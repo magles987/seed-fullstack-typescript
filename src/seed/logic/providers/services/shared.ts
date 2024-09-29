@@ -7,7 +7,6 @@ import {
 } from "../../criterias/shared";
 import { IResponse } from "../../reports/shared";
 import { IClientServiceRequestC } from "./client/shared";
-import { IServerServiceRequestC } from "./server/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras para el contexto de ejecucion para el modulo en primitive*/
 export type TKeyPrimitiveServiceModuleContext = "primitiveService";
@@ -34,7 +33,7 @@ export interface IGenericDriver<TIResponseForDrive> {
 /**esquema con parametros de configuracion de un servicio */
 export interface IServiceRequestConfig {
   client?: IClientServiceRequestC;
-  server?: IServerServiceRequestC;
+  //server?: IServerServiceRequestC;
 }
 /**refactorizacion de la interfaz */
 export type Trf_IServiceRequestConfig = IServiceRequestConfig;
