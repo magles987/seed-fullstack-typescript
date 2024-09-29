@@ -50,11 +50,13 @@ export class StructureCriteriaHandler<TModel> extends CriteriaHandler {
     const metadata = mH.getExtractMetadataByStructureContext("structureModel");
     return metadata.__S_Key;
   }
+  protected set s_Key(v: string) {} //❗NO ASIGNABLE❗, pero es necesario para el selfconstructor
   public override get p_Key(): string {
     const mH = this.metadataHandler;
     const metadata = mH.getExtractMetadataByStructureContext("structureModel");
     return metadata.__P_Key;
   }
+  protected set p_Key(v: string) {} //❗NO ASIGNABLE❗, pero es necesario para el selfconstructor
   private _keysPath: string[];
   public get keysPath(): string[] {
     return this._keysPath;

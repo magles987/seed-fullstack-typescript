@@ -39,11 +39,13 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
     const metadata = mH.getMetadata();
     return metadata.__S_Key;
   }
+  protected set s_Key(v: string) {} //❗NO ASIGNABLE❗, pero es necesario para el selfconstructor
   public override get p_Key(): string {
     const mH = this.metadataHandler;
     const metadata = mH.getMetadata();
     return metadata.__P_Key;
   }
+  protected set p_Key(v: string) {} //❗NO ASIGNABLE❗, pero es necesario para el selfconstructor
   /**... */
   constructor(
     keySrc: string,
