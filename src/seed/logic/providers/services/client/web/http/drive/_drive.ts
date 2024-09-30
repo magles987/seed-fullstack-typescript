@@ -22,15 +22,10 @@ export abstract class HttpDrive implements IGenericDriver<IHttpResponse> {
   protected get keyDriver(): TKeyDiccHttpDrive {
     return this._keyDriver;
   }
-  /**clave identificadora del recurso */
-  protected get keySrc(): string {
-    return this._keySrc;
-  }
   /** utilidades */
   protected util: Util_HttpLocalDriver = Util_HttpLocalDriver.getInstance();
-
   /** */
-  constructor(private _keyDriver: TKeyDiccHttpDrive, private _keySrc: string) {
+  constructor(private _keyDriver: TKeyDiccHttpDrive) {
     this.util = Util_HttpLocalDriver.getInstance();
   }
   /**... */

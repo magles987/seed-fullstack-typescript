@@ -50,11 +50,10 @@ export class FetchHttpDrive
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
-    keySrc: string,
     base: Partial<ReturnType<FetchHttpDrive["getDefault"]>> = {},
     isInit = true
   ) {
-    super("fetch", keySrc);
+    super("fetch");
     if (isInit) this.initProps(base);
   }
   /** devuelve la instancia única de esta clase
@@ -62,13 +61,12 @@ export class FetchHttpDrive
    *
    */
   public static getInstance(
-    keySrc: string,
     base: Partial<ReturnType<FetchHttpDrive["getDefault"]>> = {}
   ): FetchHttpDrive {
     FetchHttpDrive.FetchHttpDrive_instance =
       FetchHttpDrive.FetchHttpDrive_instance == undefined ||
       FetchHttpDrive.FetchHttpDrive_instance == null
-        ? new FetchHttpDrive(keySrc, base)
+        ? new FetchHttpDrive(base)
         : FetchHttpDrive.FetchHttpDrive_instance;
     return FetchHttpDrive.FetchHttpDrive_instance;
   }
@@ -93,13 +91,13 @@ export class FetchHttpDrive
     return;
   }
   /**⚠ Reinicia todas las propiedades al valor predefinido ⚠ */
-  public resetProps(): void {
-    const df = this.getDefault();
-    for (const key in df) {
-      this[key] = df[key];
-    }
-    return;
-  }
+  // public resetProps(): void {
+  //   const df = this.getDefault();
+  //   for (const key in df) {
+  //     this[key] = df[key];
+  //   }
+  //   return;
+  // }
   /**reinicia una propiedad al valor predefinido
    *
    * @param key clave identificadora de la propiedad a reiniciar
