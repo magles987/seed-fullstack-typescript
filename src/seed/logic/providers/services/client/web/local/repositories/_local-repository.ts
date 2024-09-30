@@ -55,7 +55,7 @@ export abstract class LocalRepository
     error?: any
   ): EHttpStatusCode {
     let httpCode: EHttpStatusCode;
-    if (this.util.isNotUndefinedAndNotNull(error)) {
+    if (this.util.isUndefinedOrNull(error)) {
       const keyRequestType = literalCriteria.type;
       const keyModifyRequestType = (literalCriteria as IModifyCriteria)
         .modifyType;

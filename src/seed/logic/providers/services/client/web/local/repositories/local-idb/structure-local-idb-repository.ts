@@ -219,7 +219,7 @@ export class StructureLocalIDBRepository<
         )} is not valid`,
       });
     }
-    if (modifyType === "create") {
+    if (modifyType !== "create") {
       throw new LogicError({
         code: ELogicCodeError.NOT_VALID,
         msn: `${modifyType} is not modify type valid`,
@@ -260,7 +260,7 @@ export class StructureLocalIDBRepository<
         )} does not valid`,
       });
     }
-    if (modifyType === "update") {
+    if (modifyType !== "update") {
       throw new LogicError({
         code: ELogicCodeError.NOT_VALID,
         msn: `${modifyType} is not modify type valid`,
@@ -300,7 +300,7 @@ export class StructureLocalIDBRepository<
         )} does not valid`,
       });
     }
-    if (modifyType === "delete") {
+    if (modifyType !== "delete") {
       throw new LogicError({
         code: ELogicCodeError.NOT_VALID,
         msn: `${modifyType} is not modify type valid`,

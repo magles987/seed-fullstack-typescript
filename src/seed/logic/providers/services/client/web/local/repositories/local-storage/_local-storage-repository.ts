@@ -241,4 +241,23 @@ export abstract class LocalStorageRepository<TKeyActionRequest>
     const data = JSON.parse(strData);
     return data;
   }
+  /**... */
+  public static async emptyAllStorage(
+    keyScope: "session" | "local" | "both" = "both"
+  ): Promise<void> {
+    if (keyScope === "session") {
+      sessionStorage.clear();
+    } else if (keyScope === "local") {
+      localStorage.clear();
+    } else if (keyScope === "both") {
+      localStorage.clear();
+      sessionStorage.clear();
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyScope} is not scope key valid`,
+      });
+    }
+    return;
+  }
 }

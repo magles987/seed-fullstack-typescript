@@ -1,125 +1,73 @@
-import lodash from "lodash";
 import {
-  IModAction,
-  IReadAction,
-} from "../../../../../controllers/_shared-primitive";
-import {
-  IPrimitiveModifyCriteria,
-  IPrimitiveReadCriteria,
-} from "../../../../../criterias/_shared-primitive";
-import {
-  ELogicCodeError,
-  LogicError,
-} from "../../../../../../../errors/logic-error";
-import { Model } from "../../../../../../../models/_model";
-import { PrimitiveRegistersHandler } from "../_registers-handler";
-import { TActionFn } from "../_local-repository";
-import {
-  LocalIDBRepository,
-  IConfig as ISuperConfig,
-  TProtectedKeyConfig as TSuperProtectedKeyConfig,
-  TInitKeyConfig as TSuperInitKeyConfig,
-  TPublicKeyConfig as TSuperPublicKeyConfig,
-} from "./_local-idb-repository";
-import {
-  Tpl_TInitConfig,
-  Tpl_TInitKeyConfig,
-  Tpl_TProtectedKeyConfig,
-  Tpl_TPublicConfig,
-  Tpl_TPublicKeyConfig,
-} from "../../../../../config/shared-config-class-module";
+  TKeyPrimitiveModifyRequestController,
+  TKeyPrimitiveReadRequestController,
+} from "../../../../../../../controllers/_primitive-ctrl";
+import { TActionFn } from "../shared";
+import { LocalIDBRepository } from "./_local-idb-repository";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**Acciones de controlador CRUD */
-interface IAction extends IModAction<TActionFn>, IReadAction<TActionFn> {}
+/**claves identificadoras de todas las acciones de request */
+type TKeyFullRequest =
+  | TKeyPrimitiveReadRequestController
+  | TKeyPrimitiveModifyRequestController;
 /**Refactorizacion de la clase */
-export type Trf_PrimitiveLocalIDBRepository = PrimitiveLocalIDBRepository;
-/**esquema de configuracion general */
-export interface IConfig extends ISuperConfig {}
-/**Configuracion opcional y accesible
- * desde el exterior del modulo */
-export type TProtectedKeyConfig = Tpl_TProtectedKeyConfig<
-  IConfig,
-  TSuperProtectedKeyConfig | ""
->;
-/**propiedades de configuracion publicas y
- * **obligatorias** a asignar fuera de
- * la clase modularizada*/
-export type TInitKeyConfig = Tpl_TInitKeyConfig<
-  IConfig,
-  TSuperInitKeyConfig | "",
-  TProtectedKeyConfig
->;
-/**propiedades de configuracion publicas y
- * **obligatorias** a asignar fuera de
- * la clase modularizada*/
-export type TPublicKeyConfig = Tpl_TPublicKeyConfig<
-  IConfig,
-  TSuperPublicKeyConfig | "",
-  TProtectedKeyConfig
->;
-/**Configuracion inicial de esta clase
- * modularizada (semi opcional) */
-export type TInitConfig = Tpl_TInitConfig<
-  IConfig,
-  TInitKeyConfig,
-  TProtectedKeyConfig
->;
-/**Configuracion publica de esta clase
- * modularizada (semi opcional) */
-export type TPublicConfig = Tpl_TPublicConfig<
-  IConfig,
-  TPublicKeyConfig,
-  TProtectedKeyConfig
->;
+export type Trf_PrimitiveLocalIDBRepository = PrimitiveLocalIDBRepository<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**
- * descrip...
- * ____
- * @extends
+/** *selfcontructor*
  *
+ * ...
  */
-export class PrimitiveLocalIDBRepository
-  extends LocalIDBRepository
-  implements IAction
+export class PrimitiveLocalIDBRepository<
+    TKeyActionRequest extends TKeyFullRequest
+  >
+  extends LocalIDBRepository<TKeyActionRequest>
+  implements
+    ReturnType<PrimitiveLocalIDBRepository<TKeyActionRequest>["getDefault"]>,
+    Record<TKeyFullRequest, TActionFn>
 {
-  protected override dataHandler = PrimitiveRegistersHandler.getInstance();
-  protected static override readonly getDefault: () => IConfig = () => {
-    const superDF = LocalIDBRepository.getDefault();
+  public static override readonly getDefault = () => {
+    const superDf = LocalIDBRepository.getDefault();
     return {
-      ...superDF,
-      logicContext: "primitive", //sobreasignacion interna
+      ...superDf,
+      //...aqui las propiedades
+    };
+  };
+  protected static override readonly getCONSTANTS = () => {
+    const superCONST = LocalIDBRepository.getCONSTANTS();
+    return {
+      ...superCONST,
+      //..aqui las constantes
     };
   };
   /**
-   * @param iConfig configuracion de
-   * inicialización
+   * @param keySrc clave identificadora del recurso
+   * @param base objeto literal con valores personalizados para iniicalizar las propiedades
+   * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
-  constructor(iConfig: TInitConfig) {
-    super(iConfig);
-    this.initConfig(iConfig);
+  constructor(
+    keySrc: string,
+    base: Partial<
+      ReturnType<PrimitiveLocalIDBRepository<TKeyActionRequest>["getDefault"]>
+    > = {},
+    isInit = true
+  ) {
+    super("primitive", keySrc, base, false);
+    if (isInit) this.initProps(base);
   }
   protected override getDefault() {
     return PrimitiveLocalIDBRepository.getDefault();
   }
-  protected override initConfig(iConfig: TInitConfig) {
-    if (!this.__isNotInit) return;
-    if (this.__config === undefined) this.__config = this.getDefault();
-    if (typeof iConfig != "object") return;
-    super.initConfig(iConfig);
-    this.setPublicConfig(iConfig, false);
+  protected override getCONST() {
+    return PrimitiveLocalIDBRepository.getCONSTANTS();
   }
-  public override setPublicConfig(pConfig: TPublicConfig, isUpCascade = true) {
-    if (!this.util.isObject(pConfig)) return;
-    if (isUpCascade) super.setPublicConfig(pConfig);
-    const v = <IConfig>pConfig; //tipado real
-  }
-  protected override get config() {
-    return <IConfig>this.__config;
-  }
-  protected override createAndSetSchemaConfig(
-    keyCollection: string,
-    keyPrimary: string
-  ) {
-    throw new Error("NO IMPLEMENTADO");
-  }
+
+  //❗normalmente definidas en el padre, salvo que se quieran sobreescribir❗
+  // /**reinicia una propiedad al valor predefinido
+  //  *
+  //  * @param key clave identificadora de la propiedad a reiniciar
+  //  */
+  // public override resetPropByKey(key: keyof ReturnType<PrimitiveLocalIDBRepository<TKeyActionRequest>["getDefault"]>): void {
+  //   const df = this.getDefault();
+  //   this[key] = df[key];
+  //   return;
+  // }
 }

@@ -15,91 +15,82 @@ import { Model } from "../../../../../../../models/_model";
 import { LocalStorageRepository } from "./_local-storage-repository";
 import { PrimitiveRegistersHandler } from "../_registers-handler";
 import { TActionFn } from "../_local-repository";
+import {
+  TKeyPrimitiveModifyRequestController,
+  TKeyPrimitiveReadRequestController,
+} from "../../../../../../../controllers/_primitive-ctrl";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**Acciones de controlador CRUD */
-interface IAction extends IModAction<TActionFn>, IReadAction<TActionFn> {}
-/**refactorizacion de la clase */
+/**claves identificadoras de todas las acciones de request */
+type TKeyFullRequest =
+  | TKeyPrimitiveReadRequestController
+  | TKeyPrimitiveModifyRequestController;
+/** */
 export type Trf_PrimitiveLocalStorageRepository =
-  PrimitiveLocalStorageRepository;
-/**esquema de configuracion general */
-export interface IConfig extends ISuperConfig {}
-/**Configuracion opcional y accesible
- * desde el exterior del modulo */
-export type TProtectedKeyConfig = Tpl_TProtectedKeyConfig<
-  IConfig,
-  TSuperProtectedKeyConfig | ""
->;
-/**propiedades de configuracion publicas y
- * **obligatorias** a asignar fuera de
- * la clase modularizada*/
-export type TInitKeyConfig = Tpl_TInitKeyConfig<
-  IConfig,
-  TSuperInitKeyConfig | "",
-  TProtectedKeyConfig
->;
-/**propiedades de configuracion publicas y
- * **obligatorias** a asignar fuera de
- * la clase modularizada*/
-export type TPublicKeyConfig = Tpl_TPublicKeyConfig<
-  IConfig,
-  TSuperPublicKeyConfig | "",
-  TProtectedKeyConfig
->;
-/**Configuracion inicial de esta clase
- * modularizada (semi opcional) */
-export type TInitConfig = Tpl_TInitConfig<
-  IConfig,
-  TInitKeyConfig,
-  TProtectedKeyConfig
->;
-/**Configuracion publica de esta clase
- * modularizada (semi opcional) */
-export type TPublicConfig = Tpl_TPublicConfig<
-  IConfig,
-  TPublicKeyConfig,
-  TProtectedKeyConfig
->;
+  PrimitiveLocalStorageRepository<any>;
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**
+/** *selfcontructor*
  *
+ * ...
  */
-export class PrimitiveLocalStorageRepository
-  extends LocalStorageRepository
-  implements IAction
+export class PrimitiveLocalStorageRepository<
+    TKeyActionRequest extends TKeyFullRequest
+  >
+  extends LocalStorageRepository<TKeyActionRequest>
+  implements
+    ReturnType<
+      PrimitiveLocalStorageRepository<TKeyActionRequest>["getDefault"]
+    >,
+    Record<TKeyFullRequest, TActionFn>
 {
-  protected override dataHandler = PrimitiveRegistersHandler.getInstance();
-  protected static override readonly getDefault: () => IConfig = () => {
-    const superDF = LocalStorageRepository.getDefault();
+  public static override readonly getDefault = () => {
+    const superDf = LocalStorageRepository.getDefault();
     return {
-      ...superDF,
-      logicContext: "primitive", //sobreasignacion interna
+      ...superDf,
+      //...aqui las propiedades
     };
   };
+  protected static override readonly getCONSTANTS = () => {
+    const superCONST = LocalStorageRepository.getCONSTANTS();
+    return {
+      ...superCONST,
+      //..aqui las constantes
+    };
+  };
+
   /**
-   * @param iConfig configuracion de
-   * inicialización
+   * @param keySrc clave identificadora del recurso
+   * @param base objeto literal con valores personalizados para iniicalizar las propiedades
+   * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
-  constructor(iConfig: TInitConfig) {
-    super(iConfig);
-    this.initConfig(iConfig);
+  constructor(
+    keySrc: string,
+    base: Partial<
+      ReturnType<
+        PrimitiveLocalStorageRepository<TKeyActionRequest>["getDefault"]
+      >
+    > = {},
+    isInit = true
+  ) {
+    super("primitive", keySrc, base, false);
+    if (isInit) this.initProps(base);
   }
   protected override getDefault() {
     return PrimitiveLocalStorageRepository.getDefault();
   }
-  protected override initConfig(iConfig: TInitConfig) {
-    if (!this.__isNotInit) return;
-    if (this.__config === undefined) this.__config = this.getDefault();
-    if (typeof iConfig != "object") return;
-    super.initConfig(iConfig);
-    this.setPublicConfig(iConfig, false);
+  protected override getCONST() {
+    return PrimitiveLocalStorageRepository.getCONSTANTS();
   }
-  public override setPublicConfig(pConfig: TPublicConfig, isUpCascade = true) {
-    if (!this.util.isObject(pConfig)) return;
-    if (isUpCascade) super.setPublicConfig(pConfig);
-    const v = <IConfig>pConfig; //tipado real
-  }
-  protected override get config() {
-    return <IConfig>this.__config;
-  }
+
+  //❗normalmente definidas en el padre, salvo que se quieran sobreescribir❗
+  // /**reinicia una propiedad al valor predefinido
+  //  *
+  //  * @param key clave identificadora de la propiedad a reiniciar
+  //  */
+  // public override resetPropByKey(key: keyof ReturnType<PrimitiveLocalStorageRepository<TKeyActionRequest>["getDefault"]>): void {
+  //   const df = this.getDefault();
+  //   this[key] = df[key];
+  //   return;
+  // }
 }

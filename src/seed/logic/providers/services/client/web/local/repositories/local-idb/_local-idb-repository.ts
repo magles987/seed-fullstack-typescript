@@ -163,4 +163,12 @@ export abstract class LocalIDBRepository<TKeyActionRequest>
     const tx = db.transaction(this.keySrc, transactionType);
     return tx;
   }
+  /**... */
+  public static async deleteCurrentDataBase(
+    db_name = LocalIDBRepository.getDefault().db_name
+  ): Promise<void> {
+    const connection = IDBConnection.getInstance();
+    await connection.deleteDB(db_name);
+    return;
+  }
 }

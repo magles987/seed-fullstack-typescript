@@ -42,6 +42,7 @@ export class PrimitiveLocalCookieRepository<
     };
   };
   /**
+   * @param keySrc clave identificadora del recurso
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
