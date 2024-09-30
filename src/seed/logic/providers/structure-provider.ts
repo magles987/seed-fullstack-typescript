@@ -224,8 +224,7 @@ export class StructureLogicProvider<
       responses,
       middlewareReportStatus,
     } = this.adapBagForContext(bag, "runProvider");
-    let { customServiceFactoryFn, serviceConfig, serviceToRun, runMode } =
-      actionConfig;
+    let { customServiceFactoryFn, serviceConfig, serviceToRun } = actionConfig;
     const rH = this.reportHandler;
     let res = rH.mutateResponse(undefined, {
       data,

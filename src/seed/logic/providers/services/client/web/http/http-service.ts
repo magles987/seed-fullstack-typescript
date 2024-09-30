@@ -1,13 +1,21 @@
 import { EHttpStatusCode } from "../../../../../util/http-utilities";
-import { IGenericDriver, IServiceRequestConfig, Trf_IServiceRequestConfig } from "../../../shared";
+import {
+  IGenericDriver,
+  IServiceRequestConfig,
+  Trf_IServiceRequestConfig,
+} from "../../../shared";
 import { WebClientService } from "../_web-service-client";
 import { IHttpResponse, IHttpWebClientServiceRequestC } from "./shared";
 import { TKeyLogicContext } from "../../../../../config/shared-modules";
 import { ELogicCodeError, LogicError } from "../../../../../errors/logic-error";
 import { IPrimitiveBag, IStructureBag } from "../../../../../bag-module/shared";
-import { IPrimitiveResponse, IStructureResponse } from "../../../../../reports/shared";
+import {
+  IPrimitiveResponse,
+  IStructureResponse,
+} from "../../../../../reports/shared";
 import { TExpectedDataType } from "../../../../../criterias/shared";
 import { FetchHttpDrive } from "./drive/fetch/fetch-drive";
+import { httpClientDriverFactoryFn } from "./drive/http-driver-factory";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_HttpService = HttpWebClientService;
@@ -26,18 +34,18 @@ export class HttpWebClientService extends WebClientService {
         ...(superDF.client as any),
         web: {
           ...(superDF.client.web as any),
-          http:{
+          http: {
             keyHttpDriver: undefined, //⚠ Debe ser definido en metadatos ⚠
             urlRoot: "",
-            urlsExtended: []
-          }
+            urlsExtended: [],
+          },
         },
-      },  
+      },
     } as IServiceRequestConfig;
-  };  
+  };
   protected get config(): IHttpWebClientServiceRequestC {
     return this.fullConfig.client.web.http;
-  }  
+  }
   /**
    * @param _keyLogicContext contexto lógico (estructural o primitivo)
    * @param _keySrc indentificadora del recurso asociado a modulo
@@ -93,25 +101,15 @@ export class HttpWebClientService extends WebClientService {
     }
     return rConfig;
   }
-  /**... */
-  protected buildDriver(): IGenericDriver<IHttpResponse> {
-    const {keyHttpDriver} = this.config;
-    let driver:IGenericDriver<IHttpResponse>;
-    if (keyHttpDriver === "axios") {
-      driver = ;
-    }else if(keyHttpDriver === "fetch"){
-      driver = FetchHttpDrive.getInstance();
-    }else{
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${keyHttpDriver} is not key http driver valid `
-      });      
-    }
+  protected override buildDriver(): IGenericDriver<IHttpResponse> {
+    const { keyHttpDriver } = this.config;
+    const diccConfig = this.config.diccDriverConfig;
+    const driver = httpClientDriverFactoryFn(keyHttpDriver, diccConfig);
     return driver;
-  }  
+  }
   public override async runRequestForPrimitive(
     iBag: IPrimitiveBag<any>
-  ): Promise<IPrimitiveResponse> {    
+  ): Promise<IPrimitiveResponse> {
     const repo = this.buildDriver();
     const bagRepository = this.convertBagToBagService(iBag);
     const localResponse = await repo.runRequestFromDrive(bagRepository);
@@ -128,7 +126,7 @@ export class HttpWebClientService extends WebClientService {
     return this.adaptDriverResponseToStructureLogicResponse(localResponse, {
       expectedDataType: iBag.literalCriteria.expectedDataType,
     });
-  }  
+  }
   protected override adaptDriverResponseToPrimitiveLogicResponse(
     driverResponse: IHttpResponse,
     option: {

@@ -60,6 +60,9 @@ export type TDataType =
   //Utilitarios
   | "any" //⚠ Representa cualquier valor **Usar con precaucion**
   | "_system"; //❗ representa un tipo reservado par ael sistema (id, path o cualquier otro)
+/**seleccion de nombre del recurso (singular o plural) para
+ * la comunicacion con los drivers de gestio de peticion */
+export type TKeySrcSelector = "singular" | "plural";
 /**tipo generico estandar para una tupla de accion de configuracion
  *
  * `TIDiccAC` el diccionario de acciones
