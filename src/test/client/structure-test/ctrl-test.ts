@@ -142,7 +142,7 @@ export class ModelTestCtrl
                     },
                   },
                 },
-                servicesToRun: [{ keyService: "local" }],
+                serviceToRun: { keyService: "local" },
               },
             },
           },

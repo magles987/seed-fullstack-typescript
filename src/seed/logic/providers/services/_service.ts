@@ -135,18 +135,4 @@ export abstract class Service extends HandlerModule implements IGenericService {
     driverResponse: unknown,
     option: unknown
   ): IStructureResponse;
-  /**... */
-  public static mergeServiceConfigWithDeepConfig(
-    serviceConfig: IServiceRequestConfig,
-    keyService: string,
-    deepConfig: object
-  ): IServiceRequestConfig {
-    const util = Util_Service.getInstance();
-    let serviceConfigContext = util.findPropByKeyPath(
-      serviceConfig,
-      keyService
-    );
-
-    return;
-  }
 }

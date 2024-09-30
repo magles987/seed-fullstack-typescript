@@ -6,7 +6,11 @@ import { StructureBag } from "../bag-module/structure-bag";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { TStructureMetaAndProvider } from "../meta/metadata-shared";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
-import { IResponse, IStructureResponse } from "../reports/shared";
+import {
+  ELogicResStatusCode,
+  IResponse,
+  IStructureResponse,
+} from "../reports/shared";
 import {
   StructureReportHandler,
   Trf_StructureReportHandler,
@@ -74,15 +78,17 @@ export class StructureLogicProvider<
             },
             //server:{},
           },
-          servicesToRun: [],
+          serviceToRun: {},
+          runMode: "sequential",
+          dataSelect: "*last*",
         },
       } as IDiccStructureProviderActionConfigG,
-      // topPriorityKeysAction: [
-      //   ...superDf.topPriorityKeysAction,
-      // ] as Array<TKeysDiccStructureProviderActionConfigG>,
-      // topMandatoryKeysAction: [
-      //   ...superDf.topMandatoryKeysAction,
-      // ] as Array<TKeysDiccStructureProviderActionConfigG>,
+      topPriorityKeysAction: [
+        ...superDf.topPriorityKeysAction,
+      ] as Array<TKeysDiccStructureProviderActionConfigG>,
+      topMandatoryKeysAction: [
+        ...superDf.topMandatoryKeysAction,
+      ] as Array<TKeysDiccStructureProviderActionConfigG>,
     };
   };
   public override get metadataHandler(): Trf_StructureLogicMetadataHandler {
@@ -218,34 +224,27 @@ export class StructureLogicProvider<
       responses,
       middlewareReportStatus,
     } = this.adapBagForContext(bag, "runProvider");
-    let { customServiceFactoryFn, serviceConfig, servicesToRun } = actionConfig;
+    let { customServiceFactoryFn, serviceConfig, serviceToRun, runMode } =
+      actionConfig;
     const rH = this.reportHandler;
     let res = rH.mutateResponse(undefined, {
       data,
       keyAction,
       keyPath,
     });
-    servicesToRun = Array.isArray(servicesToRun)
-      ? servicesToRun
-      : [servicesToRun];
-    //❓Aqui podria manejarse con middleware❓
-    let promReses: Array<Promise<IStructureResponse>> = [];
-    for (let idx = 0; idx < servicesToRun.length; idx++) {
-      let { keyService, customDeepServiceConfig } = servicesToRun[idx];
-      const serviceInstance = customServiceFactoryFn(
-        keyService,
-        this.keyLogicContext,
-        this.keySrc,
-        serviceConfig,
-        customDeepServiceConfig
-      );
-      const promRes = serviceInstance.runRequestFromService(
-        bag.getLiteralBag()
-      );
-      promReses.push(promRes as Promise<IStructureResponse>);
-    }
 
-    res = rH.mutateResponse(res);
+    let { keyService, customDeepServiceConfig } = serviceToRun;
+    const serviceInstance = customServiceFactoryFn(
+      keyService,
+      this.keyLogicContext,
+      this.keySrc,
+      serviceConfig,
+      customDeepServiceConfig
+    );
+    const serviceRes = serviceInstance.runRequestFromService(
+      bag.getLiteralBag()
+    );
+    res = rH.mutateResponse(res, serviceRes as any);
     return res;
   }
 }
