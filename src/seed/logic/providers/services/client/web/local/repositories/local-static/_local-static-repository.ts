@@ -1,6 +1,9 @@
 import { LocalRepository } from "../_local-repository";
 import {} from "../shared";
-import { TKeyLogicContext } from "../../../../../../../config/shared-modules";
+import {
+  TKeyLogicContext,
+  TKeySrcSelector,
+} from "../../../../../../../config/shared-modules";
 import { ILocalStaticRepositoryConfig } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
@@ -19,6 +22,7 @@ export abstract class LocalStaticRepository<TKeyActionRequest>
   public static readonly getDefault = () => {
     return {
       getDB: () => {},
+      srcSelector: "plural",
     } as ILocalStaticRepositoryConfig;
   };
   /**@returns todas las constantes a usar en instancias de esta clase*/
@@ -37,6 +41,18 @@ export abstract class LocalStaticRepository<TKeyActionRequest>
         ? this._getDB
         : this.getDefault().getDB;
   }
+  private _srcSelector: TKeySrcSelector;
+  public get srcSelector(): TKeySrcSelector {
+    return this._srcSelector;
+  }
+  protected set srcSelector(v: TKeySrcSelector) {
+    this._srcSelector =
+      v === "plural" || v === "singular"
+        ? v
+        : this._srcSelector !== undefined
+        ? this._srcSelector
+        : this.getDefault().srcSelector;
+  }
   /**
    * @param keyLogicContext clave identificadora del contexto logico
    * @param keySrc clave identificadora del recurso
@@ -45,13 +61,12 @@ export abstract class LocalStaticRepository<TKeyActionRequest>
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
-    keySrc: string,
     base: Partial<
       ReturnType<LocalStaticRepository<TKeyActionRequest>["getDefault"]>
     > = {},
     isInit = true
   ) {
-    super("static", keyLogicContext, keySrc);
+    super("static", keyLogicContext);
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
@@ -94,7 +109,7 @@ export abstract class LocalStaticRepository<TKeyActionRequest>
     >
   ): void {
     const df = this.getDefault();
-    this[key] = df[key];
+    this[key as any] = df[key];
     return;
   }
 }

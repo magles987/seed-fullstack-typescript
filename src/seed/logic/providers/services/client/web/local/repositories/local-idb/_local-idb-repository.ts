@@ -1,4 +1,7 @@
-import { TKeyLogicContext } from "../../../../../../../config/shared-modules";
+import {
+  TKeyLogicContext,
+  TKeySrcSelector,
+} from "../../../../../../../config/shared-modules";
 import { LocalRepository } from "../_local-repository";
 import { IDBConnection } from "./_connection";
 import { ILocalIDBRepositoryConfig } from "./shared";
@@ -19,6 +22,7 @@ export abstract class LocalIDBRepository<TKeyActionRequest>
     return {
       db_name: "logic",
       db_version: 1,
+      srcSelector: "plural",
     } as ILocalIDBRepositoryConfig;
   };
   /**@returns todas las constantes a usar en instancias de esta clase*/
@@ -49,23 +53,33 @@ export abstract class LocalIDBRepository<TKeyActionRequest>
       ? this._db_version
       : this.getDefault().db_version;
   }
+  private _keySrcSelector: TKeySrcSelector;
+  public get srcSelector(): TKeySrcSelector {
+    return this._keySrcSelector;
+  }
+  protected set srcSelector(v: TKeySrcSelector) {
+    this._keySrcSelector =
+      v === "plural" || v === "singular"
+        ? v
+        : this._keySrcSelector !== undefined
+        ? this._keySrcSelector
+        : this.getDefault().srcSelector;
+  }
   /**conexion a IndexableDB  base de datos del navegador*/
   protected connection = IDBConnection.getInstance();
   /**
    * @param keyLogicContext clave identificadora del contexto logico
-   * @param keySrc clave identificadora del recurso
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
-    keySrc: string,
     base: Partial<
       ReturnType<LocalIDBRepository<TKeyActionRequest>["getDefault"]>
     > = {},
     isInit = true
   ) {
-    super("idb", keyLogicContext, keySrc);
+    super("idb", keyLogicContext);
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
@@ -126,19 +140,19 @@ export abstract class LocalIDBRepository<TKeyActionRequest>
    * verifica si el esquema esta registrado
    * ____
    */
-  protected checkSchema() {
+  protected checkSchema(keySchema: string) {
     const mapSch = this.connection.mapSchemaConfig;
-    const isRegistered = mapSch.has(this.keySrc);
+    const isRegistered = mapSch.has(keySchema);
     if (!isRegistered) {
-      this.createAndSetSchemaConfig(this.keySrc);
+      this.createAndSetSchemaConfig(keySchema);
     }
   }
   /**
    * ____
    * @returns la conexion abierta a la BD
    */
-  protected async getDB() {
-    this.checkSchema();
+  protected async getDB(keySrcContext: string) {
+    this.checkSchema(keySrcContext);
     let db = await this.connection.openConnect(this.db_name, this.db_version);
     return db;
   }
@@ -157,10 +171,11 @@ export abstract class LocalIDBRepository<TKeyActionRequest>
    *
    */
   protected async getTransaction(
+    keySrcContext: string,
     transactionType: "readonly" | "readwrite" | "versionchange"
   ) {
-    const db = await this.getDB();
-    const tx = db.transaction(this.keySrc, transactionType);
+    const db = await this.getDB(keySrcContext);
+    const tx = db.transaction(keySrcContext, transactionType);
     return tx;
   }
   /**... */

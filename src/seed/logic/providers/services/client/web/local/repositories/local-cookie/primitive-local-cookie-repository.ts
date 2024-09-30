@@ -42,12 +42,10 @@ export class PrimitiveLocalCookieRepository<
     };
   };
   /**
-   * @param keySrc clave identificadora del recurso
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
-    keySrc: string,
     base: Partial<
       ReturnType<
         PrimitiveLocalCookieRepository<TKeyActionRequest>["getDefault"]
@@ -55,7 +53,7 @@ export class PrimitiveLocalCookieRepository<
     > = {},
     isInit = true
   ) {
-    super("primitive", keySrc, base, false);
+    super("primitive", base, false);
     if (isInit) this.initProps(base);
   }
   protected override getDefault() {
@@ -65,8 +63,11 @@ export class PrimitiveLocalCookieRepository<
     return PrimitiveLocalCookieRepository.getCONSTANTS();
   }
   //████ common snippet for action request  ████████████████████████
-  protected override async readCommon() {
-    let data = await this.getData();
+  protected override async readCommon(
+    criteria: IBagForService["literalCriteria"]
+  ) {
+    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    let data = await this.getData(keySrcContext);
     data = this.util.isNotUndefinedAndNotNull(data)
       ? Array.isArray(data)
         ? data
@@ -74,20 +75,32 @@ export class PrimitiveLocalCookieRepository<
       : [];
     return data;
   }
-  protected override async createCommon(data: any) {
-    let currentData = await this.getData();
+  protected override async createCommon(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ) {
+    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    let currentData = await this.getData(keySrcContext);
     currentData.push(data);
-    await this.setData(currentData);
+    await this.setData(currentData, keySrcContext);
     return data;
   }
-  protected override async updateCommon(data: any) {
-    let currentData = await this.getData();
+  protected override async updateCommon(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ) {
+    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    let currentData = await this.getData(keySrcContext);
     currentData = data;
-    this.setData(currentData);
+    this.setData(currentData, keySrcContext);
     return data;
   }
-  protected override async deleteCommon(data: any) {
-    let currentData = await this.getData();
+  protected override async deleteCommon(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ) {
+    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    let currentData = await this.getData(keySrcContext);
     return data;
   }
   //████ Util Registers █████████████████████████████████████████████████████

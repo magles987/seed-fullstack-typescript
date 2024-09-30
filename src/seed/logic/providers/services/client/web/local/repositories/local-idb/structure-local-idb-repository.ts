@@ -63,18 +63,16 @@ export class StructureLocalIDBRepository<
       : this.getDefault().keyId;
   }
   /**
-   * @param keySrc clave identificadora del recurso
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
-    keySrc: string,
     base: Partial<
       ReturnType<StructureLocalIDBRepository<TKeyActionRequest>["getDefault"]>
     > = {},
     isInit = true
   ) {
-    super("structure", keySrc, base, false);
+    super("structure", base, false);
     if (isInit) this.initProps(base);
   }
   protected override getDefault() {
@@ -102,15 +100,22 @@ export class StructureLocalIDBRepository<
       keyPrimary,
     });
   }
-  protected override async readCommon() {
-    const tx = await this.getTransaction("readonly");
+  protected override async readCommon(
+    criteria: IBagForService["literalCriteria"]
+  ) {
+    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const tx = await this.getTransaction(keySrcContext, "readonly");
     let data = await tx.store.getAll();
     await tx.done;
     return data;
   }
-  protected override async createCommon(data: any) {
+  protected override async createCommon(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ) {
     const kId = this.keyId;
-    const tx = await this.getTransaction("readwrite");
+    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const tx = await this.getTransaction(keySrcContext, "readwrite");
     const isExist = this.util.isObject(await tx.store.get(data.id));
     if (isExist) return undefined; //❗ no se creó porque ya existe ❗
     //❗creacion de id:❗
@@ -119,17 +124,25 @@ export class StructureLocalIDBRepository<
     await tx.done; //cerrar la trasaccion
     return data;
   }
-  protected override async updateCommon(data: any) {
-    const tx = await this.getTransaction("readwrite");
+  protected override async updateCommon(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ) {
+    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const tx = await this.getTransaction(keySrcContext, "readwrite");
     const isExist = this.util.isObject(await tx.store.get(data.id));
     if (!isExist) return undefined; //❗no existe❗
     await tx.store.put(data);
     await tx.done; //cerrar la trasaccion
     return data;
   }
-  protected override async deleteCommon(data: any) {
+  protected override async deleteCommon(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ) {
     const kId = this.keyId;
-    const tx = await this.getTransaction("readwrite");
+    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const tx = await this.getTransaction(keySrcContext, "readwrite");
     const isExist = this.util.isObject(await tx.store.get(data.id));
     if (isExist) {
       await tx.store.delete(data[kId]);
@@ -148,21 +161,21 @@ export class StructureLocalIDBRepository<
    */
   public async readAll(bagService: IBagForService) {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon();
+    const registers = await this.readCommon(literalCriteria);
     const rxData = await this.getAll(registers, literalCriteria);
     return rxData;
   }
   /**... */
   public async readMany(bagService: IBagForService): Promise<any[]> {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon();
+    const registers = await this.readCommon(literalCriteria);
     const rxData = await this.getMany(registers, literalCriteria);
     return rxData;
   }
   /** */
   public async readOne(bagService: IBagForService) {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon();
+    const registers = await this.readCommon(literalCriteria);
     const rxData = await this.getOne(registers, literalCriteria);
     return rxData;
   }
@@ -176,7 +189,11 @@ export class StructureLocalIDBRepository<
    */
   public async readById(bagService: IBagForService) {
     const { literalCriteria } = bagService;
-    const tx = await this.getTransaction("readonly");
+    const keySrcContext = this.getKeySrcContext(
+      this.srcSelector,
+      literalCriteria
+    );
+    const tx = await this.getTransaction(keySrcContext, "readonly");
     const { query } = literalCriteria as IStructureReadCriteria<any>;
     const kId = this.keyId;
     const extractQ = query.find((q) => {
@@ -225,10 +242,10 @@ export class StructureLocalIDBRepository<
         msn: `${modifyType} is not modify type valid`,
       });
     }
-    let rxData = await this.createCommon(data);
+    let rxData = await this.createCommon(data, literalCriteria);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
-        rxData = await this.updateCommon(data);
+        rxData = await this.updateCommon(data, literalCriteria);
       } else {
         throw new LogicError({
           code: ELogicCodeError.EXIST,
@@ -266,10 +283,10 @@ export class StructureLocalIDBRepository<
         msn: `${modifyType} is not modify type valid`,
       });
     }
-    let rxData = await this.updateCommon(data);
+    let rxData = await this.updateCommon(data, literalCriteria);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
-        rxData = await this.createCommon(data);
+        rxData = await this.createCommon(data, literalCriteria);
       } else {
         throw new LogicError({
           code: ELogicCodeError.NOT_EXIST,
@@ -308,7 +325,7 @@ export class StructureLocalIDBRepository<
     }
     const kId = this.keyId;
     let rxData = {};
-    await this.deleteCommon(data);
+    await this.deleteCommon(data, literalCriteria);
     rxData[kId] = data[kId];
     return rxData;
   }

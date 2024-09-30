@@ -39,18 +39,16 @@ export class PrimitiveLocalIDBRepository<
     };
   };
   /**
-   * @param keySrc clave identificadora del recurso
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
-    keySrc: string,
     base: Partial<
       ReturnType<PrimitiveLocalIDBRepository<TKeyActionRequest>["getDefault"]>
     > = {},
     isInit = true
   ) {
-    super("primitive", keySrc, base, false);
+    super("primitive", base, false);
     if (isInit) this.initProps(base);
   }
   protected override getDefault() {

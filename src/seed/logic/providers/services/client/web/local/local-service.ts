@@ -104,9 +104,8 @@ export class LocalWebClientService extends WebClientService {
     const { keyLocalRepository } = this.config;
     const diccConfig = this.config.diccRepositoryConfig;
     const driver = localRepositoryFactoryFn(
-      this.keyLogicContext,
-      this.keySrc,
       keyLocalRepository,
+      this.keyLogicContext,
       diccConfig
     );
     return driver;

@@ -1,3 +1,4 @@
+import { TKeySrcSelector } from "../../../../../../../config/shared-modules";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**esquema de configuracion para el repositorio */
 export interface ILocalCookieRepositoryConfig {
@@ -7,4 +8,6 @@ export interface ILocalCookieRepositoryConfig {
   expirationDay: number;
   /**??? */
   isURIEncodeDecode: boolean;
+  /**determina que tipo de clave identificadora de recurso usar */
+  srcSelector: TKeySrcSelector;
 }

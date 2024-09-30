@@ -65,12 +65,10 @@ export class StructureLocalStaticRepository<
       : this.getDefault().keyId;
   }
   /**
-   * @param keySrc clave identificadora del recurso
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
-    keySrc: string,
     base: Partial<
       ReturnType<
         StructureLocalStaticRepository<TKeyActionRequest>["getDefault"]
@@ -78,7 +76,7 @@ export class StructureLocalStaticRepository<
     > = {},
     isInit = true
   ) {
-    super("structure", keySrc, base, false);
+    super("structure", base, false);
     if (isInit) this.initProps(base);
   }
   protected override getDefault() {
@@ -98,9 +96,7 @@ export class StructureLocalStaticRepository<
   //   return;
   // }
   /**... */
-  protected async selectFromTable(
-    keyTable: string = this.keySrc
-  ): Promise<any[]> {
+  protected async selectFromTable(keyTable: string): Promise<any[]> {
     const db = this.getDB();
     if (!this.util.isLiteralObject(db)) {
       throw new LogicError({
@@ -115,14 +111,17 @@ export class StructureLocalStaticRepository<
   /**... */
   protected async insertIntoTable(
     registers: any,
-    keyTable: string = this.keySrc
+    keyTable: string
   ): Promise<void> {
     let db = this.getDB();
     db[keyTable] = registers;
     return;
   }
-  protected override async readCommon() {
-    let data = await this.selectFromTable();
+  protected override async readCommon(
+    criteria: IBagForService["literalCriteria"]
+  ) {
+    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    let data = await this.selectFromTable(keySrcContext);
     data = this.util.isNotUndefinedAndNotNull(data)
       ? Array.isArray(data)
         ? data
@@ -130,9 +129,13 @@ export class StructureLocalStaticRepository<
       : [];
     return data;
   }
-  protected override async createCommon(data: any) {
+  protected override async createCommon(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ) {
     const kId = this.keyId;
-    let registers = await this.selectFromTable();
+    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    let registers = await this.selectFromTable(keySrcContext);
     const idxCData = registers.findIndex((dt) => {
       const r = dt[kId] === data[kId];
       return r;
@@ -141,24 +144,32 @@ export class StructureLocalStaticRepository<
     //creacion de id:
     data[kId] = this.generateID(data);
     registers.push(data);
-    await this.insertIntoTable(registers);
+    await this.insertIntoTable(registers, keySrcContext);
     return data;
   }
-  protected override async updateCommon(data: any) {
+  protected override async updateCommon(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ) {
     const kId = this.keyId;
-    let registers = await this.selectFromTable();
+    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    let registers = await this.selectFromTable(keySrcContext);
     const idxCData = registers.findIndex((dt) => {
       const r = dt[kId] === data[kId];
       return r;
     });
     if (idxCData === -1) return undefined; //❗no existe❗
     registers[idxCData] = data;
-    await this.insertIntoTable(registers);
+    await this.insertIntoTable(registers, keySrcContext);
     return data;
   }
-  protected override async deleteCommon(data: any) {
+  protected override async deleteCommon(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ) {
     const kId = this.keyId;
-    let registers = await this.selectFromTable();
+    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    let registers = await this.selectFromTable(keySrcContext);
     const idxCData = registers.findIndex((dt) => {
       const r = dt[kId] === data[kId];
       return r;
@@ -166,7 +177,7 @@ export class StructureLocalStaticRepository<
     if (idxCData > 0) {
       //elimina solo si existe
       registers.splice(idxCData, 1);
-      await this.insertIntoTable(registers);
+      await this.insertIntoTable(registers, keySrcContext);
     }
     return data;
   }
@@ -181,14 +192,14 @@ export class StructureLocalStaticRepository<
    */
   public async readAll(bagService: IBagForService): Promise<any[]> {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon();
+    const registers = await this.readCommon(literalCriteria);
     const data = await this.getAll(registers, literalCriteria);
     return data;
   }
   /**... */
   public async readMany(bagService: IBagForService): Promise<any[]> {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon();
+    const registers = await this.readCommon(literalCriteria);
     const data = await this.getMany(registers, literalCriteria);
     return data;
   }
@@ -202,7 +213,7 @@ export class StructureLocalStaticRepository<
    */
   public async readOne(bagService: IBagForService) {
     let { literalCriteria } = bagService;
-    const registers = await this.readCommon();
+    const registers = await this.readCommon(literalCriteria);
     const data = await this.getOne(registers, literalCriteria);
     return data;
   }
@@ -234,7 +245,7 @@ export class StructureLocalStaticRepository<
         )} is not valid query, because not 'id' valid`,
       });
     }
-    const registers = await this.readCommon();
+    const registers = await this.readCommon(literalCriteria);
     const data = await this.getOne(registers, literalCriteria);
     return data;
   }
@@ -264,10 +275,10 @@ export class StructureLocalStaticRepository<
         msn: `${modifyType} is not modify type valid`,
       });
     }
-    let rxData = await this.createCommon(data);
+    let rxData = await this.createCommon(data, literalCriteria);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
-        rxData = await this.updateCommon(data);
+        rxData = await this.updateCommon(data, literalCriteria);
       } else {
         throw new LogicError({
           code: ELogicCodeError.EXIST,
@@ -305,10 +316,10 @@ export class StructureLocalStaticRepository<
         msn: `${modifyType} is not modify type valid`,
       });
     }
-    let rxData = await this.updateCommon(data);
+    let rxData = await this.updateCommon(data, literalCriteria);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
-        rxData = this.createCommon(data);
+        rxData = this.createCommon(data, literalCriteria);
       } else {
         throw new LogicError({
           code: ELogicCodeError.NOT_EXIST,
@@ -345,7 +356,7 @@ export class StructureLocalStaticRepository<
         msn: `${modifyType} is not modify type valid`,
       });
     }
-    let rxData = await this.deleteCommon(data);
+    let rxData = await this.deleteCommon(data, literalCriteria);
     return rxData;
   }
   //████ Util Registers █████████████████████████████████████████████████████

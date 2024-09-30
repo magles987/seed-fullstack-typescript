@@ -1,5 +1,8 @@
 import { EHttpStatusCode } from "../../../../../../util/http-utilities";
-import { TKeyLogicContext } from "../../../../../../config/shared-modules";
+import {
+  TKeyLogicContext,
+  TKeySrcSelector,
+} from "../../../../../../config/shared-modules";
 import {
   ELogicCodeError,
   LogicError,
@@ -29,10 +32,10 @@ export abstract class LocalRepository
   protected get keyLogicContext(): TKeyLogicContext {
     return this._keyLogicContext;
   }
-  /**clave identificadora del recurso */
-  protected get keySrc(): string {
-    return this._keySrc;
-  }
+  // /**clave identificadora del recurso */
+  // protected get keySrc(): string {
+  //   return this._keySrc;
+  // }
   /**... */
   protected queryJsAdaptator = QueryJsAdaptator.getInstance();
   /** utilidades */
@@ -44,11 +47,125 @@ export abstract class LocalRepository
    */
   constructor(
     private _keyDriver: TKeyDiccLocalRepository,
-    private _keyLogicContext: TKeyLogicContext,
-    private _keySrc: string
+    private _keyLogicContext: TKeyLogicContext //private _keySrc: string
   ) {
     this.util = Util_LocalRepository.getInstance();
   }
+  /**... */
+  public async runRequestFromDrive(
+    bagService: IBagForService
+  ): Promise<ILocalResponse> {
+    let localRes = {
+      body: "",
+      httpStatus: EHttpStatusCode.INTERNAL_SERVER_ERROR, //comienza con logica negativa
+    } as ILocalResponse;
+    try {
+      this.checkBag(bagService);
+      const { literalCriteria } = bagService;
+      const { keyActionRequest } = literalCriteria;
+      let actionFn = (this as any)[keyActionRequest] as TActionFn;
+      actionFn = actionFn.bind(this);
+      const rxData = await actionFn(bagService);
+      localRes = {
+        ...localRes,
+        body: this.buildBodySimulated(rxData),
+        ok: true,
+        httpStatus: this.buildHttpResponseSimulated(literalCriteria),
+        statusText: `request to ${literalCriteria.keyActionRequest} has Succeeded`,
+      };
+    } catch (error) {
+      localRes = {
+        ...localRes,
+        //body: this.buildBodySimulated(error), //empaquetado como objeto ???
+        ok: false,
+        httpStatus: this.buildHttpResponseSimulated(
+          bagService?.literalCriteria
+        ),
+        statusText: (<Error>error).message,
+      };
+    }
+    return localRes;
+  }
+  //████ handler method registers ████████████████████████████████████████████████████████████
+  /**... */
+  public async getOne(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any> {
+    registers = Array.isArray(registers) ? registers : [registers];
+    const data = await this.findByCondition(registers, criteria);
+    return data;
+  }
+  /**... */
+  public async getMany(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any[]> {
+    registers = Array.isArray(registers) ? registers : [registers];
+    let data = await this.findByCondition(registers, criteria);
+    data = await this.orderBy(data, criteria);
+    data = await this.pageBy(data, criteria);
+    return data;
+  }
+  /**... */
+  public async getAll(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any[]> {
+    registers = Array.isArray(registers) ? registers : [registers];
+    let data = await this.orderBy(registers, criteria);
+    data = await this.pageBy(data, criteria);
+    return data;
+  }
+  //████ common CRUD ████████████████████████████████████████████████████████████
+  /**
+   * descrip...
+   * ____
+   * @param
+   * ____
+   * @returns ``
+   *
+   */
+  protected abstract readCommon(
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any>;
+  /**
+   * descrip...
+   * ____
+   * @param
+   * ____
+   * @returns ``
+   *
+   */
+  protected abstract createCommon(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any>;
+  /**
+   * descrip...
+   * ____
+   * @param
+   * ____
+   * @returns ``
+   *
+   */
+  protected abstract updateCommon(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any>;
+  /**
+   * descrip...
+   * ____
+   * @param
+   * ____
+   * @returns ``
+   *
+   */
+  protected abstract deleteCommon(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any>;
+  //████ Utilitaries ████████████████████████████████████████████████████████████
   /**... */
   private buildHttpResponseSimulated(
     literalCriteria: IBagForService["literalCriteria"],
@@ -124,39 +241,16 @@ export abstract class LocalRepository
     return;
   }
   /**... */
-  public async runRequestFromDrive(
-    bagService: IBagForService
-  ): Promise<ILocalResponse> {
-    let localRes = {
-      body: "",
-      httpStatus: EHttpStatusCode.INTERNAL_SERVER_ERROR, //comienza con logica negativa
-    } as ILocalResponse;
-    try {
-      this.checkBag(bagService);
-      const { literalCriteria } = bagService;
-      const { keyActionRequest } = literalCriteria;
-      let actionFn = (this as any)[keyActionRequest] as TActionFn;
-      actionFn = actionFn.bind(this);
-      const rxData = await actionFn(bagService);
-      localRes = {
-        ...localRes,
-        body: this.buildBodySimulated(rxData),
-        ok: true,
-        httpStatus: this.buildHttpResponseSimulated(literalCriteria),
-        statusText: `request to ${literalCriteria.keyActionRequest} has Succeeded`,
-      };
-    } catch (error) {
-      localRes = {
-        ...localRes,
-        //body: this.buildBodySimulated(error), //empaquetado como objeto ???
-        ok: false,
-        httpStatus: this.buildHttpResponseSimulated(
-          bagService?.literalCriteria
-        ),
-        statusText: (<Error>error).message,
-      };
-    }
-    return localRes;
+  protected getKeySrcContext(
+    srcSelector: TKeySrcSelector,
+    critera: IBagForService["literalCriteria"]
+  ): string {
+    const { p_Key, s_Key, keySrc } = critera;
+    let keySrcContext: string;
+    if (srcSelector === "singular") keySrcContext = s_Key;
+    else if (srcSelector === "plural") keySrcContext = p_Key;
+    else keySrcContext = keySrc;
+    return keySrcContext;
   }
   /**
    * ordenamiento de datos
@@ -219,73 +313,4 @@ export abstract class LocalRepository
     registers: any[],
     criteria: IBagForService["literalCriteria"]
   ): Promise<any>;
-  //████ handler method registers ████████████████████████████████████████████████████████████
-
-  /**... */
-  public async getOne(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any> {
-    registers = Array.isArray(registers) ? registers : [registers];
-    const data = await this.findByCondition(registers, criteria);
-    return data;
-  }
-  /**... */
-  public async getMany(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any[]> {
-    registers = Array.isArray(registers) ? registers : [registers];
-    let data = await this.findByCondition(registers, criteria);
-    data = await this.orderBy(data, criteria);
-    data = await this.pageBy(data, criteria);
-    return data;
-  }
-  /**... */
-  public async getAll(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any[]> {
-    registers = Array.isArray(registers) ? registers : [registers];
-    let data = await this.orderBy(registers, criteria);
-    data = await this.pageBy(data, criteria);
-    return data;
-  }
-  //████ common CRUD ████████████████████████████████████████████████████████████
-  /**
-   * descrip...
-   * ____
-   * @param
-   * ____
-   * @returns ``
-   *
-   */
-  protected abstract readCommon(): Promise<any>;
-  /**
-   * descrip...
-   * ____
-   * @param
-   * ____
-   * @returns ``
-   *
-   */
-  protected abstract createCommon(data: any): Promise<any>;
-  /**
-   * descrip...
-   * ____
-   * @param
-   * ____
-   * @returns ``
-   *
-   */
-  protected abstract updateCommon(data: any): Promise<any>;
-  /**
-   * descrip...
-   * ____
-   * @param
-   * ____
-   * @returns ``
-   *
-   */
-  protected abstract deleteCommon(data: any): Promise<any>;
 }

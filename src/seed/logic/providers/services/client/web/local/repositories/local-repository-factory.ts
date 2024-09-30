@@ -3,6 +3,7 @@ import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../errors/logic-error";
+import { IGenericDriver } from "../../../../shared";
 import { PrimitiveLocalCookieRepository } from "./local-cookie/primitive-local-cookie-repository";
 import { StructureLocalCookieRepository } from "./local-cookie/structure-local-cookie-repository";
 import { PrimitiveLocalIDBRepository } from "./local-idb/primitive-local-idb-repository";
@@ -13,7 +14,7 @@ import { PrimitiveLocalStorageRepository } from "./local-storage/primitive-local
 import { StructureLocalStorageRepository } from "./local-storage/structure-local-storage-repository";
 import {
   IDiccLocalRepositoryConfig,
-  IGenericDriver,
+  ILocalResponse,
   TKeyDiccLocalRepository,
 } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -22,17 +23,16 @@ import {
 export type TKeyLocalRepositoryInstance = TKeyDiccLocalRepository;
 /**... */
 export function localRepositoryFactoryFn(
-  keyLogicContext: TKeyLogicContext,
-  keySrc: string,
   keyInstance: TKeyLocalRepositoryInstance,
+  keyLogicContext: TKeyLogicContext,
   diccConfig: IDiccLocalRepositoryConfig
-): IGenericDriver {
-  let instance: IGenericDriver;
+): IGenericDriver<ILocalResponse> {
+  let instance: IGenericDriver<ILocalResponse>;
   if (keyInstance === "static") {
     if (keyLogicContext === "primitive") {
-      instance = new PrimitiveLocalStaticRepository(keySrc, diccConfig.static);
+      instance = new PrimitiveLocalStaticRepository(diccConfig.static);
     } else if (keyLogicContext === "structure") {
-      instance = new StructureLocalStaticRepository(keySrc, diccConfig.static);
+      instance = new StructureLocalStaticRepository(diccConfig.static);
     } else {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
@@ -41,9 +41,9 @@ export function localRepositoryFactoryFn(
     }
   } else if (keyInstance === "cookie") {
     if (keyLogicContext === "primitive") {
-      instance = new PrimitiveLocalCookieRepository(keySrc, diccConfig.cookie);
+      instance = new PrimitiveLocalCookieRepository(diccConfig.cookie);
     } else if (keyLogicContext === "structure") {
-      instance = new StructureLocalCookieRepository(keySrc, diccConfig.cookie);
+      instance = new StructureLocalCookieRepository(diccConfig.cookie);
     } else {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
@@ -52,15 +52,9 @@ export function localRepositoryFactoryFn(
     }
   } else if (keyInstance === "storage") {
     if (keyLogicContext === "primitive") {
-      instance = new PrimitiveLocalStorageRepository(
-        keySrc,
-        diccConfig.storage
-      );
+      instance = new PrimitiveLocalStorageRepository(diccConfig.storage);
     } else if (keyLogicContext === "structure") {
-      instance = new StructureLocalStorageRepository(
-        keySrc,
-        diccConfig.storage
-      );
+      instance = new StructureLocalStorageRepository(diccConfig.storage);
     } else {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
@@ -69,9 +63,9 @@ export function localRepositoryFactoryFn(
     }
   } else if (keyInstance === "idb") {
     if (keyLogicContext === "primitive") {
-      instance = new PrimitiveLocalIDBRepository(keySrc, diccConfig.idb);
+      instance = new PrimitiveLocalIDBRepository(diccConfig.idb);
     } else if (keyLogicContext === "structure") {
-      instance = new StructureLocalIDBRepository(keySrc, diccConfig.idb);
+      instance = new StructureLocalIDBRepository(diccConfig.idb);
     } else {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,

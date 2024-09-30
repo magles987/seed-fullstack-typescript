@@ -3,7 +3,10 @@ import {
   LogicError,
 } from "../../../../../../../errors/logic-error";
 import { LocalRepository } from "../_local-repository";
-import { TKeyLogicContext } from "../../../../../../../config/shared-modules";
+import {
+  TKeyLogicContext,
+  TKeySrcSelector,
+} from "../../../../../../../config/shared-modules";
 import { ILocalStorageRepositoryConfig, TStorageType } from "./shared";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -26,7 +29,15 @@ export abstract class LocalStorageRepository<TKeyActionRequest>
       storageType: "session" as TStorageType,
       size: 1000000, //1MB
       isURIEncodeDecode: false,
+      srcSelector: "plural",
     } as ILocalStorageRepositoryConfig;
+  };
+  /**@returns todas las constantes a usar en instancias de esta clase*/
+  protected static readonly getCONSTANTS = () => {
+    return {
+      maxStorageSizeAllow: 2000000, //2MB (los storage dicen soportar hasta 5MB pero ocupan doble byte de almacenamiento, por lo tanto son 2.5MB reales)
+      minStorageSizeAllow: 1000, //1KB
+    };
   };
   private _storageType: TStorageType;
   public get storageType(): TStorageType {
@@ -67,28 +78,31 @@ export abstract class LocalStorageRepository<TKeyActionRequest>
       ? this._isURIEncodeDecode
       : this.getDefault().isURIEncodeDecode;
   }
-  /**@returns todas las constantes a usar en instancias de esta clase*/
-  protected static readonly getCONSTANTS = () => {
-    return {
-      maxStorageSizeAllow: 2000000, //2MB (los storage dicen soportar hasta 5MB pero ocupan doble byte de almacenamiento, por lo tanto son 2.5MB reales)
-      minStorageSizeAllow: 1000, //1KB
-    };
-  };
+  private _srcSelector: TKeySrcSelector;
+  public get srcSelector(): TKeySrcSelector {
+    return this._srcSelector;
+  }
+  protected set srcSelector(v: TKeySrcSelector) {
+    this._srcSelector =
+      v === "plural" || v === "singular"
+        ? v
+        : this._srcSelector !== undefined
+        ? this._srcSelector
+        : this.getDefault().srcSelector;
+  }
   /**
    * @param keyLogicContext clave identificadora del contexto logico
-   * @param keySrc clave identificadora del recurso
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
-    keySrc: string,
     base: Partial<
       ReturnType<LocalStorageRepository<TKeyActionRequest>["getDefault"]>
     > = {},
     isInit = true
   ) {
-    super("storage", keyLogicContext, keySrc);
+    super("storage", keyLogicContext);
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
@@ -200,9 +214,9 @@ export abstract class LocalStorageRepository<TKeyActionRequest>
    * @returns ``
    *
    */
-  protected async setData(data: any, auxKeySrc = this.keySrc) {
+  protected async setData(data: any, keySrcContext: string) {
     const strData = JSON.stringify(data);
-    await this.setStorage(auxKeySrc, strData);
+    await this.setStorage(keySrcContext, strData);
     return data;
   }
   /**
@@ -235,8 +249,8 @@ export abstract class LocalStorageRepository<TKeyActionRequest>
    * @returns ``
    *
    */
-  protected async getData(auxKeySrc = this.keySrc): Promise<any> {
-    let strData = await this.getStorage(auxKeySrc);
+  protected async getData(keySrcContext: string): Promise<any> {
+    let strData = await this.getStorage(keySrcContext);
     strData = strData != "" && strData != undefined ? strData : "[]";
     const data = JSON.parse(strData);
     return data;

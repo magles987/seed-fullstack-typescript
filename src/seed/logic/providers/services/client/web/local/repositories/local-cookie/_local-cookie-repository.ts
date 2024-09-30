@@ -1,10 +1,13 @@
-import { TKeyLogicContext } from "../../../../../../../config/shared-modules";
+import {
+  TKeyLogicContext,
+  TKeySrcSelector,
+} from "../../../../../../../config/shared-modules";
 import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../../errors/logic-error";
 import { LocalRepository } from "../_local-repository";
-import { IDiccLocalRepositoryConfig } from "../shared";
+import { ILocalCookieRepositoryConfig } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_LocalCookieRepository = LocalCookieRepository<any>; //
@@ -23,7 +26,8 @@ export abstract class LocalCookieRepository<TKeyActionRequest>
       maxSize: 2048,
       expirationDay: 1,
       isURIEncodeDecode: false,
-    } as IDiccLocalRepositoryConfig["cookie"];
+      srcSelector: "plural",
+    } as ILocalCookieRepositoryConfig;
   };
   private _maxSize: number;
   public get maxSize(): number {
@@ -75,21 +79,31 @@ export abstract class LocalCookieRepository<TKeyActionRequest>
       ? this._isURIEncodeDecode
       : this.getDefault().isURIEncodeDecode;
   }
+  private _srcSelector: TKeySrcSelector;
+  public get srcSelector(): TKeySrcSelector {
+    return this._srcSelector;
+  }
+  protected set srcSelector(v: TKeySrcSelector) {
+    this._srcSelector =
+      v === "plural" || v === "singular"
+        ? v
+        : this._srcSelector !== undefined
+        ? this._srcSelector
+        : this.getDefault().srcSelector;
+  }
   /**
    * @param keyLogicContext clave identificadora del contexto logico
-   * @param keySrc clave identificadora del recurso
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
-    keySrc: string,
     base: Partial<
       ReturnType<LocalCookieRepository<TKeyActionRequest>["getDefault"]>
     > = {},
     isInit = true
   ) {
-    super("cookie", keyLogicContext, keySrc);
+    super("cookie", keyLogicContext);
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
@@ -135,6 +149,7 @@ export abstract class LocalCookieRepository<TKeyActionRequest>
     this[key as any] = df[key];
     return;
   }
+
   /**
    * descrip...
    * ____
@@ -172,9 +187,9 @@ export abstract class LocalCookieRepository<TKeyActionRequest>
    * @returns ``
    *
    */
-  protected async setData(data: any, auxKeySrc = this.keySrc) {
+  protected async setData(data: any, keySrcContext: string) {
     const strData = JSON.stringify(data);
-    await this.setCookie(auxKeySrc, strData);
+    await this.setCookie(keySrcContext, strData);
     return data;
   }
   /**
@@ -204,8 +219,8 @@ export abstract class LocalCookieRepository<TKeyActionRequest>
    * @returns ``
    *
    */
-  protected async getData(auxKeySrc = this.keySrc): Promise<any> {
-    let strData = await this.getCookie(auxKeySrc);
+  protected async getData(keySrcContext: string): Promise<any> {
+    let strData = await this.getCookie(keySrcContext);
     strData = strData != "" && strData != undefined ? strData : "[]";
     const data = JSON.parse(strData);
     return data;
