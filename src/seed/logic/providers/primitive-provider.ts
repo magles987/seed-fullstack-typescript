@@ -12,6 +12,9 @@ import {
 } from "../reports/primitive-report-handler";
 import { IPrimitiveResponse } from "../reports/shared";
 import { LogicProvider } from "./_provider";
+import { httpClientDriverFactoryFn } from "./services/client/web/http/drive/http-driver-factory";
+import { localRepositoryFactoryFn } from "./services/client/web/local/repositories/local-repository-factory";
+import { serviceFactory } from "./services/service-factory";
 import {
   TKeyPrimitiveProviderModuleContext,
   TPrimitiveConfigForProvider,
@@ -47,14 +50,48 @@ export class PrimitiveLogicProvider<
       ...superDf,
       dfDiccActionConfig: {
         ...(superDf.dfDiccActionConfig as any),
-        runProvider: true,
+        runProvider: {
+          customServiceFactoryFn: serviceFactory,
+          serviceConfig: {
+            client: {
+              app: {},
+              web: {
+                local: {
+                  keyLocalRepository: "cookie",
+                  customLocalRepositoryFn: localRepositoryFactoryFn,
+                  diccRepositoryConfig: {
+                    static: {},
+                    cookie: {},
+                    storage: {},
+                    idb: {},
+                  },
+                },
+                http: {
+                  keyHttpDriver: "fetch",
+                  customHttpClientFactoryFn: httpClientDriverFactoryFn,
+                  urlConfig: {
+                    urlRoot: "",
+                    urlPostfix: "",
+                    urlPrefix: "",
+                  },
+                  diccDriverConfig: {
+                    fetch: {},
+                    axios: {},
+                  },
+                },
+              },
+            },
+            //server:{},
+          },
+          serviceToRun: {},
+        },
       } as IDiccPrimitiveProviderActionConfigG,
-      // topPriorityKeysAction: [
-      //   ...superDf.topPriorityKeysAction,
-      // ] as Array<TKeysDiccPrimitiveProviderActionConfigG>,
-      // topMandatoryKeysAction: [
-      //   ...superDf.topMandatoryKeysAction,
-      // ] as Array<TKeysDiccPrimitiveProviderActionConfigG>,
+      topPriorityKeysAction: [
+        ...superDf.topPriorityKeysAction,
+      ] as Array<TKeysDiccPrimitiveProviderActionConfigG>,
+      topMandatoryKeysAction: [
+        ...superDf.topMandatoryKeysAction,
+      ] as Array<TKeysDiccPrimitiveProviderActionConfigG>,
     };
   };
   public override get metadataHandler(): Trf_PrimitiveLogicMetadataHandler {
@@ -172,6 +209,29 @@ export class PrimitiveLogicProvider<
   public async runProvider(
     bag: PrimitiveBag<any>
   ): Promise<IPrimitiveResponse> {
+    const { data, keyAction, actionConfig, responses } = this.adapBagForContext(
+      bag,
+      "runProvider"
+    );
+    let { customServiceFactoryFn, serviceConfig, serviceToRun } = actionConfig;
+    const rH = this.reportHandler;
+    let res = rH.mutateResponse(undefined, {
+      data,
+      keyAction,
+    });
+    let { keyService, customDeepServiceConfig } = serviceToRun;
+    const serviceInstance = customServiceFactoryFn(
+      keyService,
+      this.keyLogicContext,
+      this.keySrc,
+      serviceConfig,
+      customDeepServiceConfig
+    );
+    const serviceRes = await serviceInstance.runRequestFromService(
+      bag.getLiteralBag()
+    );
+    this.mutateDataIntoBag(serviceRes.data, bag, res);
+    res = rH.mutateResponse(res, serviceRes as any);
     return res;
   }
 }

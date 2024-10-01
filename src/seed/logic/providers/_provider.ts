@@ -1,6 +1,7 @@
+import { BagModule } from "../bag-module/_bag";
 import { ActionModule } from "../config/module";
 import { TKeyLogicContext } from "../config/shared-modules";
-import { ELogicResStatusCode } from "../reports/shared";
+import { ELogicResStatusCode, IResponse } from "../reports/shared";
 import { Util_Provider } from "./_util-provider";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
@@ -37,6 +38,30 @@ export abstract class LogicProvider<TIDiccAC> extends ActionModule<TIDiccAC> {
     const df = this.getDefault();
     const r = df.dfDiccActionConfig as TIDiccAC;
     return r;
+  }
+  /**
+   * realiza el proceso comun de mutacion
+   * del dato actualizando en el objeto Bag,
+   * como en el reporte
+   *
+   * @param newData el valor del nuevo dato
+   * @param bag la instancia que contiene la
+   * informacion que esta dicponible en todos
+   * los modulos
+   * @param res el objeto de respuesta sencillo,
+   *
+   * ⚠ las modificaciones que sufre `res` en este metodo son explicitas, no se usa fusion  ⚠
+   *
+   */
+  protected mutateDataIntoBag(
+    newData: any,
+    bag: BagModule,
+    res: IResponse
+  ): void {
+    res.tRecordMutate = [bag.data, newData]; //modificacion explicita
+    res.data = newData; //modificacion explicita
+    bag.data = newData; //❗Hace la mutacion❗
+    return;
   }
   /**
    * @returns el estado de respuesta reducido

@@ -6,16 +6,13 @@ import { StructureBag } from "../bag-module/structure-bag";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { TStructureMetaAndProvider } from "../meta/metadata-shared";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
-import {
-  ELogicResStatusCode,
-  IResponse,
-  IStructureResponse,
-} from "../reports/shared";
+import { IStructureResponse } from "../reports/shared";
 import {
   StructureReportHandler,
   Trf_StructureReportHandler,
 } from "../reports/structure-report-handler";
 import { LogicProvider } from "./_provider";
+import { httpClientDriverFactoryFn } from "./services/client/web/http/drive/http-driver-factory";
 import { localRepositoryFactoryFn } from "./services/client/web/local/repositories/local-repository-factory";
 import { serviceFactory } from "./services/service-factory";
 import {
@@ -60,8 +57,8 @@ export class StructureLogicProvider<
               app: {},
               web: {
                 local: {
-                  customLocalRepositoryFn: localRepositoryFactoryFn,
                   keyLocalRepository: "cookie",
+                  customLocalRepositoryFn: localRepositoryFactoryFn,
                   diccRepositoryConfig: {
                     static: {},
                     cookie: {},
@@ -71,16 +68,22 @@ export class StructureLogicProvider<
                 },
                 http: {
                   keyHttpDriver: "fetch",
-                  urlRoot: "",
-                  urlsExtended: [],
+                  customHttpClientFactoryFn: httpClientDriverFactoryFn,
+                  urlConfig: {
+                    urlRoot: "",
+                    urlPostfix: "",
+                    urlPrefix: "",
+                  },
+                  diccDriverConfig: {
+                    fetch: {},
+                    axios: {},
+                  },
                 },
               },
             },
             //server:{},
           },
           serviceToRun: {},
-          runMode: "sequential",
-          dataSelect: "*last*",
         },
       } as IDiccStructureProviderActionConfigG,
       topPriorityKeysAction: [
@@ -216,14 +219,8 @@ export class StructureLogicProvider<
   public async runProvider(
     bag: StructureBag<any>
   ): Promise<IStructureResponse> {
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "runProvider");
+    const { data, keyAction, keyPath, actionConfig, responses } =
+      this.adapBagForContext(bag, "runProvider");
     let { customServiceFactoryFn, serviceConfig, serviceToRun } = actionConfig;
     const rH = this.reportHandler;
     let res = rH.mutateResponse(undefined, {
@@ -231,7 +228,6 @@ export class StructureLogicProvider<
       keyAction,
       keyPath,
     });
-
     let { keyService, customDeepServiceConfig } = serviceToRun;
     const serviceInstance = customServiceFactoryFn(
       keyService,
@@ -240,9 +236,10 @@ export class StructureLogicProvider<
       serviceConfig,
       customDeepServiceConfig
     );
-    const serviceRes = serviceInstance.runRequestFromService(
+    const serviceRes = await serviceInstance.runRequestFromService(
       bag.getLiteralBag()
     );
+    this.mutateDataIntoBag(serviceRes.data, bag, res);
     res = rH.mutateResponse(res, serviceRes as any);
     return res;
   }
