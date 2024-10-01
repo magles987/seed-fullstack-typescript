@@ -12,6 +12,7 @@ export interface ILocalWebClientServiceRequestC<
   keyLocalRepository: TKeyLRI;
   /** */
   diccRepositoryConfig?: IDiccLocalRepositoryConfig;
+  /**funcion de factoria para el local */
   customLocalRepositoryFn?: typeof localRepositoryFactoryFn;
 }
 /**refactorizacion de la interfaz */

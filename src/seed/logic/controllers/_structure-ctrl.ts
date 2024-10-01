@@ -375,7 +375,9 @@ export abstract class StructureLogicController<
     if (!this.util.isObject(bBC)) {
       rBagCtrl = {
         ...dfBC,
-        criteriaHandler: new StructureCriteriaHandler(this.keySrc, {}),
+        criteriaHandler: new StructureCriteriaHandler(this.keySrc, {
+          type: "read",
+        }),
         keyPath: this.metadataHandler.keyModelPath,
       };
     } else {
@@ -387,7 +389,7 @@ export abstract class StructureLogicController<
             : bBC.keyPath, //❗❗debe ser proporcionado❗❗
         criteriaHandler: this.util.isInstance(bBC.criteriaHandler)
           ? bBC.criteriaHandler
-          : new StructureCriteriaHandler(this.keySrc, {}),
+          : new StructureCriteriaHandler(this.keySrc, { type: "read" }),
         diccGlobalAC: this.util.isObject(bBC.diccGlobalAC)
           ? {
               ...bBC.diccGlobalAC,
@@ -681,7 +683,8 @@ export abstract class StructureLogicController<
       aTKeyGlobal
     );
     let bag = this.buildBag("fieldBag", bagCtrl, aTGlobalAC as any);
-    return this.runRequest("fieldCtrl", bag);
+    const r = this.runRequest("fieldCtrl", bag);
+    return r;
   }
   /**... */
   public async runGenericModelRequest(
@@ -712,7 +715,8 @@ export abstract class StructureLogicController<
       aTKeyGlobal
     );
     let bag = this.buildBag("modelBag", bagCtrl, aTGlobalAC as any);
-    return this.runRequest("modelCtrl", bag);
+    const r = this.runRequest("modelCtrl", bag);
+    return r;
   }
 
   /*----------------------------------------------------------------*/

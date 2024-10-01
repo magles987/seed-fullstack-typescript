@@ -238,14 +238,16 @@ export abstract class PrimitiveLogicController<
     if (!this.util.isObject(bBC)) {
       rBagCtrl = {
         ...dfBC,
-        criteriaHandler: new PrimitiveCriteriaHandler(this.keySrc, "read", {}),
+        criteriaHandler: new PrimitiveCriteriaHandler(this.keySrc, {
+          type: "read",
+        }),
       };
     } else {
       rBagCtrl = {
         data: bBC.data,
         criteriaHandler: this.util.isInstance(bBC.criteriaHandler)
           ? bBC.criteriaHandler
-          : new PrimitiveCriteriaHandler(this.keySrc, "read", {}),
+          : new PrimitiveCriteriaHandler(this.keySrc, { type: "read" }),
         diccGlobalAC: this.util.isObject(bBC.diccGlobalAC)
           ? {
               ...bBC.diccGlobalAC,
