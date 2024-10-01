@@ -9,11 +9,8 @@ import { Util_Criteria } from "./_util-criteria";
 import {
   IModifyCriteria,
   IReadCriteria,
-  ISingleCondition,
   TAConds,
   TExpectedDataType,
-  TKeyCriteriaType,
-  TSortDirection,
 } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
@@ -229,6 +226,7 @@ export abstract class CriteriaHandler
   protected initProps(
     base: Partial<ReturnType<CriteriaHandler["getDefault"]>>
   ): void {
+    base = typeof base === "object" && base !== null ? base : {};
     for (const key in this.getDefault()) {
       this[key] = base[key];
     }

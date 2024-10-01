@@ -123,6 +123,7 @@ export abstract class LocalCookieRepository<TKeyActionRequest>
       ReturnType<LocalCookieRepository<TKeyActionRequest>["getDefault"]>
     >
   ): void {
+    base = typeof base === "object" && base !== null ? base : {};
     for (const key in this.getDefault()) {
       this[key] = base[key];
     }

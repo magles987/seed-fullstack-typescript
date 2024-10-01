@@ -29,6 +29,7 @@ r = await ctrl.runGenericModelRequest("readAll", {
   diccGlobalAC: {},
   keyPath: ctrl.metadataHandler.keyModelPath,
 });
+console.log("hola");
 export function runStructureTestClient() {
   return {
     modelTestCtrl,

@@ -99,6 +99,7 @@ export abstract class LocalIDBRepository<TKeyActionRequest>
       ReturnType<LocalIDBRepository<TKeyActionRequest>["getDefault"]>
     >
   ): void {
+    base = typeof base === "object" && base !== null ? base : {};
     for (const key in this.getDefault()) {
       this[key] = base[key];
     }

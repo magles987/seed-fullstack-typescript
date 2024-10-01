@@ -85,6 +85,7 @@ export class FetchHttpDrive
   protected initProps(
     base: Partial<ReturnType<FetchHttpDrive["getDefault"]>>
   ): void {
+    base = typeof base === "object" && base !== null ? base : {};
     for (const key in this.getDefault()) {
       this[key] = base[key];
     }

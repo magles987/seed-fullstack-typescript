@@ -90,7 +90,7 @@ export class PrimitiveBag<
     super("primitive", keySrc, baseBag);
     this.criteriaHandler = this.util.isInstance(this.criteriaHandler)
       ? this.criteriaHandler
-      : (new PrimitiveCriteriaHandler(this.keySrc, "read", {}) as any);
+      : (new PrimitiveCriteriaHandler(this.keySrc, { type: "read" }) as any);
   }
   protected override getDefault() {
     return PrimitiveBag.getDefault();

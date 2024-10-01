@@ -115,7 +115,7 @@ export class StructureBag<
     this._keyPath = baseBag.keyPath;
     this.criteriaHandler = this.util.isInstance(this.criteriaHandler)
       ? this.criteriaHandler
-      : (new StructureCriteriaHandler(this.keySrc, "read", {}) as any);
+      : (new StructureCriteriaHandler(this.keySrc, { type: "read" }) as any);
     this.aTupleGlobalActionConfig =
       this.filterATupleGlobalActionConfigByDeepModelContext();
   }

@@ -86,6 +86,7 @@ export abstract class LocalStaticRepository<TKeyActionRequest>
       ReturnType<LocalStaticRepository<TKeyActionRequest>["getDefault"]>
     >
   ): void {
+    base = typeof base === "object" && base !== null ? base : {};
     for (const key in this.getDefault()) {
       this[key] = base[key];
     }
