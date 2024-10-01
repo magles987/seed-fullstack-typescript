@@ -1,4 +1,5 @@
 import { EHttpStatusCode } from "../../../../../util/http-utilities";
+import { httpClientDriverFactoryFn } from "./drive/http-driver-factory";
 import { IDiccHttpDriveConfig, TKeyDiccHttpDrive } from "./drive/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
@@ -47,4 +48,6 @@ export interface IHttpWebClientServiceRequestC {
      */
     urlPostfix?: string;
   };
+  /** */
+  customHttpClientFactoryFn?: typeof httpClientDriverFactoryFn;
 }

@@ -1,5 +1,6 @@
 import { TKeyLogicContext } from "../../config/shared-modules";
 import { ELogicCodeError, LogicError } from "../../errors/logic-error";
+import { HttpWebClientService } from "./client/web/http/http-service";
 import { LocalWebClientService } from "./client/web/local/local-service";
 import { IGenericService, IServiceRequestConfig } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -38,7 +39,7 @@ export function serviceFactory(
       customDeepConfig
     );
   else if (keyService === "http")
-    instance = new LocalHttpClientService(
+    instance = new HttpWebClientService(
       keyLogicContext,
       keySrc,
       configBase,

@@ -1,20 +1,13 @@
-import { EHttpStatusCode } from "../../../../../util/http-utilities";
-import {
-  IGenericDriver,
-  IServiceRequestConfig,
-  Trf_IServiceRequestConfig,
-} from "../../../shared";
+import { IGenericDriver, IServiceRequestConfig } from "../../../shared";
 import { WebClientService } from "../_web-service-client";
 import { IHttpResponse, IHttpWebClientServiceRequestC } from "./shared";
 import { TKeyLogicContext } from "../../../../../config/shared-modules";
-import { ELogicCodeError, LogicError } from "../../../../../errors/logic-error";
 import { IPrimitiveBag, IStructureBag } from "../../../../../bag-module/shared";
 import {
   IPrimitiveResponse,
   IStructureResponse,
 } from "../../../../../reports/shared";
 import { TExpectedDataType } from "../../../../../criterias/shared";
-import { FetchHttpDrive } from "./drive/fetch/fetch-drive";
 import { httpClientDriverFactoryFn } from "./drive/http-driver-factory";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
@@ -113,9 +106,13 @@ export class HttpWebClientService extends WebClientService {
     const repo = this.buildDriver();
     const bagRepository = this.convertBagToBagService(iBag);
     const localResponse = await repo.runRequestFromDrive(bagRepository);
-    return this.adaptDriverResponseToPrimitiveLogicResponse(localResponse, {
-      expectedDataType: iBag.literalCriteria.expectedDataType,
-    });
+    const rBag = this.adaptDriverResponseToPrimitiveLogicResponse(
+      localResponse,
+      {
+        expectedDataType: iBag.literalCriteria.expectedDataType,
+      }
+    );
+    return rBag;
   }
   public override async runRequestForStructure(
     iBag: IStructureBag<any>
@@ -123,9 +120,13 @@ export class HttpWebClientService extends WebClientService {
     const repo = this.buildDriver();
     const bagRepository = this.convertBagToBagService(iBag);
     const localResponse = await repo.runRequestFromDrive(bagRepository);
-    return this.adaptDriverResponseToStructureLogicResponse(localResponse, {
-      expectedDataType: iBag.literalCriteria.expectedDataType,
-    });
+    const rBag = this.adaptDriverResponseToStructureLogicResponse(
+      localResponse,
+      {
+        expectedDataType: iBag.literalCriteria.expectedDataType,
+      }
+    );
+    return rBag;
   }
   protected override adaptDriverResponseToPrimitiveLogicResponse(
     driverResponse: IHttpResponse,

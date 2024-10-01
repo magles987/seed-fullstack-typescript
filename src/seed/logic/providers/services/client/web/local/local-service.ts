@@ -116,9 +116,13 @@ export class LocalWebClientService extends WebClientService {
     const repo = this.buildDriver();
     const bagService = this.convertBagToBagService(iBag);
     const driverResponse = await repo.runRequestFromDrive(bagService);
-    return this.adaptDriverResponseToPrimitiveLogicResponse(driverResponse, {
-      expectedDataType: iBag.literalCriteria.expectedDataType,
-    });
+    const rBag = this.adaptDriverResponseToPrimitiveLogicResponse(
+      driverResponse,
+      {
+        expectedDataType: iBag.literalCriteria.expectedDataType,
+      }
+    );
+    return rBag;
   }
   public override async runRequestForStructure(
     iBag: IStructureBag<any>
@@ -126,9 +130,13 @@ export class LocalWebClientService extends WebClientService {
     const repo = this.buildDriver();
     const bagService = this.convertBagToBagService(iBag);
     const driverResponse = await repo.runRequestFromDrive(bagService);
-    return this.adaptDriverResponseToStructureLogicResponse(driverResponse, {
-      expectedDataType: iBag.literalCriteria.expectedDataType,
-    });
+    const rBag = this.adaptDriverResponseToStructureLogicResponse(
+      driverResponse,
+      {
+        expectedDataType: iBag.literalCriteria.expectedDataType,
+      }
+    );
+    return rBag;
   }
   protected override adaptDriverResponseToPrimitiveLogicResponse(
     driverResponse: ILocalResponse,

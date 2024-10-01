@@ -87,18 +87,20 @@ export abstract class Service extends HandlerModule implements IGenericService {
   public async runRequestFromService(
     iBag: IBagModule<any>
   ): Promise<IResponse> {
+    let rBag: IResponse;
     if (this.keyLogicContext === "primitive") {
       const iPrimitiveBag = iBag as IPrimitiveBag<any>;
-      return await this.runRequestForPrimitive(iPrimitiveBag);
+      rBag = await this.runRequestForPrimitive(iPrimitiveBag);
     } else if (this.keyLogicContext === "structure") {
       const iStructureBag = iBag as IStructureBag<any>;
-      return await this.runRequestForStructure(iStructureBag);
+      rBag = await this.runRequestForStructure(iStructureBag);
     } else {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
         msn: `${this.keyLogicContext} is not key logic context valid `,
       });
     }
+    return rBag;
   }
   /**... */
   protected abstract buildConfig(
