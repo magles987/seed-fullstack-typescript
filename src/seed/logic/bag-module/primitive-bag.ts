@@ -95,7 +95,7 @@ export class PrimitiveBag<
   protected override getDefault() {
     return PrimitiveBag.getDefault();
   }
-  public getLiteralBag(): unknown {
+  public getLiteralBag(): IPrimitiveBag<TValue> {
     const literalBag: IPrimitiveBag<TValue> = {
       data: this.data,
       keySrc: this.keySrc,
