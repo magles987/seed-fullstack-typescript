@@ -106,7 +106,7 @@ export class UtilNative {
    *   - `"isNullAsTrue"`: El valor `null` se asume como `true`.
    * @returns {boolean} Retorna el booleano correspondiente al valor recibido.
    */
-  public anyToBoolean(
+  public convertToBoolean(
     anyToCast: any,
     castExceptions: Array<"isEmptyAsTrue" | "isZeroAsTrue" | "isNullAsTrue"> = [
       "isZeroAsTrue",
@@ -149,7 +149,7 @@ export class UtilNative {
    */
   public isNumber(num: any, allowString = false): boolean {
     const parse = parseFloat(num);
-    allowString = this.anyToBoolean(allowString);
+    allowString = this.convertToBoolean(allowString);
     const r =
       (typeof num === "number" || (typeof num === "string" && allowString)) &&
       !isNaN(parse) &&
@@ -165,7 +165,7 @@ export class UtilNative {
    *
    * @return Retorna `true` si corresponde al signo o `false` si no corresponde a signo o no es un número
    */
-  public isSignNumber(
+  public isNumberSign(
     num: any,
     sign: "+" | "-",
     isZeroIncluded = false
@@ -199,7 +199,7 @@ export class UtilNative {
    * // Salida: { polarity: "negative", genericType: "number", estrictType: "float" }
    * ```
    */
-  public getTypeNumber(num: number | string): {
+  public getNumberReport(num: number | string): {
     polarity: "positive" | "negative";
     genericType: "number" | "string-number";
     estrictType: "int" | "bigInt" | "float";
@@ -345,7 +345,7 @@ export class UtilNative {
     let exp = this.stringToNumber(exponential); //garantizar que es un numero
     if (!this.isString(type, true))
       throw new Error(`${type} is not type valid`);
-    if (this.getTypeNumber(exp).estrictType !== "int")
+    if (this.getNumberReport(exp).estrictType !== "int")
       throw new Error(`${exponential} is not exponential factor valid`);
     //caso especial si es 0 (no hay forma de redondear)
     if (n === 0) return n;
@@ -412,21 +412,21 @@ export class UtilNative {
    *
    * //Dentro del rango:
    * num = 5;
-   * r = adaptNumberByRange(num, [0,10]);
+   * r = adaptNumberToRange(num, [0,10]);
    * console.log(r);// Salida: 5
    *
    * //Fuera del rango, por encima:
    * num = 11;
-   * r = adaptNumberByRange(num, [0,10]);
+   * r = adaptNumberToRange(num, [0,10]);
    * console.log(r);// Salida: 10
    *
    * //Fuera del rango, por debajo:
    * num = -2;
-   * r = adaptNumberByRange(num, [0,10]);
+   * r = adaptNumberToRange(num, [0,10]);
    * console.log(r);// Salida: 0
    * ````
    */
-  public adaptNumberByRange(
+  public adaptNumberToRange(
     num: number | string,
     range: [number | string, number | string]
   ): number {
@@ -462,7 +462,7 @@ export class UtilNative {
    * ```
    */
   public isString(str: any, allowEmpty = false): boolean {
-    allowEmpty = this.anyToBoolean(allowEmpty);
+    allowEmpty = this.convertToBoolean(allowEmpty);
     const r = typeof str === "string" && (allowEmpty || str !== "");
     return r;
   }
@@ -480,20 +480,20 @@ export class UtilNative {
    * ```typescript
    * const str = "Hello, world!";
    * const strToSearch = "Hello";
-   * const result = isStringWhereLike(str, strToSearch, { likeType: "start" });
+   * const result = isStringLike(str, strToSearch, { likeType: "start" });
    * console.log(result); // salida: true
    *
-   * const result2 = isStringWhereLike(str, "world", { likeType: "end" });
+   * const result2 = isStringLike(str, "world", { likeType: "end" });
    * console.log(result2); // salida: false , termina en "world!"
    *
-   * const result3 = isStringWhereLike(str, "lo, wo", { likeType: "between" });
+   * const result3 = isStringLike(str, "lo, wo", { likeType: "between" });
    * console.log(result3); // salida: true
    *
-   * const result4 = isStringWhereLike(str, "test", { likeType: "between" });
+   * const result4 = isStringLike(str, "test", { likeType: "between" });
    * console.log(result4); // salida: false
    * ```
    */
-  public isStringWhereLike(
+  public isStringLike(
     str: string,
     strToSearch: string,
     option: { likeType: "start" | "end" | "between" }
@@ -659,10 +659,12 @@ export class UtilNative {
    *
    * @example
    * ````typescript
-   *
+   * const txt = "hola mundo"
+   * const r = capitalizeString(txt);
+   * console.log(r); // "Hola mundo"
    * ````
    */
-  public capitalizeWordFirstLetter(word: string): string {
+  public capitalizeString(word: string): string {
     if (!this.isString(word, true))
       // "" no lanza throw
       throw new Error(`${word} is not a valid string`);
@@ -687,11 +689,11 @@ export class UtilNative {
    * const keys = ["home", "user", "documents"];
    * let path: string;
    * //ejemplo 1:
-   * path = buildGenericPathFromArray(keys, { charSeparator: "/", isInitWithSeparator: true });
+   * path = buildPath(keys, { charSeparator: "/", isInitWithSeparator: true });
    * console.log(path); // salida: "/home/user/documents"
    *
    * //ejemplo 2:
-   * path = buildGenericPathFromArray(keys, {
+   * path = buildPath(keys, {
    *   charSeparator: "/",
    *   isInitWithSeparator: true,
    *   isEndtWithSeparator: true
@@ -699,7 +701,7 @@ export class UtilNative {
    * console.log(path); // salida: "/home/user/documents/"
    *
    * //ejemplo 3:
-   * path = buildGenericPathFromArray(keys, {
+   * path = buildPath(keys, {
    *   charSeparator: "/",
    *   isInitWithSeparator: true,
    *   isEndtWithSeparator: true,
@@ -708,7 +710,7 @@ export class UtilNative {
    * console.log(path); // salida: "../home/user/documents/"
    * ```
    */
-  public buildGenericPathFromArray(
+  public buildPath(
     aKeys: string[],
     option?: {
       /** `= "."`: El carácter separador a utilizar entre los elementos del path. */
@@ -799,7 +801,7 @@ export class UtilNative {
    * ```
    */
   public isObject(value: any, allowEmpty = false): boolean {
-    allowEmpty = this.anyToBoolean(allowEmpty);
+    allowEmpty = this.convertToBoolean(allowEmpty);
     const r =
       typeof value === "object" &&
       value !== null &&
@@ -831,36 +833,36 @@ export class UtilNative {
    *
    * //ejemplo básico (evalua como `isObject()`):
    * obj = { p1: "hola", p2: 31 };
-   * r = util.isObjectAndExistEveryProperty(data);
+   * r = util.isObjectWithProperties(data);
    * console.log(r); //salida: `true`, es un objeto
    *
    * //ejemplo verificando propiedad (no undefined y no null):
    * obj = { p1: "hola", p2: 31 };
-   * r = util.isObjectAndExistEveryProperty(data, "p1", "is-not-undefined-and-not-null");
+   * r = util.isObjectWithProperties(data, "p1", "is-not-undefined-and-not-null");
    * console.log(r); //salida: `true`, es un objeto y `p1` no es undefined o null
    *
    * //ejemplo verificando propiedad (es undefined o es null):
    * obj = { p1: "hola", p2: 31 };
-   * r = util.isObjectAndExistEveryProperty(data, "p3", "is-not-undefined-and-not-null");
+   * r = util.isObjectWithProperties(data, "p3", "is-not-undefined-and-not-null");
    * console.log(r); //salida: `false`, es un objeto pero `p3`es undefined
    *
    * //ejemplo diferencias de comprobacion ("it-exist"):
    * obj = { p1: "hola", p2: 31 p3: undefined};
-   * r = util.isObjectAndExistEveryProperty(data, "p3", "it-exist");
+   * r = util.isObjectWithProperties(data, "p3", "it-exist");
    * console.log(r); //salida: `true`, es un objeto y `p3` existe (apesar de tener asignado undefined)
    *
    * //ejemplo diferencias de comprobacion ("is-not-undefined"):
    * obj = { p1: "hola", p2: 31 p3: undefined};
-   * r = util.isObjectAndExistEveryProperty(data, "p3", "is-not-undefined");
+   * r = util.isObjectWithProperties(data, "p3", "is-not-undefined");
    * console.log(r); //salida: `false`, es un objeto y `p3` tiene asignado undefined
    *
    * //ejemplo comprobacion profunda:
    * obj = { p1: "hola", p2:{p21:3}};
-   * r = util.isObjectAndExistEveryProperty(data, "p2.p21", "is-not-undefined-and-not-null");
+   * r = util.isObjectWithProperties(data, "p2.p21", "is-not-undefined-and-not-null");
    * console.log(r); //salida: `false`, 🚫 **NO** esta habilitada la verificacion profunda
    * ````
    */
-  public isObjectAndExistEveryProperty<TObj extends object>(
+  public isObjectWithProperties<TObj extends object>(
     obj: TObj,
     allowEmpty = false,
     keyOrKeys?: keyof TObj | Array<keyof TObj>,
@@ -928,36 +930,36 @@ export class UtilNative {
    *
    * //ejemplo básico (evalua como `isObject()`):
    * obj = { p1: "hola", p2: 31 };
-   * r = util.isObjectAndExistEveryProperty(data);
+   * r = util.isObjectWithDeepProperties(data);
    * console.log(r); //salida: `true`, es un objeto
    *
    * //ejemplo verificando propiedad (no undefined y no null):
    * obj = { p1: "hola", p2: 31 };
-   * r = util.isObjectAndExistEveryProperty(data, "p1", "is-not-undefined-and-not-null");
+   * r = util.isObjectWithDeepProperties(data, "p1", "is-not-undefined-and-not-null");
    * console.log(r); //salida: `true`, es un objeto y `p1` no es undefined o null
    *
    * //ejemplo verificando propiedad (es undefined o es null):
    * obj = { p1: "hola", p2: 31 };
-   * r = util.isObjectAndExistEveryProperty(data, "p3", "is-not-undefined-and-not-null");
+   * r = util.isObjectWithDeepProperties(data, "p3", "is-not-undefined-and-not-null");
    * console.log(r); //salida: `false`, es un objeto pero `p3`es undefined
    *
    * //ejemplo diferencias de comprobacion ("it-exist"):
    * obj = { p1: "hola", p2: 31 p3: undefined};
-   * r = util.isObjectAndExistEveryProperty(data, "p3", "it-exist");
+   * r = util.isObjectWithDeepProperties(data, "p3", "it-exist");
    * console.log(r); //salida: `true`, es un objeto y `p3` existe (apesar de tener asignado undefined)
    *
    * //ejemplo diferencias de comprobacion ("is-not-undefined"):
    * obj = { p1: "hola", p2: 31 p3: undefined};
-   * r = util.isObjectAndExistEveryProperty(data, "p3", "is-not-undefined");
+   * r = util.isObjectWithDeepProperties(data, "p3", "is-not-undefined");
    * console.log(r); //salida: `false`, es un objeto y `p3` tiene asignado undefined
    *
    * //ejemplo comprobacion profunda:
    * obj = { p1: "hola", p2:{p21:3}};
-   * r = util.isObjectAndExistEveryProperty(data, "p2.p21", "is-not-undefined-and-not-null");
+   * r = util.isObjectWithDeepProperties(data, "p2.p21", "is-not-undefined-and-not-null");
    * console.log(r); //salida: `true`, permite verificacion profunda (hasta 16 niveles probados)
    * ````
    */
-  public isObjectAndExistEveryDeepProperty(
+  public isObjectWithDeepProperties(
     obj: any,
     allowEmpty = false,
     keyOrKeysPath?: string | string[],
@@ -1006,7 +1008,7 @@ export class UtilNative {
             lenKP = keysSplitPath.length; //actualiza
             const subKeyOrKeysPath = lenKP > 0 ? [keysSplitPath.join(sp)] : [];
             const sObj = obj[cKey];
-            r = this.isObjectAndExistEveryDeepProperty(
+            r = this.isObjectWithDeepProperties(
               sObj,
               allowEmpty,
               subKeyOrKeysPath,
@@ -1120,7 +1122,7 @@ export class UtilNative {
    *   campo_c: "dato c.1", // Sin prefijo
    *   _campo_c: "dato c.2",
    * };
-   * const objCase = objCastKeyPropertiesToCase(objBase, "Camel");
+   * const objCase = objectKeysToCase(objBase, "Camel");
    * console.log(objCase);
    * // Salida:
    * // {
@@ -1131,17 +1133,14 @@ export class UtilNative {
    * // }
    * ```
    */
-  public objectKeyPropertiesToCase(
-    objBase: object,
-    caseType: TStrCase
-  ): object {
+  public objectKeysToCase(objBase: object, caseType: TStrCase): object {
     if (!this.isObject(objBase))
       throw new Error(`${objBase} is not object valid`);
     let objCase = {} as object;
     for (let key in objBase) {
       const keyC = this.convertStringToCase(key, caseType);
       objCase[keyC] = this.isObject(objBase[key])
-        ? this.objectKeyPropertiesToCase(objBase[key], caseType)
+        ? this.objectKeysToCase(objBase[key], caseType)
         : objBase[key];
     }
     return objCase;
@@ -1234,7 +1233,7 @@ export class UtilNative {
       : this.isString(keyOrKeysPathForDelete)
       ? ([keyOrKeysPathForDelete] as string[])
       : ([] as string[]);
-    isDeletePrivates = this.anyToBoolean(isDeletePrivates);
+    isDeletePrivates = this.convertToBoolean(isDeletePrivates);
     const sp = this.charSeparatorLogicPath;
     //eliminar claves identificadoras repetidas
     const isKPTCArray = this.isArray(keysPathForDelete, false); //❗no se aceptan vacios
@@ -1355,7 +1354,7 @@ export class UtilNative {
    * con el `keyOrKeyPath` recibida. De no encontrarse, se retorna el valor de `defaultReturnObj`.
    *
    */
-  public findPropByKeyPath(
+  public findObjectProperty(
     objBase: object,
     keyPath: string,
     defaultReturnObj: object = undefined
@@ -1447,7 +1446,7 @@ export class UtilNative {
    *   p4: undefined,
    *   p5: null,
    * }
-   * r = objectDeepMerge([baseObj, newObj], {mode: "soft"});
+   * r = deepMergeObjects([baseObj, newObj], {mode: "soft"});
    * console.log(r); //Salida:
    * //{
    * //  p1: "ahora si es español", //se fusionó
@@ -1472,7 +1471,7 @@ export class UtilNative {
    *   p4: undefined,
    *   p5: null,
    * }
-   * r = objectDeepMerge([baseObj, newObj], {mode: "hard"});
+   * r = deepMergeObjects([baseObj, newObj], {mode: "hard"});
    * console.log(r); //Salida:
    * //{
    * //  p1: "ahora si es español", //se fusionó
@@ -1485,7 +1484,7 @@ export class UtilNative {
    * ````
    *
    */
-  public objectDeepMerge<T>(
+  public deepMergeObjects<T>(
     tObjToMerge: [T, T?],
     config: {
       /**
@@ -1553,7 +1552,7 @@ export class UtilNative {
           //caso especial objeto vacio en propiedad nuevo
           rObj[key] = mode === "hard" ? propN : propB;
         } else {
-          rObj[key] = this.objectDeepMerge([propB, propN], {
+          rObj[key] = this.deepMergeObjects([propB, propN], {
             mode,
             isNullAsUndefined,
           });
@@ -1592,11 +1591,11 @@ export class UtilNative {
    * @example
    * ```
    * const arrayOfEntries = [["key1", "value1"], ["key2", "value2"]];
-   * const obj = arrayOfEntriesToObject(arrayOfEntries);
+   * const obj = arrayEntriesToObject(arrayOfEntries);
    * console.log(obj); // salida: { key1: "value1", key2: "value2" }
    * ```
    */
-  public aEntryTupleToObject(aEntryTuple: Array<[any, any]>): object {
+  public arrayEntriesToObject(aEntryTuple: Array<[any, any]>): object {
     //❗ se permite arrays vacios❗
     if (!this.isArrayTuple(aEntryTuple, 2, true))
       throw new Error(`${aEntryTuple} contain tuples not valid`);
@@ -1612,7 +1611,7 @@ export class UtilNative {
   /**
    * Convierte un iterable de tuplas en un objeto.
    *
-   * @param {IterableIterator<[any, any]>} entries - El iterable de tuplas que se va a convertir en un objeto.
+   * @param {IterableIterator<[any, any]>} entry - El iterable de tuplas que se va a convertir en un objeto.
    * @throws {Error} - Lanza un error si `entries` no es un iterable de tuplas válido.
    * @returns {object} - Retorna un nuevo objeto donde cada propiedad es una tupla del iterable de entrada.
    *
@@ -1624,12 +1623,12 @@ export class UtilNative {
    * console.log(obj); // salida: { key1: "value1", key2: "value2" }
    * ```
    */
-  public entriesToObjetc(entries: IterableIterator<[any, any]>): object {
+  public entriesToObject(entry: IterableIterator<[any, any]>): object {
     //⚠ Obligatorio el testeo primitivo
-    if (typeof entries !== "object")
-      throw new Error(`${entries} is not entries (:IterableIterator) valid`);
-    const arrayOfEntries = Array.from(entries);
-    const obj = this.aEntryTupleToObject(arrayOfEntries);
+    if (typeof entry !== "object")
+      throw new Error(`${entry} is not entries (:IterableIterator) valid`);
+    const arrayOfEntries = Array.from(entry);
+    const obj = this.arrayEntriesToObject(arrayOfEntries);
     return obj;
   }
   /**
@@ -1649,7 +1648,7 @@ export class UtilNative {
   public mapToObject(map: Map<any, any>): object {
     if (!(map instanceof Map)) throw new Error(`${map} is not map valid`);
     const entries = map.entries();
-    const obj = this.entriesToObjetc(entries);
+    const obj = this.entriesToObject(entries);
     return obj;
   }
   /**
@@ -1755,18 +1754,18 @@ export class UtilNative {
    *
    * //array de booleanos
    * aToSort = [false, true, true, false, true];
-   * r = anyArraySort(aToSort, {direction: "asc"})
+   * r = sortMixedArray(aToSort, {direction: "asc"})
    * console.log(r); //salida: `[false, false, true, true, true]`
    *
    * //array de numeros
    * aToSort = [-1,2,1,0,-2];
-   * r = anyArraySort(aToSort, {direction: "asc"})
+   * r = sortMixedArray(aToSort, {direction: "asc"})
    * console.log(r); //salida: `[-2,-1,0,1,2]`
    * ````
    *
    * //array de string (direccion "asc" y sesnsitivo)
    * aToSort = ["A", "B", "a", "b"];
-   * r = anyArraySort(aToSort, {
+   * r = sortMixedArray(aToSort, {
    *  direction: "asc",
    *  isCaseSensitiveForString: true
    * });
@@ -1774,7 +1773,7 @@ export class UtilNative {
    *
    * //array de string (direccion "desc" y no sesnsitivo)
    * aToSort = ["A", "B", "a", "b"];
-   * r = anyArraySort(aToSort, {
+   * r = sortMixedArray(aToSort, {
    *  direction: "desc",
    *  isCaseSensitiveForString: false
    * });
@@ -1782,7 +1781,7 @@ export class UtilNative {
    *
    * //array de string (direccion "desc" y sesnsitivo)
    * aToSort = ["A", "B", "a", "b"];
-   * r = anyArraySort(aToSort, {
+   * r = sortMixedArray(aToSort, {
    *  direction: "desc",
    *  isCaseSensitiveForString: true
    * });
@@ -1795,7 +1794,7 @@ export class UtilNative {
    *   {code: "a", age:3, name: "pedro"},
    *   {code: "B", age:20, name: "pablo"},
    * ];
-   * r = anyArraySort(aToSort, {
+   * r = sortMixedArray(aToSort, {
    *  direction: "asc",
    *  isCaseSensitiveForString: false,
    *  keyOrKeysPath: ["code", "age"] //el orden de las keys influye en el orden
@@ -1810,7 +1809,7 @@ export class UtilNative {
    *
    * ````
    */
-  public anyArraySort<T extends Array<any>>(
+  public sortMixedArray<T extends Array<any>>(
     arrayToSort: T,
     config: Omit<IConfigEqGtLt, "isAllowEquivalent"> & {
       /**direccion de orden
@@ -1854,7 +1853,7 @@ export class UtilNative {
       isCompareStringToNumber,
       keyOrKeysPath,
     } = config;
-    isRemoveDuplicate = this.anyToBoolean(isRemoveDuplicate);
+    isRemoveDuplicate = this.convertToBoolean(isRemoveDuplicate);
     const nDirection = direction === "asc" ? 1 : -1;
     //tratamiento de arrays internos
     let arrayToSortClone = [] as T;
@@ -1864,7 +1863,7 @@ export class UtilNative {
       //caso especial array
       if (this.isArray(item)) {
         arrayToSortClone.push(
-          this.anyArraySort(item as any[], {
+          this.sortMixedArray(item as any[], {
             direction,
             isCaseSensitiveForString,
             isCompareLength,
@@ -1908,7 +1907,7 @@ export class UtilNative {
         : ([...arrayToSortClone, ...aUndefined] as T);
     //tratamiento de repetidos
     if (isRemoveDuplicate) {
-      arrayToSortClone = this.arrayRemoveDuplicate(arrayToSortClone, {
+      arrayToSortClone = this.removeArrayDuplicate(arrayToSortClone, {
         keyOrKeysPath,
         itemConflictMode: "last",
         isCaseSensitiveForString,
@@ -1956,7 +1955,7 @@ export class UtilNative {
    *   "juan",
    *   null,
    * ];
-   * r = arrayRemoveDuplicate(a, {
+   * r = removeArrayDuplicate(a, {
    *   itemConflictMode: "first"
    * });
    * console.log(r) //Salida:
@@ -1986,7 +1985,7 @@ export class UtilNative {
    *   "juan",
    *   null,
    * ];
-   * r = arrayRemoveDuplicate(a, {
+   * r = removeArrayDuplicate(a, {
    *   itemConflictMode: "last"
    * });
    * console.log(r) //Salida:
@@ -2003,21 +2002,21 @@ export class UtilNative {
    *
    * //caso strings (modo "first", no sensitivo)
    * a = ["a","A","B","C","A","B"];
-   * r = arrayRemoveDuplicate(a, {
+   * r = removeArrayDuplicate(a, {
    *   itemConflictMode: "first"
    * });
    * console.log(r) //Salida: ["a","B","C"]
    *
    * //caso strings (modo "last", no sensitivo)
    * a = ["a","A","B","C","A","B"];
-   * r = arrayRemoveDuplicate(a, {
+   * r = removeArrayDuplicate(a, {
    *   itemConflictMode: "last"
    * });
    * console.log(r) //Salida: ["C","A","B"]
    *
    * //caso strings (modo "first", sensitivo)
    * a = ["a","A","B","C","A","B"];
-   * r = arrayRemoveDuplicate(a, {
+   * r = removeArrayDuplicate(a, {
    *   itemConflictMode: "first",
    *   isCaseSensitiveForString
    * });
@@ -2025,7 +2024,7 @@ export class UtilNative {
    *
    * //caso strings (modo "last", sensitivo)
    * a = ["a","A","B","C","A","B"];
-   * r = arrayRemoveDuplicate(a, {
+   * r = removeArrayDuplicate(a, {
    *   itemConflictMode: "last"
    * });
    * console.log(r) //Salida: ["a","C","A","B"]
@@ -2037,7 +2036,7 @@ export class UtilNative {
    *   {name: "Ana", age:13},
    *   {name: "Juan", age:12},
    * ];
-   * r = arrayRemoveDuplicate(a, {
+   * r = removeArrayDuplicate(a, {
    *   itemConflictMode: "first"
    * });
    * console.log(r) //Salida: (no hay repetidos porque no hubo keysPath)
@@ -2055,7 +2054,7 @@ export class UtilNative {
    *   {name: "Ana", age:13},
    *   {name: "Juan", age:12},
    * ];
-   * r = arrayRemoveDuplicate(a, {
+   * r = removeArrayDuplicate(a, {
    *   itemConflictMode: "first",
    *   keyOrKeysPath: ["name"]
    * });
@@ -2072,7 +2071,7 @@ export class UtilNative {
    *   {name: "Ana", age:13},
    *   {name: "Juan", age:12},
    * ];
-   * r = arrayRemoveDuplicate(a, {
+   * r = removeArrayDuplicate(a, {
    *   itemConflictMode: "last",
    *   keyOrKeysPath: ["name"]
    * });
@@ -2084,7 +2083,7 @@ export class UtilNative {
    * ````
    *
    */
-  public arrayRemoveDuplicate<T extends Array<any>>(
+  public removeArrayDuplicate<T extends Array<any>>(
     arrayToRemove: T,
     config: Omit<IConfigEqGtLt, "isAllowEquivalent"> & {
       /**Si existe un elemento equivalente
@@ -2219,13 +2218,13 @@ export class UtilNative {
    */
   public getArrayUnion<TArray extends Array<any>>(
     tArraysToUnion: [TArray, TArray],
-    config: Parameters<typeof this.arrayRemoveDuplicate>[1] = {}
+    config: Parameters<typeof this.removeArrayDuplicate>[1] = {}
   ): TArray {
     if (!this.isArray(tArraysToUnion) || tArraysToUnion.length > 2)
       throw new Error(`${tArraysToUnion} is not array of set valid`);
     let [aAU, bAU] = tArraysToUnion;
     let aR = [...aAU, ...bAU] as TArray;
-    aR = this.arrayRemoveDuplicate(aR, config);
+    aR = this.removeArrayDuplicate(aR, config);
     return aR;
   }
   /**
@@ -2261,7 +2260,7 @@ export class UtilNative {
    */
   public getArrayIntersection<T extends Array<any>>(
     tArraysToIntersection: [T, T],
-    config: Parameters<typeof this.arrayRemoveDuplicate>[1] = {}
+    config: Parameters<typeof this.removeArrayDuplicate>[1] = {}
   ): T {
     if (
       !this.isArray(tArraysToIntersection) ||
@@ -2273,7 +2272,7 @@ export class UtilNative {
       const r = bAI.some((b) => this.isEquivalentTo([a, b], config));
       return r;
     }) as T;
-    aR = this.arrayRemoveDuplicate(aR, config);
+    aR = this.removeArrayDuplicate(aR, config);
     return aR;
   }
   /**
@@ -2318,7 +2317,7 @@ export class UtilNative {
   public getArrayDifference<T extends Array<any>>(
     tArraysToDifference: [T, T],
     selector: "difference_A" | "difference_B",
-    config: Parameters<typeof this.arrayRemoveDuplicate>[1] = {}
+    config: Parameters<typeof this.removeArrayDuplicate>[1] = {}
   ): T {
     if (!this.isArray(tArraysToDifference) || tArraysToDifference.length > 2)
       throw new Error(`${tArraysToDifference} is not array of set valid`);
@@ -2340,7 +2339,7 @@ export class UtilNative {
     } else {
       throw new Error(`${selector} is not selector valid`);
     }
-    aR = this.arrayRemoveDuplicate(aR, config);
+    aR = this.removeArrayDuplicate(aR, config);
     return aR;
   }
   /**
@@ -2360,7 +2359,7 @@ export class UtilNative {
    *  {id:4}
    * ];
    *
-   * const r = findArrayIntoArray(mainArray, searchArray);
+   * const r = searchItemsInArray(mainArray, searchArray);
    * console.log(r); //-> [{id: "1", nombre:"Alan", edad:12}, {id: "4", nombre:"Manuel", edad:16},]
    * ````
    *
@@ -2377,7 +2376,7 @@ export class UtilNative {
    *  {id:2}
    * ];
    *
-   * const r = findArrayIntoArray(mainArray, searchArray);
+   * const r = searchItemsInArray(mainArray, searchArray);
    * console.log(r); //-> [{id: "2", nombre:"Marta", edad:14}, {id: "3", nombre:"Maria", edad:16},]
    * ````
    *
@@ -2394,7 +2393,7 @@ export class UtilNative {
    *  {id: "3", nombre:"Maria", edad:16},
    * ];
    * const diccKeyId = ["edad"];  // SOLO buscar por nombre
-   * const r = findArrayIntoArray(mainArray, searchArray, diccKeyId);
+   * const r = searchItemsInArray(mainArray, searchArray, diccKeyId);
    * console.log(r); //-> [
    *                  //{id: "2", nombre:"Marta", edad:14},
    *                  //{id: "3", nombre:"Maria", edad:16},
@@ -2421,7 +2420,7 @@ export class UtilNative {
    * encontraron (que son equivalentes)
    * ____
    */
-  public findArrayIntoArray<TArray extends Array<any>>(
+  public searchItemsInArray<TArray extends Array<any>>(
     rootArray: TArray,
     searchArray: TArray,
     config: Omit<IConfigEqGtLt, "isAllowEquivalent"> & {}
@@ -2543,7 +2542,7 @@ export class UtilNative {
     aTuple: Array<TTuple>,
     length: number | [number, number],
     allowEmpty = false
-  ) {
+  ): boolean {
     if (!this.isArray(aTuple, allowEmpty)) return false;
     const r = aTuple.every((tuple) => this.isTuple(tuple, length));
     return r;
@@ -2559,11 +2558,11 @@ export class UtilNative {
    * @example
    * ```typescript
    * const obj = { a: 1, b: 2, c: 3 };
-   * const array = literalObjectToArrayTuple(obj);
+   * const array = convertObjectToArrayOfTuples(obj);
    * console.log(array); // salida: [["a", 1], ["b", 2], ["c", 3]]
    * ```
    */
-  public literalObjectToArrayTuple<TObj>(obj: TObj) {
+  public convertObjectToArrayOfTuples<TObj>(obj: TObj) {
     if (!this.isLiteralObject(obj)) return [];
     let aT = Object.keys(obj).map((k) => {
       const key = k as keyof TObj;
@@ -2585,11 +2584,11 @@ export class UtilNative {
    * @example
    * ```typescript
    * const array = [["key1", "value1"], ["key2", "value2"], ["key1", "value3"]];
-   * const newArray = removeDuplicateOfArrayTupleByKey(array);
+   * const newArray = removeTupleArrayDuplicateByKey(array);
    * console.log(newArray); // salida: [["key1", "value3"], ["key2", "value2"]]
    * ```
    */
-  public removeDuplicateOfArrayTupleByKey<TATuple>(
+  public removeTupleArrayDuplicateByKey<TATuple>(
     arrayTupleToRemove: TATuple
   ): TATuple {
     if (
@@ -2615,7 +2614,7 @@ export class UtilNative {
   public isTimestamp(timestamp: any): boolean {
     if (!this.isNumber(timestamp, true)) return false;
     const timestampReduced = this.stringToNumber(timestamp) / 1000; //reducirlo a segundos para evitar problemas de memoria (en año 2038)
-    if (this.isSignNumber(timestampReduced, "-", false)) return false; //un timestamp SIEMPRE será positivo
+    if (this.isNumberSign(timestampReduced, "-", false)) return false; //un timestamp SIEMPRE será positivo
     return true;
   }
   /** convierte de string de fecha a timestamp
@@ -2690,14 +2689,14 @@ export class UtilNative {
    * cada promesa
    * ____
    */
-  public async nestPromises(
+  public async runPromisesSequentially(
     fns: ((value: any) => Promise<any>)[],
     options?: any
   ): Promise<any> {
     if (!Array.isArray(fns)) {
       throw new Error("No Array Promise"); //---falta definir ERROR--
     }
-    return await this._nestPromises(fns, options);
+    return await this._runPromisesSequentially(fns, options);
   }
   /**
    * @real
@@ -2719,7 +2718,7 @@ export class UtilNative {
    * cada promesa
    * ____
    */
-  private async _nestPromises(
+  private async _runPromisesSequentially(
     fns: ((value: any) => Promise<any>)[],
     options?: any,
     rValues = []
@@ -2727,7 +2726,7 @@ export class UtilNative {
     if (fns.length > 0) {
       const currentFn: (param?) => Promise<any> = fns[0].bind(this);
       rValues.push(await currentFn(options));
-      await this._nestPromises(fns.slice(1), options, rValues);
+      await this._runPromisesSequentially(fns.slice(1), options, rValues);
     }
     return rValues;
   }
@@ -2775,7 +2774,7 @@ export class UtilNative {
     //caso null directo
     if (value === null) return null;
     //caso objetos o arrays
-    isDeep = this.anyToBoolean(isDeep);
+    isDeep = this.convertToBoolean(isDeep);
     let newObjOrArray = !Array.isArray(value)
       ? { ...(value as object) } //clonacion superficial objeto
       : [...(value as any[])]; //clonacion superficial array
@@ -2820,7 +2819,7 @@ export class UtilNative {
     if (typeof value !== "object" || value === null)
       return value === null ? undefined : value;
     //caso objetos o arrays
-    isDeep = this.anyToBoolean(isDeep);
+    isDeep = this.convertToBoolean(isDeep);
     let newObjOrArray = !Array.isArray(value)
       ? { ...(value as object) } //clonacion superficial objeto
       : [...(value as any[])]; //clonacion superficial array
@@ -3185,10 +3184,10 @@ export class UtilNative {
       : this.isString(keyOrKeysPath)
       ? ([keyOrKeysPath] as string[])
       : ([] as string[]);
-    isCompareLength = this.anyToBoolean(isCompareLength);
-    isCompareSize = this.anyToBoolean(isCompareSize);
-    isCompareStringToNumber = this.anyToBoolean(isCompareStringToNumber);
-    isCaseSensitiveForString = this.anyToBoolean(isCaseSensitiveForString);
+    isCompareLength = this.convertToBoolean(isCompareLength);
+    isCompareSize = this.convertToBoolean(isCompareSize);
+    isCompareStringToNumber = this.convertToBoolean(isCompareStringToNumber);
+    isCaseSensitiveForString = this.convertToBoolean(isCaseSensitiveForString);
     let isEquivalent = true; //obligatorio iniciar con true
     //eliminar claves identificadoras repetidas
     const isKPTCArray = this.isArray(keysPath, false); //❗no se aceptan vacios
@@ -3601,10 +3600,10 @@ export class UtilNative {
       : this.isString(keyOrKeysPath)
       ? ([keyOrKeysPath] as string[])
       : ([] as string[]);
-    isCompareLength = this.anyToBoolean(isCompareLength);
-    isCompareSize = this.anyToBoolean(isCompareSize);
-    isAllowEquivalent = this.anyToBoolean(isAllowEquivalent);
-    isCompareStringToNumber = this.anyToBoolean(isCompareStringToNumber);
+    isCompareLength = this.convertToBoolean(isCompareLength);
+    isCompareSize = this.convertToBoolean(isCompareSize);
+    isAllowEquivalent = this.convertToBoolean(isAllowEquivalent);
+    isCompareStringToNumber = this.convertToBoolean(isCompareStringToNumber);
     let isGreater = true; //obligatorio iniciar con true
     //eliminar claves identificadoras repetidas
     const isKPTCArray = this.isArray(keysPath, false); //❗no se aceptan vacios
@@ -4134,10 +4133,10 @@ export class UtilNative {
       : this.isString(keyOrKeysPath)
       ? ([keyOrKeysPath] as string[])
       : ([] as string[]);
-    isCompareLength = this.anyToBoolean(isCompareLength);
-    isCompareSize = this.anyToBoolean(isCompareSize);
-    isAllowEquivalent = this.anyToBoolean(isAllowEquivalent);
-    isCompareStringToNumber = this.anyToBoolean(isCompareStringToNumber);
+    isCompareLength = this.convertToBoolean(isCompareLength);
+    isCompareSize = this.convertToBoolean(isCompareSize);
+    isAllowEquivalent = this.convertToBoolean(isAllowEquivalent);
+    isCompareStringToNumber = this.convertToBoolean(isCompareStringToNumber);
     let isLesser = true; //obligatorio iniciar con true
     //eliminar claves identificadoras repetidas
     const isKPTCArray = this.isArray(keysPath, false); //❗no se aceptan vacios
