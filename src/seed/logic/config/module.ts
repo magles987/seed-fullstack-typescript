@@ -383,7 +383,7 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
   ): Array<[keyof TIDiccAC, TIDiccAC[keyof TIDiccAC]]> {
     const util = this.util as Util_Module;
     const diccBaseAC = this.getDiccBaseActionConfig(acOption);
-    const aTupleBaseAC = util.literalObjectToArrayTuple(diccBaseAC);
+    const aTupleBaseAC = util.convertObjectToArrayOfTuples(diccBaseAC);
     return [...aTupleBaseAC]; //clonacion sencilla necesaria
   }
   /**Obtener una tupla de tipo Entry de configuracion de acciones
@@ -798,7 +798,7 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
       let diccActionConfig = containerOfActionsConfig as Partial<TIDiccAC>;
       let baseDiccAC = this.getDiccBaseActionConfig(builderACOption);
       //retirar acciones no requeridas y agrega las obligatorias (si no estan incluidas)
-      const selectionKeysAction = util.arrayRemoveDuplicate(
+      const selectionKeysAction = util.removeArrayDuplicate(
         [
           ...this.dfTopMandatoryKeysAction, //obligatorias
           ...Object.keys(diccActionConfig),
@@ -833,11 +833,11 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
         [TKey, TIDiccAC[TKey]]
       >;
       aTupleActionConfig =
-        util.removeDuplicateOfArrayTupleByKey(aTupleActionConfig);
+        util.removeTupleArrayDuplicateByKey(aTupleActionConfig);
       let aTupleBaseActionConfig =
         this.getATupleBaseActionConfig(builderACOption);
       //retirar acciones no requeridas y agrega las obligatorias (si no estan incluidas)
-      const selectionKeysAction = util.arrayRemoveDuplicate(
+      const selectionKeysAction = util.removeArrayDuplicate(
         [
           ...this.dfTopMandatoryKeysAction, //obligatorias
           ...aTupleActionConfig.map((tuple) => tuple[0]),

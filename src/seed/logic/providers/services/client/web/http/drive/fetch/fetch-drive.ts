@@ -38,7 +38,7 @@ export class FetchHttpDrive
   }
   public set headers(v: ReturnType<FetchHttpDrive["getDefault"]>["headers"]) {
     this._headers = this.util.isObject(v)
-      ? this.util.objectDeepMerge([this._headers ?? {}, v], { mode: "soft" })
+      ? this.util.deepMergeObjects([this._headers ?? {}, v], { mode: "soft" })
       : this._headers !== undefined
       ? this._headers
       : this.getDefault().headers;

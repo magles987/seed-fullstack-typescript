@@ -30,17 +30,17 @@ export class QueryJsAdaptator {
       bto: (value, vCond) => util.isNumberInRange(value, vCond, false),
       bti: (value, vCond) => util.isNumberInRange(value, vCond, true),
       like_: (value, vCond) =>
-        util.isStringWhereLike(value, vCond, { likeType: "end" }),
+        util.isStringLike(value, vCond, { likeType: "end" }),
       _like: (value, vCond) =>
-        util.isStringWhereLike(value, vCond, { likeType: "start" }),
+        util.isStringLike(value, vCond, { likeType: "start" }),
       _like_: (value, vCond) =>
-        util.isStringWhereLike(value, vCond, { likeType: "between" }),
+        util.isStringLike(value, vCond, { likeType: "between" }),
       a_ctn: (value, vCond) => {
         const isVCArray = util.isArray(vCond);
         let r = false;
         if (!isVCArray) return r;
         value = Array.isArray(value) ? value : [value];
-        const aF = util.findArrayIntoArray<any[]>(vCond, value, {});
+        const aF = util.searchItemsInArray<any[]>(vCond, value, {});
         r = aF.length !== 0;
         return r;
       },
@@ -88,7 +88,7 @@ export class QueryJsAdaptator {
     const logicPath = keys.join(sp); //sin modelo
     if (
       !this.util.isString(logicPath, false) ||
-      !this.util.isObjectAndExistEveryDeepProperty(
+      !this.util.isObjectWithDeepProperties(
         register,
         false,
         logicPath,
@@ -96,7 +96,7 @@ export class QueryJsAdaptator {
       )
     )
       return r;
-    const data = this.util.findPropByKeyPath(register, logicPath);
+    const data = this.util.findObjectProperty(register, logicPath);
     const condFn = diccCondFn[op];
     r = condFn(data, vCond);
     return r;

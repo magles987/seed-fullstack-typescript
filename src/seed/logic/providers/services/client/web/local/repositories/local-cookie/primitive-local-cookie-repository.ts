@@ -110,7 +110,7 @@ export class PrimitiveLocalCookieRepository<
   ): Promise<any[]> {
     if (!this.util.isArray(registers)) return registers;
     const { sort } = criteria as IPrimitiveReadCriteria;
-    registers = this.util.anyArraySort(registers, { direction: sort });
+    registers = this.util.sortMixedArray(registers, { direction: sort });
     //registers = lodash.orderBy(registers, keysField, aSorts); //como se hace con lodash???
     return registers;
   }

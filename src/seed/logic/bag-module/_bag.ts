@@ -237,7 +237,7 @@ export abstract class BagModule extends HandlerModule {
     const sp = util.charSeparatorBagGlobalKeyAction;
     const keyModule = actionModule.keyModule;
     const keyActionModuleContext = actionModule.keyModuleContext;
-    let keyGlobal = util.buildGenericPathFromArray(
+    let keyGlobal = util.buildPath(
       [keyModule, keyActionModuleContext, keyAction],
       { charSeparator: sp }
     );
@@ -390,7 +390,7 @@ export abstract class BagModule extends HandlerModule {
     const aTGAC = customATupleGlobalActionConfig;
     const rATGAC = aTGAC.filter((tGAC) => {
       const r = aTKeysFilter.some((tKeyF) => {
-        const strForRe = util.buildGenericPathFromArray(tKeyF as string[], {
+        const strForRe = util.buildPath(tKeyF as string[], {
           charSeparator: sp,
           isInitWithSeparator: false,
           pathInit: "^",

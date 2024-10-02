@@ -93,7 +93,7 @@ export class Util_Module extends Util_Logic {
    */
   public mergeActionConfig(
     tActionConfig: [any, any],
-    config: Parameters<typeof this.objectDeepMerge>[1] = { mode: "soft" }
+    config: Parameters<typeof this.deepMergeObjects>[1] = { mode: "soft" }
   ): any {
     if (!this.isTuple(tActionConfig, 2)) {
       throw new LogicError({
@@ -125,7 +125,7 @@ export class Util_Module extends Util_Logic {
       //     ? newAC //se asume explicitamenete la nueva configuracion
       //     : baseAC;
     } else if (this.isObject(newAC)) {
-      actionConfig = this.objectDeepMerge([baseAC, newAC], config);
+      actionConfig = this.deepMergeObjects([baseAC, newAC], config);
     } else {
       actionConfig = newAC;
     }
@@ -134,7 +134,7 @@ export class Util_Module extends Util_Logic {
   /** fusiona dos diccionarios de acciones de configuracion */
   public mergeDiccActionConfig<TDiccAC>(
     tDiccActionConfig: [TDiccAC, TDiccAC],
-    config: Parameters<typeof this.objectDeepMerge>[1] = { mode: "soft" }
+    config: Parameters<typeof this.deepMergeObjects>[1] = { mode: "soft" }
   ): TDiccAC {
     if (!this.isTuple(tDiccActionConfig, 2)) {
       throw new LogicError({
@@ -149,14 +149,14 @@ export class Util_Module extends Util_Logic {
     if (this.isObject(newADiccAC)) {
       if (this.isObject(baseDiccAC)) {
         const tATuplaAC = [
-          this.literalObjectToArrayTuple(baseDiccAC),
-          this.literalObjectToArrayTuple(newADiccAC),
+          this.convertObjectToArrayOfTuples(baseDiccAC),
+          this.convertObjectToArrayOfTuples(newADiccAC),
         ] as any as [any[], any[]];
         const aTuplaAC = this.mergeTupleArrayOfTupleActionConfig(
           tATuplaAC,
           config
         );
-        diccAC = this.aEntryTupleToObject(aTuplaAC) as TDiccAC;
+        diccAC = this.arrayEntriesToObject(aTuplaAC) as TDiccAC;
       } else {
         diccAC = newADiccAC; //si por casualidad base no es un objeto sea asume le nuevo (como esté)
       }
@@ -171,7 +171,7 @@ export class Util_Module extends Util_Logic {
       Array<[keyof TDiccAC, TDiccAC[keyof TDiccAC]]>, //array tuple base
       Array<[keyof TDiccAC, TDiccAC[keyof TDiccAC]]> //array tuple nuevo
     ],
-    config: Parameters<typeof this.objectDeepMerge>[1] = { mode: "soft" }
+    config: Parameters<typeof this.deepMergeObjects>[1] = { mode: "soft" }
   ): Array<[keyof TDiccAC, TDiccAC[keyof TDiccAC]]> {
     if (!this.isTuple(tArrayTupleActionConfig, 2)) {
       throw new LogicError({
@@ -205,8 +205,8 @@ export class Util_Module extends Util_Logic {
       });
     }
     let aT_fusion = [
-      ...this.removeDuplicateOfArrayTupleByKey(aTupleBaseAC),
-      ...this.removeDuplicateOfArrayTupleByKey(aTupleNewAC),
+      ...this.removeTupleArrayDuplicateByKey(aTupleBaseAC),
+      ...this.removeTupleArrayDuplicateByKey(aTupleNewAC),
     ];
     let aTupleAC = [];
     for (let idx = 0; idx < aT_fusion.length; idx++) {
@@ -252,7 +252,7 @@ export class Util_Module extends Util_Logic {
       });
     }
     let rATDiccAC = [] as Array<[keyof TDiccAC, TDiccAC[keyof TDiccAC]]>;
-    keysActionToSort = this.arrayRemoveDuplicate(keysActionToSort, {
+    keysActionToSort = this.removeArrayDuplicate(keysActionToSort, {
       itemConflictMode: "first",
     });
     let bfDicc = { ...diccAC };
@@ -266,7 +266,7 @@ export class Util_Module extends Util_Logic {
     //union de tuplas
     rATDiccAC = [
       ...rATDiccAC, //ordenadas en prioridad
-      ...(this.literalObjectToArrayTuple(bfDicc) as Array<[any, any]>), //restantes
+      ...(this.convertObjectToArrayOfTuples(bfDicc) as Array<[any, any]>), //restantes
     ];
     return rATDiccAC;
   }
@@ -320,14 +320,14 @@ export class Util_Module extends Util_Logic {
    */
   public filterActiveADAC(aDiccActionConfig: object[]): object[] {
     if (!this.isArray(aDiccActionConfig)) return [];
-    const castException: Parameters<typeof this.anyToBoolean>[1] = [
+    const castException: Parameters<typeof this.convertToBoolean>[1] = [
       "isZeroAsTrue",
       "isEmptyAsTrue", //las acciones con configuracion vacia {} se consideran activas
     ];
     aDiccActionConfig = this.clone(aDiccActionConfig);
     aDiccActionConfig = aDiccActionConfig.filter((diccAC) => {
       const actionConfig = Object.values(diccAC)[0];
-      const r = this.anyToBoolean(actionConfig, castException);
+      const r = this.convertToBoolean(actionConfig, castException);
       return r;
     });
     return aDiccActionConfig;
@@ -340,7 +340,7 @@ export class Util_Module extends Util_Logic {
    * @returns el string keyPath ya construido
    */
   public buildKeyPathForGeneralPropuse(aKeys: string[]): string {
-    const keyPath = this.buildGenericPathFromArray(aKeys, {
+    const keyPath = this.buildPath(aKeys, {
       charSeparator: this.charSeparatorLogicPath,
       isInitWithSeparator: false,
       isEndtWithSeparator: false,

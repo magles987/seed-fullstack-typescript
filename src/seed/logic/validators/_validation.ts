@@ -164,9 +164,9 @@ export abstract class LogicValidation<TIDiccAC> extends ActionModule<TIDiccAC> {
       ) => {
         let r = false;
         if (keyDriver === "Util") {
-          r = util.isSignNumber(v, sign, isZeroIncluded); //
+          r = util.isNumberSign(v, sign, isZeroIncluded); //
         } else if (keyDriver === "Lodash") {
-          r = util.isSignNumber(v, sign, isZeroIncluded); // Lodash no tiene el metodo
+          r = util.isNumberSign(v, sign, isZeroIncluded); // Lodash no tiene el metodo
         } else if (keyDriver === "Zod") {
           if (sign === "+") {
             r = isZeroIncluded

@@ -85,7 +85,7 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
         } else if (this.util.isArray(cond)) {
           this.checkQueryConds(cond as TAConds);
         } else if (
-          !this.util.isObjectAndExistEveryProperty(
+          !this.util.isObjectWithProperties(
             cond as ISingleCondition,
             false,
             ["op", "vCond"],
