@@ -26,6 +26,7 @@ import {
   TKeyPrimitiveServiceModuleContext,
   TKeyStructureServiceModuleContext,
 } from "../providers/services/shared";
+import { TKeyLogicContext, TKeyRequestType } from "../config/shared-modules";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** Define los codigos de esdtado retornados
  * despues de la ejecucion de una accion en
@@ -173,12 +174,20 @@ export enum EKeyActionGroupForRes {
 }
 /** */
 export interface IResponse {
+  /**datos */
+  data: any;
+  /**clave identificadora del modulo */
+  keyModule: string;
+  /**clave identificadora del contexto logico que se usó para la petición */
+  keyLogicContext: TKeyLogicContext;
+  /**clave identificadora del contexto de modulo interno */
+  keyModuleContext: unknown;
   /**clave identificadora del recurso(modelo o campo), sin ruta */
   keyLogic?: string;
   /**clave identificadora del recurso*/
   keySrc: string;
-  /**clave identificadora del modulo que ejecutó el middleware */
-  keyModule: string;
+  /**clave identificadora del tipo de request */
+  keyTypeRequest: TKeyRequestType;
   /**clave identificadora de la accion que ejecutó el middleware
    *
    * ❕Existen acciones especiales que agrupan subAcciones, no
@@ -186,10 +195,8 @@ export interface IResponse {
    * en mayuscula y comienzan y terminan con el caracter `"#"` ❕
    */
   keyAction: string | EKeyActionGroupForRes;
-  /**clave identificadora del middlaware */
-  keyModuleContext: unknown;
-  /**datos */
-  data: any;
+  /**clave identificadora de l apeticion de request */
+  keyActionRequest: string;
   /**el dato inicial con el que se inició la peticion en el controller*/
   fisrtCtrlData?: any;
   /**estado despues de la ejecucion del middleware */

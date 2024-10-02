@@ -16,12 +16,15 @@ export abstract class ReportHandler extends HandlerModule {
     return {
       response: {
         data: undefined,
-        responses: [],
-        keyAction: undefined,
         keyModule: undefined,
-        keySrc: undefined,
         keyModuleContext: undefined,
+        keyLogicContext: undefined,
         keyLogic: undefined,
+        keySrc: undefined,
+        keyAction: undefined,
+        keyActionRequest: undefined,
+        keyTypeRequest: undefined,
+        responses: [],
         extResponse: undefined,
         status: ELogicResStatusCode.SUCCESS,
         msn: "",

@@ -75,6 +75,9 @@ export class PrimitiveReportHandler extends ReportHandler {
         keyModuleContext: this.util.isString(dfRCM.keyModuleContext)
           ? dfRCM.keyModuleContext
           : df.keyModuleContext,
+        keyLogicContext: this.keyLogicContext,
+        keyTypeRequest: df.keyTypeRequest,
+        keyActionRequest: df.keyActionRequest,
         status: this.util.isNumber(dfRCM.status) ? dfRCM.status : df.status,
         tolerance: this.util.isNumber(dfRCM.tolerance)
           ? dfRCM.tolerance
@@ -111,10 +114,18 @@ export class PrimitiveReportHandler extends ReportHandler {
         keySrc: this.keySrc,
         keyLogic: this.dfReportConfigForModule.keyLogic, //obligatorio el predefinido
         keyModule: this.dfReportConfigForModule.keyModule, //obligatorio el predefinido
+        keyLogicContext: this.dfReportConfigForModule.keyLogicContext, //obligatorio el predefinido
         keyModuleContext: this.dfReportConfigForModule.keyModuleContext, //obligatorio el predefinido
+        keyTypeRequest:
+          pa.keyTypeRequest === "read" || pa.keyTypeRequest === "modify"
+            ? pa.keyTypeRequest
+            : df.keyTypeRequest,
         keyAction: this.util.isString(pa.keyAction)
           ? pa.keyAction
           : df.keyAction,
+        keyActionRequest: this.util.isString(pa.keyActionRequest)
+          ? pa.keyActionRequest
+          : df.keyActionRequest,
         msn: this.util.isString(pa.msn) ? pa.msn : df.msn,
         extResponse: this.util.isObject(pa.extResponse)
           ? pa.extResponse

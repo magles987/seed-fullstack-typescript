@@ -69,13 +69,16 @@ export class StructureReportHandler extends ReportHandler {
     } else {
       rResponse = {
         data: df.data,
-        keySrc: this.keySrc,
         keyModule: this.util.isString(bR.keyModule)
           ? bR.keyModule
           : df.keyModule,
         keyModuleContext: this.util.isString(bR.keyModuleContext)
           ? bR.keyModuleContext
           : df.keyModuleContext,
+        keyLogicContext: this.keyLogicContext,
+        keyTypeRequest: df.keyTypeRequest,
+        keyActionRequest: df.keyActionRequest,
+        keySrc: this.keySrc,
         status: this.util.isNumber(bR.status) ? bR.status : df.status,
         tolerance: this.util.isNumber(bR.tolerance)
           ? bR.tolerance
@@ -117,10 +120,18 @@ export class StructureReportHandler extends ReportHandler {
         keySrc: this.keySrc,
         keyLogic: this.dfReportConfigForModule.keyLogic, //obligatorio el predefinido
         keyModule: this.dfReportConfigForModule.keyModule, //obligatorio el predefinido
+        keyLogicContext: this.dfReportConfigForModule.keyLogicContext, //obligatorio el predefinido
         keyModuleContext: this.dfReportConfigForModule.keyModuleContext, //obligatorio el predefinido
+        keyTypeRequest:
+          pa.keyTypeRequest === "read" || pa.keyTypeRequest === "modify"
+            ? pa.keyTypeRequest
+            : df.keyTypeRequest,
         keyAction: this.util.isString(pa.keyAction)
           ? pa.keyAction
           : df.keyAction,
+        keyActionRequest: this.util.isString(pa.keyActionRequest)
+          ? pa.keyActionRequest
+          : df.keyActionRequest,
         msn: this.util.isString(pa.msn) ? pa.msn : df.msn,
         extResponse: this.util.isObject(pa.extResponse)
           ? pa.extResponse
