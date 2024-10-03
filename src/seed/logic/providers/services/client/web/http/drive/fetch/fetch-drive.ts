@@ -43,8 +43,6 @@ export class FetchHttpDrive
       ? this._headers
       : this.getDefault().headers;
   }
-  /**  Almacena la instancia única de esta clase */
-  private static FetchHttpDrive_instance: FetchHttpDrive;
   /**
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
@@ -55,20 +53,6 @@ export class FetchHttpDrive
   ) {
     super("fetch");
     if (isInit) this.initProps(base);
-  }
-  /** devuelve la instancia única de esta clase
-   * ya sea que la crea o la que ya a sido creada
-   *
-   */
-  public static getInstance(
-    base: Partial<ReturnType<FetchHttpDrive["getDefault"]>> = {}
-  ): FetchHttpDrive {
-    FetchHttpDrive.FetchHttpDrive_instance =
-      FetchHttpDrive.FetchHttpDrive_instance == undefined ||
-      FetchHttpDrive.FetchHttpDrive_instance == null
-        ? new FetchHttpDrive(base)
-        : FetchHttpDrive.FetchHttpDrive_instance;
-    return FetchHttpDrive.FetchHttpDrive_instance;
   }
   /**@returns todos los campos con sus valores predefinidos*/
   protected getDefault() {

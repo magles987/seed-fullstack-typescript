@@ -17,10 +17,9 @@ export function httpClientDriverFactoryFn(
   diccConfig: IDiccHttpDriveConfig
 ): IGenericDriver<IHttpResponse> {
   let instance: IGenericDriver<IHttpResponse>;
-  if (keyInstance === "fetch")
-    instance = FetchHttpDrive.getInstance(diccConfig.fetch);
+  if (keyInstance === "fetch") instance = new FetchHttpDrive(diccConfig.fetch);
   else if (keyInstance === "axios")
-    instance = AxiosHttpDrive.getInstance(diccConfig.axios);
+    instance = new AxiosHttpDrive(diccConfig.axios);
   else {
     throw new LogicError({
       code: ELogicCodeError.MODULE_ERROR,

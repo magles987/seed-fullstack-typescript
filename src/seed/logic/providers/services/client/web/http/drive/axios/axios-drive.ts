@@ -1,7 +1,6 @@
 import { HttpDrive } from "../_drive";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfconstructor*
- * *Singleton*
  * ...
  */
 export class AxiosHttpDrive
@@ -20,8 +19,6 @@ export class AxiosHttpDrive
       //..aqui las constantes
     };
   };
-  /**  Almacena la instancia única de esta clase */
-  private static AxiosHttpDrive_instance: AxiosHttpDrive;
   /**
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
@@ -32,20 +29,6 @@ export class AxiosHttpDrive
   ) {
     super("axios");
     if (isInit) this.initProps(base);
-  }
-  /** devuelve la instancia única de esta clase
-   * ya sea que la crea o la que ya a sido creada
-   *
-   */
-  public static getInstance(
-    base: Partial<ReturnType<AxiosHttpDrive["getDefault"]>> = {}
-  ): AxiosHttpDrive {
-    AxiosHttpDrive.AxiosHttpDrive_instance =
-      AxiosHttpDrive.AxiosHttpDrive_instance == undefined ||
-      AxiosHttpDrive.AxiosHttpDrive_instance == null
-        ? new AxiosHttpDrive(base)
-        : AxiosHttpDrive.AxiosHttpDrive_instance;
-    return AxiosHttpDrive.AxiosHttpDrive_instance;
   }
   /**@returns todos los campos con sus valores predefinidos*/
   protected getDefault() {
