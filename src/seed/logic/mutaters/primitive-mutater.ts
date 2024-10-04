@@ -9,7 +9,7 @@ import {
 } from "../bag-module/shared-for-external-module";
 import { IPrimitiveResponse } from "../reports/shared";
 import { TPrimitiveMetaAndMutater } from "../meta/metadata-shared";
-import { PrimitiveBag } from "../bag-module/primitive-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import {
   PrimitiveReportHandler,
@@ -208,12 +208,7 @@ export class PrimitiveLogicMutater<
    */
   constructor(keySrc: string) {
     super("primitive", keySrc);
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: this.keyModuleContext,
-      status: this.globalStatus,
-      tolerance: this.globalTolerance,
-    });
+    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return PrimitiveLogicMutater.getDefault();
@@ -288,20 +283,50 @@ export class PrimitiveLogicMutater<
       actionConfig,
       responses: bag.responses,
       criteriaHandler: bag.criteriaHandler,
-      middlewareReportStatus: bag.middlewareReportStatus,
     };
     return bagFC;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag,
+    keyAction: string
+  ): Trf_PrimitiveBag {
+    const rH = this.reportHandler;
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    rH.startResponse({
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyLogic: this.keySrc,
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return bag;
+  }
+  public override postRunAction(
+    bag: Trf_PrimitiveBag,
+    res: IPrimitiveResponse
+  ): IPrimitiveResponse {
+    //mutar data
+    bag.data = res.data;
+    return res;
   }
   //================================================================================================================================
   public async anyTrim(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, keyAction, actionConfig, responses, middlewareReportStatus } =
-      this.adapBagForContext(bag, "anyTrim");
+    const { data, keyAction, actionConfig, responses } = this.adapBagForContext(
+      bag,
+      "anyTrim"
+    );
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     const {} = actionConfig;
 
     // //Desempaquetar la accion e inicializar

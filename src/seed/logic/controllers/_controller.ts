@@ -1,10 +1,15 @@
 import { TKeyLogicContext } from "../config/shared-modules";
 import { Util_Ctrl } from "./_util-ctrl";
-import { ELogicResStatusCode, IResponse } from "../reports/shared";
+import {
+  ELogicResStatusCode,
+  IResponse,
+  TResponseForMutate,
+} from "../reports/shared";
 import { ActionModule, LogicModuleWithReport } from "../config/module";
 import { BagModule } from "../bag-module/_bag";
 import { IBuilderBaseMetadata } from "../meta/metadata-builder-shared";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
+import { ReportHandler } from "../reports/_reportHandler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TKeyReadRequestController = "readAll" | "readOne" | "readMany";
 export type TKeyModifyRequestController = "create" | "update" | "delete";
@@ -118,9 +123,25 @@ export abstract class LogicController extends LogicModuleWithReport {
     keyAction: any
   ): Promise<IResponse> {
     const actionFn = actionModuleInstContext.getActionFnByKey(keyAction);
-    const res = await actionFn(bag);
+    bag = actionModuleInstContext.preRunAction(bag, keyAction) as any;
+    let res = await actionFn(bag);
+    res = actionModuleInstContext.postRunAction(bag, res) as any;
     return res;
   }
+  /**micro hook embebido que se ejecuta antes de ejecutar la accion
+   *
+   * @param bag
+   * @param keyAction
+   * @returns el objeto bag (posiblemente mutado)
+   */
+  public abstract preRunAction(bag: unknown, keyAction: string): unknown;
+  /**micro hook embebido que se ejecuta despues de ejecutar la accion
+   *
+   * @param bag
+   * @param res
+   * @returns el objeto res (posiblemente mutado), el bag puede tambien mutarse
+   */
+  public abstract postRunAction(bag: unknown, res: unknown): unknown;
   /**
    * @returns el estado de respuesta reducido
    * segun criterio de este modulo

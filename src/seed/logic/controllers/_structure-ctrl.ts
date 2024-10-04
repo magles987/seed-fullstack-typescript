@@ -24,8 +24,12 @@ import { FieldLogicValidation } from "../validators/field-validation";
 import { ModelLogicValidation } from "../validators/model-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { EKeyActionGroupForRes, IStructureResponse } from "../reports/shared";
-import { StructureBag } from "../bag-module/structure-bag";
+import {
+  EKeyActionGroupForRes,
+  IStructureResponse,
+  TStructureResponseForFromExtModule,
+} from "../reports/shared";
+import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
 import { ActionModule, IBuildACOption } from "../config/module";
 import { IStructureBuilderBaseMetadata } from "../meta/metadata-builder-shared";
 import { StructureLogicHook } from "../hooks/structure-hook";
@@ -189,7 +193,6 @@ export abstract class StructureLogicController<
     >
   ) {
     super("structure", baseStructureMetadata);
-    const df = this.getDefault();
     const { keySrc, customBase, customDiccModuleInstance } =
       baseStructureMetadata;
     this.metadataHandler = new StructureLogicMetadataHandler(
@@ -197,12 +200,7 @@ export abstract class StructureLogicController<
       customBase,
       customDiccModuleInstance as any
     );
-    this.reportHandler = new StructureReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: this.keyModuleContext as any,
-      status: df.status,
-      tolerance: df.globalTolerance,
-    });
+    this.reportHandler = new StructureReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return StructureLogicController.getDefault();
@@ -327,6 +325,37 @@ export abstract class StructureLogicController<
     const config = this.getMetadataOnlyModuleConfig("modelCtrl", keyPath);
     const diccATKeyCRUD = config.modelCtrl.diccATKeyCRUD;
     return diccATKeyCRUD;
+  }
+  public override preRunAction(
+    bag: Trf_StructureBag,
+    keyAction: string
+  ): Trf_StructureBag {
+    const rH = this.reportHandler;
+    const { data, criteriaHandler, keyPath, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    rH.startResponse({
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext as any, //⚠Posible error de tipado⚠
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyPath,
+      keyLogic: this.util.getKeyLogicByKeyPath(keyPath),
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return bag;
+  }
+  public override postRunAction(
+    bag: Trf_StructureBag,
+    res: IStructureResponse
+  ): IStructureResponse {
+    return res;
   }
   /**costruye un literal bag controller en contexto de campo */
   public buildBagCtrl(
@@ -618,13 +647,9 @@ export abstract class StructureLogicController<
         msn: `${keyBagCtrlContext} is not key bag controller context valid`,
       });
     }
+    bag = this.preRunAction(bag, keyCtrlAction) as any;
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data: bag.data,
-      fisrtCtrlData: bag.firstData,
-      keyPath: bag.keyPath,
-      keyAction: keyCtrlAction,
-    });
+    let res = rH.mutateResponse(undefined, { data: bag.data });
     for (const tGAC of bag.aTupleGlobalActionConfig) {
       const { keyModule, keyModuleContext, keyAction } =
         bag.getDiccKeysGlobalFromTupleGlobal(tGAC);
@@ -649,9 +674,8 @@ export abstract class StructureLogicController<
         res.responses.push(resForAction);
       }
     }
-    res = rH.mutateResponse(res, {
-      data: bag.data, //actualiza data
-    });
+    res = rH.mutateResponse(res, { data: bag.data });
+    res = this.postRunAction(bag, res);
     return res;
   }
   protected override async runRequestForAction(
@@ -683,7 +707,7 @@ export abstract class StructureLogicController<
       aTKeyGlobal
     );
     let bag = this.buildBag("fieldBag", bagCtrl, aTGlobalAC as any);
-    const r = this.runRequest("fieldCtrl", bag);
+    const r = await this.runRequest("fieldCtrl", bag);
     return r;
   }
   /**... */
@@ -715,7 +739,7 @@ export abstract class StructureLogicController<
       aTKeyGlobal
     );
     let bag = this.buildBag("modelBag", bagCtrl, aTGlobalAC as any);
-    const r = this.runRequest("modelCtrl", bag);
+    const r = await this.runRequest("modelCtrl", bag);
     return r;
   }
 

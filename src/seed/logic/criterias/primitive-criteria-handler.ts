@@ -69,6 +69,11 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
   ): void {
     return super.resetPropByKey(key as any);
   }
+  public override getLiteral():
+    | IPrimitiveReadCriteria
+    | IPrimitiveModifyCriteria {
+    return super.getLiteral() as any;
+  }
   protected override checkQueryConds(conds: TAConds): void {
     const len = conds.length;
     //verificaciones solo cuando esta poblado
@@ -105,10 +110,5 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
       }
     }
     return;
-  }
-  public getCriteriaByContext():
-    | IPrimitiveReadCriteria
-    | IPrimitiveModifyCriteria {
-    return super.getCriteriaByContext();
   }
 }

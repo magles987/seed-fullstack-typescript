@@ -18,7 +18,8 @@ import {
   TStructureFieldMetaAndMutater,
   TStructureMetaAndMutater,
 } from "../meta/metadata-shared";
-import { StructureBag } from "../bag-module/structure-bag";
+import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
+import { IStructureResponse } from "../reports/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipado refactorizado de la clase */
 export type Trf_StructureLogicMutater = StructureLogicMutater<any>;
@@ -60,12 +61,7 @@ export abstract class StructureLogicMutater<
     keySrc: string
   ) {
     super("structure", keySrc);
-    this.reportHandler = new StructureReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: this.keyModuleContext,
-      status: this.globalStatus,
-      tolerance: this.globalTolerance,
-    });
+    this.reportHandler = new StructureReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return StructureLogicMutater.getDefault();
@@ -195,8 +191,40 @@ export abstract class StructureLogicMutater<
       actionConfig,
       responses: bag.responses,
       criteriaHandler: bag.criteriaHandler,
-      middlewareReportStatus: bag.middlewareReportStatus,
     };
     return bagFC;
+  }
+  public override preRunAction(
+    bag: Trf_StructureBag,
+    keyAction: string
+  ): Trf_StructureBag {
+    const rH = this.reportHandler;
+    const { data, criteriaHandler, keyPath, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    rH.startResponse({
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyPath,
+      keyLogic: this.util.getKeyLogicByKeyPath(keyPath),
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return bag;
+  }
+  public override postRunAction(
+    bag: Trf_StructureBag,
+    res: IStructureResponse
+  ): IStructureResponse {
+    //mutacion de data
+    bag.data = res.data;
+    return res;
   }
 }

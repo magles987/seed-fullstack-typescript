@@ -14,7 +14,7 @@ import {
   ELogicResStatusCode,
   IPrimitiveResponse,
 } from "../reports/shared";
-import { PrimitiveBag } from "../bag-module/primitive-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
 import { TGenericTupleActionConfig } from "../config/shared-modules";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
@@ -329,12 +329,7 @@ export class PrimitiveLogicValidation<
    */
   constructor(keySrc: string) {
     super("primitive", keySrc);
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: this.keyModuleContext,
-      status: this.globalStatus,
-      tolerance: this.globalTolerance,
-    });
+    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return PrimitiveLogicValidation.getDefault();
@@ -429,9 +424,38 @@ export class PrimitiveLogicValidation<
       actionConfig,
       responses: bag.responses,
       criteriaHandler: bag.criteriaHandler,
-      middlewareReportStatus: bag.middlewareReportStatus,
     };
     return bagFC;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag,
+    keyAction: string
+  ): Trf_PrimitiveBag {
+    const rH = this.reportHandler;
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    rH.startResponse({
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyLogic: this.keySrc,
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return bag;
+  }
+  public override postRunAction(
+    bag: Trf_PrimitiveBag,
+    res: IPrimitiveResponse
+  ): IPrimitiveResponse {
+    return res;
   }
   protected checkEmptyData(
     data: any,
@@ -491,13 +515,12 @@ export class PrimitiveLogicValidation<
   //================================================================
   public async isTypeOf(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, keyAction, actionConfig, responses, middlewareReportStatus } =
-      this.adapBagForContext(bag, "isTypeOf");
+    const { data, keyAction, actionConfig } = this.adapBagForContext(
+      bag,
+      "isTypeOf"
+    );
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     const { isArray, type } = actionConfig;
     //❗❗❗isTypeof no necesita saber si es dato vacio o no❗❗❗
     //validaciones primitivas con zod:
@@ -540,13 +563,12 @@ export class PrimitiveLogicValidation<
   }
   public async isRequired(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, keyAction, actionConfig, responses, middlewareReportStatus } =
-      this.adapBagForContext(bag, "isRequired");
+    const { data, keyAction, actionConfig } = this.adapBagForContext(
+      bag,
+      "isRequired"
+    );
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     //❗se verifica el vacion sin res❗
     const isEmptyData = this.checkEmptyData(
       data,
@@ -563,18 +585,16 @@ export class PrimitiveLogicValidation<
     }
     return res;
   }
-
   public async isAnonimusObject(
     bag: PrimitiveBag<any>
   ): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, keyAction, actionConfig, responses, middlewareReportStatus } =
-      this.adapBagForContext(bag, "isAnonimusObject");
+    const { data, keyAction, actionConfig } = this.adapBagForContext(
+      bag,
+      "isAnonimusObject"
+    );
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     let { anonimuSchemaForATupleAC, isAllowedExtraProp } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
@@ -620,7 +640,6 @@ export class PrimitiveLogicValidation<
             aTupleAC as any[]
           ),
         criteriaHandler: bag.criteriaHandler,
-        middlewareReportStatus,
       });
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];
@@ -639,13 +658,12 @@ export class PrimitiveLogicValidation<
     bag: PrimitiveBag<any>
   ): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, keyAction, actionConfig, responses, middlewareReportStatus } =
-      this.adapBagForContext(bag, "isAnonimusArray");
+    const { data, keyAction, actionConfig, responses } = this.adapBagForContext(
+      bag,
+      "isAnonimusArray"
+    );
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     let { aTupleAC } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
@@ -675,7 +693,6 @@ export class PrimitiveLogicValidation<
             aTupleAC as any[]
           ),
         criteriaHandler: bag.criteriaHandler,
-        middlewareReportStatus,
       });
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];

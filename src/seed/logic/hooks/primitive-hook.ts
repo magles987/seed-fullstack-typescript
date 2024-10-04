@@ -1,11 +1,7 @@
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import {
-  PrimitiveLogicMetadataHandler,
-  Trf_PrimitiveLogicMetadataHandler,
-} from "../meta/primitive-metadata-handler";
+import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import { LogicHook } from "./_hook";
 import {
-  TStructureConfigForHook,
   TKeyPrimitiveHookModuleContext,
   TPrimitiveConfigForHook,
 } from "./shared";
@@ -13,13 +9,13 @@ import {
   IPrimitiveBagForActionModuleContext,
   TPrimitiveFnBagForActionModule,
 } from "../bag-module/shared-for-external-module";
-import { ELogicResStatusCode, IPrimitiveResponse } from "../reports/shared";
+import { IPrimitiveResponse } from "../reports/shared";
 import {
   PrimitiveReportHandler,
   Trf_PrimitiveReportHandler,
 } from "../reports/primitive-report-handler";
 import { TPrimitiveMetaAndHook } from "../meta/metadata-shared";
-import { PrimitiveBag } from "../bag-module/primitive-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del hook */
 export interface IDiccPrimitiveHookActionConfigG {
@@ -84,12 +80,7 @@ export class PrimitiveLogicHook<
    */
   constructor(keySrc: string) {
     super("primitive", keySrc);
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: this.keyModuleContext,
-      status: this.globalStatus,
-      tolerance: this.globalTolerance,
-    });
+    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return PrimitiveLogicHook.getDefault();
@@ -168,9 +159,38 @@ export class PrimitiveLogicHook<
       actionConfig,
       responses: bag.responses,
       criteriaHandler: bag.criteriaHandler,
-      middlewareReportStatus: bag.middlewareReportStatus,
     };
     return bagFC;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag,
+    keyAction: string
+  ): Trf_PrimitiveBag {
+    const rH = this.reportHandler;
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    rH.startResponse({
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyLogic: this.keySrc,
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return bag;
+  }
+  public override postRunAction(
+    bag: Trf_PrimitiveBag,
+    res: IPrimitiveResponse
+  ): IPrimitiveResponse {
+    return res;
   }
   //================================================================
   public async read(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {

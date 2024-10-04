@@ -1,12 +1,12 @@
 import { IPrimitiveBag, IStructureBag } from "../../../bag-module/shared";
 import { TKeyLogicContext } from "../../../config/shared-modules";
-import { Service } from "../_service";
+import { LogicService } from "../_service";
 import { IServiceRequestConfig } from "../shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
-export abstract class ClientService extends Service {
+export abstract class ClientService extends LogicService {
   public static override readonly getDefault = () => {
-    const superDF = Service.getDefault();
+    const superDF = LogicService.getDefault();
     return {
       ...superDF,
       client: {

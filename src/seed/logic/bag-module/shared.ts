@@ -8,7 +8,6 @@ import { IDiccModelMutateActionConfigG } from "../mutaters/model-mutater";
 import { IDiccFieldValActionConfigG } from "../validators/field-validation";
 import { IDiccModelValActionConfigG } from "../validators/model-validation";
 import { IDiccRequestValActionConfigG } from "../validators/request-validation";
-import { IMiddlewareReportStatus } from "../middleware/module/shared";
 import {
   TGenericTupleActionConfig,
   TKeyActionModule,
@@ -61,8 +60,6 @@ export interface IBagModule<TData> {
   /**array con el global de las acciones de todos los
    * modulos en orden de ejecucion */
   aTupleGlobalActionConfig: Array<[string, unknown]>;
-  /**reporte del estado actual del middleware */
-  middlewareReportStatus: IMiddlewareReportStatus;
 }
 /**... */
 export interface ISchemaSingleBuildGlobalAction<TKeyGlobalAction, TGlobalAC> {

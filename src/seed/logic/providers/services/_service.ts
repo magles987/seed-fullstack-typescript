@@ -4,14 +4,17 @@ import {
   IGenericDriver,
   IGenericService,
   IServiceRequestConfig,
+  TKeyPrimitiveServiceModuleContext,
 } from "./shared";
 import { ELogicCodeError, LogicError } from "../../errors/logic-error";
 import { Util_Service } from "./_util-service";
 import {
+  EKeyActionGroupForRes,
   ELogicResStatusCode,
   IPrimitiveResponse,
   IResponse,
   IStructureResponse,
+  TResponseForMutate,
 } from "../../reports/shared";
 import { TKeyLogicContext } from "../../config/shared-modules";
 import { StructureReportHandler } from "../../reports/structure-report-handler";
@@ -21,15 +24,25 @@ import {
   IPrimitiveBag,
   IStructureBag,
 } from "../../bag-module/shared";
+import { ReportHandler } from "../../reports/_reportHandler";
+import {
+  IPrimitiveModifyCriteria,
+  IPrimitiveReadCriteria,
+  IStructureModifyCriteria,
+  IStructureReadCriteria,
+} from "../../criterias/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
-export type Trf_Service = Service;
+export type Trf_LogicService = LogicService;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
  * descrip...
  *
  */
-export abstract class Service extends HandlerModule implements IGenericService {
+export abstract class LogicService
+  extends HandlerModule
+  implements IGenericService
+{
   /** configuracion predefinida para el manejador */
   public static readonly getDefault = () => {
     return {
@@ -67,40 +80,69 @@ export abstract class Service extends HandlerModule implements IGenericService {
    */
   constructor(keyLogicContext: TKeyLogicContext, keySrc: string) {
     super("service", keyLogicContext, keySrc);
-    this._reportPrimitiveHandler = new PrimitiveReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: "primitiveService",
-      status: ELogicResStatusCode.VALID_DATA,
-      tolerance: ELogicResStatusCode.INVALID_DATA,
-    });
-    this._reportStructureHandler = new StructureReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: "structureService",
-      status: ELogicResStatusCode.VALID_DATA,
-      tolerance: ELogicResStatusCode.INVALID_DATA,
-    });
+    this._reportPrimitiveHandler = new PrimitiveReportHandler(this.keySrc, {});
+    this._reportStructureHandler = new StructureReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
-    return Service.getDefault();
+    return LogicService.getDefault();
   }
   /**ejecutar la peticion en el servicio */
   public async runRequestFromService(
     iBag: IBagModule<any>
   ): Promise<IResponse> {
-    let rBag: IResponse;
+    let res: IResponse;
+
     if (this.keyLogicContext === "primitive") {
       const iPrimitiveBag = iBag as IPrimitiveBag<any>;
-      rBag = await this.runRequestForPrimitive(iPrimitiveBag);
+      const rH = this.reportPrimitiveHandler;
+      const { data, literalCriteria } = iPrimitiveBag;
+      const { keyActionRequest, type, modifyType, keySrc } =
+        literalCriteria as IPrimitiveReadCriteria & IPrimitiveModifyCriteria;
+      res = rH.startResponse({
+        keyRepModule: this.keyModule as any,
+        keyRepModuleContext: "primitiveService",
+        keyRepLogicContext: this.keyLogicContext,
+        keyActionRequest,
+        keyAction: EKeyActionGroupForRes.servicePrimitive,
+        keyTypeRequest: type,
+        keyModifyTypeRequest: modifyType,
+        keyLogic: keySrc,
+        keyRepSrc: keySrc,
+        status: ELogicResStatusCode.VALID_DATA,
+        tolerance: ELogicResStatusCode.INVALID_DATA,
+        data,
+      });
+      res = await this.runRequestForPrimitive(iPrimitiveBag);
     } else if (this.keyLogicContext === "structure") {
       const iStructureBag = iBag as IStructureBag<any>;
-      rBag = await this.runRequestForStructure(iStructureBag);
+      const rH = this.reportStructureHandler;
+      const { data, literalCriteria, keyPath } = iStructureBag;
+      const { keyActionRequest, type, modifyType, keySrc } =
+        literalCriteria as IStructureReadCriteria<any> &
+          IStructureModifyCriteria<any>;
+      res = rH.startResponse({
+        keyRepModule: this.keyModule as any,
+        keyRepModuleContext: "structureService",
+        keyRepLogicContext: this.keyLogicContext,
+        keyActionRequest,
+        keyAction: EKeyActionGroupForRes.serviceStructure,
+        keyTypeRequest: type,
+        keyModifyTypeRequest: modifyType,
+        keyPath,
+        keyLogic: this.util.getKeyLogicByKeyPath(keyPath),
+        keyRepSrc: keySrc,
+        status: ELogicResStatusCode.VALID_DATA,
+        tolerance: ELogicResStatusCode.INVALID_DATA,
+        data,
+      });
+      res = await this.runRequestForStructure(iStructureBag);
     } else {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
         msn: `${this.keyLogicContext} is not key logic context valid `,
       });
     }
-    return rBag;
+    return res;
   }
   /**... */
   protected abstract buildConfig(
@@ -137,4 +179,33 @@ export abstract class Service extends HandlerModule implements IGenericService {
     driverResponse: unknown,
     option: unknown
   ): IStructureResponse;
+  /**
+   * @returns el estado de respuesta reducido
+   * segun criterio de este modulo
+   */
+  public static getControlReduceStatusResponse(
+    cStt: ELogicResStatusCode,
+    nStt: ELogicResStatusCode
+  ): ELogicResStatusCode {
+    let stateStatus: ELogicResStatusCode;
+    if (
+      cStt === ELogicResStatusCode.ERROR ||
+      nStt >= ELogicResStatusCode.ERROR
+    ) {
+      stateStatus = ELogicResStatusCode.ERROR;
+    } else if (
+      cStt === ELogicResStatusCode.BAD ||
+      nStt >= ELogicResStatusCode.BAD
+    ) {
+      stateStatus = ELogicResStatusCode.BAD;
+    } else if (
+      cStt === ELogicResStatusCode.WARNING ||
+      nStt >= ELogicResStatusCode.WARNING
+    ) {
+      stateStatus = ELogicResStatusCode.WARNING;
+    } else {
+      stateStatus = ELogicResStatusCode.SUCCESS;
+    }
+    return stateStatus;
+  }
 }

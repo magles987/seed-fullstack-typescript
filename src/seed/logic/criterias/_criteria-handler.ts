@@ -4,7 +4,6 @@ import {
   TKeyRequestModifyType,
   TKeyRequestType,
 } from "../config/shared-modules";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { Util_Criteria } from "./_util-criteria";
 import {
   IModifyCriteria,
@@ -51,6 +50,8 @@ export abstract class CriteriaHandler
       MAX_LIMIT_ALLOW: 100,
       /**limite minimo permitido */
       MIN_LIMIT_ALLOW: 0,
+      /**si el literal debe ser clonado */
+      IS_LITERAL_CLONE: true,
     };
   };
   /**instancia de manejador de metadatos de este recurso */
@@ -233,13 +234,13 @@ export abstract class CriteriaHandler
     return;
   }
   /**⚠ Reinicia todas las propiedades al valor predefinido ⚠ */
-  public resetProps(): void {
-    const df = this.getDefault();
-    for (const key in df) {
-      this[key] = df[key];
-    }
-    return;
-  }
+  // public resetProps(): void {
+  //   const df = this.getDefault();
+  //   for (const key in df) {
+  //     this[key] = df[key];
+  //   }
+  //   return;
+  // }
   /**reinicia una propiedad al valor predefinido
    *
    * @param key clave identificadora de la propiedad a reiniciar
@@ -250,6 +251,18 @@ export abstract class CriteriaHandler
     const df = this.getDefault();
     this[key as any] = df[key];
     return;
+  }
+  /**@returns un objeto literal con las propiedades base */
+  public getLiteral(): IReadCriteria | IModifyCriteria {
+    let literal = {};
+    for (const key in this.getDefault()) {
+      literal[key] = this[key];
+    }
+    const isClone = this.getCONST().IS_LITERAL_CLONE;
+    if (isClone) {
+      literal = this.util.clone(literal, "lodash");
+    }
+    return literal as any;
   }
   /**construye un query sencillo a partir de una base
    *
@@ -268,41 +281,4 @@ export abstract class CriteriaHandler
    * @param conds las condiciones del query
    */
   protected abstract checkQueryConds(conds: TAConds): void;
-  /**... */
-  public getCriteriaByContext(): IReadCriteria | IModifyCriteria {
-    let criteria: IReadCriteria | IModifyCriteria;
-    if (this.type === "read")
-      criteria = this.util.clone({
-        keyLogicContext: this.keyLogicContext,
-        keySrc: this.keySrc,
-        keyActionRequest: this.keyActionRequest,
-        type: this.type,
-        p_Key: this.p_Key,
-        s_Key: this.s_Key,
-        expectedDataType: this.expectedDataType,
-        limit: this.limit,
-        sort: this.sort,
-        query: this.query,
-        targetPage: this.targetPage,
-        targetPageLogic: this.targetPageLogic,
-      } as IReadCriteria);
-    else if (this.type === "modify")
-      criteria = this.util.clone({
-        keyLogicContext: this.keyLogicContext,
-        keySrc: this.keySrc,
-        keyActionRequest: this.keyActionRequest,
-        type: this.type,
-        p_Key: this.p_Key,
-        s_Key: this.s_Key,
-        expectedDataType: this.expectedDataType,
-        modifyType: this.modifyType,
-        isCreateOrUpdate: this.isCreateOrUpdate,
-      } as IModifyCriteria);
-    else
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${this.type} is not criteria key type criteria valid`,
-      });
-    return criteria;
-  }
 }

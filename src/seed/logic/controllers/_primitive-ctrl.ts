@@ -3,7 +3,7 @@ import {
   TKeyModifyRequestController,
   TKeyReadRequestController,
 } from "./_controller";
-import { PrimitiveBag } from "../bag-module/primitive-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { ActionModule, IBuildACOption } from "../config/module";
 import { IPrimitiveBuilderbaseMetadata } from "../meta/metadata-builder-shared";
@@ -11,7 +11,11 @@ import { PrimitiveLogicMutater } from "../mutaters/primitive-mutater";
 import { PrimitiveLogicValidation } from "../validators/primitive-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
 import { PrimitiveLogicHook } from "../hooks/primitive-hook";
-import { EKeyActionGroupForRes, IPrimitiveResponse } from "../reports/shared";
+import {
+  EKeyActionGroupForRes,
+  IPrimitiveResponse,
+  TPrimitiveResponseForFromExtModule,
+} from "../reports/shared";
 import {
   PrimitiveLogicMetadataHandler,
   Trf_PrimitiveLogicMetadataHandler,
@@ -107,7 +111,6 @@ export abstract class PrimitiveLogicController<
   public override get keyModuleContext(): TKeyPrimitiveCtrlModuleContext {
     return "primitiveCtrl" as TKeyPrimitiveCtrlModuleContext;
   }
-
   /**... */
   public get primitiveMutateModuleInstance() {
     const r = this.metadataHandler.diccModuleIntanceContext.primitiveMutate;
@@ -157,12 +160,7 @@ export abstract class PrimitiveLogicController<
       customBase,
       customDiccModuleInstance as any
     );
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: this.keyModuleContext,
-      status: df.status,
-      tolerance: df.globalTolerance,
-    });
+    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return PrimitiveLogicController.getDefault();
@@ -205,6 +203,36 @@ export abstract class PrimitiveLogicController<
     const config = this.getMetadataOnlyModuleConfig();
     const diccATKeyCRUD = config.primitiveCtrl.diccATKeyCRUD;
     return diccATKeyCRUD;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag,
+    keyAction: string
+  ): Trf_PrimitiveBag {
+    const rH = this.reportHandler;
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    rH.startResponse({
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyLogic: this.keySrc,
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return bag;
+  }
+  public override postRunAction(
+    bag: Trf_PrimitiveBag,
+    res: IPrimitiveResponse
+  ): IPrimitiveResponse {
+    return res;
   }
   public buildBagCtrl(
     baseBagCtrl: Partial<
@@ -415,12 +443,9 @@ export abstract class PrimitiveLogicController<
     } = this.metadataHandler.diccModuleIntanceContext;
     let keyCtrlAction: EKeyActionGroupForRes =
       EKeyActionGroupForRes.ctrlPrimitive;
+    bag = this.preRunAction(bag, keyCtrlAction) as any;
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data: bag.data,
-      fisrtCtrlData: bag.data,
-      keyAction: keyCtrlAction,
-    });
+    let res = rH.mutateResponse(undefined, { data: bag.data });
     for (const tGAC of bag.aTupleGlobalActionConfig) {
       const { keyModule, keyModuleContext, keyAction } =
         bag.getDiccKeysGlobalFromTupleGlobal(tGAC);
@@ -442,9 +467,8 @@ export abstract class PrimitiveLogicController<
         res.responses.push(resForAction);
       }
     }
-    res = rH.mutateResponse(res, {
-      data: bag.data,
-    });
+    res = rH.mutateResponse(res, { data: bag.data });
+    res = this.postRunAction(bag, res);
     return res;
   }
   protected async runRequestForAction(
@@ -488,7 +512,7 @@ export abstract class PrimitiveLogicController<
       aTKeyGlobal
     );
     let bag = this.buildBag(bagCtrl, aTGlobalAC as any);
-    return this.runRequest(bag);
+    return await this.runRequest(bag);
   }
 
   /*----------------------------------------------------------------*/

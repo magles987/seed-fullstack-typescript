@@ -3,7 +3,12 @@ import { TKeyLogicContext } from "../config/shared-modules";
 import { Util_Validator } from "./_util-validator";
 import { ActionModule } from "../config/module";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { ELogicResStatusCode } from "../reports/shared";
+import {
+  ELogicResStatusCode,
+  IResponse,
+  TResponseForMutate,
+} from "../reports/shared";
+import { ReportHandler } from "../reports/_reportHandler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**calves identificadoras del los
  * drivers (librerias) a usar

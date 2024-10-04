@@ -1009,4 +1009,18 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
     bag: unknown,
     keyAction: unknown
   ): unknown;
+  /**micro hook embebido que se ejecuta antes de ejecutar la accion
+   *
+   * @param bag
+   * @param keyAction
+   * @returns el objeto bag (posiblemente mutado)
+   */
+  public abstract preRunAction(bag: unknown, keyAction: string): unknown;
+  /**micro hook embebido que se ejecuta despues de ejecutar la accion
+   *
+   * @param bag
+   * @param res
+   * @returns el objeto res (posiblemente mutado), el bag puede tambien mutarse
+   */
+  public abstract postRunAction(bag: unknown, res: unknown): unknown;
 }

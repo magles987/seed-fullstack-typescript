@@ -21,7 +21,9 @@ import {
   TStructureATupleGlobalDiccAC,
   TStructureKeysGlobal,
 } from "./shared";
-
+//████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/**refactorización de la clase*/
+export type Trf_StructureBag = StructureBag<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
  * ...
@@ -127,10 +129,9 @@ export class StructureBag<
       data: this.data,
       keyPath: this.keyPath,
       keySrc: this.keySrc,
-      literalCriteria: this.criteriaHandler.getCriteriaByContext(),
+      literalCriteria: this.criteriaHandler.getLiteral(),
       aTupleGlobalActionConfig: this.aTupleGlobalActionConfig as any,
       responses: this.responses,
-      middlewareReportStatus: this.middlewareReportStatus,
     };
     return literalBag;
   }

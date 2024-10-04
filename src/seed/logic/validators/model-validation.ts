@@ -201,20 +201,10 @@ export class ModelLogicValidation<
   public async isTypeOfModel(
     bag: StructureBag<any>
   ): Promise<IStructureResponse> {
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "isTypeOfModel");
+    const { data, keyAction, keyPath, actionConfig, responses } =
+      this.adapBagForContext(bag, "isTypeOfModel");
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-      keyPath,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     let zodCursor: TZodSchemaForClose = this.zod
       .optional(this.zod.object({}))
       .nullable();
@@ -228,20 +218,10 @@ export class ModelLogicValidation<
   }
   public async isRequired(bag: StructureBag<any>): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "isRequired");
+    const { data, keyAction, keyPath, actionConfig, responses } =
+      this.adapBagForContext(bag, "isRequired");
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-      keyPath,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     //❗se verifica el vacion sin res❗
     const isEmptyData = this.checkEmptyData(
       data,
@@ -259,20 +239,10 @@ export class ModelLogicValidation<
     return res;
   }
   public async isModel(bag: StructureBag<any>): Promise<IStructureResponse> {
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "isModel");
+    const { data, keyAction, keyPath, actionConfig, responses } =
+      this.adapBagForContext(bag, "isModel");
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-      keyPath,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     let { modelForATupleAC } = actionConfig;
     if (!this.util.isObject(modelForATupleAC)) {
       res = rH.mutateResponse(res, {
@@ -307,7 +277,6 @@ export class ModelLogicValidation<
                 { keyPath: resForField.keyPath }
               ),
             criteriaHandler: bag.criteriaHandler,
-            middlewareReportStatus,
           });
           let resesForAction: IStructureResponse[] = [];
           for (const tupleAC of aTupleAC) {

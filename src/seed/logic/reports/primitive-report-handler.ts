@@ -8,159 +8,99 @@ import { ReportHandler } from "./_reportHandler";
 import {
   ELogicResStatusCode,
   IPrimitiveResponse,
-  TBasePrimitiveResponse,
-  TKeyPrimitiveResponseModuleContext,
+  TPrimitiveModuleContext,
+  TPrimitiveResponseForMutate,
   Trf_IPrimitiveResponse,
 } from "./shared";
+import { LogicService } from "../providers/services/_service";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_PrimitiveReportHandler = PrimitiveReportHandler;
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-
-/**... */
-export class PrimitiveReportHandler extends ReportHandler {
-  /** configuracion de valores predefinidos para el modulo*/
-  public static readonly getDefault = () => {
+/** *selfcontructor*
+ *
+ * ...
+ */
+export class PrimitiveReportHandler
+  extends ReportHandler
+  implements ReturnType<PrimitiveReportHandler["getDefault"]>
+{
+  public static override readonly getDefault = () => {
     const superDf = ReportHandler.getDefault();
     return {
       ...superDf,
-      response: {
-        ...superDf.response,
-      } as IPrimitiveResponse,
+    } as IPrimitiveResponse;
+  };
+  protected static override readonly getCONSTANTS = () => {
+    const superCONST = ReportHandler.getCONSTANTS();
+    return {
+      ...superCONST,
+      //..aqui las constantes
     };
   };
-  public override get keyModuleContext(): TKeyPrimitiveResponseModuleContext {
-    return "primitiveResponse";
+  public override get keyRepModuleContext(): TPrimitiveModuleContext {
+    return super.keyRepModuleContext as any;
   }
-  protected override get dfReportConfigForModule(): IPrimitiveResponse {
-    return super.dfReportConfigForModule as any;
+  protected override set keyRepModuleContext(v: TPrimitiveModuleContext) {
+    super.keyRepModuleContext = v;
   }
-  /**... */
-  protected override set dfReportConfigForModule(
-    newDfReport: IPrimitiveResponse
-  ) {
-    super.dfReportConfigForModule = newDfReport;
+  public override get responses(): IPrimitiveResponse[] {
+    return super.responses as any;
+  }
+  protected override set responses(v: IPrimitiveResponse[]) {
+    super.responses = v;
   }
   /**
    * @param keySrc indentificadora del recurso asociado a modulo
-   * @param baseResponse configuracion base  de acuerdo al
-   * contexto del modulo que requiera el manejador de
-   * reporte
-   *
+   * @param base objeto literal con valores personalizados para iniicalizar las propiedades
+   * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
-  constructor(keySrc: string, baseResponse: TBasePrimitiveResponse) {
-    super("primitive", keySrc);
-    this.dfReportConfigForModule = this.buildDfReportConfig(baseResponse);
+  constructor(
+    keySrc: string,
+    base: Partial<ReturnType<PrimitiveReportHandler["getDefault"]>> = {},
+    isInit = true
+  ) {
+    super("primitive", keySrc, base, false);
+    if (isInit) this.initProps(base);
   }
   protected override getDefault() {
     return PrimitiveReportHandler.getDefault();
   }
-  protected override buildDfReportConfig(
-    dfReportConfigForModule: TBasePrimitiveResponse
-  ): IPrimitiveResponse {
-    const dfRCM = dfReportConfigForModule;
-    const df = this.getDefault().response;
-    let rResponse: IPrimitiveResponse;
-    if (!this.util.isObject(dfRCM)) {
-      this.dfReportConfigForModule = df;
-    } else {
-      this.dfReportConfigForModule = {
-        data: df.data,
-        keySrc: this.keySrc,
-        keyModule: this.util.isString(dfRCM.keyModule)
-          ? dfRCM.keyModule
-          : df.keyModule,
-        keyModuleContext: this.util.isString(dfRCM.keyModuleContext)
-          ? dfRCM.keyModuleContext
-          : df.keyModuleContext,
-        keyLogicContext: this.keyLogicContext,
-        keyTypeRequest: df.keyTypeRequest,
-        keyActionRequest: df.keyActionRequest,
-        status: this.util.isNumber(dfRCM.status) ? dfRCM.status : df.status,
-        tolerance: this.util.isNumber(dfRCM.tolerance)
-          ? dfRCM.tolerance
-          : df.tolerance,
-        keyAction: df.keyAction,
-        keyLogic: this.keyLogicContext,
-        msn: df.msn,
-        responses: df.responses,
-        extResponse: df.extResponse,
-      };
-    }
-    return rResponse;
+  protected override getCONST() {
+    return PrimitiveReportHandler.getCONSTANTS();
   }
-  public override checkInitResponseKeyMissing(
-    resParam: Partial<IPrimitiveResponse>,
-    keys: Array<keyof IPrimitiveResponse>
-  ): void {
-    return super.checkInitResponseKeyMissing(resParam, keys as any);
-  }
-  protected override buildResponse(
-    param?: Partial<IPrimitiveResponse>,
-    dfParam?: Trf_IPrimitiveResponse
+  //❗normalmente definidas en el padre, salvo que se quieran sobreescribir❗
+  // /**reinicia una propiedad al valor predefinido
+  //  *
+  //  * @param key clave identificadora de la propiedad a reiniciar
+  //  */
+  // public override resetPropByKey(key: keyof ReturnType<PrimitiveReportHandler["getDefault"]>): void {
+  //   const df = this.getDefault();
+  //   this[key] = df[key];
+  //   return;
+  // }
+  // protected override getLiteral(): ReturnType<
+  //   PrimitiveReportHandler["getDefault"]
+  // > {
+  //   return super.getLiteral() as any;
+  // }
+  public override startResponse(
+    param?: Partial<IPrimitiveResponse>
   ): IPrimitiveResponse {
-    let res: IPrimitiveResponse;
-    const df = this.util.isObject(dfParam)
-      ? dfParam
-      : this.dfReportConfigForModule;
-    const pa = param;
-    if (!this.util.isObject(pa)) {
-      res = df;
-    } else {
-      res = {
-        data: "data" in pa ? pa.data : df.data, //verifica existencia ya que los valores undefined y null son validos
-        keySrc: this.keySrc,
-        keyLogic: this.dfReportConfigForModule.keyLogic, //obligatorio el predefinido
-        keyModule: this.dfReportConfigForModule.keyModule, //obligatorio el predefinido
-        keyLogicContext: this.dfReportConfigForModule.keyLogicContext, //obligatorio el predefinido
-        keyModuleContext: this.dfReportConfigForModule.keyModuleContext, //obligatorio el predefinido
-        keyTypeRequest:
-          pa.keyTypeRequest === "read" || pa.keyTypeRequest === "modify"
-            ? pa.keyTypeRequest
-            : df.keyTypeRequest,
-        keyAction: this.util.isString(pa.keyAction)
-          ? pa.keyAction
-          : df.keyAction,
-        keyActionRequest: this.util.isString(pa.keyActionRequest)
-          ? pa.keyActionRequest
-          : df.keyActionRequest,
-        msn: this.util.isString(pa.msn) ? pa.msn : df.msn,
-        extResponse: this.util.isObject(pa.extResponse)
-          ? pa.extResponse
-          : df.extResponse,
-        responses: this.util.isArray(pa.responses)
-          ? pa.responses
-          : df.responses,
-        status: this.util.isNotUndefinedAndNotNull(pa.status)
-          ? pa.status
-          : df.status,
-        tolerance: this.util.isNumber(pa.tolerance)
-          ? pa.tolerance
-          : df.tolerance,
-      };
-    }
-    return res;
+    return super.startResponse(param) as IPrimitiveResponse;
   }
   public override mutateResponse(
     res: IPrimitiveResponse,
-    param?: Partial<IPrimitiveResponse>
+    param?: TPrimitiveResponseForMutate
   ): IPrimitiveResponse {
-    //verificacion especial de propiedades
-    if (res === undefined && this.util.isObject(param)) {
-      this.checkInitResponseKeyMissing(param, ["data"]);
-    }
-    res = !this.util.isObject(res)
-      ? this.buildResponse(param, undefined)
-      : this.buildResponse(param, res as IPrimitiveResponse);
-    res = this.reduceResponses(res);
-    return res;
+    return super.mutateResponse(res, param) as IPrimitiveResponse;
   }
   protected override reduceResponses(
     response: IPrimitiveResponse
   ): IPrimitiveResponse {
-    const keyModule = response.keyModule as TKeyModuleWithReport;
+    const { keyRepModule: keyModule } = response;
     let aStatus: ELogicResStatusCode[] = [];
     const res = response as Trf_IPrimitiveResponse;
     aStatus = res.responses.map((embRes, idx) => {
@@ -197,6 +137,11 @@ export class PrimitiveReportHandler extends ReportHandler {
         );
       else if (keyModule === "provider")
         stateStatus = LogicProvider.getControlReduceStatusResponse(
+          currentStatus,
+          nextStatus
+        );
+      else if (keyModule === "service")
+        stateStatus = LogicService.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );

@@ -392,20 +392,10 @@ export class FieldLogicValidation<
   //================================================================
   public async isTypeOf(bag: StructureBag<any>): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "isTypeOf");
+    const { data, keyAction, keyPath, actionConfig, responses } =
+      this.adapBagForContext(bag, "isTypeOf");
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-      keyPath,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     const { isArray, fieldType } = actionConfig;
     //❗❗❗isTypeof no necesita saber si es dato vacio o no❗❗❗
     //validaciones primitivas con zod:
@@ -448,20 +438,9 @@ export class FieldLogicValidation<
   }
   public async isRequired(bag: StructureBag<any>): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "isRequired");
+    const { data, actionConfig } = this.adapBagForContext(bag, "isRequired");
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-      keyPath,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     //❗se verifica el vacion sin res❗
     const isEmptyData = this.checkEmptyData(
       data,
@@ -731,20 +710,10 @@ export class FieldLogicValidation<
     bag: StructureBag<any>
   ): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "isAnonimusObject");
+    const { data, keyAction, keyPath, actionConfig, responses } =
+      this.adapBagForContext(bag, "isAnonimusObject");
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-      keyPath,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     let { anonimuSchemaForATupleAC, isAllowedExtraProp } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
@@ -793,7 +762,6 @@ export class FieldLogicValidation<
           ),
         keyPath: embResForProp.keyPath,
         criteriaHandler: bag.criteriaHandler,
-        middlewareReportStatus,
       });
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];
@@ -812,20 +780,10 @@ export class FieldLogicValidation<
     bag: StructureBag<any>
   ): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "isAnonimusArray");
+    const { data, keyAction, keyPath, actionConfig, responses } =
+      this.adapBagForContext(bag, "isAnonimusArray");
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-      keyPath,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     let { aTupleAC } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
@@ -858,7 +816,6 @@ export class FieldLogicValidation<
           ),
         keyPath: embResForItem.keyPath,
         criteriaHandler: bag.criteriaHandler,
-        middlewareReportStatus,
       });
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];

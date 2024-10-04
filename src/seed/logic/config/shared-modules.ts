@@ -13,7 +13,8 @@ export type TKeyExclusiveModule = "controller" | "middleware";
 /**clave identificadora de modulos con reportes de respuesta asignados */
 export type TKeyModuleWithReport =
   | TKeyActionModule
-  | Extract<TKeyExclusiveModule, "controller">;
+  | Extract<TKeyExclusiveModule, "controller">
+  | Extract<TKeyHandlerModule, "service">;
 /**Tipos de modulos para la logica de negocio*/
 export type TKeyModule =
   | TKeyActionModule

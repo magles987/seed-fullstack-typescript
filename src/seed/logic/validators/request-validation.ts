@@ -26,8 +26,8 @@ import {
 } from "../bag-module/shared-for-external-module";
 import { StructureReportHandler } from "../reports/structure-report-handler";
 import { Trf_ReportHandler } from "../reports/_reportHandler";
-import { StructureBag } from "../bag-module/structure-bag";
-import { PrimitiveBag } from "../bag-module/primitive-bag";
+import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 
@@ -120,15 +120,15 @@ export class RequestLogicValidation<
     const df = this.getDefault();
     if (keyLogicContext === "primitive") {
       this.reportHandler = new PrimitiveReportHandler(this.keySrc, {
-        keyModule: this.keyModule,
-        keyModuleContext: this.keyModuleContext,
+        keyRepModule: this.keyModule as any,
+        keyRepModuleContext: this.keyModuleContext,
         status: ELogicResStatusCode.VALID_DATA,
         tolerance: df.globalTolerance,
       });
     } else if (keyLogicContext === "structure") {
       this.reportHandler = new StructureReportHandler(this.keySrc, {
-        keyModule: this.keyModule,
-        keyModuleContext: this.keyModuleContext,
+        keyRepModule: this.keyModule as any,
+        keyRepModuleContext: this.keyModuleContext,
         status: ELogicResStatusCode.VALID_DATA,
         tolerance: df.globalTolerance,
       });
@@ -225,9 +225,40 @@ export class RequestLogicValidation<
       actionConfig,
       responses: bag.responses as any,
       criteriaHandler: bag.criteriaHandler as any,
-      middlewareReportStatus: bag.middlewareReportStatus,
     };
     return bagFC as any;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag | Trf_StructureBag,
+    keyAction: string
+  ): Trf_PrimitiveBag | Trf_StructureBag {
+    const rH = this.reportHandler;
+    const { data, criteriaHandler, keyPath, firstData } =
+      bag as Trf_StructureBag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    rH.startResponse({
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyPath: keyPath,
+      keyLogic: this.util.getKeyLogicByKeyPath(keyPath),
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    } as Partial<IStructureResponse> | Partial<IPrimitiveResponse>);
+    return bag;
+  }
+  public override postRunAction(
+    bag: Trf_StructureBag,
+    res: IStructureResponse
+  ): IStructureResponse {
+    return res;
   }
   //================================================================================================================================
   public async isReadAllowed(

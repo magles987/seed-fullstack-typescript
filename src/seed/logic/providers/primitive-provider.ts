@@ -1,4 +1,4 @@
-import { PrimitiveBag } from "../bag-module/primitive-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
 import {
   IPrimitiveBagForActionModuleContext,
   TPrimitiveFnBagForActionModule,
@@ -114,12 +114,7 @@ export class PrimitiveLogicProvider<
    */
   constructor(keySrc: string) {
     super("structure", keySrc);
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: this.keyModuleContext,
-      status: this.globalStatus,
-      tolerance: this.globalTolerance,
-    });
+    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return PrimitiveLogicProvider.getDefault();
@@ -201,9 +196,40 @@ export class PrimitiveLogicProvider<
       actionConfig,
       responses: bag.responses,
       criteriaHandler: bag.criteriaHandler,
-      middlewareReportStatus: bag.middlewareReportStatus,
     };
     return bagFC;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag,
+    keyAction: string
+  ): Trf_PrimitiveBag {
+    const rH = this.reportHandler;
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    rH.startResponse({
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyLogic: this.keySrc,
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return bag;
+  }
+  public override postRunAction(
+    bag: Trf_PrimitiveBag,
+    res: IPrimitiveResponse
+  ): IPrimitiveResponse {
+    //mutar data
+    bag.data = res.data;
+    return res;
   }
   //================================================================
   public async runProvider(
@@ -215,10 +241,7 @@ export class PrimitiveLogicProvider<
     );
     let { customServiceFactoryFn, serviceConfig, serviceToRun } = actionConfig;
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     let { keyService, customDeepServiceConfig } = serviceToRun;
     const serviceInstance = customServiceFactoryFn(
       keyService,
@@ -230,7 +253,6 @@ export class PrimitiveLogicProvider<
     const serviceRes = await serviceInstance.runRequestFromService(
       bag.getLiteralBag()
     );
-    this.mutateDataIntoBag(serviceRes.data, bag, res);
     res = rH.mutateResponse(res, serviceRes as any);
     return res;
   }

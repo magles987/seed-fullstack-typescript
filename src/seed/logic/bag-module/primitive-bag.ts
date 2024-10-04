@@ -15,7 +15,9 @@ import {
   TPrimitiveATupleGlobalDiccAC,
   TPrimitiveKeysGlobal,
 } from "./shared";
-
+//████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/**refactorización de la clase*/
+export type Trf_PrimitiveBag = PrimitiveBag<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class PrimitiveBag<
@@ -99,10 +101,9 @@ export class PrimitiveBag<
     const literalBag: IPrimitiveBag<TValue> = {
       data: this.data,
       keySrc: this.keySrc,
-      literalCriteria: this.criteriaHandler.getCriteriaByContext(),
+      literalCriteria: this.criteriaHandler.getLiteral(),
       aTupleGlobalActionConfig: this.aTupleGlobalActionConfig as any,
       responses: this.responses,
-      middlewareReportStatus: this.middlewareReportStatus,
     };
     return literalBag;
   }

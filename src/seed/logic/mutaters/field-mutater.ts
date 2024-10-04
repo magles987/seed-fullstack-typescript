@@ -206,20 +206,10 @@ export class FieldLogicMutater<
   //================================================================================================================================
   public async anyTrim(bag: StructureBag<any>): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "anyTrim");
+    const { data, keyAction, keyPath, actionConfig, responses } =
+      this.adapBagForContext(bag, "anyTrim");
     const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-      keyPath,
-    });
+    let res = rH.mutateResponse(undefined, { data });
     //const {} = actionConfig;
     if (
       !actionConfig ||
@@ -230,9 +220,7 @@ export class FieldLogicMutater<
         msn: `${keyAction} is not applicable to ${data}`,
       });
     }
-    ////❗❗❗MUTACION❗❗❗
     let newData = (data as string).trim();
-    this.mutateDataIntoBag(newData, bag, res);
     res = rH.mutateResponse(res, {
       data: newData,
     });

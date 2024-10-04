@@ -1,6 +1,12 @@
 import { ActionModule } from "../config/module";
 import { TKeyLogicContext } from "../config/shared-modules";
-import { ELogicResStatusCode } from "../reports/shared";
+import { LogicError, ELogicCodeError } from "../errors/logic-error";
+import { ReportHandler } from "../reports/_reportHandler";
+import {
+  ELogicResStatusCode,
+  IResponse,
+  TResponseForMutate,
+} from "../reports/shared";
 import { Util_Hook } from "./_util-hook";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipado refactorizado de la clase */

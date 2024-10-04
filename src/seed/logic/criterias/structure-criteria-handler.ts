@@ -93,6 +93,11 @@ export class StructureCriteriaHandler<TModel> extends CriteriaHandler {
   ): void {
     return super.resetPropByKey(key as any);
   }
+  public override getLiteral():
+    | IStructureReadCriteria<TModel>
+    | IStructureModifyCriteria<TModel> {
+    return super.getLiteral() as any;
+  }
   protected override checkQueryConds(conds: TAConds): void {
     const len = conds.length;
     //verificaciones solo cuando esta poblado
@@ -129,10 +134,5 @@ export class StructureCriteriaHandler<TModel> extends CriteriaHandler {
       }
     }
     return;
-  }
-  public override getCriteriaByContext():
-    | IStructureReadCriteria<TModel>
-    | IStructureModifyCriteria<TModel> {
-    return super.getCriteriaByContext() as any;
   }
 }

@@ -38,7 +38,7 @@ import { BagModule } from "./_bag";
 export interface IBagForActionModuleContext<
   TIDiccAC,
   TKey extends keyof TIDiccAC
-> extends Pick<BagModule, "data" | "responses" | "middlewareReportStatus"> {
+> extends Pick<BagModule, "data" | "responses"> {
   /**clave identificadora de la accion */
   keyAction: TKey;
   /**configuracion de la accion a ejecutar */
@@ -71,10 +71,7 @@ export type TFnBagForActionModule<
 export interface IPrimitiveBagForActionModuleContext<
   TIDiccAC,
   TKey extends keyof TIDiccAC
-> extends Pick<
-    PrimitiveBag<any>,
-    "data" | "responses" | "criteriaHandler" | "middlewareReportStatus"
-  > {
+> extends Pick<PrimitiveBag<any>, "data" | "responses" | "criteriaHandler"> {
   /**clave identificadora de la accion */
   keyAction: TKey;
   /**configuracion de la accion a ejecutar */
@@ -186,11 +183,7 @@ export interface IStructureBagForActionModuleContext<
   TKey extends keyof TIDiccAC
 > extends Pick<
     StructureBag<any>,
-    | "data"
-    | "keyPath"
-    | "responses"
-    | "criteriaHandler"
-    | "middlewareReportStatus"
+    "data" | "keyPath" | "responses" | "criteriaHandler"
   > {
   /**clave identificadora de la accion */
   keyAction: TKey;
