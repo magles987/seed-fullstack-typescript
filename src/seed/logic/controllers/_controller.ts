@@ -116,18 +116,6 @@ export abstract class LogicController extends LogicModuleWithReport {
     r = !(actionConfig === null);
     return r;
   }
-  /**... */
-  protected async runRequestForAction(
-    actionModuleInstContext: ActionModule<any>,
-    bag: BagModule,
-    keyAction: any
-  ): Promise<IResponse> {
-    const actionFn = actionModuleInstContext.getActionFnByKey(keyAction);
-    bag = actionModuleInstContext.preRunAction(bag, keyAction) as any;
-    let res = await actionFn(bag);
-    res = actionModuleInstContext.postRunAction(bag, res) as any;
-    return res;
-  }
   /**micro hook embebido que se ejecuta antes de ejecutar la accion
    *
    * @param bag
@@ -142,6 +130,40 @@ export abstract class LogicController extends LogicModuleWithReport {
    * @returns el objeto res (posiblemente mutado), el bag puede tambien mutarse
    */
   public abstract postRunAction(bag: unknown, res: unknown): unknown;
+  /**... */
+  protected async runRequestForAction(
+    actionModuleInstContext: ActionModule<any>,
+    bag: BagModule,
+    keyAction: any
+  ): Promise<IResponse> {
+    const res = (await LogicController.runRequestForAction(
+      actionModuleInstContext,
+      bag,
+      keyAction
+    )) as IResponse;
+    return res;
+  }
+  /**... */
+  public static async runRequestForAction(
+    actionModuleInstContext: ActionModule<any>,
+    bag: BagModule,
+    keyAction: any
+  ): Promise<IResponse> {
+    const actionFn = actionModuleInstContext.getActionFnByKey(keyAction);
+    let res: IResponse = undefined;
+    if (typeof actionFn !== "function") {
+      const rH = actionModuleInstContext.reportHandler as ReportHandler;
+      res = rH.mutateResponse(res, {
+        keyAction,
+        status: ELogicResStatusCode.ERROR,
+        msn: `${keyAction} is not action function valid`,
+      }) as IResponse;
+    }
+    bag = actionModuleInstContext.preRunAction(bag, keyAction) as any;
+    res = await actionFn(bag);
+    res = actionModuleInstContext.postRunAction(bag, res) as any;
+    return res;
+  }
   /**
    * @returns el estado de respuesta reducido
    * segun criterio de este modulo

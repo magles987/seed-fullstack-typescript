@@ -120,6 +120,16 @@ export class ModelTestCtrl
           __fieldType: "string",
         },
         __dfData: new ModelTest(),
+        __valConfig: {
+          modelVal: {
+            diccActionsConfig: {
+              isRequired: true,
+              isModel: {
+                modelForDiccAC: {},
+              },
+            },
+          },
+        },
         __providerConfig: {
           structureProvider: {
             diccActionsConfig: {
@@ -151,7 +161,12 @@ export class ModelTestCtrl
           modelCtrl: {
             diccATKeyCRUD: {
               readAll: [["structureProvider", "runProvider"]],
-              create: [["structureProvider", "runProvider"]],
+              create: [
+                ["modelVal", "isTypeOfModel"],
+                ["modelVal", "isRequired"],
+                ["modelVal", "isModel"],
+                ["structureProvider", "runProvider"],
+              ],
               update: [],
               delete: [],
 

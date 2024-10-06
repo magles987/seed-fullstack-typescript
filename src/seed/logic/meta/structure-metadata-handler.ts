@@ -1714,10 +1714,59 @@ export class StructureLogicMetadataHandler<
    * de configuracion **unicamente** de los campos
    * de acuerdo al contexto.
    */
+  public getExtractMetadataStructureOnlyField<
+    TIDiccEmbFieldMutateAC = TFieldMutateInstance["dfDiccActionConfig"],
+    TIDiccEmbFieldValAC = TFieldValInstance["dfDiccActionConfig"],
+    TEmbEmbModel = unknown
+  >(
+    keyStructureContext: "structureEmbedded",
+    keyModule: "controller",
+    keyPath: string
+  ): Record<
+    keyof TEmbEmbModel,
+    TStructureFieldMetaAndCtrl<
+      TIDiccEmbFieldMutateAC,
+      TIDiccEmbFieldValAC,
+      TEmbEmbModel
+    >
+  >;
   public getExtractMetadataStructureOnlyField<TEmbModel>(
     keyStructureContext: "structureEmbedded",
+    keyModule: "metadata",
     keyPath: string
   ): Record<keyof TEmbModel, TStructureFieldMeta<TEmbModel>>;
+  public getExtractMetadataStructureOnlyField<
+    TIDiccEmbFieldMutateAC = TFieldMutateInstance["dfDiccActionConfig"],
+    TIDiccEmbFieldValAC = TFieldValInstance["dfDiccActionConfig"],
+    TEmbEmbModel = unknown
+  >(
+    keyStructureContext: "structureEmbedded",
+    keyModule: "mutater",
+    keyPath: string
+  ): Record<
+    keyof TEmbEmbModel,
+    TStructureFieldMetaAndCtrl<
+      TIDiccEmbFieldMutateAC,
+      TIDiccEmbFieldValAC,
+      TEmbEmbModel
+    >
+  >;
+  public getExtractMetadataStructureOnlyField<
+    TIDiccEmbFieldMutateAC = TFieldMutateInstance["dfDiccActionConfig"],
+    TIDiccEmbFieldValAC = TFieldValInstance["dfDiccActionConfig"],
+    TEmbEmbModel = unknown
+  >(
+    keyStructureContext: "structureEmbedded",
+    keyModule: "validator",
+    keyPath: string
+  ): Record<
+    keyof TEmbEmbModel,
+    TStructureFieldMetaAndCtrl<
+      TIDiccEmbFieldMutateAC,
+      TIDiccEmbFieldValAC,
+      TEmbEmbModel
+    >
+  >;
   /**
    * @facade
    * obtener la estructura de configuracion solo
@@ -1732,13 +1781,45 @@ export class StructureLogicMetadataHandler<
    * de acuerdo al contexto.
    */
   public getExtractMetadataStructureOnlyField(
-    keyStructureContext: "structureModel"
+    keyStructureContext: "structureModel",
+    keyModule: "controller"
+  ): Record<
+    keyof TModel,
+    TStructureFieldMetaAndCtrl<
+      TFieldMutateInstance["dfDiccActionConfig"],
+      TFieldValInstance["dfDiccActionConfig"]
+    >
+  >;
+  public getExtractMetadataStructureOnlyField(
+    keyStructureContext: "structureModel",
+    keyModule: "metadata"
   ): Record<keyof TModel, TStructureFieldMeta<any>>;
+  public getExtractMetadataStructureOnlyField(
+    keyStructureContext: "structureModel",
+    keyModule: "mutater"
+  ): Record<
+    keyof TModel,
+    TStructureFieldMetaAndMutater<
+      TFieldMutateInstance["dfDiccActionConfig"],
+      TFieldValInstance["dfDiccActionConfig"]
+    >
+  >;
+  public getExtractMetadataStructureOnlyField(
+    keyStructureContext: "structureModel",
+    keyModule: "validator"
+  ): Record<
+    keyof TModel,
+    TStructureFieldMetaAndValidator<
+      TFieldMutateInstance["dfDiccActionConfig"],
+      TFieldValInstance["dfDiccActionConfig"]
+    >
+  >;
   public getExtractMetadataStructureOnlyField(
     keyStructureContext: Extract<
       TKeyStructureContextFull,
       "structureEmbedded" | "structureModel"
     >,
+    keyModule: TKeyModuleWithReport | Extract<TKeyHandlerModule, "metadata">, //❗Solo para tipar el retorno❗
     keyPath?: string
   ): unknown {
     if (

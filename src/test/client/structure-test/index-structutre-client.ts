@@ -5,7 +5,7 @@ import { ModelTest } from "./model-test";
 const modelTestCtrl = new ModelTestCtrl();
 const ctrl = modelTestCtrl;
 const data: ModelTest = {
-  _id: "1",
+  _id: "  1   ",
   _pathDoc: "/1/",
 };
 await LocalCookieRepository.emptyAllCookies();
