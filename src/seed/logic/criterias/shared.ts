@@ -167,6 +167,16 @@ export interface IPrimitiveReadCriteria
 export interface IPrimitiveModifyCriteria
   extends IPrimitiveCriteria,
     IModifyCriteria {}
+/**... */
+export type TPrimitiveBaseCriteria = Partial<
+  IPrimitiveReadCriteria & IPrimitiveModifyCriteria
+> &
+  Pick<IPrimitiveReadCriteria & IPrimitiveModifyCriteria, "type">;
+/**... */
+export type TPrimitiveBaseCriteriaForCtrlRead = Partial<IPrimitiveReadCriteria>;
+/**... */
+export type TPrimitiveBaseCriteriaForCtrlModify =
+  Partial<IPrimitiveModifyCriteria>;
 //====Strcuture====================================================================================================================
 /**esquema de proposito general con los contextos estructurales del modulo*/
 export interface IStructureCriteriaContext<
@@ -196,3 +206,15 @@ export interface IStructureReadCriteria<TModel>
 export interface IStructureModifyCriteria<TModel>
   extends IStructureCriteria,
     IModifyCriteria {}
+/**... */
+export type TStructureBaseCriteria<TModel> = Partial<
+  IStructureReadCriteria<TModel> & IStructureModifyCriteria<TModel>
+>;
+/**... */
+export type TStructureBaseCriteriaForCtrlRead<TModel> = Partial<
+  IStructureReadCriteria<TModel>
+>;
+/**... */
+export type TStructureBaseCriteriaForCtrlModify<TModel> = Partial<
+  IStructureModifyCriteria<TModel>
+>;

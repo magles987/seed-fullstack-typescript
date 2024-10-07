@@ -1,4 +1,3 @@
-import { IPrimitiveBag, IStructureBag } from "../../../bag-module/shared";
 import { TKeyLogicContext } from "../../../config/shared-modules";
 import { LogicService } from "../_service";
 import { IServiceRequestConfig } from "../shared";

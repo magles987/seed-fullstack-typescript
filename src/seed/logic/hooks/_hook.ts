@@ -1,3 +1,4 @@
+import { Trf_BagModule } from "../bag-module/_bag";
 import { ActionModule } from "../config/module";
 import { TKeyLogicContext } from "../config/shared-modules";
 import { LogicError, ELogicCodeError } from "../errors/logic-error";
@@ -34,6 +35,15 @@ export abstract class LogicHook<TIDiccAC> extends ActionModule<TIDiccAC> {
   }
   protected override getDefault() {
     return LogicHook.getDefault();
+  }
+  public override preRunAction(
+    bag: Trf_BagModule,
+    keyAction: keyof TIDiccAC
+  ): void {
+    return;
+  }
+  public override postRunAction(bag: Trf_BagModule, res: IResponse): void {
+    return;
   }
   /**
    * @returns el estado de respuesta reducido

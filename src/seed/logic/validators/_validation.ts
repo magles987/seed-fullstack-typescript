@@ -9,6 +9,7 @@ import {
   TResponseForMutate,
 } from "../reports/shared";
 import { ReportHandler } from "../reports/_reportHandler";
+import { Trf_BagModule } from "../bag-module/_bag";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**calves identificadoras del los
  * drivers (librerias) a usar
@@ -326,6 +327,15 @@ export abstract class LogicValidation<TIDiccAC> extends ActionModule<TIDiccAC> {
         return r;
       },
     };
+  }
+  public override preRunAction(
+    bag: Trf_BagModule,
+    keyAction: keyof TIDiccAC
+  ): void {
+    return;
+  }
+  public override postRunAction(bag: Trf_BagModule, res: IResponse): void {
+    return;
   }
   /**
    * @returns el estado de respuesta reducido

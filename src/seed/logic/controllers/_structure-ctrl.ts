@@ -24,11 +24,7 @@ import { FieldLogicValidation } from "../validators/field-validation";
 import { ModelLogicValidation } from "../validators/model-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import {
-  EKeyActionGroupForRes,
-  IStructureResponse,
-  TStructureResponseForFromExtModule,
-} from "../reports/shared";
+import { EKeyActionGroupForRes, IStructureResponse } from "../reports/shared";
 import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
 import { ActionModule, IBuildACOption } from "../config/module";
 import { IStructureBuilderBaseMetadata } from "../meta/metadata-builder-shared";
@@ -49,7 +45,11 @@ import {
   TStructureFieldMetaAndCtrl,
   TStructureMetaAndCtrl,
 } from "../meta/metadata-shared";
-
+import { TKeyRequestType } from "../config/shared-modules";
+import {
+  TStructureBaseCriteriaForCtrlModify,
+  TStructureBaseCriteriaForCtrlRead,
+} from "../criterias/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TKeyStructureReadRequestController =
   | TKeyReadRequestController
@@ -131,12 +131,6 @@ export abstract class StructureLogicController<
   ) {
     super.metadataHandler = metadataHandler;
   }
-  public override get reportHandler(): StructureReportHandler {
-    return super.reportHandler as any;
-  }
-  public override set reportHandler(reportHandler: StructureReportHandler) {
-    super.reportHandler = reportHandler;
-  }
   public override get keyModuleContext(): TKeyStructureCtrlModuleContext {
     return "structureCtrl"; //❗especial❗, no hay contexto field o model ya que solo hereda modelos
   }
@@ -200,7 +194,6 @@ export abstract class StructureLogicController<
       customBase,
       customDiccModuleInstance as any
     );
-    this.reportHandler = new StructureReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return StructureLogicController.getDefault();
@@ -326,19 +319,40 @@ export abstract class StructureLogicController<
     const diccATKeyCRUD = config.modelCtrl.diccATKeyCRUD;
     return diccATKeyCRUD;
   }
-  public override preRunAction(
+  public override buildCriteriaHandler(
+    requestType: "read",
+    base?: TStructureBaseCriteriaForCtrlRead<TModel>
+  ): StructureCriteriaHandler<TModel>;
+  public override buildCriteriaHandler(
+    requestType: "modify",
+    base?: TStructureBaseCriteriaForCtrlModify<TModel>
+  ): StructureCriteriaHandler<TModel>;
+  public override buildCriteriaHandler(
+    requestType: TKeyRequestType, //❗Solo para tipar❗
+    base?:
+      | TStructureBaseCriteriaForCtrlRead<TModel>
+      | TStructureBaseCriteriaForCtrlModify<TModel>
+  ): StructureCriteriaHandler<TModel> {
+    let cH = new StructureCriteriaHandler(this.keySrc, {
+      ...base,
+      type: requestType,
+      keySrc: this.keySrc,
+    });
+    cH.metadataHandler = this.metadataHandler;
+    return cH;
+  }
+  public override buildReportHandler(
     bag: Trf_StructureBag,
-    keyAction: string
-  ): Trf_StructureBag {
-    const rH = this.reportHandler;
+    keyAction: unknown
+  ): StructureReportHandler {
     const { data, criteriaHandler, keyPath, firstData } = bag;
     const { type, modifyType, keyActionRequest } = criteriaHandler;
-    rH.startResponse({
+    let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
-      keyRepModuleContext: this.keyModuleContext as any, //⚠Posible error de tipado⚠
+      keyRepModuleContext: this.keyModuleContext as any,
       keyRepLogicContext: this.keyLogicContext,
       keyActionRequest: keyActionRequest,
-      keyAction,
+      keyAction: keyAction as any,
       keyTypeRequest: type,
       keyModifyTypeRequest: modifyType,
       keyPath,
@@ -349,13 +363,21 @@ export abstract class StructureLogicController<
       fisrtCtrlData: firstData,
       data,
     });
-    return bag;
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_StructureBag,
+    keyAction: unknown
+  ): void {
+    super.preRunAction(bag, keyAction) as any;
+    return;
   }
   public override postRunAction(
     bag: Trf_StructureBag,
     res: IStructureResponse
-  ): IStructureResponse {
-    return res;
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   /**costruye un literal bag controller en contexto de campo */
   public buildBagCtrl(
@@ -404,9 +426,7 @@ export abstract class StructureLogicController<
     if (!this.util.isObject(bBC)) {
       rBagCtrl = {
         ...dfBC,
-        criteriaHandler: new StructureCriteriaHandler(this.keySrc, {
-          type: "read",
-        }),
+        criteriaHandler: this.buildCriteriaHandler("read"),
         keyPath: this.metadataHandler.keyModelPath,
       };
     } else {
@@ -418,7 +438,7 @@ export abstract class StructureLogicController<
             : bBC.keyPath, //❗❗debe ser proporcionado❗❗
         criteriaHandler: this.util.isInstance(bBC.criteriaHandler)
           ? bBC.criteriaHandler
-          : new StructureCriteriaHandler(this.keySrc, { type: "read" }),
+          : this.buildCriteriaHandler("read"),
         diccGlobalAC: this.util.isObject(bBC.diccGlobalAC)
           ? {
               ...bBC.diccGlobalAC,
@@ -444,8 +464,6 @@ export abstract class StructureLogicController<
           : dfBC.diccGlobalAC,
       };
     }
-    //asignar el manejador de metadatos:
-    rBagCtrl.criteriaHandler.metadataHandler = this.metadataHandler;
     return rBagCtrl as any;
   }
   protected buildBag(
@@ -647,8 +665,8 @@ export abstract class StructureLogicController<
         msn: `${keyBagCtrlContext} is not key bag controller context valid`,
       });
     }
-    bag = this.preRunAction(bag, keyCtrlAction) as any;
-    const rH = this.reportHandler;
+    this.preRunAction(bag, keyCtrlAction) as any;
+    const rH = this.buildReportHandler(bag, keyCtrlAction);
     let res = rH.mutateResponse(undefined, { data: bag.data });
     for (const tGAC of bag.aTupleGlobalActionConfig) {
       const { keyModule, keyModuleContext, keyAction } =
@@ -675,7 +693,7 @@ export abstract class StructureLogicController<
       }
     }
     res = rH.mutateResponse(res, { data: bag.data });
-    res = this.postRunAction(bag, res);
+    this.postRunAction(bag, res);
     return res;
   }
   protected override async runRequestForAction(

@@ -149,8 +149,6 @@ export abstract class LogicModuleWithReport extends LogicModule {
   }
   /**instancia de manejador de metadatos de este recurso */
   private _metadataHandler: unknown;
-  /**instance de manejador de reporte de respuestas */
-  private _reportHandler: unknown;
   /**
    * @param keyModule clave identificadora del modulo
    * @param keyLogicContext contexto logico (primitivo o estructurado).
@@ -184,18 +182,14 @@ export abstract class LogicModuleWithReport extends LogicModule {
       return; //❗garantiza solo 1 vez inicializar❗
     this._metadataHandler = metadataHandler;
   }
-  /**instancia del manejador de reportes de respuestas para este modulo */
-  public get reportHandler(): unknown {
-    return this._reportHandler;
-  }
-  /**instancia del manejador de reportes de respuestas para este modulo */
-  public set reportHandler(reportHandler: unknown) {
-    const util = Util_Module.getInstance();
-    if (!util.isInstance(reportHandler) || util.isInstance(this._reportHandler))
-      return; //❗garantiza solo 1 vez inicializar❗
-    this._reportHandler = reportHandler;
-    return;
-  }
+  /**construye un reporte de manejador de respuesta para este modulo
+   *
+   * @param bag instancia bag de la peticion actual
+   * @param keyAction clave indentificadora de la accion
+   *
+   * @returns instancia del reporte de manejador de respuesta
+   */
+  public abstract buildReportHandler(bag: unknown, keyAction: unknown): unknown;
 }
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *abstract*
@@ -1015,12 +1009,12 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
    * @param keyAction
    * @returns el objeto bag (posiblemente mutado)
    */
-  public abstract preRunAction(bag: unknown, keyAction: string): unknown;
+  public abstract preRunAction(bag: unknown, keyAction: unknown): void;
   /**micro hook embebido que se ejecuta despues de ejecutar la accion
    *
    * @param bag
    * @param res
    * @returns el objeto res (posiblemente mutado), el bag puede tambien mutarse
    */
-  public abstract postRunAction(bag: unknown, res: unknown): unknown;
+  public abstract postRunAction(bag: unknown, res: unknown): void;
 }

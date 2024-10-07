@@ -8,6 +8,7 @@ import {
   TAConds,
   TKeyCriteriaType,
   TKeyStructureCriteriaModuleContext,
+  TStructureBaseCriteria,
 } from "./shared";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -70,13 +71,7 @@ export class StructureCriteriaHandler<TModel> extends CriteriaHandler {
    */
   constructor(
     keySrc: string,
-    base: Partial<
-      IStructureReadCriteria<TModel> & IStructureModifyCriteria<TModel>
-    > &
-      Pick<
-        IStructureReadCriteria<TModel> & IStructureModifyCriteria<TModel>,
-        "type"
-      > = { type: "read" },
+    base: TStructureBaseCriteria<TModel> = { type: "read" },
     isInit = true
   ) {
     super("structure", keySrc, base, false);

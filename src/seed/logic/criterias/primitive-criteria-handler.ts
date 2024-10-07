@@ -7,6 +7,7 @@ import {
   ISingleCondition,
   TAConds,
   TKeyPrimitiveCriteriaModuleContext,
+  TPrimitiveBaseCriteria,
 } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfconstructor*
@@ -49,8 +50,7 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
   /**... */
   constructor(
     keySrc: string,
-    base: Partial<IPrimitiveReadCriteria & IPrimitiveModifyCriteria> &
-      Pick<IPrimitiveReadCriteria & IPrimitiveModifyCriteria, "type"> = {
+    base: TPrimitiveBaseCriteria = {
       type: "read",
     },
     isInit = true

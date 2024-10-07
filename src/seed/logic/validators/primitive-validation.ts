@@ -329,7 +329,6 @@ export class PrimitiveLogicValidation<
    */
   constructor(keySrc: string) {
     super("primitive", keySrc);
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return PrimitiveLogicValidation.getDefault();
@@ -340,13 +339,6 @@ export class PrimitiveLogicValidation<
   }
   public override set metadataHandler(mH: Trf_PrimitiveLogicMetadataHandler) {
     super.metadataHandler = mH;
-  }
-  public override get reportHandler(): Trf_PrimitiveReportHandler {
-    const rH = super.reportHandler as Trf_PrimitiveReportHandler;
-    return rH;
-  }
-  public override set reportHandler(rH: Trf_PrimitiveReportHandler) {
-    super.reportHandler = rH;
   }
   public override get keyModuleContext(): TKeyPrimitiveValModuleContext {
     return "primitiveVal";
@@ -427,19 +419,18 @@ export class PrimitiveLogicValidation<
     };
     return bagFC;
   }
-  public override preRunAction(
+  public override buildReportHandler(
     bag: Trf_PrimitiveBag,
-    keyAction: string
-  ): Trf_PrimitiveBag {
-    const rH = this.reportHandler;
+    keyAction: keyof TIDiccAC
+  ): PrimitiveReportHandler {
     const { data, criteriaHandler, firstData } = bag;
     const { type, modifyType, keyActionRequest } = criteriaHandler;
-    rH.startResponse({
+    let rH = new PrimitiveReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
       keyRepLogicContext: this.keyLogicContext,
       keyActionRequest: keyActionRequest,
-      keyAction,
+      keyAction: keyAction as any,
       keyTypeRequest: type,
       keyModifyTypeRequest: modifyType,
       keyLogic: this.keySrc,
@@ -449,13 +440,21 @@ export class PrimitiveLogicValidation<
       fisrtCtrlData: firstData,
       data,
     });
-    return bag;
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag,
+    keyAction: keyof TIDiccAC
+  ): void {
+    super.preRunAction(bag, keyAction as any) as any;
+    return;
   }
   public override postRunAction(
     bag: Trf_PrimitiveBag,
     res: IPrimitiveResponse
-  ): IPrimitiveResponse {
-    return res;
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   protected checkEmptyData(
     data: any,
@@ -482,9 +481,9 @@ export class PrimitiveLogicValidation<
     return isEmpty;
   }
   protected checkEmptyDataWithRes(
+    reportHandler: PrimitiveReportHandler,
     bag: PrimitiveBag<any>,
-    data: any,
-    res: IPrimitiveResponse
+    data: any
   ): IPrimitiveResponse {
     const tGlobalAC = bag.findTupleGlobalActionConfig([
       this.keyModule as any,
@@ -496,9 +495,10 @@ export class PrimitiveLogicValidation<
       ? tIsRequired[1] //la configuracion de la accion sin envoltura
       : undefined;
     const isEmpty = this.checkEmptyData(data, isRequired as any);
+    let res: IPrimitiveResponse = undefined;
     //comprobacion de vacio
     if (isEmpty) {
-      const rH = this.reportHandler;
+      const rH = reportHandler;
       if (isRequired === undefined) {
         res = rH.mutateResponse(res, {
           status: ELogicResStatusCode.WARNING_DATA,
@@ -519,7 +519,7 @@ export class PrimitiveLogicValidation<
       bag,
       "isTypeOf"
     );
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     const { isArray, type } = actionConfig;
     //❗❗❗isTypeof no necesita saber si es dato vacio o no❗❗❗
@@ -567,7 +567,7 @@ export class PrimitiveLogicValidation<
       bag,
       "isRequired"
     );
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     //❗se verifica el vacion sin res❗
     const isEmptyData = this.checkEmptyData(
@@ -593,12 +593,12 @@ export class PrimitiveLogicValidation<
       bag,
       "isAnonimusObject"
     );
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     let { anonimuSchemaForATupleAC, isAllowedExtraProp } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(bag, data, res);
+    res = this.checkEmptyDataWithRes(rH, bag, data);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
     if (!this.util.isObject(anonimuSchemaForATupleAC)) {
@@ -662,12 +662,12 @@ export class PrimitiveLogicValidation<
       bag,
       "isAnonimusArray"
     );
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     let { aTupleAC } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(bag, data, res);
+    res = this.checkEmptyDataWithRes(rH, bag, data);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
     if (!this.util.isArray(data, true)) {

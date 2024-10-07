@@ -11,11 +11,7 @@ import { PrimitiveLogicMutater } from "../mutaters/primitive-mutater";
 import { PrimitiveLogicValidation } from "../validators/primitive-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
 import { PrimitiveLogicHook } from "../hooks/primitive-hook";
-import {
-  EKeyActionGroupForRes,
-  IPrimitiveResponse,
-  TPrimitiveResponseForFromExtModule,
-} from "../reports/shared";
+import { EKeyActionGroupForRes, IPrimitiveResponse } from "../reports/shared";
 import {
   PrimitiveLogicMetadataHandler,
   Trf_PrimitiveLogicMetadataHandler,
@@ -35,6 +31,11 @@ import {
   Trf_IPrimitiveBagForCtrlContext,
 } from "../bag-module/shared-for-external-module";
 import { TPrimitiveMetaAndCtrl } from "../meta/metadata-shared";
+import { TKeyRequestType } from "../config/shared-modules";
+import {
+  TPrimitiveBaseCriteriaForCtrlModify,
+  TPrimitiveBaseCriteriaForCtrlRead,
+} from "../criterias/shared";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TKeyPrimitiveReadRequestController = TKeyReadRequestController;
@@ -102,12 +103,6 @@ export abstract class PrimitiveLogicController<
   ) {
     super.metadataHandler = metadataHandler;
   }
-  public override get reportHandler(): PrimitiveReportHandler {
-    return super.reportHandler as any;
-  }
-  public override set reportHandler(reportHandler: PrimitiveReportHandler) {
-    super.reportHandler = reportHandler;
-  }
   public override get keyModuleContext(): TKeyPrimitiveCtrlModuleContext {
     return "primitiveCtrl" as TKeyPrimitiveCtrlModuleContext;
   }
@@ -160,7 +155,6 @@ export abstract class PrimitiveLogicController<
       customBase,
       customDiccModuleInstance as any
     );
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return PrimitiveLogicController.getDefault();
@@ -204,19 +198,40 @@ export abstract class PrimitiveLogicController<
     const diccATKeyCRUD = config.primitiveCtrl.diccATKeyCRUD;
     return diccATKeyCRUD;
   }
-  public override preRunAction(
+  public override buildCriteriaHandler(
+    requestType: "read",
+    base?: TPrimitiveBaseCriteriaForCtrlRead
+  ): PrimitiveCriteriaHandler<TValue>;
+  public override buildCriteriaHandler(
+    requestType: "modify",
+    base?: TPrimitiveBaseCriteriaForCtrlModify
+  ): PrimitiveCriteriaHandler<TValue>;
+  public override buildCriteriaHandler(
+    requestType: TKeyRequestType, //❗Solo para tipar❗
+    base?:
+      | TPrimitiveBaseCriteriaForCtrlRead
+      | TPrimitiveBaseCriteriaForCtrlModify
+  ): PrimitiveCriteriaHandler<TValue> {
+    let cH = new PrimitiveCriteriaHandler(this.keySrc, {
+      ...base,
+      type: requestType,
+      keySrc: this.keySrc,
+    });
+    cH.metadataHandler = this.metadataHandler;
+    return cH;
+  }
+  public override buildReportHandler(
     bag: Trf_PrimitiveBag,
-    keyAction: string
-  ): Trf_PrimitiveBag {
-    const rH = this.reportHandler;
+    keyAction: unknown
+  ): PrimitiveReportHandler {
     const { data, criteriaHandler, firstData } = bag;
     const { type, modifyType, keyActionRequest } = criteriaHandler;
-    rH.startResponse({
+    let rH = new PrimitiveReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
       keyRepLogicContext: this.keyLogicContext,
       keyActionRequest: keyActionRequest,
-      keyAction,
+      keyAction: keyAction as any,
       keyTypeRequest: type,
       keyModifyTypeRequest: modifyType,
       keyLogic: this.keySrc,
@@ -226,13 +241,21 @@ export abstract class PrimitiveLogicController<
       fisrtCtrlData: firstData,
       data,
     });
-    return bag;
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag,
+    keyAction: unknown
+  ): void {
+    super.preRunAction(bag, keyAction as any) as any;
+    return;
   }
   public override postRunAction(
     bag: Trf_PrimitiveBag,
     res: IPrimitiveResponse
-  ): IPrimitiveResponse {
-    return res;
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   public buildBagCtrl(
     baseBagCtrl: Partial<
@@ -266,16 +289,14 @@ export abstract class PrimitiveLogicController<
     if (!this.util.isObject(bBC)) {
       rBagCtrl = {
         ...dfBC,
-        criteriaHandler: new PrimitiveCriteriaHandler(this.keySrc, {
-          type: "read",
-        }),
+        criteriaHandler: this.buildCriteriaHandler("read"),
       };
     } else {
       rBagCtrl = {
         data: bBC.data,
         criteriaHandler: this.util.isInstance(bBC.criteriaHandler)
           ? bBC.criteriaHandler
-          : new PrimitiveCriteriaHandler(this.keySrc, { type: "read" }),
+          : this.buildCriteriaHandler("read"),
         diccGlobalAC: this.util.isObject(bBC.diccGlobalAC)
           ? {
               ...bBC.diccGlobalAC,
@@ -297,8 +318,6 @@ export abstract class PrimitiveLogicController<
           : dfBC.diccGlobalAC,
       };
     }
-    //asignar el manejador de metadatos:
-    rBagCtrl.criteriaHandler.metadataHandler = this.metadataHandler;
     return rBagCtrl as any;
   }
   protected buildBag(
@@ -443,8 +462,8 @@ export abstract class PrimitiveLogicController<
     } = this.metadataHandler.diccModuleIntanceContext;
     let keyCtrlAction: EKeyActionGroupForRes =
       EKeyActionGroupForRes.ctrlPrimitive;
-    bag = this.preRunAction(bag, keyCtrlAction) as any;
-    const rH = this.reportHandler;
+    this.preRunAction(bag, keyCtrlAction) as any;
+    const rH = this.buildReportHandler(bag, keyCtrlAction);
     let res = rH.mutateResponse(undefined, { data: bag.data });
     for (const tGAC of bag.aTupleGlobalActionConfig) {
       const { keyModule, keyModuleContext, keyAction } =
@@ -468,7 +487,7 @@ export abstract class PrimitiveLogicController<
       }
     }
     res = rH.mutateResponse(res, { data: bag.data });
-    res = this.postRunAction(bag, res);
+    this.postRunAction(bag, res);
     return res;
   }
   protected async runRequestForAction(

@@ -100,12 +100,6 @@ export class StructureLogicProvider<
   public override set metadataHandler(mH: Trf_StructureLogicMetadataHandler) {
     super.metadataHandler = mH;
   }
-  public override get reportHandler(): Trf_StructureReportHandler {
-    return super.reportHandler as any;
-  }
-  public override set reportHandler(rH: Trf_StructureReportHandler) {
-    super.reportHandler = rH;
-  }
   public override get keyModuleContext(): TKeyStructureProviderModuleContext {
     return "structureProvider";
   }
@@ -114,7 +108,6 @@ export class StructureLogicProvider<
    */
   constructor(keySrc: string) {
     super("structure", keySrc);
-    this.reportHandler = new StructureReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return StructureLogicProvider.getDefault();
@@ -209,19 +202,18 @@ export class StructureLogicProvider<
     };
     return bagFC;
   }
-  public override preRunAction(
+  public override buildReportHandler(
     bag: Trf_StructureBag,
-    keyAction: string
-  ): Trf_StructureBag {
-    const rH = this.reportHandler;
+    keyAction: keyof TIDiccAC
+  ): StructureReportHandler {
     const { data, criteriaHandler, keyPath, firstData } = bag;
     const { type, modifyType, keyActionRequest } = criteriaHandler;
-    rH.startResponse({
+    let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
       keyRepLogicContext: this.keyLogicContext,
       keyActionRequest: keyActionRequest,
-      keyAction,
+      keyAction: keyAction as any,
       keyTypeRequest: type,
       keyModifyTypeRequest: modifyType,
       keyPath,
@@ -232,15 +224,21 @@ export class StructureLogicProvider<
       fisrtCtrlData: firstData,
       data,
     });
-    return bag;
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_StructureBag,
+    keyAction: keyof TIDiccAC
+  ): void {
+    super.preRunAction(bag, keyAction) as any;
+    return;
   }
   public override postRunAction(
     bag: Trf_StructureBag,
     res: IStructureResponse
-  ): IStructureResponse {
-    //mutacion de data
-    bag.data = res.data;
-    return res;
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   //================================================================
   public async runProvider(
@@ -249,7 +247,7 @@ export class StructureLogicProvider<
     const { data, keyAction, keyPath, actionConfig, responses } =
       this.adapBagForContext(bag, "runProvider");
     let { customServiceFactoryFn, serviceConfig, serviceToRun } = actionConfig;
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     let { keyService, customDeepServiceConfig } = serviceToRun;
     const serviceInstance = customServiceFactoryFn(

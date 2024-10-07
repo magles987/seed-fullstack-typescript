@@ -208,7 +208,7 @@ export class FieldLogicMutater<
     //Desempaquetar la accion e inicializar
     const { data, keyAction, keyPath, actionConfig, responses } =
       this.adapBagForContext(bag, "anyTrim");
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     //const {} = actionConfig;
     if (

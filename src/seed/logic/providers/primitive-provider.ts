@@ -100,12 +100,6 @@ export class PrimitiveLogicProvider<
   public override set metadataHandler(mH: Trf_PrimitiveLogicMetadataHandler) {
     super.metadataHandler = mH;
   }
-  public override get reportHandler(): Trf_PrimitiveReportHandler {
-    return super.reportHandler as any;
-  }
-  public override set reportHandler(rH: Trf_PrimitiveReportHandler) {
-    super.reportHandler = rH;
-  }
   public override get keyModuleContext(): TKeyPrimitiveProviderModuleContext {
     return "primitiveProvider";
   }
@@ -114,7 +108,6 @@ export class PrimitiveLogicProvider<
    */
   constructor(keySrc: string) {
     super("structure", keySrc);
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return PrimitiveLogicProvider.getDefault();
@@ -199,19 +192,18 @@ export class PrimitiveLogicProvider<
     };
     return bagFC;
   }
-  public override preRunAction(
+  public override buildReportHandler(
     bag: Trf_PrimitiveBag,
-    keyAction: string
-  ): Trf_PrimitiveBag {
-    const rH = this.reportHandler;
+    keyAction: keyof TIDiccAC
+  ): PrimitiveReportHandler {
     const { data, criteriaHandler, firstData } = bag;
     const { type, modifyType, keyActionRequest } = criteriaHandler;
-    rH.startResponse({
+    let rH = new PrimitiveReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
       keyRepLogicContext: this.keyLogicContext,
       keyActionRequest: keyActionRequest,
-      keyAction,
+      keyAction: keyAction as any,
       keyTypeRequest: type,
       keyModifyTypeRequest: modifyType,
       keyLogic: this.keySrc,
@@ -221,15 +213,21 @@ export class PrimitiveLogicProvider<
       fisrtCtrlData: firstData,
       data,
     });
-    return bag;
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag,
+    keyAction: keyof TIDiccAC
+  ): void {
+    super.preRunAction(bag, keyAction as any) as any;
+    return;
   }
   public override postRunAction(
     bag: Trf_PrimitiveBag,
     res: IPrimitiveResponse
-  ): IPrimitiveResponse {
-    //mutar data
-    bag.data = res.data;
-    return res;
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   //================================================================
   public async runProvider(
@@ -240,7 +238,7 @@ export class PrimitiveLogicProvider<
       "runProvider"
     );
     let { customServiceFactoryFn, serviceConfig, serviceToRun } = actionConfig;
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     let { keyService, customDeepServiceConfig } = serviceToRun;
     const serviceInstance = customServiceFactoryFn(

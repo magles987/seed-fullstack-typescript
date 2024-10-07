@@ -9,10 +9,7 @@ import {
   IStructureBagForActionModuleContext,
   TStructureFnBagForActionModule,
 } from "../bag-module/shared-for-external-module";
-import {
-  IStructureResponse,
-  TStructureResponseForFromExtModule,
-} from "../reports/shared";
+import { IStructureResponse } from "../reports/shared";
 import {
   StructureReportHandler,
   Trf_StructureReportHandler,
@@ -67,13 +64,6 @@ export class StructureLogicHook<
   public override set metadataHandler(mH: Trf_StructureLogicMetadataHandler) {
     super.metadataHandler = mH;
   }
-  public override get reportHandler(): Trf_StructureReportHandler {
-    const rH = super.reportHandler as Trf_StructureReportHandler;
-    return rH;
-  }
-  public override set reportHandler(rH: Trf_StructureReportHandler) {
-    super.reportHandler = rH;
-  }
   public override get keyModuleContext(): TKeyStructureHookModuleContext {
     return "structureHook";
   }
@@ -82,7 +72,6 @@ export class StructureLogicHook<
    */
   constructor(keySrc: string) {
     super("structure", keySrc);
-    this.reportHandler = new StructureReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return StructureLogicHook.getDefault();
@@ -175,19 +164,18 @@ export class StructureLogicHook<
     };
     return bagFC;
   }
-  public override preRunAction(
+  public override buildReportHandler(
     bag: Trf_StructureBag,
-    keyAction: string
-  ): Trf_StructureBag {
-    const rH = this.reportHandler;
+    keyAction: keyof TIDiccAC
+  ): StructureReportHandler {
     const { data, criteriaHandler, keyPath, firstData } = bag;
     const { type, modifyType, keyActionRequest } = criteriaHandler;
-    rH.startResponse({
+    let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
       keyRepLogicContext: this.keyLogicContext,
       keyActionRequest: keyActionRequest,
-      keyAction,
+      keyAction: keyAction as any,
       keyTypeRequest: type,
       keyModifyTypeRequest: modifyType,
       keyPath,
@@ -198,13 +186,21 @@ export class StructureLogicHook<
       fisrtCtrlData: firstData,
       data,
     });
-    return bag;
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_StructureBag,
+    keyAction: keyof TIDiccAC
+  ): void {
+    super.preRunAction(bag, keyAction) as any;
+    return;
   }
   public override postRunAction(
     bag: Trf_StructureBag,
     res: IStructureResponse
-  ): IStructureResponse {
-    return res;
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   //================================================================
   public async read(bag: StructureBag<any>): Promise<IStructureResponse> {

@@ -8,24 +8,24 @@ const data: ModelTest = {
   _id: "  1   ",
   _pathDoc: "/1/",
 };
+let cH = ctrl.buildCriteriaHandler("modify", {
+  isCreateOrUpdate: false,
+  modifyType: "create",
+  keyActionRequest: "create",
+});
 await LocalCookieRepository.emptyAllCookies();
 let r = await ctrl.runGenericModelRequest("create", {
   data: data,
-  criteriaHandler: new StructureCriteriaHandler(ctrl.metadataHandler.keySrc, {
-    type: "modify",
-    isCreateOrUpdate: false,
-    modifyType: "create",
-    keyActionRequest: "create",
-  }),
+  criteriaHandler: cH,
   diccGlobalAC: {},
   keyPath: ctrl.metadataHandler.keyModelPath,
 });
+cH = ctrl.buildCriteriaHandler("read", {
+  keyActionRequest: "readAll",
+});
 r = await ctrl.runGenericModelRequest("readAll", {
   data: data,
-  criteriaHandler: new StructureCriteriaHandler(ctrl.metadataHandler.keySrc, {
-    type: "read",
-    keyActionRequest: "readAll",
-  }),
+  criteriaHandler: cH,
   diccGlobalAC: {},
   keyPath: ctrl.metadataHandler.keyModelPath,
 });

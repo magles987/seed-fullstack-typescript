@@ -14,6 +14,7 @@ import {
 } from "../reports/shared";
 import { StructureBag } from "../bag-module/structure-bag";
 import { TGenericTupleActionConfig } from "../config/shared-modules";
+import { StructureReportHandler } from "../reports/structure-report-handler";
 //████tipos e interfaces████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipo exclusivo para adicionar una configuracion
  * a la accion isRequired */
@@ -359,9 +360,9 @@ export class FieldLogicValidation<
     return isEmpty;
   }
   protected override checkEmptyDataWithRes(
+    reportHandler: StructureReportHandler,
     bag: StructureBag<any>,
-    data: any,
-    res: IStructureResponse
+    data: any
   ): IStructureResponse {
     const tGlobalAC = bag.findTupleGlobalActionConfig([
       this.keyModule as any,
@@ -373,9 +374,10 @@ export class FieldLogicValidation<
       ? tIsRequired[1] //la configuracion de la accion sin envoltura
       : undefined;
     const isEmpty = this.checkEmptyData(data, isRequired as any);
+    const rH = reportHandler;
+    let res = rH.mutateResponse(undefined);
     //comprobacion de vacio
     if (isEmpty) {
-      const rH = this.reportHandler;
       if (isRequired === undefined) {
         res = rH.mutateResponse(res, {
           status: ELogicResStatusCode.WARNING_DATA,
@@ -394,7 +396,7 @@ export class FieldLogicValidation<
     //Desempaquetar la accion e inicializar
     const { data, keyAction, keyPath, actionConfig, responses } =
       this.adapBagForContext(bag, "isTypeOf");
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     const { isArray, fieldType } = actionConfig;
     //❗❗❗isTypeof no necesita saber si es dato vacio o no❗❗❗
@@ -438,8 +440,11 @@ export class FieldLogicValidation<
   }
   public async isRequired(bag: StructureBag<any>): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, actionConfig } = this.adapBagForContext(bag, "isRequired");
-    const rH = this.reportHandler;
+    const { data, keyAction, actionConfig } = this.adapBagForContext(
+      bag,
+      "isRequired"
+    );
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     //❗se verifica el vacion sin res❗
     const isEmptyData = this.checkEmptyData(
@@ -712,12 +717,12 @@ export class FieldLogicValidation<
     //Desempaquetar la accion e inicializar
     const { data, keyAction, keyPath, actionConfig, responses } =
       this.adapBagForContext(bag, "isAnonimusObject");
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     let { anonimuSchemaForATupleAC, isAllowedExtraProp } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(bag, data, res);
+    res = this.checkEmptyDataWithRes(rH, bag, data);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
     if (!this.util.isObject(anonimuSchemaForATupleAC)) {
@@ -782,12 +787,12 @@ export class FieldLogicValidation<
     //Desempaquetar la accion e inicializar
     const { data, keyAction, keyPath, actionConfig, responses } =
       this.adapBagForContext(bag, "isAnonimusArray");
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     let { aTupleAC } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(bag, data, res);
+    res = this.checkEmptyDataWithRes(rH, bag, data);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
     if (!this.util.isArray(data, true)) {

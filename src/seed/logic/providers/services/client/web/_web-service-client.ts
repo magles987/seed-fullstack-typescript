@@ -1,4 +1,3 @@
-import { IPrimitiveBag, IStructureBag } from "../../../../bag-module/shared";
 import { TKeyLogicContext } from "../../../../config/shared-modules";
 import { TExpectedDataType } from "../../../../criterias/shared";
 import { ELogicResStatusCode } from "../../../../reports/shared";

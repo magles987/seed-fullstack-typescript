@@ -194,12 +194,6 @@ export class PrimitiveLogicMutater<
   public override set metadataHandler(mH: Trf_PrimitiveLogicMetadataHandler) {
     super.metadataHandler = mH;
   }
-  public override get reportHandler(): Trf_PrimitiveReportHandler {
-    return super.reportHandler as any;
-  }
-  public override set reportHandler(rH: Trf_PrimitiveReportHandler) {
-    super.reportHandler = rH;
-  }
   public override get keyModuleContext(): TKeyPrimitiveMutateModuleContext {
     return "primitiveMutate";
   }
@@ -208,7 +202,6 @@ export class PrimitiveLogicMutater<
    */
   constructor(keySrc: string) {
     super("primitive", keySrc);
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return PrimitiveLogicMutater.getDefault();
@@ -254,6 +247,29 @@ export class PrimitiveLogicMutater<
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
+  public override buildReportHandler(
+    bag: Trf_PrimitiveBag,
+    keyAction: keyof TIDiccAC
+  ): PrimitiveReportHandler {
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    let rH = new PrimitiveReportHandler(this.keySrc, {
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction: keyAction as any,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyLogic: this.keySrc,
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return rH;
+  }
   protected override adapBagForContext<TKey extends keyof TIDiccAC>(
     bag: PrimitiveBag<any>,
     keyAction: TKey
@@ -288,35 +304,17 @@ export class PrimitiveLogicMutater<
   }
   public override preRunAction(
     bag: Trf_PrimitiveBag,
-    keyAction: string
-  ): Trf_PrimitiveBag {
-    const rH = this.reportHandler;
-    const { data, criteriaHandler, firstData } = bag;
-    const { type, modifyType, keyActionRequest } = criteriaHandler;
-    rH.startResponse({
-      keyRepModule: this.keyModule as any,
-      keyRepModuleContext: this.keyModuleContext,
-      keyRepLogicContext: this.keyLogicContext,
-      keyActionRequest: keyActionRequest,
-      keyAction,
-      keyTypeRequest: type,
-      keyModifyTypeRequest: modifyType,
-      keyLogic: this.keySrc,
-      keyRepSrc: this.keySrc,
-      status: this.globalStatus,
-      tolerance: this.globalTolerance,
-      fisrtCtrlData: firstData,
-      data,
-    });
-    return bag;
+    keyAction: keyof TIDiccAC
+  ): void {
+    super.preRunAction(bag, keyAction as any) as any;
+    return;
   }
   public override postRunAction(
     bag: Trf_PrimitiveBag,
     res: IPrimitiveResponse
-  ): IPrimitiveResponse {
-    //mutar data
-    bag.data = res.data;
-    return res;
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   //================================================================================================================================
   public async anyTrim(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
@@ -325,7 +323,7 @@ export class PrimitiveLogicMutater<
       bag,
       "anyTrim"
     );
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     const {} = actionConfig;
 

@@ -41,12 +41,6 @@ export abstract class StructureLogicValidation<
   public override set metadataHandler(mH: Trf_StructureLogicMetadataHandler) {
     super.metadataHandler = mH;
   }
-  public override get reportHandler(): Trf_StructureReportHandler {
-    return super.reportHandler as any;
-  }
-  public override set reportHandler(rH: Trf_StructureReportHandler) {
-    super.reportHandler = rH;
-  }
   public override get keyModuleContext(): Trf_StructureLogicValidation["_keyStructureModuleContext"] {
     return this._keyStructureModuleContext;
   }
@@ -62,7 +56,6 @@ export abstract class StructureLogicValidation<
     keySrc: string
   ) {
     super("structure", keySrc);
-    this.reportHandler = new StructureReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return StructureLogicValidation.getDefault();
@@ -196,19 +189,18 @@ export abstract class StructureLogicValidation<
     };
     return bagFC;
   }
-  public override preRunAction(
+  public override buildReportHandler(
     bag: Trf_StructureBag,
-    keyAction: string
-  ): Trf_StructureBag {
-    const rH = this.reportHandler;
+    keyAction: keyof TIDiccAC
+  ): StructureReportHandler {
     const { data, criteriaHandler, keyPath, firstData } = bag;
     const { type, modifyType, keyActionRequest } = criteriaHandler;
-    rH.startResponse({
+    let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
       keyRepLogicContext: this.keyLogicContext,
       keyActionRequest: keyActionRequest,
-      keyAction,
+      keyAction: keyAction as any,
       keyTypeRequest: type,
       keyModifyTypeRequest: modifyType,
       keyPath,
@@ -219,13 +211,21 @@ export abstract class StructureLogicValidation<
       fisrtCtrlData: firstData,
       data,
     });
-    return bag;
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_StructureBag,
+    keyAction: keyof TIDiccAC
+  ): void {
+    super.preRunAction(bag, keyAction) as any;
+    return;
   }
   public override postRunAction(
     bag: Trf_StructureBag,
     res: IStructureResponse
-  ): IStructureResponse {
-    return res;
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   /**... */
   protected abstract checkEmptyData(
@@ -243,8 +243,8 @@ export abstract class StructureLogicValidation<
    * (actual, ejecutados y por ejecutarse).
    */
   protected abstract checkEmptyDataWithRes(
+    reportHandler: StructureReportHandler,
     bag: StructureBag<any>,
-    data: any,
-    res: IStructureResponse
+    data: any
   ): IStructureResponse;
 }

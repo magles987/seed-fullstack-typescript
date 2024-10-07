@@ -64,13 +64,6 @@ export class PrimitiveLogicHook<
   public override set metadataHandler(mH: Trf_PrimitiveLogicMetadataHandler) {
     super.metadataHandler = mH;
   }
-  public override get reportHandler(): Trf_PrimitiveReportHandler {
-    const rH = super.reportHandler as Trf_PrimitiveReportHandler;
-    return rH;
-  }
-  public override set reportHandler(rH: Trf_PrimitiveReportHandler) {
-    super.reportHandler = rH;
-  }
   public override get keyModuleContext(): TKeyPrimitiveHookModuleContext {
     return "primitiveHook";
   }
@@ -80,7 +73,6 @@ export class PrimitiveLogicHook<
    */
   constructor(keySrc: string) {
     super("primitive", keySrc);
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {});
   }
   protected override getDefault() {
     return PrimitiveLogicHook.getDefault();
@@ -162,19 +154,18 @@ export class PrimitiveLogicHook<
     };
     return bagFC;
   }
-  public override preRunAction(
+  public override buildReportHandler(
     bag: Trf_PrimitiveBag,
-    keyAction: string
-  ): Trf_PrimitiveBag {
-    const rH = this.reportHandler;
+    keyAction: keyof TIDiccAC
+  ): PrimitiveReportHandler {
     const { data, criteriaHandler, firstData } = bag;
     const { type, modifyType, keyActionRequest } = criteriaHandler;
-    rH.startResponse({
+    let rH = new PrimitiveReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
       keyRepLogicContext: this.keyLogicContext,
       keyActionRequest: keyActionRequest,
-      keyAction,
+      keyAction: keyAction as any,
       keyTypeRequest: type,
       keyModifyTypeRequest: modifyType,
       keyLogic: this.keySrc,
@@ -184,13 +175,21 @@ export class PrimitiveLogicHook<
       fisrtCtrlData: firstData,
       data,
     });
-    return bag;
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag,
+    keyAction: keyof TIDiccAC
+  ): void {
+    super.preRunAction(bag, keyAction as any) as any;
+    return;
   }
   public override postRunAction(
     bag: Trf_PrimitiveBag,
     res: IPrimitiveResponse
-  ): IPrimitiveResponse {
-    return res;
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   //================================================================
   public async read(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {

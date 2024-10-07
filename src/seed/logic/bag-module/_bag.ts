@@ -324,7 +324,7 @@ export abstract class BagModule extends HandlerModule {
         msn: `${actionModule} is not instance of action module valid`,
       });
     }
-    if (!util.isTuple(aTupleAC, 2)) {
+    if (!util.isArrayTuple(aTupleAC, 2, true)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
         msn: `${aTupleAC} is not array of tuple of action config valid`,

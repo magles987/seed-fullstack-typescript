@@ -21,6 +21,8 @@ import {
 } from "./field-validation";
 import { TGenericTupleActionConfig } from "../config/shared-modules";
 import { LogicController } from "../controllers/_controller";
+import { StructureReportHandler } from "../reports/structure-report-handler";
+import { IBuildACOption } from "../config/module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipo exclusivo para adicionar una configuracion
  * a la accion isRequired */
@@ -172,9 +174,9 @@ export class ModelLogicValidation<
    *
    */
   protected override checkEmptyDataWithRes(
+    reportHandler: StructureReportHandler,
     bag: StructureBag<any>,
-    data: object,
-    res: IStructureResponse
+    data: object
   ): IStructureResponse {
     const tGlobalAC = bag.findTupleGlobalActionConfig([
       this.keyModule as any,
@@ -186,9 +188,10 @@ export class ModelLogicValidation<
       ? tIsRequired[1] //la configuracion de la accion sin envoltura
       : undefined;
     const isEmpty = this.checkEmptyData(data, isRequired as any);
+    const rH = reportHandler;
+    let res = rH.mutateResponse(undefined);
     //comprobacion de vacio
     if (isEmpty) {
-      const rH = this.reportHandler;
       if (isRequired === undefined) {
         res = rH.mutateResponse(res, {
           status: ELogicResStatusCode.WARNING_DATA,
@@ -208,7 +211,7 @@ export class ModelLogicValidation<
   ): Promise<IStructureResponse> {
     const { data, keyAction, keyPath, actionConfig, responses } =
       this.adapBagForContext(bag, "isTypeOfModel");
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     let zodCursor: TZodSchemaForClose = this.zod
       .optional(this.zod.object({}))
@@ -225,7 +228,7 @@ export class ModelLogicValidation<
     //Desempaquetar la accion e inicializar
     const { data, keyAction, keyPath, actionConfig, responses } =
       this.adapBagForContext(bag, "isRequired");
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     //❗se verifica el vacion sin res❗
     const isEmptyData = this.checkEmptyData(
@@ -246,118 +249,63 @@ export class ModelLogicValidation<
   public async isModel(bag: StructureBag<any>): Promise<IStructureResponse> {
     const { data, keyAction, keyPath, actionConfig, responses } =
       this.adapBagForContext(bag, "isModel");
-    const rH = this.reportHandler;
+    const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     let { modelForDiccAC } = actionConfig;
-    if (!this.util.isObject(modelForDiccAC, true)) {
-      //❗Necesario permitir vacios❗
-      res = rH.mutateResponse(res, {
-        status: ELogicResStatusCode.ERROR,
-        msn: `${modelForDiccAC} is not schema of array of tuples of action config configure valid`,
-      });
-      return res;
-    }
-    /*----------------------------------------------------------------*/
-    /*----------------------------------------------------------------*/
-    /*---- <INICIO CONSTRUCCION> -------------------------------------*/
-    /*
-        const promForField = Object.entries(modelForATupleAC).map(
-          async ([keyField, aTupleAC]) => {
-            const subData = data[keyField];
-            const subKeyPath = this.util.buildProgresiveKeyPath(keyPath, keyField);
-            let resForField = rH.mutateResponse(undefined, {
-              data: subData,
-              keyAction: EKeyActionGroupForRes.fields,
-              keyPath: subKeyPath,
-            });
-            if (this.util.isArrayTuple(aTupleAC, [1, 2], true)) {
-              aTupleAC = this.buildContainerActionsConfig(
-                "toTupleActionConfig",
-                aTupleAC as Array<[any, any]>,
-                { keyPath } // la ruta identificadora de modelo
-              ) as Array<[any, any]>;
-              const subBag = new StructureBag(this.keySrc, "fieldBag", {
-                //❗el contexto es campo fieldBag❗
-                data: subData,
-                keyPath: subKeyPath,
-                aTupleGlobalActionConfig:
-                  bag.buildATupleModuleContextActionConfigFromATupleAC(
-                    this,
-                    aTupleAC as any[],
-                    { keyPath: resForField.keyPath }
-                  ),
-                criteriaHandler: bag.criteriaHandler,
-              });
-              let resesForAction: IStructureResponse[] = [];
-              for (const tupleAC of aTupleAC) {
-                const keyAction = tupleAC[0];
-                let aFn = this.getActionFnByKey(keyAction as any);
-                const resForAction = await aFn(subBag);
-                resesForAction.push(resForAction);
-                if (resForAction.status >= res.tolerance) break;
-              }
-              resForField = rH.mutateResponse(resForField, {
-                //❕Deberia ser fieldVal y no this pero el metodo es protegido❕
-                responses: resesForAction,
-              });
-            } else {
-              //respuesta fachada
-              resForField = rH.mutateResponse(resForField, {
-                status: ELogicResStatusCode.ERROR,
-              });
-            }
-            return resForField;
-          }
-        );
-    */
+    //===============================================
+    //❗Obligatorio verificar que se pueda validar el dato❗
+    res = this.checkEmptyDataWithRes(rH, bag, data);
+    if (res.status > ELogicResStatusCode.VALID_DATA) return res;
+    //===============================================
+    modelForDiccAC = this.util.isObject(modelForDiccAC) ? modelForDiccAC : {};
     const mH = this.metadataHandler;
     const modelMetadata =
       mH.getExtractMetadataByStructureContext("structureModel");
     const keysField = modelMetadata.__keysProp;
     const promForField = keysField.map(async (keyField) => {
       const fieldMetadata = modelMetadata[keyField];
-      const subData = data[keyField];
-      const subKeyPath = fieldMetadata.__keyPath;
-      const fieldDiccAC = this.util.mergeDiccActionConfig(
-        [
-          fieldMetadata.__valConfig.fieldVal.diccActionsConfig,
-          modelForDiccAC[keyField as any],
-        ],
-        {
-          mode: "soft",
-        }
-      );
-      const sub_vH = mH.diccModuleIntanceContext
+      const fieldData = data[keyField];
+      const fieldKeyPath = fieldMetadata.__keyPath;
+      const fieldVal = mH.diccModuleIntanceContext
         .fieldVal as FieldLogicValidation;
       const sub_aTupleAC = fieldMetadata.__ctrlConfig.fieldCtrl.aTKeysForReq
+        //filtra solo los del contexto de este modulo
         .filter((tkeyForReq) => {
-          const [KeyInternal, keyAction] = tkeyForReq;
-          return KeyInternal === "fieldVal";
+          const [keyModuleContext, keyAction] = tkeyForReq;
+          return keyModuleContext === "fieldVal";
         })
         .map((tkeyForReq) => {
-          const [KeyInternal, keyAction] = tkeyForReq;
-          const tAC = [keyAction, fieldDiccAC[keyAction as any]] as [any, any];
+          const [keyModuleContext, keyAction] = tkeyForReq;
+          const tAC = fieldVal.buildSingleActionConfig(
+            "toTupleActionConfig",
+            keyAction as any,
+            modelForDiccAC[keyAction as any],
+            { keyPath: fieldKeyPath, mergeMode: "soft" }
+          );
           return tAC;
         });
       const sub_aTupleGlobalAC =
         bag.buildATupleModuleContextActionConfigFromATupleAC(
-          sub_vH,
+          fieldVal,
           sub_aTupleAC,
-          { keyPath: subKeyPath }
+          { keyPath: fieldKeyPath }
         );
       const subBag = new StructureBag(this.keySrc, "fieldBag", {
         //❗el contexto es campo fieldBag❗
-        data: subData,
-        keyPath: subKeyPath,
+        data: fieldData,
+        keyPath: fieldKeyPath,
         aTupleGlobalActionConfig: sub_aTupleGlobalAC,
         criteriaHandler: bag.criteriaHandler,
       });
-      const sub_rH = sub_vH.reportHandler;
-      let resForField = sub_rH.mutateResponse(undefined, { data: subData });
+      const sub_rH = fieldVal.buildReportHandler(
+        subBag,
+        EKeyActionGroupForRes.fields as any
+      );
+      let resForField = sub_rH.mutateResponse(undefined, { data: fieldData });
       for (const tuplaAC of sub_aTupleAC) {
         const [sub_keyAction, actionConfig] = tuplaAC;
         const resForFieldForAction = (await LogicController.runRequestForAction(
-          sub_vH,
+          fieldVal,
           subBag,
           sub_keyAction
         )) as IStructureResponse;
@@ -366,9 +314,6 @@ export class ModelLogicValidation<
       resForField = sub_rH.mutateResponse(resForField);
       return resForField;
     });
-    /*---- <FIN CONSTRUCCION> ----------------------------------------*/
-    /*----------------------------------------------------------------*/
-    /*----------------------------------------------------------------*/
     const resesForField = await Promise.all(promForField);
     res = rH.mutateResponse(res, {
       responses: resesForField,

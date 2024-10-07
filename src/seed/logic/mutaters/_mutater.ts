@@ -7,7 +7,7 @@ import {
   IResponse,
   TResponseForMutate,
 } from "../reports/shared";
-import { BagModule } from "../bag-module/_bag";
+import { BagModule, Trf_BagModule } from "../bag-module/_bag";
 import { ReportHandler } from "../reports/_reportHandler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**calves identificadoras del los
@@ -82,6 +82,15 @@ export abstract class LogicMutater<TIDiccAC> extends ActionModule<TIDiccAC> {
         return r;
       },
     };
+  }
+  public override preRunAction(
+    bag: Trf_BagModule,
+    keyAction: keyof TIDiccAC
+  ): void {
+    return;
+  }
+  public override postRunAction(bag: Trf_BagModule, res: IResponse): void {
+    return;
   }
   /**
    * @returns el estado de respuesta reducido
