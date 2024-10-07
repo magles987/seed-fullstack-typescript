@@ -252,6 +252,21 @@ export abstract class CriteriaHandler
     this[key as any] = df[key];
     return;
   }
+  /**... */
+  public mutateProps(
+    base: Partial<
+      Omit<
+        ReturnType<CriteriaHandler["getDefault"]>,
+        "keyLogicContext" | "keySrc" | "p_Key" | "s_Key"
+      >
+    >
+  ): void {
+    base = typeof base === "object" && base !== null ? base : ({} as any);
+    for (const key in base) {
+      this[key] = base[key];
+    }
+    return;
+  }
   /**@returns un objeto literal con las propiedades base */
   public getLiteral(): IReadCriteria | IModifyCriteria {
     let literal = {};

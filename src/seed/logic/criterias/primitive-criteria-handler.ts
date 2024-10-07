@@ -69,6 +69,17 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
   ): void {
     return super.resetPropByKey(key as any);
   }
+  public override mutateProps(
+    base: Partial<
+      Omit<
+        ReturnType<PrimitiveCriteriaHandler<TValue>["getDefault"]>,
+        "keyLogicContext" | "keySrc" | "keysPath" | "p_Key" | "s_Key"
+      >
+    >
+  ): void {
+    super.mutateProps(base);
+    return;
+  }
   public override getLiteral():
     | IPrimitiveReadCriteria
     | IPrimitiveModifyCriteria {

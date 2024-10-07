@@ -503,7 +503,6 @@ export abstract class PrimitiveLogicController<
     return res;
   }
   //████ Acciones de peticion ████████████████████████████████████████████████████████████
-
   /**... */
   public async runGenericPrimitiveRequest(
     keyActionRequest: TKeyDiccCtrlCRUD,
@@ -533,18 +532,7 @@ export abstract class PrimitiveLogicController<
     let bag = this.buildBag(bagCtrl, aTGlobalAC as any);
     return await this.runRequest(bag);
   }
-
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*---- <INICIO CONSTRUCCION> -------------------------------------*/
-  public async read(
+  public async readAll(
     bagCtrl: IPrimitiveBagForCtrlContext<
       TValue,
       TPrimitiveCriteriaInstance,
@@ -555,12 +543,69 @@ export abstract class PrimitiveLogicController<
       TPrimitiveProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IPrimitiveResponse> {
-    const aTGlobalAC = this.buildATupleForRequestCtrlFromBagCtrl(bagCtrl, [
-      ["primitiveVal", "isRequired"],
-    ]);
-    const bag = this.buildBag(bagCtrl, aTGlobalAC as any);
-
-    return;
+    const keyActionRequest: TKeyPrimitiveReadRequestController = "readAll";
+    //criterios obligatorios para esta accion de peticion
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "read",
+      keyActionRequest,
+      query: [], //se leen todos (no hay condicion de filtrador)
+      expectedDataType: "array",
+    });
+    const res = await this.runGenericPrimitiveRequest(
+      keyActionRequest as any,
+      bagCtrl
+    );
+    return res;
+  }
+  public async readMany(
+    bagCtrl: IPrimitiveBagForCtrlContext<
+      TValue,
+      TPrimitiveCriteriaInstance,
+      TPrimitiveMutateInstance["dfDiccActionConfig"],
+      TPrimitiveValInstance["dfDiccActionConfig"],
+      TRequestValInstance["dfDiccActionConfig"],
+      TPrimitiveHookInstance["dfDiccActionConfig"],
+      TPrimitiveProviderInstance["dfDiccActionConfig"]
+    >
+  ): Promise<IPrimitiveResponse> {
+    const keyActionRequest: TKeyPrimitiveReadRequestController = "readMany";
+    //criterios obligatorios para esta accion de peticion
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "read",
+      keyActionRequest,
+      expectedDataType: "array",
+    });
+    const res = await this.runGenericPrimitiveRequest(
+      keyActionRequest as any,
+      bagCtrl
+    );
+    return res;
+  }
+  public async readOne(
+    bagCtrl: IPrimitiveBagForCtrlContext<
+      TValue,
+      TPrimitiveCriteriaInstance,
+      TPrimitiveMutateInstance["dfDiccActionConfig"],
+      TPrimitiveValInstance["dfDiccActionConfig"],
+      TRequestValInstance["dfDiccActionConfig"],
+      TPrimitiveHookInstance["dfDiccActionConfig"],
+      TPrimitiveProviderInstance["dfDiccActionConfig"]
+    >
+  ): Promise<IPrimitiveResponse> {
+    const keyActionRequest: TKeyPrimitiveReadRequestController = "readMany";
+    //criterios obligatorios para esta accion de peticion
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "read",
+      keyActionRequest,
+      expectedDataType: "single", //se espera solo un primitivo (puede ser un objeto literal anonimo)
+      limit: 1,
+      sort: undefined,
+    });
+    const res = await this.runGenericPrimitiveRequest(
+      keyActionRequest as any,
+      bagCtrl
+    );
+    return res;
   }
   public async create(
     bagCtrl: IPrimitiveBagForCtrlContext<
@@ -573,7 +618,19 @@ export abstract class PrimitiveLogicController<
       TPrimitiveProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IPrimitiveResponse> {
-    return;
+    const keyActionRequest: TKeyPrimitiveModifyRequestController = "create";
+    //criterios obligatorios para esta accion de peticion
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "modify",
+      modifyType: "create",
+      keyActionRequest,
+      expectedDataType: "single", //se espera solo un primitivo (puede ser un objeto literal anonimo)
+    });
+    const res = await this.runGenericPrimitiveRequest(
+      keyActionRequest as any,
+      bagCtrl
+    );
+    return res;
   }
   public async update(
     bagCtrl: IPrimitiveBagForCtrlContext<
@@ -586,7 +643,19 @@ export abstract class PrimitiveLogicController<
       TPrimitiveProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IPrimitiveResponse> {
-    return;
+    const keyActionRequest: TKeyPrimitiveModifyRequestController = "update";
+    //criterios obligatorios para esta accion de peticion
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "modify",
+      modifyType: "update",
+      keyActionRequest,
+      expectedDataType: "single", //se espera solo un primitivo (puede ser un objeto literal anonimo)
+    });
+    const res = await this.runGenericPrimitiveRequest(
+      keyActionRequest as any,
+      bagCtrl
+    );
+    return res;
   }
   public async delete(
     bagCtrl: IPrimitiveBagForCtrlContext<
@@ -599,16 +668,18 @@ export abstract class PrimitiveLogicController<
       TPrimitiveProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IPrimitiveResponse> {
-    return;
+    const keyActionRequest: TKeyPrimitiveModifyRequestController = "delete";
+    //criterios obligatorios para esta accion de peticion
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "modify",
+      modifyType: "delete",
+      keyActionRequest,
+      expectedDataType: "single", //se espera solo un primitivo (puede ser un objeto literal anonimo)
+    });
+    const res = await this.runGenericPrimitiveRequest(
+      keyActionRequest as any,
+      bagCtrl
+    );
+    return res;
   }
-  /*---- <FIN CONSTRUCCION> ----------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
 }

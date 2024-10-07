@@ -88,6 +88,17 @@ export class StructureCriteriaHandler<TModel> extends CriteriaHandler {
   ): void {
     return super.resetPropByKey(key as any);
   }
+  public override mutateProps(
+    base: Partial<
+      Omit<
+        ReturnType<StructureCriteriaHandler<TModel>["getDefault"]>,
+        "keyLogicContext" | "keySrc" | "keysPath" | "p_Key" | "s_Key"
+      >
+    >
+  ): void {
+    super.mutateProps(base);
+    return;
+  }
   public override getLiteral():
     | IStructureReadCriteria<TModel>
     | IStructureModifyCriteria<TModel> {

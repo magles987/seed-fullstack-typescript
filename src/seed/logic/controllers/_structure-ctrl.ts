@@ -47,9 +47,11 @@ import {
 } from "../meta/metadata-shared";
 import { TKeyRequestType } from "../config/shared-modules";
 import {
+  ELogicOperatorForCondition,
   TStructureBaseCriteriaForCtrlModify,
   TStructureBaseCriteriaForCtrlRead,
 } from "../criterias/shared";
+import { Model } from "../models/_model";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TKeyStructureReadRequestController =
   | TKeyReadRequestController
@@ -709,7 +711,6 @@ export abstract class StructureLogicController<
     return res;
   }
   //████ Acciones de peticion ████████████████████████████████████████████████████████████
-
   /**... */
   public async runGenericFieldRequest(
     bagCtrl: IStructureBagForFieldCtrlContext<
@@ -760,19 +761,7 @@ export abstract class StructureLogicController<
     const r = await this.runRequest("modelCtrl", bag);
     return r;
   }
-
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*---- <INICIO CONSTRUCCION> -------------------------------------*/
-
-  public async read(
+  public async readAll(
     bagCtrl: IStructureBagForModelCtrlContext<
       TModel,
       TStructureCriteriaInstance,
@@ -783,14 +772,98 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    const aTGlobalAC = this.buildATupleForRequestCtrlFromBagCtrl(
-      "modelCtrl",
-      bagCtrl,
-      [["modelVal", "isModel"]]
+    const keyActionRequest: TKeyStructureReadRequestController = "readAll";
+    //criterios obligatorios para esta accion de peticion
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "read",
+      keyActionRequest,
+      query: [], //se leen todos (no hay condicion de filtrador)
+      expectedDataType: "array",
+    });
+    const res = await this.runGenericModelRequest(
+      keyActionRequest as any,
+      bagCtrl
     );
-    const bag = this.buildBag("modelBag", bagCtrl, aTGlobalAC as any);
-
-    return;
+    return res;
+  }
+  public async readMany(
+    bagCtrl: IStructureBagForModelCtrlContext<
+      TModel,
+      TStructureCriteriaInstance,
+      TModelMutateInstance["dfDiccActionConfig"],
+      TModelValInstance["dfDiccActionConfig"],
+      TRequestValInstance["dfDiccActionConfig"],
+      TStructureHookInstance["dfDiccActionConfig"],
+      TStructureProviderInstance["dfDiccActionConfig"]
+    >
+  ): Promise<IStructureResponse> {
+    const keyActionRequest: TKeyStructureReadRequestController = "readMany";
+    //criterios obligatorios para esta accion de peticion
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "read",
+      keyActionRequest,
+      expectedDataType: "array",
+    });
+    const res = await this.runGenericModelRequest(
+      keyActionRequest as any,
+      bagCtrl
+    );
+    return res;
+  }
+  public async readOne(
+    bagCtrl: IStructureBagForModelCtrlContext<
+      TModel,
+      TStructureCriteriaInstance,
+      TModelMutateInstance["dfDiccActionConfig"],
+      TModelValInstance["dfDiccActionConfig"],
+      TRequestValInstance["dfDiccActionConfig"],
+      TStructureHookInstance["dfDiccActionConfig"],
+      TStructureProviderInstance["dfDiccActionConfig"]
+    >
+  ): Promise<IStructureResponse> {
+    const keyActionRequest: TKeyStructureReadRequestController = "readMany";
+    //criterios obligatorios para esta accion de peticion
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "read",
+      keyActionRequest,
+      expectedDataType: "object", //se espera solo un literal (modelo)
+      limit: 1,
+      sort: [],
+    });
+    const res = await this.runGenericModelRequest(
+      keyActionRequest as any,
+      bagCtrl
+    );
+    return res;
+  }
+  public async readById(
+    bagCtrl: IStructureBagForModelCtrlContext<
+      TModel,
+      TStructureCriteriaInstance,
+      TModelMutateInstance["dfDiccActionConfig"],
+      TModelValInstance["dfDiccActionConfig"],
+      TRequestValInstance["dfDiccActionConfig"],
+      TStructureHookInstance["dfDiccActionConfig"],
+      TStructureProviderInstance["dfDiccActionConfig"]
+    >
+  ): Promise<IStructureResponse> {
+    const keyActionRequest: TKeyStructureReadRequestController = "readMany";
+    //criterios obligatorios para esta accion de peticion
+    const key_id = "_id" as keyof Model;
+    const find_id = bagCtrl.data[key_id];
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "read",
+      keyActionRequest,
+      expectedDataType: "object", //se espera solo un literal (modelo)
+      limit: 1,
+      sort: [],
+      query: [{ op: ELogicOperatorForCondition.eq, vCond: find_id }],
+    });
+    const res = await this.runGenericModelRequest(
+      keyActionRequest as any,
+      bagCtrl
+    );
+    return res;
   }
   public async create(
     bagCtrl: IStructureBagForModelCtrlContext<
@@ -803,7 +876,19 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    return;
+    const keyActionRequest: TKeyStructureModifyRequestController = "create";
+    //criterios obligatorios para esta accion de peticion
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "modify",
+      modifyType: "create",
+      keyActionRequest,
+      expectedDataType: "object",
+    });
+    const res = await this.runGenericModelRequest(
+      keyActionRequest as any,
+      bagCtrl
+    );
+    return res;
   }
   public async update(
     bagCtrl: IStructureBagForModelCtrlContext<
@@ -816,7 +901,19 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    return;
+    const keyActionRequest: TKeyStructureModifyRequestController = "update";
+    //criterios obligatorios para esta accion de peticion
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "modify",
+      modifyType: "update",
+      keyActionRequest,
+      expectedDataType: "object",
+    });
+    const res = await this.runGenericModelRequest(
+      keyActionRequest as any,
+      bagCtrl
+    );
+    return res;
   }
   public async delete(
     bagCtrl: IStructureBagForModelCtrlContext<
@@ -829,56 +926,57 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    return;
+    const keyActionRequest: TKeyStructureModifyRequestController = "delete";
+    //criterios obligatorios para esta accion de peticion
+    bagCtrl.criteriaHandler.mutateProps({
+      type: "modify",
+      modifyType: "delete",
+      keyActionRequest,
+      expectedDataType: "object",
+    });
+    const res = await this.runGenericModelRequest(
+      keyActionRequest as any,
+      bagCtrl
+    );
+    return res;
   }
-  public async createMany(
-    bagCtrl: IStructureBagForModelCtrlContext<
-      TModel,
-      TStructureCriteriaInstance,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"]
-    >
-  ): Promise<IStructureResponse> {
-    return;
-  }
-  public async updateMany(
-    bagCtrl: IStructureBagForModelCtrlContext<
-      TModel,
-      TStructureCriteriaInstance,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"]
-    >
-  ): Promise<IStructureResponse> {
-    return;
-  }
-  public async deleteMany(
-    bagCtrl: IStructureBagForModelCtrlContext<
-      TModel,
-      TStructureCriteriaInstance,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"]
-    >
-  ): Promise<IStructureResponse> {
-    return;
-  }
-
-  /*---- <FIN CONSTRUCCION> ----------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
-  /*----------------------------------------------------------------*/
+  // public async createMany(
+  //   bagCtrl: IStructureBagForModelCtrlContext<
+  //     TModel,
+  //     TStructureCriteriaInstance,
+  //     TModelMutateInstance["dfDiccActionConfig"],
+  //     TModelValInstance["dfDiccActionConfig"],
+  //     TRequestValInstance["dfDiccActionConfig"],
+  //     TStructureHookInstance["dfDiccActionConfig"],
+  //     TStructureProviderInstance["dfDiccActionConfig"]
+  //   >
+  // ): Promise<IStructureResponse> {
+  //   return;
+  // }
+  // public async updateMany(
+  //   bagCtrl: IStructureBagForModelCtrlContext<
+  //     TModel,
+  //     TStructureCriteriaInstance,
+  //     TModelMutateInstance["dfDiccActionConfig"],
+  //     TModelValInstance["dfDiccActionConfig"],
+  //     TRequestValInstance["dfDiccActionConfig"],
+  //     TStructureHookInstance["dfDiccActionConfig"],
+  //     TStructureProviderInstance["dfDiccActionConfig"]
+  //   >
+  // ): Promise<IStructureResponse> {
+  //   return;
+  // }
+  // public async deleteMany(
+  //   bagCtrl: IStructureBagForModelCtrlContext<
+  //     TModel,
+  //     TStructureCriteriaInstance,
+  //     TModelMutateInstance["dfDiccActionConfig"],
+  //     TModelValInstance["dfDiccActionConfig"],
+  //     TRequestValInstance["dfDiccActionConfig"],
+  //     TStructureHookInstance["dfDiccActionConfig"],
+  //     TStructureProviderInstance["dfDiccActionConfig"]
+  //   >
+  // ): Promise<IStructureResponse> {
+  //   return;
+  // }
 }
