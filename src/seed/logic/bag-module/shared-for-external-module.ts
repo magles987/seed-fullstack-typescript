@@ -288,20 +288,23 @@ export interface IStructureBagForCtrlContext<
 }
 /**refactorizacion de la interfaz */
 export type Trf_IStructureBagForCtrlContext = IStructureBagForCtrlContext<any>;
-/**estructura de bag adaptada (extracto y adaptacion) pare un
- * bag esclusivo para el controller en contexto campo*/
+/**estructura de bag adaptada (extracto y adaptacion) para un
+ * bag exclusivo para el controller en contexto campo*/
 export interface IStructureBagForFieldCtrlContext<
   TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
   TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
-> extends IStructureBagForCtrlContext<
-    any,
-    any,
-    TIDiccFieldMutateAC,
-    any,
-    TIDiccFieldValAC,
-    any,
-    any,
-    any
+> extends Omit<
+    IStructureBagForCtrlContext<
+      any,
+      any,
+      TIDiccFieldMutateAC,
+      any,
+      TIDiccFieldValAC,
+      any,
+      any,
+      any
+    >,
+    "criteriaHandler"
   > {
   diccGlobalAC: Partial<
     Pick<
@@ -322,6 +325,7 @@ export interface IStructureBagForFieldCtrlContext<
             //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
             | Record<keyof TIDiccFieldValAC, null>
           >,
+          any,
           any
         >,
         "fieldVal"

@@ -45,32 +45,31 @@ export type Trf_PrimitiveLogicController = PrimitiveLogicController<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export abstract class PrimitiveLogicController<
-    TValue,
-    TPrimitiveCriteriaInstance extends PrimitiveCriteriaHandler<TValue> = PrimitiveCriteriaHandler<TValue>,
-    TPrimitiveMutateInstance extends PrimitiveLogicMutater = PrimitiveLogicMutater,
-    TPrimitiveValInstance extends PrimitiveLogicValidation = PrimitiveLogicValidation,
-    TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
-    TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook,
-    TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider,
-    TKeyDiccCtrlCRUD extends string = string
-  >
+  TValue,
+  TPrimitiveCriteriaInstance extends PrimitiveCriteriaHandler<TValue> = PrimitiveCriteriaHandler<TValue>,
+  TPrimitiveMutateInstance extends PrimitiveLogicMutater = PrimitiveLogicMutater,
+  TPrimitiveValInstance extends PrimitiveLogicValidation = PrimitiveLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
+  TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook,
+  TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider,
+  TKeyDiccCtrlCRUD extends TKeyPrimitiveReadRequestController | TKeyPrimitiveModifyRequestController = TKeyPrimitiveReadRequestController | TKeyPrimitiveModifyRequestController
+>
   extends LogicController
   implements
-    Record<
-      TKeyPrimitiveReadRequestController | TKeyPrimitiveModifyRequestController,
-      TPrimitiveFnBagForCtrl<
-        IPrimitiveBagForCtrlContext<
-          TValue,
-          TPrimitiveCriteriaInstance,
-          TPrimitiveMutateInstance["dfDiccActionConfig"],
-          TPrimitiveValInstance["dfDiccActionConfig"],
-          TRequestValInstance["dfDiccActionConfig"],
-          TPrimitiveHookInstance["dfDiccActionConfig"],
-          TPrimitiveProviderInstance["dfDiccActionConfig"]
-        >
+  Record<
+    TKeyPrimitiveReadRequestController | TKeyPrimitiveModifyRequestController,
+    TPrimitiveFnBagForCtrl<
+      IPrimitiveBagForCtrlContext<
+        TValue,
+        TPrimitiveCriteriaInstance,
+        TPrimitiveMutateInstance["dfDiccActionConfig"],
+        TPrimitiveValInstance["dfDiccActionConfig"],
+        TRequestValInstance["dfDiccActionConfig"],
+        TPrimitiveHookInstance["dfDiccActionConfig"],
+        TPrimitiveProviderInstance["dfDiccActionConfig"]
       >
     >
-{
+  > {
   public static override getDefault = () => {
     const superDf = LogicController.getDefault();
     return {
@@ -175,10 +174,10 @@ export abstract class PrimitiveLogicController<
   }
   protected getMetadataOnlyModuleConfig(): TPrimitiveConfigForCtrl<
     TPrimitiveMutateInstance["dfDiccActionConfig"] &
-      TPrimitiveValInstance["dfDiccActionConfig"] &
-      TRequestValInstance["dfDiccActionConfig"] &
-      TPrimitiveHookInstance["dfDiccActionConfig"] &
-      TPrimitiveProviderInstance["dfDiccActionConfig"],
+    TPrimitiveValInstance["dfDiccActionConfig"] &
+    TRequestValInstance["dfDiccActionConfig"] &
+    TPrimitiveHookInstance["dfDiccActionConfig"] &
+    TPrimitiveProviderInstance["dfDiccActionConfig"],
     TKeyDiccCtrlCRUD
   > {
     const metadata = this.getMetadataWithContextModule();
@@ -188,10 +187,10 @@ export abstract class PrimitiveLogicController<
   }
   protected getDiccATKeyCRUD(): TPrimitiveCtrlModuleConfigForPrimitive<
     TPrimitiveMutateInstance["dfDiccActionConfig"] &
-      TPrimitiveValInstance["dfDiccActionConfig"] &
-      TRequestValInstance["dfDiccActionConfig"] &
-      TPrimitiveHookInstance["dfDiccActionConfig"] &
-      TPrimitiveProviderInstance["dfDiccActionConfig"],
+    TPrimitiveValInstance["dfDiccActionConfig"] &
+    TRequestValInstance["dfDiccActionConfig"] &
+    TPrimitiveHookInstance["dfDiccActionConfig"] &
+    TPrimitiveProviderInstance["dfDiccActionConfig"],
     TKeyDiccCtrlCRUD
   >["diccATKeyCRUD"] {
     const config = this.getMetadataOnlyModuleConfig();
@@ -200,22 +199,26 @@ export abstract class PrimitiveLogicController<
   }
   public override buildCriteriaHandler(
     requestType: "read",
+    keyActionRequest: TKeyDiccCtrlCRUD,
     base?: TPrimitiveBaseCriteriaForCtrlRead
   ): PrimitiveCriteriaHandler<TValue>;
   public override buildCriteriaHandler(
     requestType: "modify",
+    keyActionRequest: TKeyDiccCtrlCRUD,
     base?: TPrimitiveBaseCriteriaForCtrlModify
   ): PrimitiveCriteriaHandler<TValue>;
   public override buildCriteriaHandler(
-    requestType: TKeyRequestType, //❗Solo para tipar❗
+    requestType: TKeyRequestType,
+    keyActionRequest: TKeyDiccCtrlCRUD,
     base?:
       | TPrimitiveBaseCriteriaForCtrlRead
       | TPrimitiveBaseCriteriaForCtrlModify
   ): PrimitiveCriteriaHandler<TValue> {
     let cH = new PrimitiveCriteriaHandler(this.keySrc, {
       ...base,
-      type: requestType,
       keySrc: this.keySrc,
+      type: requestType,
+      keyActionRequest
     });
     cH.metadataHandler = this.metadataHandler;
     return cH;
@@ -268,11 +271,11 @@ export abstract class PrimitiveLogicController<
         TPrimitiveHookInstance["dfDiccActionConfig"],
         TPrimitiveProviderInstance["dfDiccActionConfig"]
       > &
-        //❗Obligatorias❗
-        Pick<
-          IPrimitiveBagForCtrlContext<TValue, TPrimitiveCriteriaInstance>,
-          "data" | "criteriaHandler"
-        >
+      //❗Obligatorias❗
+      Pick<
+        IPrimitiveBagForCtrlContext<TValue, TPrimitiveCriteriaInstance>,
+        "data" | "criteriaHandler"
+      >
     >
   ): IPrimitiveBagForCtrlContext<
     TValue,
@@ -289,32 +292,32 @@ export abstract class PrimitiveLogicController<
     if (!this.util.isObject(bBC)) {
       rBagCtrl = {
         ...dfBC,
-        criteriaHandler: this.buildCriteriaHandler("read"),
+        criteriaHandler: this.buildCriteriaHandler("read", "readOne" as any),
       };
     } else {
       rBagCtrl = {
         data: bBC.data,
         criteriaHandler: this.util.isInstance(bBC.criteriaHandler)
           ? bBC.criteriaHandler
-          : this.buildCriteriaHandler("read"),
+          : this.buildCriteriaHandler("read", "readOne" as any),
         diccGlobalAC: this.util.isObject(bBC.diccGlobalAC)
           ? {
-              ...bBC.diccGlobalAC,
-              primitiveMutate: this.util.isObject(
-                bBC.diccGlobalAC.primitiveMutate
-              )
-                ? bBC.diccGlobalAC.primitiveMutate
-                : dfBC.diccGlobalAC.primitiveMutate,
-              primitiveVal: this.util.isObject(bBC.diccGlobalAC.primitiveVal)
-                ? bBC.diccGlobalAC.primitiveVal
-                : dfBC.diccGlobalAC.primitiveVal,
-              requestVal: this.util.isObject(dfBC.diccGlobalAC.requestVal)
-                ? bBC.diccGlobalAC.requestVal
-                : dfBC.diccGlobalAC.requestVal,
-              primitiveHook: this.util.isObject(bBC.diccGlobalAC.primitiveHook)
-                ? bBC.diccGlobalAC.primitiveHook
-                : dfBC.diccGlobalAC.primitiveHook,
-            }
+            ...bBC.diccGlobalAC,
+            primitiveMutate: this.util.isObject(
+              bBC.diccGlobalAC.primitiveMutate
+            )
+              ? bBC.diccGlobalAC.primitiveMutate
+              : dfBC.diccGlobalAC.primitiveMutate,
+            primitiveVal: this.util.isObject(bBC.diccGlobalAC.primitiveVal)
+              ? bBC.diccGlobalAC.primitiveVal
+              : dfBC.diccGlobalAC.primitiveVal,
+            requestVal: this.util.isObject(dfBC.diccGlobalAC.requestVal)
+              ? bBC.diccGlobalAC.requestVal
+              : dfBC.diccGlobalAC.requestVal,
+            primitiveHook: this.util.isObject(bBC.diccGlobalAC.primitiveHook)
+              ? bBC.diccGlobalAC.primitiveHook
+              : dfBC.diccGlobalAC.primitiveHook,
+          }
           : dfBC.diccGlobalAC,
       };
     }
@@ -377,10 +380,10 @@ export abstract class PrimitiveLogicController<
   }
   protected buildATupleForRequestCtrlFromBagCtrl<
     TIDiccAC = TPrimitiveMutateInstance["dfDiccActionConfig"] &
-      TPrimitiveValInstance["dfDiccActionConfig"] &
-      TRequestValInstance["dfDiccActionConfig"] &
-      TPrimitiveHookInstance["dfDiccActionConfig"] &
-      TPrimitiveProviderInstance["dfDiccActionConfig"],
+    TPrimitiveValInstance["dfDiccActionConfig"] &
+    TRequestValInstance["dfDiccActionConfig"] &
+    TPrimitiveHookInstance["dfDiccActionConfig"] &
+    TPrimitiveProviderInstance["dfDiccActionConfig"],
     TKeyAction extends keyof TIDiccAC = keyof TIDiccAC
   >(
     bagCtrl: IPrimitiveBagForCtrlContext<
