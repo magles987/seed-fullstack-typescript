@@ -7,6 +7,7 @@ import {
   TFieldConfigForCtrl,
   TKeyFieldInternalACModuleContext,
   TKeyModelInternalACModuleContext,
+  TKeyModelInternalModuleContext,
   TKeyStructureCtrlModuleContext,
   TKeyStructureDeepCtrlModuleContext,
   TKeyStructureInternalACModuleContext,
@@ -24,7 +25,7 @@ import { FieldLogicValidation } from "../validators/field-validation";
 import { ModelLogicValidation } from "../validators/model-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { EKeyActionGroupForRes, IStructureResponse } from "../reports/shared";
+import { EKeyActionGroupForRes, ELogicResStatusCode, IStructureResponse } from "../reports/shared";
 import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
 import { ActionModule, IBuildACOption } from "../config/module";
 import { IStructureBuilderBaseMetadata } from "../meta/metadata-builder-shared";
@@ -303,7 +304,8 @@ export abstract class StructureLogicController<
     TFieldValInstance["dfDiccActionConfig"]
   >["aTKeysForReq"] {
     const config = this.getMetadataOnlyModuleConfig("fieldCtrl", keyPath);
-    const aTKeysForReq = config.fieldCtrl.aTKeysForReq;
+    let aTKeysForReq = config.fieldCtrl.aTKeysForReq;
+    aTKeysForReq = this.util.isArray(aTKeysForReq) ? aTKeysForReq : [];
     return aTKeysForReq;
   }
   protected getDiccATKeyCRUD(
@@ -317,8 +319,17 @@ export abstract class StructureLogicController<
     TKeyDiccCtrlCRUD
   >["diccATKeyCRUD"] {
     const config = this.getMetadataOnlyModuleConfig("modelCtrl", keyPath);
-    const diccATKeyCRUD = config.modelCtrl.diccATKeyCRUD;
+    let diccATKeyCRUD = config.modelCtrl.diccATKeyCRUD;
     return diccATKeyCRUD;
+  }
+  /**... */
+  protected getATKeyCRUDByKeyActionRequest(keyPath: string, keyActionRequest: TKeyDiccCtrlCRUD) {
+    const schemaATKeyGlobal = this.getDiccATKeyCRUD(keyPath);
+    const aTKeyGlobal = this.util.isObject(schemaATKeyGlobal)
+      && this.util.isArray(schemaATKeyGlobal[keyActionRequest])
+      ? schemaATKeyGlobal[keyActionRequest]
+      : [];
+    return aTKeyGlobal;
   }
   public override buildCriteriaHandler(
     requestType: "read",
@@ -492,7 +503,7 @@ export abstract class StructureLogicController<
         msn: `${bagCtrl} is not bag controller valid`,
       });
     }
-    if (!this.util.isArrayTuple(aTupleGlobalActionConfig, [1, 2])) {
+    if (!this.util.isArrayTuple(aTupleGlobalActionConfig, [1, 2], true)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
         msn: `${aTupleGlobalActionConfig} is not array of tuple of action config valid`,
@@ -629,6 +640,40 @@ export abstract class StructureLogicController<
     }
     return aTGlobalAC;
   }
+  /**obtiene la instancia de modulo de acuerdo a la clave identificadora
+   * 
+   * @param keyModuleContext clave identificadora del contexto del submodulo 
+   * con la accion a ejecutar
+   * 
+   * @returns la instancia seleccionada
+   */
+  private getModuleInstanceForActionContext(keyModuleContext: TKeyStructureInternalACModuleContext): ActionModule<any> {
+    const {
+      fieldMutate: mFM,
+      modelMutate: mMM,
+      fieldVal: mFV,
+      modelVal: mMV,
+      requestVal: mRV,
+      structureHook: mSH,
+      structureProvider: mSP,
+    } = this.metadataHandler.diccModuleIntanceContext;
+    let mFX: ActionModule<any>;
+    if (keyModuleContext === "fieldMutate") mFX = mFM;
+    else if (keyModuleContext === "fieldVal") mFX = mFV;
+    else if (keyModuleContext === "modelMutate") mFX = mMM;
+    else if (keyModuleContext === "modelVal") mFX = mMV;
+    else if (keyModuleContext === "requestVal") mFX = mRV;
+    else if (keyModuleContext === "structureHook") mFX = mSH;
+    else if (keyModuleContext === "structureProvider")
+      mFX = mSP as any; //provider es un modulo de accion especial
+    else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyModuleContext} is not key action module context valid`,
+      });
+    }
+    return mFX;
+  }
   /**
    * ejecuta las acciones configuradas en el bag completo
    *
@@ -650,54 +695,38 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    const {
-      fieldMutate: mFM,
-      modelMutate: mMM,
-      fieldVal: mFV,
-      modelVal: mMV,
-      requestVal: mRV,
-      structureHook: mSH,
-      structureProvider: mSP,
-    } = this.metadataHandler.diccModuleIntanceContext;
     let keyCtrlAction: EKeyActionGroupForRes;
-    if (keyBagCtrlContext === "fieldCtrl") {
-      keyCtrlAction = EKeyActionGroupForRes.ctrlField;
-    } else if (keyBagCtrlContext === "modelCtrl") {
-      keyCtrlAction = EKeyActionGroupForRes.ctrlModel;
-    } else {
+    if (keyBagCtrlContext === "fieldCtrl") keyCtrlAction = EKeyActionGroupForRes.ctrlField;
+    else if (keyBagCtrlContext === "modelCtrl") keyCtrlAction = EKeyActionGroupForRes.ctrlModel;
+    else {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
         msn: `${keyBagCtrlContext} is not key bag controller context valid`,
       });
     }
-    this.preRunAction(bag, keyCtrlAction) as any;
+    const { data: dataBag, aTupleGlobalActionConfig } = bag;
     const rH = this.buildReportHandler(bag, keyCtrlAction);
-    let res = rH.mutateResponse(undefined, { data: bag.data });
-    for (const tGAC of bag.aTupleGlobalActionConfig) {
-      const { keyModule, keyModuleContext, keyAction } =
+    this.preRunAction(bag, keyCtrlAction);
+    let res = rH.mutateResponse(undefined, { data: dataBag });
+    if (aTupleGlobalActionConfig.length === 0) {
+      res = rH.mutateResponse(res, {
+        status: ELogicResStatusCode.WARNING,
+        msn: `${aTupleGlobalActionConfig} is array of global action config empty`
+      });
+      this.postRunAction(bag, res);
+      return res;
+    }
+    for (const tGAC of aTupleGlobalActionConfig) {
+      const { keyModuleContext, keyAction } =
         bag.getDiccKeysGlobalFromTupleGlobal(tGAC);
-      let resForAction: IStructureResponse;
-      let mFX: ActionModule<any>;
-      if (keyModuleContext === "fieldMutate") mFX = mFM;
-      else if (keyModuleContext === "fieldVal") mFX = mFV;
-      else if (keyModuleContext === "modelMutate") mFX = mMM;
-      else if (keyModuleContext === "modelVal") mFX = mMV;
-      else if (keyModuleContext === "requestVal") mFX = mRV;
-      else if (keyModuleContext === "structureHook") mFX = mSH;
-      else if (keyModuleContext === "structureProvider")
-        mFX = mSP as any; //provider es un modulo de accion especial
-      else {
-        throw new LogicError({
-          code: ELogicCodeError.MODULE_ERROR,
-          msn: `${keyModuleContext} is not key action module context valid`,
-        });
-      }
+      const mFX = this.getModuleInstanceForActionContext(keyModuleContext);
       if (this.isAllowRunAction(tGAC)) {
-        resForAction = await this.runRequestForAction(mFX, bag, keyAction);
+        const resForAction = await this.runRequestForAction(mFX, bag, keyAction);
         res.responses.push(resForAction);
+        if (resForAction.status > this.globalTolerance) break;
       }
     }
-    res = rH.mutateResponse(res, { data: bag.data });
+    res = rH.mutateResponse(res);
     this.postRunAction(bag, res);
     return res;
   }
@@ -753,8 +782,7 @@ export abstract class StructureLogicController<
     }
     bagCtrl = this.buildBagCtrl("modelCtrl", bagCtrl); //reconstruccion OBLIGATORIA
     bagCtrl.criteriaHandler.keyActionRequest = keyActionRequest;
-    const schemaATKeyGlobal = this.getDiccATKeyCRUD(bagCtrl.keyPath);
-    const aTKeyGlobal = schemaATKeyGlobal[keyActionRequest];
+    const aTKeyGlobal = this.getATKeyCRUDByKeyActionRequest(bagCtrl.keyPath, keyActionRequest);
     const aTGlobalAC = this.buildATupleForRequestCtrlFromBagCtrl(
       "modelCtrl",
       bagCtrl,

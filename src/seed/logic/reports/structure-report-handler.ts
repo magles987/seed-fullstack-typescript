@@ -24,8 +24,7 @@ export type Trf_StructureReportHandler = StructureReportHandler;
  */
 export class StructureReportHandler
   extends ReportHandler
-  implements ReturnType<StructureReportHandler["getDefault"]>
-{
+  implements ReturnType<StructureReportHandler["getDefault"]> {
   public static override readonly getDefault = () => {
     const superDf = ReportHandler.getDefault();
     return {
@@ -48,8 +47,8 @@ export class StructureReportHandler
     this._keyPath = this.util.isString(v)
       ? v
       : this._keyPath !== undefined
-      ? this._keyPath
-      : this.getDefault().keyPath;
+        ? this._keyPath
+        : this.getDefault().keyPath;
   }
   public override get keyRepModuleContext(): TStructureModuleContext {
     return super.keyRepModuleContext as any;
@@ -111,47 +110,41 @@ export class StructureReportHandler
   protected override reduceResponses(
     response: IStructureResponse
   ): IStructureResponse {
-    const { keyRepModule: keyModule } = response;
-    let aStatus: ELogicResStatusCode[] = [];
+    const { keyRepModule, keyRepModuleContext } = response;
     const res = response as Trf_IStructureResponse;
-    aStatus = res.responses.map((embRes, idx) => {
-      embRes = this.reduceResponses(embRes);
-      //⚠ muta la respuesta internamente ⚠
-      res.responses[idx] = embRes;
-      return embRes.status;
-    });
+    const reses = res.responses;
     /**funcion lanzadora de reductoras personalizadas */
     let lanchReducerFn = (
       currentStatus: ELogicResStatusCode,
       nextStatus: ELogicResStatusCode
     ) => {
       let stateStatus: ELogicResStatusCode;
-      if (keyModule === "controller")
+      if (keyRepModule === "controller")
         stateStatus = LogicController.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "mutater")
+      else if (keyRepModule === "mutater")
         stateStatus = LogicMutater.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "validator")
+      else if (keyRepModule === "validator")
         stateStatus = LogicValidation.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "hook")
+      else if (keyRepModule === "hook")
         stateStatus = LogicHook.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "provider")
+      else if (keyRepModule === "provider")
         stateStatus = LogicProvider.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "service")
+      else if (keyRepModule === "service")
         stateStatus = LogicService.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
@@ -160,10 +153,20 @@ export class StructureReportHandler
       return stateStatus;
     };
     lanchReducerFn.bind(this);
-    (response as Trf_IStructureResponse).status = aStatus.reduce(
-      lanchReducerFn,
-      res.status
-    );
+    for (let idx = 0; idx < reses.length; idx++) {
+      const embRes = this.reduceResponses(reses[idx]); //recursivo para res embebidos internos      
+      res.status = lanchReducerFn(res.status, embRes.status);
+      const isFieldContext = embRes.keyRepModuleContext === "fieldCtrl"
+        || embRes.keyRepModuleContext === "fieldMutate"
+        || embRes.keyRepModuleContext === "fieldVal";
+      const isModelContext = res.keyRepModuleContext === "modelCtrl"
+        || res.keyRepModuleContext === "modelMutate"
+        || res.keyRepModuleContext === "modelVal";
+      if (!(isFieldContext && isModelContext)) {
+        //solo muta si la reduccion no compromete de campo a modelo
+        this.mutateData(embRes.data, res);
+      }
+    }
     return response;
   }
 }

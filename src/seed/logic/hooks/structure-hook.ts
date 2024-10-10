@@ -4,6 +4,7 @@ import { LogicHook } from "./_hook";
 import {
   TStructureConfigForHook,
   TKeyStructureHookModuleContext,
+  TStructureHookModuleConfigForStructure,
 } from "./shared";
 import {
   IStructureBagForActionModuleContext,
@@ -33,12 +34,11 @@ export type Trf_StructureLogicHook = StructureLogicHook<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class StructureLogicHook<
-    TIDiccAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG
-  >
+  TIDiccAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG
+>
   extends LogicHook<TIDiccAC>
   implements
-    Record<TKeysDiccStructureHookActionConfigG, TStructureFnBagForActionModule>
-{
+  Record<TKeysDiccStructureHookActionConfigG, TStructureFnBagForActionModule> {
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = LogicHook.getDefault();
@@ -75,6 +75,37 @@ export class StructureLogicHook<
   }
   protected override getDefault() {
     return StructureLogicHook.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TStructureHookModuleConfigForStructure<TIDiccAC>,
+    newContextConfig: TStructureHookModuleConfigForStructure<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TStructureHookModuleConfigForStructure<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TStructureHookModuleConfigForStructure<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   protected override getMetadataWithContextModule(): TStructureMetaAndHook<
     any,

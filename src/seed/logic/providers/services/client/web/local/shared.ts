@@ -1,15 +1,24 @@
+import { EHttpStatusCode } from "../../../../../util/http-utilities";
 import {
   localRepositoryFactoryFn,
-  TKeyLocalRepositoryInstance,
 } from "./repositories/local-repository-factory";
 import { IDiccLocalRepositoryConfig } from "./repositories/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/**... */
+export interface ILocalResponse {
+  /**cuerpo de la respuesta */
+  body: string;
+  /**estado basico de la peticion */
+  ok: boolean;
+  /**mensaje adicional de estado de la peticion */
+  statusText: string;
+  /**simula un codigo HTTP response */
+  httpStatus: EHttpStatusCode;
+  /**error generico */
+  error?: any;
+}
 /**esquema con parametros de configuracion de un servicio en contexto *client* */
-export interface ILocalWebClientServiceRequestC<
-  TKeyLRI extends TKeyLocalRepositoryInstance = TKeyLocalRepositoryInstance
-> {
-  /**clave identificadora del repositorio local a usar*/
-  keyLocalRepository: TKeyLRI;
+export interface ILocalWebClientServiceRequestC {
   /** */
   diccRepositoryConfig?: IDiccLocalRepositoryConfig;
   /**funcion de factoria para el local */
@@ -17,6 +26,5 @@ export interface ILocalWebClientServiceRequestC<
 }
 /**refactorizacion de la interfaz */
 export type Trf_ILocalWebClientServiceRequestC = ILocalWebClientServiceRequestC;
-/**... */
-export type TKeyLocalWebClientServiceRequestC =
-  keyof ILocalWebClientServiceRequestC;
+
+

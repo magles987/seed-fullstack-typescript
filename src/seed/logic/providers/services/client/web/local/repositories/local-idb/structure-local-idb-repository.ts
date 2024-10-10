@@ -31,13 +31,12 @@ export type Trf_StructureLocalIDBRepository = StructureLocalIDBRepository<any>;
  * ...
  */
 export class StructureLocalIDBRepository<
-    TKeyActionRequest extends TKeyFullRequest
-  >
+  TKeyActionRequest extends TKeyFullRequest
+>
   extends LocalIDBRepository<TKeyActionRequest>
   implements
-    ReturnType<StructureLocalIDBRepository<TKeyActionRequest>["getDefault"]>,
-    Record<TKeyFullRequest, TActionFn>
-{
+  ReturnType<StructureLocalIDBRepository<TKeyActionRequest>["getDefault"]>,
+  Record<TKeyFullRequest, TActionFn> {
   public static override readonly getDefault = () => {
     const superDf = LocalIDBRepository.getDefault();
     return {
@@ -59,8 +58,8 @@ export class StructureLocalIDBRepository<
     this._keyId = this.util.isString(v)
       ? v
       : this._keyId !== undefined
-      ? this._keyId
-      : this.getDefault().keyId;
+        ? this._keyId
+        : this.getDefault().keyId;
   }
   /**
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
@@ -148,7 +147,10 @@ export class StructureLocalIDBRepository<
       await tx.store.delete(data[kId]);
       await tx.done;
     }
-    return data;
+    //mutar data para la eliminacion:
+    let dData = {};
+    dData[kId] = data[kId]; //solo envia id
+    return dData;
   }
   //████ Request Actions ████████████████████████████████████████████████████████████
   /**

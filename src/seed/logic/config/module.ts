@@ -47,7 +47,7 @@ export abstract class Module {
   /**
    * @param _keyModule clave identificadora del modulo
    */
-  constructor(private readonly _keyModule: TKeyModule) {}
+  constructor(private readonly _keyModule: TKeyModule) { }
   /**@returns los valores de configuracion predefinidos */
   protected getDefault() {
     return Module.getDefault();
@@ -500,6 +500,15 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
     }
     return tFnOrATFFn;
   }
+  /**Reconstruye la configuracion de los metadatos para este modulo con personalizacion adicional
+   * 
+   * ❕Solo acesible desde el manejador de metadatos❕
+  */
+  protected abstract rebuildCustomConfigFromModuleContext(
+    currentContextConfig: unknown,
+    newContextConfig: unknown,
+    mergeMode: unknown
+  ): unknown;
   /**Construye objeto de opciones o configuraciones para
    * solicitar un diccionario base de configuracion de acciones
    *
@@ -818,9 +827,8 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
       ) {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
-          msn: `${
-            containerOfActionsConfig as any as string
-          } is not array of tuple of action config valid`,
+          msn: `${containerOfActionsConfig as any as string
+            } is not array of tuple of action config valid`,
         });
       }
       let aTupleActionConfig = containerOfActionsConfig as Array<

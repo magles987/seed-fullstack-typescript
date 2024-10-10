@@ -10,7 +10,7 @@ import {
   PrimitiveReportHandler,
   Trf_PrimitiveReportHandler,
 } from "../reports/primitive-report-handler";
-import { IPrimitiveResponse } from "../reports/shared";
+import { ELogicResStatusCode, IPrimitiveResponse } from "../reports/shared";
 import { LogicProvider } from "./_provider";
 import { httpClientDriverFactoryFn } from "./services/client/web/http/drive/http-driver-factory";
 import { localRepositoryFactoryFn } from "./services/client/web/local/repositories/local-repository-factory";
@@ -18,6 +18,7 @@ import { serviceFactory } from "./services/service-factory";
 import {
   TKeyPrimitiveProviderModuleContext,
   TPrimitiveConfigForProvider,
+  TPrimitiveProviderModuleConfigForPrimitive,
 } from "./shared";
 import { IRunProvider } from "./shared-for-external-module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -34,15 +35,14 @@ export type Trf_PrimitiveLogicProvider = PrimitiveLogicProvider<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class PrimitiveLogicProvider<
-    TIDiccAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
-  >
+  TIDiccAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
+>
   extends LogicProvider<TIDiccAC>
   implements
-    Record<
-      TKeysDiccPrimitiveProviderActionConfigG,
-      TPrimitiveFnBagForActionModule
-    >
-{
+  Record<
+    TKeysDiccPrimitiveProviderActionConfigG,
+    TPrimitiveFnBagForActionModule
+  > {
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = LogicProvider.getDefault();
@@ -83,7 +83,12 @@ export class PrimitiveLogicProvider<
             },
             //server:{},
           },
-          serviceToRun: {},
+          serviceToRun: {
+            //❗❗Obligatorio definirlo en los metadatos❗❗
+            keyService: undefined,
+            keyDriver: undefined,
+            customDeepServiceConfig: {}
+          },
         },
       } as IDiccPrimitiveProviderActionConfigG,
       topPriorityKeysAction: [
@@ -111,6 +116,37 @@ export class PrimitiveLogicProvider<
   }
   protected override getDefault() {
     return PrimitiveLogicProvider.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TPrimitiveProviderModuleConfigForPrimitive<TIDiccAC>,
+    newContextConfig: TPrimitiveProviderModuleConfigForPrimitive<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TPrimitiveProviderModuleConfigForPrimitive<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TPrimitiveProviderModuleConfigForPrimitive<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   protected override getMetadataWithContextModule(): TPrimitiveMetaAndProvider<TIDiccAC> {
     let extractMetadataByContext: TPrimitiveMetaAndProvider<TIDiccAC>;
@@ -240,9 +276,24 @@ export class PrimitiveLogicProvider<
     let { customServiceFactoryFn, serviceConfig, serviceToRun } = actionConfig;
     const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    let { keyService, customDeepServiceConfig } = serviceToRun;
+    let { keyService, keyDriver, customDeepServiceConfig } = serviceToRun;
+    if (!this.util.isString(keyService)) {
+      res = rH.mutateResponse(res, {
+        status: ELogicResStatusCode.ERROR,
+        msn: `${keyService} is not key service instance valid`
+      });
+      return res;
+    }
+    if (!this.util.isString(keyDriver)) {
+      res = rH.mutateResponse(res, {
+        status: ELogicResStatusCode.ERROR,
+        msn: `${keyDriver} is not key driver for service instance valid`
+      });
+      return res;
+    }
     const serviceInstance = customServiceFactoryFn(
       keyService,
+      keyDriver,
       this.keyLogicContext,
       this.keySrc,
       serviceConfig,

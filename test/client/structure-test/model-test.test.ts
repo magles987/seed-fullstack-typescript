@@ -1,6 +1,6 @@
 import { describe, expect, test, it } from "vitest";
-import { ModelTestCtrl } from "./ctrl-test";
-import { StructureCriteriaHandler } from "../../../seed/logic/criterias/structure-criteria-handler";
+import { ModelTestCtrl } from "./module-context/controller/ctrl-test";
+import { StructureCriteriaHandler } from "../../../src/seed/logic/criterias/structure-criteria-handler";
 
 const ctrl = new ModelTestCtrl();
 const keyPath = ctrl.metadataHandler.findKeyPathByExtract("_id");

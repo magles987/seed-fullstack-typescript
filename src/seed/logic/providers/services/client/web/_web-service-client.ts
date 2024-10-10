@@ -26,11 +26,16 @@ export abstract class WebClientService extends ClientService {
     } as IServiceRequestConfig;
   };
   /**
-   * @param _keyLogicContext contexto lógico (estructural o primitivo)
-   * @param _keySrc indentificadora del recurso asociado a modulo
+   * @param keyLogicContext contexto lógico (estructural o primitivo)
+   * @param keySrc indentificadora del recurso asociado a modulo
+   * @param keyDrive clave identificadora del drive a instanciar para este servicio
    */
-  constructor(keyLogicContext: TKeyLogicContext, keySrc: string) {
-    super(keyLogicContext, keySrc);
+  constructor(
+    keyLogicContext: TKeyLogicContext,
+    keySrc: string,
+    keyDrive: unknown,
+  ) {
+    super(keyLogicContext, keySrc, keyDrive);
   }
   protected override getDefault() {
     return WebClientService.getDefault();
@@ -58,16 +63,16 @@ export abstract class WebClientService extends ClientService {
         httpStatusCode === EHttpStatusCode.CREATED
           ? ELogicResStatusCode.VALID_DATA
           : httpStatusCode === EHttpStatusCode.ACCEPTED
-          ? ELogicResStatusCode.VALID_DATA
-          : httpStatusCode === EHttpStatusCode.NON_AUTHORITATIVE_INFORMATION
-          ? ELogicResStatusCode.WARNING
-          : httpStatusCode === EHttpStatusCode.NO_CONTENT
-          ? ELogicResStatusCode.VALID_DATA //❓❓WARNING_DATA❓❓
-          : httpStatusCode === EHttpStatusCode.RESET_CONTENT
-          ? ELogicResStatusCode.WARNING_DATA
-          : httpStatusCode === EHttpStatusCode.PARTIAL_CONTENT
-          ? ELogicResStatusCode.WARNING_DATA
-          : ELogicResStatusCode.SUCCESS;
+            ? ELogicResStatusCode.VALID_DATA
+            : httpStatusCode === EHttpStatusCode.NON_AUTHORITATIVE_INFORMATION
+              ? ELogicResStatusCode.WARNING
+              : httpStatusCode === EHttpStatusCode.NO_CONTENT
+                ? ELogicResStatusCode.VALID_DATA //❓❓WARNING_DATA❓❓
+                : httpStatusCode === EHttpStatusCode.RESET_CONTENT
+                  ? ELogicResStatusCode.WARNING_DATA
+                  : httpStatusCode === EHttpStatusCode.PARTIAL_CONTENT
+                    ? ELogicResStatusCode.WARNING_DATA
+                    : ELogicResStatusCode.SUCCESS;
     } else if (
       httpStatusCode >= EHttpRangeStatusCode.REDIRECT &&
       httpStatusCode < EHttpRangeStatusCode.BAD
@@ -83,8 +88,8 @@ export abstract class WebClientService extends ClientService {
         httpStatusCode === EHttpStatusCode.UNAUTHORIZED
           ? ELogicResStatusCode.INVALID_USER
           : httpStatusCode === EHttpStatusCode.NOT_FOUND
-          ? ELogicResStatusCode.INVALID_DATA
-          : ELogicResStatusCode.BAD;
+            ? ELogicResStatusCode.INVALID_DATA
+            : ELogicResStatusCode.BAD;
     } else {
       logicStatusCode = ELogicResStatusCode.ERROR;
     }
@@ -110,10 +115,10 @@ export abstract class WebClientService extends ClientService {
       expectedDataType === "single"
         ? dfSingleValue
         : expectedDataType === "object"
-        ? {}
-        : expectedDataType === "array"
-        ? []
-        : undefined;
+          ? {}
+          : expectedDataType === "array"
+            ? []
+            : undefined;
     if (!this.util.isString(body)) return dfData;
     let data = dfData;
     try {

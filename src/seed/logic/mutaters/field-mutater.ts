@@ -1,5 +1,5 @@
 import { StructureLogicMutater } from "./_structure-mutater";
-import { TFieldConfigForMutate } from "./shared";
+import { TFieldConfigForMutate, TStructureMutateModuleConfigForField } from "./shared";
 import {
   IStructureBagForActionModuleContext,
   TStructureFnBagForActionModule,
@@ -152,12 +152,11 @@ export type Trf_FieldLogicMutater = FieldLogicMutater;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class FieldLogicMutater<
-    TIDiccAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG
-  >
+  TIDiccAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG
+>
   extends StructureLogicMutater<TIDiccAC>
   implements
-    Record<TKeysDiccFieldMutateActionConfigG, TStructureFnBagForActionModule>
-{
+  Record<TKeysDiccFieldMutateActionConfigG, TStructureFnBagForActionModule> {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = StructureLogicMutater.getDefault();
@@ -184,6 +183,38 @@ export class FieldLogicMutater<
   }
   protected override getDefault() {
     return FieldLogicMutater.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TStructureMutateModuleConfigForField<TIDiccAC>,
+    newContextConfig: TStructureMutateModuleConfigForField<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TStructureMutateModuleConfigForField<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TStructureMutateModuleConfigForField<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+              //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   protected override getMetadataWithContextModule(
     keyPath?: string

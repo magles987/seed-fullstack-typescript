@@ -224,11 +224,6 @@ export interface IResponse {
   tolerance: ELogicResStatusCode;
   /**reportes embebidos si los hay */
   responses: IResponse[];
-  /**tupla que indica (en caso de haber mutacion),
-   * el estado anterio `recordMutate[0]` y el estado
-   * posterior `recordMutate[1]` del dato cuando
-   * este ah mutado*/
-  tRecordMutate?: [any, any];
 }
 /**refactorizacion de la interfaz */
 export type Trf_IResponse = IResponse;
@@ -318,22 +313,22 @@ export function statusToKeyStatus(status: ELogicResStatusCode): TKeyStatus {
     status === ELogicResStatusCode.INFO
       ? "info"
       : status === ELogicResStatusCode.INFO_USER
-      ? "infoUser"
-      : status === ELogicResStatusCode.SUCCESS
-      ? "success"
-      : status === ELogicResStatusCode.VALID_DATA
-      ? "validUser"
-      : status === ELogicResStatusCode.WARNING
-      ? "warning"
-      : status === ELogicResStatusCode.WARNING_DATA
-      ? "warningUser"
-      : status === ELogicResStatusCode.BAD
-      ? "invalid"
-      : status === ELogicResStatusCode.INVALID_DATA
-      ? "invalidUser"
-      : status === ELogicResStatusCode.ERROR
-      ? "error"
-      : "success";
+        ? "infoUser"
+        : status === ELogicResStatusCode.SUCCESS
+          ? "success"
+          : status === ELogicResStatusCode.VALID_DATA
+            ? "validUser"
+            : status === ELogicResStatusCode.WARNING
+              ? "warning"
+              : status === ELogicResStatusCode.WARNING_DATA
+                ? "warningUser"
+                : status === ELogicResStatusCode.BAD
+                  ? "invalid"
+                  : status === ELogicResStatusCode.INVALID_DATA
+                    ? "invalidUser"
+                    : status === ELogicResStatusCode.ERROR
+                      ? "error"
+                      : "success";
 
   return r;
 }

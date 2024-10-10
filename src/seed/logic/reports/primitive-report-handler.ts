@@ -25,8 +25,7 @@ export type Trf_PrimitiveReportHandler = PrimitiveReportHandler;
  */
 export class PrimitiveReportHandler
   extends ReportHandler
-  implements ReturnType<PrimitiveReportHandler["getDefault"]>
-{
+  implements ReturnType<PrimitiveReportHandler["getDefault"]> {
   public static override readonly getDefault = () => {
     const superDf = ReportHandler.getDefault();
     return {
@@ -100,47 +99,41 @@ export class PrimitiveReportHandler
   protected override reduceResponses(
     response: IPrimitiveResponse
   ): IPrimitiveResponse {
-    const { keyRepModule: keyModule } = response;
-    let aStatus: ELogicResStatusCode[] = [];
+    const { keyRepModule } = response;
     const res = response as Trf_IPrimitiveResponse;
-    aStatus = res.responses.map((embRes, idx) => {
-      embRes = this.reduceResponses(embRes);
-      //⚠ muta la respuesta internamente ⚠
-      res.responses[idx] = embRes;
-      return embRes.status;
-    });
+    const reses = res.responses;
     /**funcion lanzadora de reductoras personalizadas */
     let lanchReducerFn = (
       currentStatus: ELogicResStatusCode,
       nextStatus: ELogicResStatusCode
     ) => {
       let stateStatus: ELogicResStatusCode;
-      if (keyModule === "controller")
+      if (keyRepModule === "controller")
         stateStatus = LogicController.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      if (keyModule === "mutater")
+      if (keyRepModule === "mutater")
         stateStatus = LogicMutater.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "validator")
+      else if (keyRepModule === "validator")
         stateStatus = LogicValidation.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "hook")
+      else if (keyRepModule === "hook")
         stateStatus = LogicHook.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "provider")
+      else if (keyRepModule === "provider")
         stateStatus = LogicProvider.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "service")
+      else if (keyRepModule === "service")
         stateStatus = LogicService.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
@@ -149,10 +142,11 @@ export class PrimitiveReportHandler
       return stateStatus;
     };
     lanchReducerFn.bind(this);
-    (response as Trf_IPrimitiveResponse).status = aStatus.reduce(
-      lanchReducerFn,
-      res.status
-    );
+    for (let idx = 0; idx < reses.length; idx++) {
+      const embRes = this.reduceResponses(reses[idx]); //recursivo para res embebidos internos      
+      res.status = lanchReducerFn(res.status, embRes.status);
+      this.mutateData(embRes.data, res);
+    }
     return response;
   }
 }

@@ -107,7 +107,6 @@ export class StructureLogicMetadataHandler<
           __structureType: "structureField",
           __fieldType: "string",
           __isArray: false,
-          __isMany: false,
           __isVirtual: false,
           __dfData: undefined, //❗ OBLIGATORIO en la definicion de cada metadato
           __keysProp: [],
@@ -488,9 +487,6 @@ export class StructureLogicMetadataHandler<
           __isArray: this.util.isNotUndefinedAndNotNull(mHC.__isArray)
             ? mHC.__isArray
             : cMHC.__isArray,
-          __isMany: this.util.isNotUndefinedAndNotNull(mHC.__isMany)
-            ? mHC.__isMany
-            : cMHC.__isMany,
           __isVirtual: this.util.isNotUndefinedAndNotNull(mHC.__isVirtual)
             ? mHC.__isVirtual
             : cMHC.__isVirtual,
@@ -607,8 +603,8 @@ export class StructureLogicMetadataHandler<
         newDfData !== undefined
           ? newDfData
           : currentDfData !== undefined
-          ? currentDfData
-          : undefined;
+            ? currentDfData
+            : undefined;
       //❓❓Que hacer si el valor predefinido si es undefined❓❓
       // if (dfValue === undefined) {
       //   throw new LogicError({
@@ -620,8 +616,8 @@ export class StructureLogicMetadataHandler<
       dfData = this.util.isObject(newDfData)
         ? newDfData
         : this.util.isObject(currentDfData)
-        ? currentDfData
-        : undefined;
+          ? currentDfData
+          : undefined;
       if (dfData === undefined) {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
@@ -662,60 +658,54 @@ export class StructureLogicMetadataHandler<
       const cMMC = (
         this.util.isObject(currentMetadataMutateC)
           ? {
-              ...(currentMetadataMutateC as Trf_TFieldConfigForMutate),
-              fieldMutate: this.util.isObject(
-                (currentMetadataMutateC as Trf_TFieldConfigForMutate)
-                  .fieldMutate
-              )
-                ? {
-                    ...(currentMetadataMutateC as Trf_TFieldConfigForMutate)
-                      .fieldMutate,
-                    diccActionsConfig: this.util.isObject(
-                      (currentMetadataMutateC as Trf_TFieldConfigForMutate)
-                        .fieldMutate.diccActionsConfig
-                    )
-                      ? (currentMetadataMutateC as Trf_TFieldConfigForMutate)
-                          .fieldMutate.diccActionsConfig
-                      : fieldMutateInstance.dfDiccActionConfig,
-                  }
-                : {
-                    diccActionsConfig: fieldMutateInstance.dfDiccActionConfig,
-                  },
-            }
-          : {
-              fieldMutate: {
+            ...(currentMetadataMutateC as Trf_TFieldConfigForMutate),
+            fieldMutate: this.util.isObject(
+              (currentMetadataMutateC as Trf_TFieldConfigForMutate)
+                .fieldMutate
+            )
+              ? {
+                ...(currentMetadataMutateC as Trf_TFieldConfigForMutate)
+                  .fieldMutate,
+                diccActionsConfig: this.util.isObject(
+                  (currentMetadataMutateC as Trf_TFieldConfigForMutate)
+                    .fieldMutate.diccActionsConfig
+                )
+                  ? (currentMetadataMutateC as Trf_TFieldConfigForMutate)
+                    .fieldMutate.diccActionsConfig
+                  : fieldMutateInstance.dfDiccActionConfig,
+              }
+              : {
                 diccActionsConfig: fieldMutateInstance.dfDiccActionConfig,
               },
-            }
+          }
+          : {
+            fieldMutate: {
+              diccActionsConfig: fieldMutateInstance.dfDiccActionConfig,
+            },
+          }
       ) as Trf_TFieldConfigForMutate;
       let rFieldConfig = {} as Trf_TFieldConfigForMutate;
+      //😉 trampa `rebuildCustomConfigFromModuleContext` 
+      //es protected pero se llama asi para saltarse la proteccion
+      let reBuildFieldFn = fieldMutateInstance["rebuildCustomConfigFromModuleContext"];
+      reBuildFieldFn = reBuildFieldFn.bind(fieldMutateInstance);
       if (!this.util.isObject(mMC)) {
-        rFieldConfig = cMMC;
+        rFieldConfig = {
+          ...cMMC,
+          fieldMutate: reBuildFieldFn(
+            cMMC.fieldMutate,
+            undefined,
+            "hard"
+          )
+        };
       } else {
         rFieldConfig = {
           ...mMC,
-          fieldMutate: this.util.isObject(mMC.fieldMutate)
-            ? {
-                ...mMC.fieldMutate,
-                diccActionsConfig: this.util.isObject(
-                  mMC.fieldMutate.diccActionsConfig
-                )
-                  ? this.util.mergeDiccActionConfig(
-                      [
-                        cMMC.fieldMutate.diccActionsConfig,
-                        mMC.fieldMutate.diccActionsConfig,
-                      ],
-                      {
-                        //si no existe metadatos actualmente la fusion debe ser "hard"
-                        //ya que la prioridad maxima seria los nuevos metadatos
-                        mode: this.util.isObject(currentMetadataMutateC)
-                          ? "soft"
-                          : "hard",
-                      }
-                    )
-                  : cMMC.fieldMutate.diccActionsConfig,
-              }
-            : cMMC.fieldMutate,
+          fieldMutate: reBuildFieldFn(
+            cMMC.fieldMutate,
+            mMC.fieldMutate,
+            (this.util.isObject(currentMetadataMutateC) ? "soft" : "hard")
+          ),
         };
       }
       rMetadataMutateC = rFieldConfig;
@@ -724,60 +714,54 @@ export class StructureLogicMetadataHandler<
       const cMMC = (
         this.util.isObject(currentMetadataMutateC)
           ? {
-              ...(currentMetadataMutateC as Trf_TModelConfigForMutate),
-              modelMutate: this.util.isObject(
-                (currentMetadataMutateC as Trf_TModelConfigForMutate)
-                  .modelMutate
-              )
-                ? {
-                    ...(currentMetadataMutateC as Trf_TModelConfigForMutate)
-                      .modelMutate,
-                    diccActionsConfig: this.util.isObject(
-                      (currentMetadataMutateC as Trf_TModelConfigForMutate)
-                        .modelMutate.diccActionsConfig
-                    )
-                      ? (currentMetadataMutateC as Trf_TModelConfigForMutate)
-                          .modelMutate.diccActionsConfig
-                      : modelMutateInstance.dfDiccActionConfig,
-                  }
-                : {
-                    diccActionsConfig: modelMutateInstance.dfDiccActionConfig,
-                  },
-            }
-          : {
-              modelMutate: {
+            ...(currentMetadataMutateC as Trf_TModelConfigForMutate),
+            modelMutate: this.util.isObject(
+              (currentMetadataMutateC as Trf_TModelConfigForMutate)
+                .modelMutate
+            )
+              ? {
+                ...(currentMetadataMutateC as Trf_TModelConfigForMutate)
+                  .modelMutate,
+                diccActionsConfig: this.util.isObject(
+                  (currentMetadataMutateC as Trf_TModelConfigForMutate)
+                    .modelMutate.diccActionsConfig
+                )
+                  ? (currentMetadataMutateC as Trf_TModelConfigForMutate)
+                    .modelMutate.diccActionsConfig
+                  : modelMutateInstance.dfDiccActionConfig,
+              }
+              : {
                 diccActionsConfig: modelMutateInstance.dfDiccActionConfig,
               },
-            }
+          }
+          : {
+            modelMutate: {
+              diccActionsConfig: modelMutateInstance.dfDiccActionConfig,
+            },
+          }
       ) as Trf_TModelConfigForMutate;
       let rModelConfig = {} as Trf_TModelConfigForMutate;
+      //😉 trampa `rebuildCustomConfigFromModuleContext` 
+      //es protected pero se llama asi para saltarse la proteccion
+      let reBuildModelFn = modelMutateInstance["rebuildCustomConfigFromModuleContext"];
+      reBuildModelFn = reBuildModelFn.bind(modelMutateInstance);
       if (!this.util.isObject(mMC)) {
-        rModelConfig = cMMC;
+        rModelConfig = {
+          ...cMMC,
+          modelMutate: reBuildModelFn(
+            cMMC.modelMutate,
+            undefined,
+            "hard"
+          )
+        };
       } else {
         rModelConfig = {
           ...mMC,
-          modelMutate: this.util.isObject(mMC.modelMutate)
-            ? {
-                ...mMC.modelMutate,
-                diccActionsConfig: this.util.isObject(
-                  mMC.modelMutate.diccActionsConfig
-                )
-                  ? this.util.mergeDiccActionConfig(
-                      [
-                        cMMC.modelMutate.diccActionsConfig,
-                        mMC.modelMutate.diccActionsConfig,
-                      ],
-                      {
-                        //si no existe metadatos actualmente la fusion debe ser "hard"
-                        //ya que la prioridad maxima seria los nuevos metadatos
-                        mode: this.util.isObject(currentMetadataMutateC)
-                          ? "soft"
-                          : "hard",
-                      }
-                    )
-                  : cMMC.modelMutate.diccActionsConfig,
-              }
-            : cMMC.modelMutate,
+          modelMutate: reBuildModelFn(
+            cMMC.modelMutate,
+            mMC.modelMutate,
+            (this.util.isObject(currentMetadataMutateC) ? "soft" : "hard")
+          ),
         };
       }
       rMetadataMutateC = rModelConfig;
@@ -816,59 +800,52 @@ export class StructureLogicMetadataHandler<
       const cMVC = (
         this.util.isObject(currentMetadataValC)
           ? {
-              ...(currentMetadataValC as Trf_TFieldConfigForVal),
-              fieldVal: this.util.isObject(
-                (currentMetadataValC as Trf_TFieldConfigForVal).fieldVal
-              )
-                ? {
-                    ...(currentMetadataValC as Trf_TFieldConfigForVal).fieldVal,
-                    diccActionsConfig: this.util.isObject(
-                      (currentMetadataValC as Trf_TFieldConfigForVal).fieldVal
-                        .diccActionsConfig
-                    )
-                      ? (currentMetadataValC as Trf_TFieldConfigForVal).fieldVal
-                          .diccActionsConfig
-                      : fieldValInstance.dfDiccActionConfig,
-                  }
-                : {
-                    diccActionsConfig: fieldValInstance.dfDiccActionConfig,
-                  },
-            }
-          : {
-              fieldVal: {
+            ...(currentMetadataValC as Trf_TFieldConfigForVal),
+            fieldVal: this.util.isObject(
+              (currentMetadataValC as Trf_TFieldConfigForVal).fieldVal
+            )
+              ? {
+                ...(currentMetadataValC as Trf_TFieldConfigForVal).fieldVal,
+                diccActionsConfig: this.util.isObject(
+                  (currentMetadataValC as Trf_TFieldConfigForVal).fieldVal
+                    .diccActionsConfig
+                )
+                  ? (currentMetadataValC as Trf_TFieldConfigForVal).fieldVal
+                    .diccActionsConfig
+                  : fieldValInstance.dfDiccActionConfig,
+              }
+              : {
                 diccActionsConfig: fieldValInstance.dfDiccActionConfig,
               },
-            }
+          }
+          : {
+            fieldVal: {
+              diccActionsConfig: fieldValInstance.dfDiccActionConfig,
+            },
+          }
       ) as Trf_TFieldConfigForVal;
       let rFieldConfig = {} as Trf_TFieldConfigForVal;
+      //😉 trampa `rebuildCustomConfigFromModuleContext` 
+      //es protected pero se llama asi para saltarse la proteccion
+      let reBuildFieldFn = fieldValInstance["rebuildCustomConfigFromModuleContext"];
+      reBuildFieldFn = reBuildFieldFn.bind(fieldValInstance);
       if (!this.util.isObject(mVC)) {
-        rFieldConfig = cMVC;
+        rFieldConfig = {
+          ...cMVC,
+          fieldVal: reBuildFieldFn(
+            cMVC.fieldVal,
+            undefined,
+            "hard"
+          )
+        };
       } else {
         rFieldConfig = {
           ...mVC,
-          fieldVal: this.util.isObject(mVC.fieldVal)
-            ? {
-                ...mVC.fieldVal,
-                diccActionsConfig: this.util.isObject(
-                  mVC.fieldVal.diccActionsConfig
-                )
-                  ? this.util.mergeDiccActionConfig(
-                      [
-                        cMVC.fieldVal.diccActionsConfig,
-                        mVC.fieldVal.diccActionsConfig,
-                      ],
-                      {
-                        //si no existe metadatos actualmente la fusion debe ser "hard"
-                        //ya que la prioridad maxima seria los nuevos metadatos
-                        mode: this.util.isObject(currentMetadataValC)
-                          ? "soft"
-                          : "hard",
-                        //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
-                      }
-                    )
-                  : cMVC.fieldVal.diccActionsConfig,
-              }
-            : cMVC.fieldVal,
+          fieldVal: reBuildFieldFn(
+            cMVC.fieldVal,
+            mVC.fieldVal,
+            (this.util.isObject(currentMetadataValC) ? "soft" : "hard")
+          )
         };
       }
       rMetadataValC = rFieldConfig;
@@ -877,100 +854,84 @@ export class StructureLogicMetadataHandler<
       const cMVC = (
         this.util.isObject(currentMetadataValC)
           ? {
-              ...(currentMetadataValC as Trf_TModelConfigForVal),
-              modelVal: this.util.isObject(
-                (currentMetadataValC as Trf_TModelConfigForVal).modelVal
-              )
-                ? {
-                    ...(currentMetadataValC as Trf_TModelConfigForVal).modelVal,
-                    diccActionsConfig: this.util.isObject(
-                      (currentMetadataValC as Trf_TModelConfigForVal).modelVal
-                        .diccActionsConfig
-                    )
-                      ? (currentMetadataValC as Trf_TModelConfigForVal).modelVal
-                          .diccActionsConfig
-                      : modelValInstance.dfDiccActionConfig,
-                  }
-                : {
-                    diccActionsConfig: modelValInstance.dfDiccActionConfig,
-                  },
-              requestVal: this.util.isObject(
-                (currentMetadataValC as Trf_TModelConfigForVal).requestVal
-              )
-                ? {
-                    ...(currentMetadataValC as Trf_TModelConfigForVal)
-                      .requestVal,
-                    diccActionsConfig: this.util.isObject(
-                      (currentMetadataValC as Trf_TModelConfigForVal).requestVal
-                        .diccActionsConfig
-                    )
-                      ? (currentMetadataValC as Trf_TModelConfigForVal)
-                          .requestVal.diccActionsConfig
-                      : requestValInstance.dfDiccActionConfig,
-                  }
-                : {
-                    diccActionsConfig: requestValInstance.dfDiccActionConfig,
-                  },
-            }
-          : {
-              modelVal: {
+            ...(currentMetadataValC as Trf_TModelConfigForVal),
+            modelVal: this.util.isObject(
+              (currentMetadataValC as Trf_TModelConfigForVal).modelVal
+            )
+              ? {
+                ...(currentMetadataValC as Trf_TModelConfigForVal).modelVal,
+                diccActionsConfig: this.util.isObject(
+                  (currentMetadataValC as Trf_TModelConfigForVal).modelVal
+                    .diccActionsConfig
+                )
+                  ? (currentMetadataValC as Trf_TModelConfigForVal).modelVal
+                    .diccActionsConfig
+                  : modelValInstance.dfDiccActionConfig,
+              }
+              : {
                 diccActionsConfig: modelValInstance.dfDiccActionConfig,
               },
-              requestVal: {
+            requestVal: this.util.isObject(
+              (currentMetadataValC as Trf_TModelConfigForVal).requestVal
+            )
+              ? {
+                ...(currentMetadataValC as Trf_TModelConfigForVal)
+                  .requestVal,
+                diccActionsConfig: this.util.isObject(
+                  (currentMetadataValC as Trf_TModelConfigForVal).requestVal
+                    .diccActionsConfig
+                )
+                  ? (currentMetadataValC as Trf_TModelConfigForVal)
+                    .requestVal.diccActionsConfig
+                  : requestValInstance.dfDiccActionConfig,
+              }
+              : {
                 diccActionsConfig: requestValInstance.dfDiccActionConfig,
               },
-            }
+          }
+          : {
+            modelVal: {
+              diccActionsConfig: modelValInstance.dfDiccActionConfig,
+            },
+            requestVal: {
+              diccActionsConfig: requestValInstance.dfDiccActionConfig,
+            },
+          }
       ) as Trf_TModelConfigForVal;
       let rModelConfig = {} as Trf_TModelConfigForVal;
+      //😉 trampa `rebuildCustomConfigFromModuleContext` 
+      //es protected pero se llama asi para saltarse la proteccion
+      let reBuildModelFn = modelValInstance["rebuildCustomConfigFromModuleContext"];
+      reBuildModelFn = reBuildModelFn.bind(modelValInstance);
+      let reBuildRequestFn = requestValInstance["rebuildCustomConfigFromModuleContext"];
+      reBuildRequestFn = reBuildRequestFn.bind(requestValInstance);
       if (!this.util.isObject(mVC)) {
-        rModelConfig = cMVC;
+        rModelConfig = {
+          ...cMVC,
+          modelVal: reBuildModelFn(
+            cMVC.modelVal,
+            undefined,
+            "hard"
+          ),
+          requestVal: reBuildRequestFn(
+            cMVC.requestVal,
+            undefined,
+            "hard"
+          )
+        };
       } else {
         rModelConfig = {
           ...mVC,
-          modelVal: this.util.isObject(mVC.modelVal)
-            ? {
-                ...mVC.modelVal,
-                diccActionsConfig: this.util.isObject(
-                  mVC.modelVal.diccActionsConfig
-                )
-                  ? this.util.mergeDiccActionConfig(
-                      [
-                        cMVC.modelVal.diccActionsConfig,
-                        mVC.modelVal.diccActionsConfig,
-                      ],
-                      {
-                        //si no existe metadatos actualmente la fusion debe ser "hard"
-                        //ya que la prioridad maxima seria los nuevos metadatos
-                        mode: this.util.isObject(currentMetadataValC)
-                          ? "soft"
-                          : "hard",
-                      }
-                    )
-                  : cMVC.modelVal.diccActionsConfig,
-              }
-            : cMVC.modelVal,
-          requestVal: this.util.isObject(mVC.requestVal)
-            ? {
-                ...mVC.requestVal,
-                diccActionsConfig: this.util.isObject(
-                  mVC.requestVal.diccActionsConfig
-                )
-                  ? this.util.mergeDiccActionConfig(
-                      [
-                        cMVC.requestVal.diccActionsConfig,
-                        mVC.requestVal.diccActionsConfig,
-                      ],
-                      {
-                        //si no existe metadatos actualmente la fusion debe ser "hard"
-                        //ya que la prioridad maxima seria los nuevos metadatos
-                        mode: this.util.isObject(currentMetadataValC)
-                          ? "soft"
-                          : "hard",
-                      }
-                    )
-                  : cMVC.requestVal.diccActionsConfig,
-              }
-            : cMVC.requestVal,
+          modelVal: reBuildModelFn(
+            cMVC.modelVal,
+            mVC.modelVal,
+            (this.util.isObject(currentMetadataValC) ? "soft" : "hard")
+          ),
+          requestVal: reBuildRequestFn(
+            cMVC.requestVal,
+            mVC.requestVal,
+            (this.util.isObject(currentMetadataValC) ? "soft" : "hard")
+          ),
         };
       }
       rMetadataValC = rModelConfig;
@@ -1006,60 +967,54 @@ export class StructureLogicMetadataHandler<
       const cMHC = (
         this.util.isObject(currentMetadataHookC)
           ? {
-              ...(currentMetadataHookC as Trf_TStructureConfigForHook),
-              structureHook: this.util.isObject(
-                (currentMetadataHookC as Trf_TStructureConfigForHook)
-                  .structureHook
-              )
-                ? {
-                    ...(currentMetadataHookC as Trf_TStructureConfigForHook)
-                      .structureHook,
-                    diccActionsConfig: this.util.isObject(
-                      (currentMetadataHookC as Trf_TStructureConfigForHook)
-                        .structureHook.diccActionsConfig
-                    )
-                      ? (currentMetadataHookC as Trf_TStructureConfigForHook)
-                          .structureHook.diccActionsConfig
-                      : structureHookInstance.dfDiccActionConfig,
-                  }
-                : {
-                    diccActionsConfig: structureHookInstance.dfDiccActionConfig,
-                  },
-            }
-          : {
-              structureHook: {
+            ...(currentMetadataHookC as Trf_TStructureConfigForHook),
+            structureHook: this.util.isObject(
+              (currentMetadataHookC as Trf_TStructureConfigForHook)
+                .structureHook
+            )
+              ? {
+                ...(currentMetadataHookC as Trf_TStructureConfigForHook)
+                  .structureHook,
+                diccActionsConfig: this.util.isObject(
+                  (currentMetadataHookC as Trf_TStructureConfigForHook)
+                    .structureHook.diccActionsConfig
+                )
+                  ? (currentMetadataHookC as Trf_TStructureConfigForHook)
+                    .structureHook.diccActionsConfig
+                  : structureHookInstance.dfDiccActionConfig,
+              }
+              : {
                 diccActionsConfig: structureHookInstance.dfDiccActionConfig,
               },
-            }
+          }
+          : {
+            structureHook: {
+              diccActionsConfig: structureHookInstance.dfDiccActionConfig,
+            },
+          }
       ) as Trf_TStructureConfigForHook;
       let rModelConfig = {} as Trf_TStructureConfigForHook;
+      //😉 trampa `rebuildCustomConfigFromModuleContext` 
+      //es protected pero se llama asi para saltarse la proteccion
+      let reBuildStructureFn = structureHookInstance["rebuildCustomConfigFromModuleContext"];
+      reBuildStructureFn = reBuildStructureFn.bind(structureHookInstance);
       if (!this.util.isObject(mHC)) {
-        rModelConfig = cMHC;
+        rModelConfig = {
+          ...cMHC,
+          structureHook: reBuildStructureFn(
+            cMHC.structureHook,
+            undefined,
+            "hard"
+          )
+        };
       } else {
         rModelConfig = {
           ...mHC,
-          structureHook: this.util.isObject(mHC.structureHook)
-            ? {
-                ...mHC.structureHook,
-                diccActionsConfig: this.util.isObject(
-                  mHC.structureHook.diccActionsConfig
-                )
-                  ? this.util.mergeDiccActionConfig(
-                      [
-                        cMHC.structureHook.diccActionsConfig,
-                        mHC.structureHook.diccActionsConfig,
-                      ],
-                      {
-                        //si no existe metadatos actualmente la fusion debe ser "hard"
-                        //ya que la prioridad maxima seria los nuevos metadatos
-                        mode: this.util.isObject(currentMetadataHookC)
-                          ? "soft"
-                          : "hard",
-                      }
-                    )
-                  : cMHC.structureHook.diccActionsConfig,
-              }
-            : cMHC.structureHook,
+          structureHook: reBuildStructureFn(
+            cMHC.structureHook,
+            mHC.structureHook,
+            (this.util.isObject(currentMetadataHookC) ? "soft" : "hard")
+          ),
         } as Trf_TStructureConfigForHook;
       }
       rMetadataHookC = rModelConfig;
@@ -1095,62 +1050,56 @@ export class StructureLogicMetadataHandler<
       const cMPC = (
         this.util.isObject(currentMetadataProviderC)
           ? {
-              ...(currentMetadataProviderC as Trf_TModelConfigForProvider),
-              structureProvider: this.util.isObject(
-                (currentMetadataProviderC as Trf_TModelConfigForProvider)
-                  .structureProvider
-              )
-                ? {
-                    ...(currentMetadataProviderC as Trf_TModelConfigForProvider)
-                      .structureProvider,
-                    diccActionsConfig: this.util.isObject(
-                      (currentMetadataProviderC as Trf_TModelConfigForProvider)
-                        .structureProvider.diccActionsConfig
-                    )
-                      ? (
-                          currentMetadataProviderC as Trf_TModelConfigForProvider
-                        ).structureProvider.diccActionsConfig
-                      : structureProviderInstance.dfDiccActionConfig,
-                  }
-                : {
-                    diccActionsConfig:
-                      structureProviderInstance.dfDiccActionConfig,
-                  },
-            }
-          : {
-              structureProvider: {
-                diccActionsConfig: structureProviderInstance.dfDiccActionConfig,
+            ...(currentMetadataProviderC as Trf_TModelConfigForProvider),
+            structureProvider: this.util.isObject(
+              (currentMetadataProviderC as Trf_TModelConfigForProvider)
+                .structureProvider
+            )
+              ? {
+                ...(currentMetadataProviderC as Trf_TModelConfigForProvider)
+                  .structureProvider,
+                diccActionsConfig: this.util.isObject(
+                  (currentMetadataProviderC as Trf_TModelConfigForProvider)
+                    .structureProvider.diccActionsConfig
+                )
+                  ? (
+                    currentMetadataProviderC as Trf_TModelConfigForProvider
+                  ).structureProvider.diccActionsConfig
+                  : structureProviderInstance.dfDiccActionConfig,
+              }
+              : {
+                diccActionsConfig:
+                  structureProviderInstance.dfDiccActionConfig,
               },
-            }
+          }
+          : {
+            structureProvider: {
+              diccActionsConfig: structureProviderInstance.dfDiccActionConfig,
+            },
+          }
       ) as Trf_TModelConfigForProvider;
       let rModelConfig = {} as Trf_TModelConfigForProvider;
+      //😉 trampa `rebuildCustomConfigFromModuleContext` 
+      //es protected pero se llama asi para saltarse la proteccion
+      let reBuildStructureFn = structureProviderInstance["rebuildCustomConfigFromModuleContext"];
+      reBuildStructureFn = reBuildStructureFn.bind(structureProviderInstance);
       if (!this.util.isObject(mPC)) {
-        rModelConfig = cMPC;
+        rModelConfig = {
+          ...cMPC,
+          structureProvider: reBuildStructureFn(
+            cMPC.structureProvider,
+            undefined,
+            "hard"
+          )
+        };
       } else {
         rModelConfig = {
           ...mPC,
-          structureProvider: this.util.isObject(mPC.structureProvider)
-            ? {
-                ...mPC.structureProvider,
-                diccActionsConfig: this.util.isObject(
-                  mPC.structureProvider.diccActionsConfig
-                )
-                  ? this.util.mergeDiccActionConfig(
-                      [
-                        cMPC.structureProvider.diccActionsConfig,
-                        mPC.structureProvider.diccActionsConfig,
-                      ],
-                      {
-                        //si no existe metadatos actualmente la fusion debe ser "hard"
-                        //ya que la prioridad maxima seria los nuevos metadatos
-                        mode: this.util.isObject(currentMetadataProviderC)
-                          ? "soft"
-                          : "hard",
-                      }
-                    )
-                  : cMPC.structureProvider.diccActionsConfig,
-              }
-            : cMPC.structureProvider,
+          structureProvider: reBuildStructureFn(
+            cMPC.structureProvider,
+            mPC.structureProvider,
+            (this.util.isObject(currentMetadataProviderC) ? "soft" : "hard")
+          ),
         } as Trf_TModelConfigForProvider;
       }
       rMetadataProviderC = rModelConfig;
@@ -1186,29 +1135,29 @@ export class StructureLogicMetadataHandler<
       const cMCC = (
         this.util.isObject(currentMetadataCtrlC)
           ? {
-              ...(currentMetadataCtrlC as Trf_TFieldConfigForCtrl),
-              fieldCtrl: this.util.isObject(
-                (currentMetadataCtrlC as Trf_TFieldConfigForCtrl).fieldCtrl
-              )
-                ? {
-                    ...(currentMetadataCtrlC as Trf_TFieldConfigForCtrl)
-                      .fieldCtrl,
-                    aTKeysForReq: this.util.isArrayTuple(
-                      (currentMetadataCtrlC as Trf_TFieldConfigForCtrl)
-                        .fieldCtrl.aTKeysForReq,
-                      2
-                    )
-                      ? (currentMetadataCtrlC as Trf_TFieldConfigForCtrl)
-                          .fieldCtrl.aTKeysForReq
-                      : dfCC.fieldCtrl.aTKeysForReq,
-                  }
-                : {
-                    aTKeysForReq: dfCC.fieldCtrl.aTKeysForReq,
-                  },
-            }
+            ...(currentMetadataCtrlC as Trf_TFieldConfigForCtrl),
+            fieldCtrl: this.util.isObject(
+              (currentMetadataCtrlC as Trf_TFieldConfigForCtrl).fieldCtrl
+            )
+              ? {
+                ...(currentMetadataCtrlC as Trf_TFieldConfigForCtrl)
+                  .fieldCtrl,
+                aTKeysForReq: this.util.isArrayTuple(
+                  (currentMetadataCtrlC as Trf_TFieldConfigForCtrl)
+                    .fieldCtrl.aTKeysForReq,
+                  2
+                )
+                  ? (currentMetadataCtrlC as Trf_TFieldConfigForCtrl)
+                    .fieldCtrl.aTKeysForReq
+                  : dfCC.fieldCtrl.aTKeysForReq,
+              }
+              : {
+                aTKeysForReq: dfCC.fieldCtrl.aTKeysForReq,
+              },
+          }
           : {
-              fieldCtrl: dfCC.fieldCtrl,
-            }
+            fieldCtrl: dfCC.fieldCtrl,
+          }
       ) as Trf_TFieldConfigForCtrl;
       let rFieldConfig = {} as Trf_TFieldConfigForCtrl;
       if (!this.util.isObject(mCC)) {
@@ -1218,14 +1167,14 @@ export class StructureLogicMetadataHandler<
           ...mCC,
           fieldCtrl: this.util.isObject(mCC.fieldCtrl)
             ? {
-                ...mCC.fieldCtrl,
-                aTKeysForReq: this.util.isArrayTuple(
-                  mCC.fieldCtrl.aTKeysForReq,
-                  2
-                )
-                  ? mCC.fieldCtrl.aTKeysForReq
-                  : cMCC.fieldCtrl.aTKeysForReq,
-              }
+              ...mCC.fieldCtrl,
+              aTKeysForReq: this.util.isArrayTuple(
+                mCC.fieldCtrl.aTKeysForReq,
+                2
+              )
+                ? mCC.fieldCtrl.aTKeysForReq
+                : cMCC.fieldCtrl.aTKeysForReq,
+            }
             : cMCC.fieldCtrl,
         };
       }
@@ -1236,28 +1185,28 @@ export class StructureLogicMetadataHandler<
       const cMCC = (
         this.util.isObject(currentMetadataCtrlC)
           ? {
-              ...(currentMetadataCtrlC as Trf_TModelConfigForCtrl),
-              modelCtrl: this.util.isObject(
-                (currentMetadataCtrlC as Trf_TModelConfigForCtrl).modelCtrl
-              )
-                ? {
-                    ...(currentMetadataCtrlC as Trf_TModelConfigForCtrl)
-                      .modelCtrl,
-                    diccATKeyCRUD: this.util.isObject(
-                      (currentMetadataCtrlC as Trf_TModelConfigForCtrl)
-                        .modelCtrl.diccATKeyCRUD
-                    )
-                      ? (currentMetadataCtrlC as Trf_TModelConfigForCtrl)
-                          .modelCtrl.diccATKeyCRUD
-                      : dfCC.modelCtrl.diccATKeyCRUD,
-                  }
-                : {
-                    diccATKeyCRUD: dfCC.modelCtrl.diccATKeyCRUD,
-                  },
-            }
+            ...(currentMetadataCtrlC as Trf_TModelConfigForCtrl),
+            modelCtrl: this.util.isObject(
+              (currentMetadataCtrlC as Trf_TModelConfigForCtrl).modelCtrl
+            )
+              ? {
+                ...(currentMetadataCtrlC as Trf_TModelConfigForCtrl)
+                  .modelCtrl,
+                diccATKeyCRUD: this.util.isObject(
+                  (currentMetadataCtrlC as Trf_TModelConfigForCtrl)
+                    .modelCtrl.diccATKeyCRUD
+                )
+                  ? (currentMetadataCtrlC as Trf_TModelConfigForCtrl)
+                    .modelCtrl.diccATKeyCRUD
+                  : dfCC.modelCtrl.diccATKeyCRUD,
+              }
+              : {
+                diccATKeyCRUD: dfCC.modelCtrl.diccATKeyCRUD,
+              },
+          }
           : {
-              modelCtrl: dfCC.modelCtrl,
-            }
+            modelCtrl: dfCC.modelCtrl,
+          }
       ) as Trf_TModelConfigForCtrl;
       let rModelConfig = {} as Trf_TModelConfigForCtrl;
       if (!this.util.isObject(mCC)) {
@@ -1267,11 +1216,11 @@ export class StructureLogicMetadataHandler<
           ...mCC,
           modelCtrl: this.util.isObject(mCC.modelCtrl)
             ? {
-                ...mCC.modelCtrl,
-                diccATKeyCRUD: this.util.isObject(mCC.modelCtrl.diccATKeyCRUD)
-                  ? mCC.modelCtrl.diccATKeyCRUD
-                  : cMCC.modelCtrl.diccATKeyCRUD,
-              }
+              ...mCC.modelCtrl,
+              diccATKeyCRUD: this.util.isObject(mCC.modelCtrl.diccATKeyCRUD)
+                ? mCC.modelCtrl.diccATKeyCRUD
+                : cMCC.modelCtrl.diccATKeyCRUD,
+            }
             : cMCC.modelCtrl,
         };
       }
@@ -1429,9 +1378,9 @@ export class StructureLogicMetadataHandler<
     TIDiccEmbModelMutateAC = TFieldMutateInstance["dfDiccActionConfig"],
     TIDiccEmbFieldValAC = TFieldValInstance["dfDiccActionConfig"],
     TIDiccEmbModelValAC = TFieldValInstance["dfDiccActionConfig"]
-    //TIDiccEmbRequestValAC = TModelValInstance["dfDiccActionConfig"],
-    //TIDiccEmbHookAC = TStructureHookInstance["dfDiccActionConfig"],
-    //TIDiccEmbProviderAC = TStructureProviderInstance["dfDiccActionConfig"]
+  //TIDiccEmbRequestValAC = TModelValInstance["dfDiccActionConfig"],
+  //TIDiccEmbHookAC = TStructureHookInstance["dfDiccActionConfig"],
+  //TIDiccEmbProviderAC = TStructureProviderInstance["dfDiccActionConfig"]
   >(
     keyStructureContext: "structureEmbedded",
     keyPath: string
@@ -1441,9 +1390,9 @@ export class StructureLogicMetadataHandler<
     TIDiccEmbModelMutateAC,
     TIDiccEmbFieldValAC,
     TIDiccEmbModelValAC
-    //TIDiccEmbRequestValAC,
-    //TIDiccEmbHookAC,
-    //TIDiccEmbProviderAC
+  //TIDiccEmbRequestValAC,
+  //TIDiccEmbHookAC,
+  //TIDiccEmbProviderAC
   >;
   public getExtractMetadataByStructureContext(
     keyStructureContext: "structureModel"
@@ -1526,7 +1475,7 @@ export class StructureLogicMetadataHandler<
     TEmbEmbModel = unknown, //❗nivel aun mas profundo❗
     TIDiccEmbEmbFieldValAC = TFieldValInstance["dfDiccActionConfig"], //❗nivel aun mas profundo❗
     TIDiccEmbEmbModelValAC = TModelValInstance["dfDiccActionConfig"] //❗nivel aun mas profundo❗
-    //TIDiccEmbEmbRequestValAC = TRequestValInstance["dfDiccActionConfig"] //los embebidos no tienen request
+  //TIDiccEmbEmbRequestValAC = TRequestValInstance["dfDiccActionConfig"] //los embebidos no tienen request
   >(
     keyStructureContext: "structureField",
     keyModule: "validator", //❗Solo para tipar el retorno❗

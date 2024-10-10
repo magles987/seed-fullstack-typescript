@@ -143,6 +143,8 @@ export abstract class LogicController extends LogicModuleWithReport {
    * @returns el objeto res (posiblemente mutado), el bag puede tambien mutarse
    */
   public postRunAction(bag: unknown, res: unknown): void {
+    //mutar data de res a bag
+    bag["data"] = res["data"];
     return;
   }
   /**... */

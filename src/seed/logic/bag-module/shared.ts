@@ -28,8 +28,6 @@ import { IDiccPrimitiveHookActionConfigG } from "../hooks/primitive-hook";
 import { IDiccPrimitiveMutateActionConfigG } from "../mutaters/primitive-mutater";
 import { IDiccPrimitiveValActionConfigG } from "../validators/primitive-validation";
 import { IDiccStructureHookActionConfigG } from "../hooks/structure-hook";
-import { PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
-import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
 import { IDiccStructureProviderActionConfigG } from "../providers/structure-provider";
 import {
   TKeyPrimitiveProviderModuleContext,
@@ -90,10 +88,10 @@ export type TKeyPrimitiveBagModuleContext = "primitiveBag";
 export interface IPrimitiveDiccKeyGlobalContextAction<TIDiccGlobalAC>
   extends IDiccKeyGlobalContextAction<TIDiccGlobalAC> {
   keyModuleContext:
-    | TKeyPrimitiveMutateModuleContext
-    | TKeyPrimitiveValModuleContext
-    | TKeyPrimitiveHookModuleContext
-    | TKeyPrimitiveProviderModuleContext;
+  | TKeyPrimitiveMutateModuleContext
+  | TKeyPrimitiveValModuleContext
+  | TKeyPrimitiveHookModuleContext
+  | TKeyPrimitiveProviderModuleContext;
 }
 /** */
 export type TPrimitiveKeysGlobal =
@@ -109,10 +107,10 @@ export type TPrimitiveATupleGlobalDiccAC<
   TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
 > = TATupleGlobalDiccAC<
   TIDiccPrimitiveMutateAC &
-    TIDiccPrimitiveValAC &
-    TIDiccRequestValAC &
-    TIDiccPrimitiveHookAC &
-    TIDiccPrimitiveProviderAC
+  TIDiccPrimitiveValAC &
+  TIDiccRequestValAC &
+  TIDiccPrimitiveHookAC &
+  TIDiccPrimitiveProviderAC
 >;
 /**... */
 export interface IPrimitiveBag<
@@ -145,10 +143,10 @@ export type TKeyStructureDeepBagModuleContext = "fieldBag" | "modelBag";
 export interface IStructureDiccKeyGlobalContextAction<TIDiccGlobalAC>
   extends IDiccKeyGlobalContextAction<TIDiccGlobalAC> {
   keyModuleContext:
-    | TKeyStructureDeepMutateModuleContext
-    | TKeyStructureDeepValModuleContext
-    | TKeyStructureHookModuleContext
-    | TKeyStructureProviderModuleContext;
+  | TKeyStructureDeepMutateModuleContext
+  | TKeyStructureDeepValModuleContext
+  | TKeyStructureHookModuleContext
+  | TKeyStructureProviderModuleContext;
 }
 /** */
 export type TStructureKeysGlobal =
@@ -166,12 +164,12 @@ export type TStructureATupleGlobalDiccAC<
   TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
 > = TATupleGlobalDiccAC<
   TIDiccFieldMutateAC &
-    TIDiccModelMutateAC &
-    TIDiccFieldValAC &
-    TIDiccModelValAC &
-    TIDiccRequestValAC &
-    TIDiccStructureHookAC &
-    TIDiccStructureProviderAC
+  TIDiccModelMutateAC &
+  TIDiccFieldValAC &
+  TIDiccModelValAC &
+  TIDiccRequestValAC &
+  TIDiccStructureHookAC &
+  TIDiccStructureProviderAC
 >;
 /**... */
 export interface IStructureBag<
@@ -186,8 +184,8 @@ export interface IStructureBag<
 > extends IBagModule<TModel> {
   keyPath: string;
   literalCriteria:
-    | IStructureReadCriteria<TModel>
-    | IStructureModifyCriteria<TModel>;
+  | IStructureReadCriteria<TModel>
+  | IStructureModifyCriteria<TModel>;
   aTupleGlobalActionConfig: TStructureATupleGlobalDiccAC<
     TIDiccFieldMutateAC,
     TIDiccModelMutateAC,

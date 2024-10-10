@@ -4,6 +4,7 @@ import { LogicHook } from "./_hook";
 import {
   TKeyPrimitiveHookModuleContext,
   TPrimitiveConfigForHook,
+  TPrimitiveHookModuleConfigForPrimitive,
 } from "./shared";
 import {
   IPrimitiveBagForActionModuleContext,
@@ -12,7 +13,6 @@ import {
 import { IPrimitiveResponse } from "../reports/shared";
 import {
   PrimitiveReportHandler,
-  Trf_PrimitiveReportHandler,
 } from "../reports/primitive-report-handler";
 import { TPrimitiveMetaAndHook } from "../meta/metadata-shared";
 import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
@@ -33,12 +33,11 @@ export type Trf_PrimitiveLogicHook = PrimitiveLogicHook<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class PrimitiveLogicHook<
-    TIDiccAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG
-  >
+  TIDiccAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG
+>
   extends LogicHook<TIDiccAC>
   implements
-    Record<TKeysDiccPrimitiveHookActionConfigG, TPrimitiveFnBagForActionModule>
-{
+  Record<TKeysDiccPrimitiveHookActionConfigG, TPrimitiveFnBagForActionModule> {
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = LogicHook.getDefault();
@@ -57,6 +56,37 @@ export class PrimitiveLogicHook<
       ] as Array<TKeysDiccPrimitiveHookActionConfigG>,
     };
   };
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TPrimitiveHookModuleConfigForPrimitive<TIDiccAC>,
+    newContextConfig: TPrimitiveHookModuleConfigForPrimitive<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TPrimitiveHookModuleConfigForPrimitive<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TPrimitiveHookModuleConfigForPrimitive<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
+  }
   public override get metadataHandler(): Trf_PrimitiveLogicMetadataHandler {
     const mH = super.metadataHandler as Trf_PrimitiveLogicMetadataHandler;
     return mH;

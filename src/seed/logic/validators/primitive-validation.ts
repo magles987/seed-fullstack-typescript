@@ -4,6 +4,7 @@ import { TPrimitiveMetaAndValidator } from "../meta/metadata-shared";
 import {
   TKeyPrimitiveValModuleContext,
   TPrimitiveConfigForVal,
+  TPrimitiveValModuleConfigForPrimitive,
 } from "./shared";
 import {
   IPrimitiveBagForActionModuleContext,
@@ -222,57 +223,57 @@ export interface IDiccPrimitiveValActionConfigG {
    * usar con modelos embebidos
    */
   isAnonimusObject:
-    | {
-        //❓POSIBLES ERRORES DE CONFIGURACION❓
-        //se aplicará a cada propiedad del objeto por
-        //lo que deben ser validaciones muy genericas
-        /**recursivo para los subcampos */
-        anonimuSchemaForATupleAC: Record<
-          any,
-          Array<TGenericTupleActionConfig<IDiccPrimitiveValActionConfigG>> //tupla de acciones [keyAction, ActionConfig]
-        >; //Modelo o esquema con los campos asinando a cada uno un array de diccionarios de acciones de configuracion (ADiccAC)
-        /**determina si se permite propiedades
-         * adicionales en el dato que no esten
-         * en la configuracion de `schemaADiccActionsConfig`
-         *
-         * Ejemplo:
-         * ````
-         * isObjectAnonimus = {
-         *   isEmbbeded: false,
-         *   schemaADiccActionsConfig: {
-         *     field1: [
-         *       { isTypeOf: { fieldType: "string" } },
-         *       { isRequired: true }
-         *     ],
-         *   },
-         *   isAllowedExtraProp: true
-         * }
-         *
-         * data = {
-         *   field1: "algun dato",
-         *   field2: 99,
-         * }
-         * //`data` es valido aunque tenga
-         * //una propiedad extra `field2`
-         *
-         * **⚠Importante:** el permitir propiedades
-         * extras estas no se validan asi que
-         * pueden incluir cualquier tipo de información
-         * ````
-         *
-         */
-        isAllowedExtraProp?: boolean;
-      }
-    | undefined;
+  | {
+    //❓POSIBLES ERRORES DE CONFIGURACION❓
+    //se aplicará a cada propiedad del objeto por
+    //lo que deben ser validaciones muy genericas
+    /**recursivo para los subcampos */
+    anonimuSchemaForATupleAC: Record<
+      any,
+      Array<TGenericTupleActionConfig<IDiccPrimitiveValActionConfigG>> //tupla de acciones [keyAction, ActionConfig]
+    >; //Modelo o esquema con los campos asinando a cada uno un array de diccionarios de acciones de configuracion (ADiccAC)
+    /**determina si se permite propiedades
+     * adicionales en el dato que no esten
+     * en la configuracion de `schemaADiccActionsConfig`
+     *
+     * Ejemplo:
+     * ````
+     * isObjectAnonimus = {
+     *   isEmbbeded: false,
+     *   schemaADiccActionsConfig: {
+     *     field1: [
+     *       { isTypeOf: { fieldType: "string" } },
+     *       { isRequired: true }
+     *     ],
+     *   },
+     *   isAllowedExtraProp: true
+     * }
+     *
+     * data = {
+     *   field1: "algun dato",
+     *   field2: 99,
+     * }
+     * //`data` es valido aunque tenga
+     * //una propiedad extra `field2`
+     *
+     * **⚠Importante:** el permitir propiedades
+     * extras estas no se validan asi que
+     * pueden incluir cualquier tipo de información
+     * ````
+     *
+     */
+    isAllowedExtraProp?: boolean;
+  }
+  | undefined;
   /** */
   isAnonimusArray:
-    | {
-        /**array de diccionarios de acciones para cada elemento del array del dato*/
-        aTupleAC: Array<
-          TGenericTupleActionConfig<IDiccPrimitiveValActionConfigG>
-        >;
-      }
-    | undefined;
+  | {
+    /**array de diccionarios de acciones para cada elemento del array del dato*/
+    aTupleAC: Array<
+      TGenericTupleActionConfig<IDiccPrimitiveValActionConfigG>
+    >;
+  }
+  | undefined;
 }
 /**claves identificadoras del diccionario
  * de acciones de configuracion */
@@ -283,12 +284,11 @@ export type Trf_PrimitiveLogicValidation = PrimitiveLogicValidation;
 //████Clases████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class PrimitiveLogicValidation<
-    TIDiccAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG
-  >
+  TIDiccAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG
+>
   extends LogicValidation<TIDiccAC>
   implements
-    Record<TKeysDiccPrimitiveValActionConfigG, TPrimitiveFnBagForActionModule>
-{
+  Record<TKeysDiccPrimitiveValActionConfigG, TPrimitiveFnBagForActionModule> {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = LogicValidation.getDefault();
@@ -332,6 +332,38 @@ export class PrimitiveLogicValidation<
   }
   protected override getDefault() {
     return PrimitiveLogicValidation.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TPrimitiveValModuleConfigForPrimitive<TIDiccAC>,
+    newContextConfig: TPrimitiveValModuleConfigForPrimitive<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TPrimitiveValModuleConfigForPrimitive<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TPrimitiveValModuleConfigForPrimitive<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+              //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   public override get metadataHandler(): Trf_PrimitiveLogicMetadataHandler {
     const mH = super.metadataHandler as Trf_PrimitiveLogicMetadataHandler;

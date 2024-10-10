@@ -2,7 +2,6 @@ import { EHttpStatusCode } from "../../../../../util/http-utilities";
 import { httpClientDriverFactoryFn } from "./drive/http-driver-factory";
 import { IDiccHttpDriveConfig, TKeyDiccHttpDrive } from "./drive/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-
 /**... */
 export interface IHttpResponse {
   /**cuerpo de la respuesta */
@@ -20,11 +19,10 @@ export interface IHttpResponse {
 }
 /**... */
 export interface IHttpWebClientServiceRequestC {
-  /**clave identificadora de la libreria
-   * (driver) usado para la comunicacion http */
-  keyHttpDriver: TKeyDiccHttpDrive;
   /** */
   diccDriverConfig?: IDiccHttpDriveConfig;
+  /** */
+  customHttpClientFactoryFn?: typeof httpClientDriverFactoryFn;
   /** */
   urlConfig: {
     /**url raiz del recurso */
@@ -48,6 +46,4 @@ export interface IHttpWebClientServiceRequestC {
      */
     urlPostfix?: string;
   };
-  /** */
-  customHttpClientFactoryFn?: typeof httpClientDriverFactoryFn;
 }

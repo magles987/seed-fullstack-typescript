@@ -2,6 +2,7 @@ import { LogicMutater } from "./_mutater";
 import {
   TPrimitiveConfigForMutate,
   TKeyPrimitiveMutateModuleContext,
+  TPrimitiveMutateModuleConfigForPrimitive,
 } from "./shared";
 import {
   IPrimitiveBagForActionModuleContext,
@@ -161,15 +162,14 @@ export type Trf_PrimitiveLogicMutater = PrimitiveLogicMutater;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class PrimitiveLogicMutater<
-    TIDiccAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG
-  >
+  TIDiccAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG
+>
   extends LogicMutater<TIDiccAC>
   implements
-    Record<
-      TKeysDiccPrimitiveMutateActionConfigG,
-      TPrimitiveFnBagForActionModule
-    >
-{
+  Record<
+    TKeysDiccPrimitiveMutateActionConfigG,
+    TPrimitiveFnBagForActionModule
+  > {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = LogicMutater.getDefault();
@@ -205,6 +205,38 @@ export class PrimitiveLogicMutater<
   }
   protected override getDefault() {
     return PrimitiveLogicMutater.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TPrimitiveMutateModuleConfigForPrimitive<TIDiccAC>,
+    newContextConfig: TPrimitiveMutateModuleConfigForPrimitive<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TPrimitiveMutateModuleConfigForPrimitive<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TPrimitiveMutateModuleConfigForPrimitive<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+              //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   protected override getMetadataWithContextModule(): TPrimitiveMetaAndMutater<TIDiccAC> {
     const metadata =
@@ -325,7 +357,7 @@ export class PrimitiveLogicMutater<
     );
     const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    const {} = actionConfig;
+    const { } = actionConfig;
 
     // //Desempaquetar la accion e inicializar
     // const keyAction: TLibKeyAction = "any_trim";

@@ -1,5 +1,5 @@
 import { StructureLogicMutater } from "./_structure-mutater";
-import { TModelConfigForMutate } from "./shared";
+import { TModelConfigForMutate, TStructureMutateModuleConfigForModel } from "./shared";
 import {
   IStructureBagForActionModuleContext,
   TStructureFnBagForActionModule,
@@ -30,20 +30,20 @@ export interface IDiccModelMutateActionConfigG<
 > {
   /**formatear todos los campos del registro */
   mutateModel:
-    | {
-        /**representa un modelo de diccionario
-         * de configuracion de acciones de formateo
-         * para cada campo
-         *
-         * ⚠ El tipo debería ser:
-         *
-         * `Record<keyof Model, TIDiccFieldFormatAction>`
-         *
-         * donde `TIADiccFieldFormatActionsConfig` es el diccionario personalizado
-         */
-        modelForDiccAC: Partial<Record<any, Partial<TIDiccFieldMutateAC>>>;
-      }
-    | undefined;
+  | {
+    /**representa un modelo de diccionario
+     * de configuracion de acciones de formateo
+     * para cada campo
+     *
+     * ⚠ El tipo debería ser:
+     *
+     * `Record<keyof Model, TIDiccFieldFormatAction>`
+     *
+     * donde `TIADiccFieldFormatActionsConfig` es el diccionario personalizado
+     */
+    modelForDiccAC: Partial<Record<any, Partial<TIDiccFieldMutateAC>>>;
+  }
+  | undefined;
   /**eliminar los campos virtuales del modelo */
   deleteAllVirtualField: boolean | undefined;
 }
@@ -58,12 +58,11 @@ export type Trf_ModelLogicMutater = ModelLogicMutater;
  *
  */
 export class ModelLogicMutater<
-    TIDiccAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG
-  >
+  TIDiccAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG
+>
   extends StructureLogicMutater<TIDiccAC>
   implements
-    Record<TKeysDiccModelMutateActionConfigG, TStructureFnBagForActionModule>
-{
+  Record<TKeysDiccModelMutateActionConfigG, TStructureFnBagForActionModule> {
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = StructureLogicMutater.getDefault();
@@ -92,6 +91,37 @@ export class ModelLogicMutater<
   }
   protected override getDefault() {
     return ModelLogicMutater.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TStructureMutateModuleConfigForModel<TIDiccAC>,
+    newContextConfig: TStructureMutateModuleConfigForModel<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TStructureMutateModuleConfigForModel<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TStructureMutateModuleConfigForModel<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   protected override getMetadataWithContextModule(
     keyPath?: string
@@ -172,8 +202,11 @@ export class ModelLogicMutater<
           sub_keyAction
         )) as IStructureResponse;
         resForField.responses.push(resForFieldForAction);
+        if (resForFieldForAction.status > fieldMutate["globalTolerance"]) break; //😉 trampa `globalTolerance` es protected pero se lllama asi para saltarse la proteccion
       }
       resForField = sub_rH.mutateResponse(resForField);
+      //mutacion de campo a modelo
+      res.data[keyField] = resForField.data;
       return resForField;
     });
     const resesForField = await Promise.all(promForField);

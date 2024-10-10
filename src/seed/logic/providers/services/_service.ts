@@ -38,8 +38,7 @@ export type Trf_LogicService = LogicService;
  */
 export abstract class LogicService
   extends HandlerModule
-  implements IGenericService
-{
+  implements IGenericService {
   /** configuracion predefinida para el manejador */
   public static readonly getDefault = () => {
     return {
@@ -47,14 +46,10 @@ export abstract class LogicService
       server: {},
     } as IServiceRequestConfig;
   };
-  // private _reportPrimitiveHandler: PrimitiveReportHandler;
-  // protected get reportPrimitiveHandler(): PrimitiveReportHandler {
-  //   return this._reportPrimitiveHandler;
-  // }
-  // private _reportStructureHandler: StructureReportHandler;
-  // protected get reportStructureHandler(): StructureReportHandler {
-  //   return this._reportStructureHandler;
-  // }
+  /**clave identificadora del drive a instanciar para este servicio */
+  public get keyDrive(): unknown {
+    return this._keyDrive;
+  }
   private _fullConfig: IServiceRequestConfig;
   /**esquema completo de configuracion de servicio */
   protected get fullConfig(): IServiceRequestConfig {
@@ -72,10 +67,15 @@ export abstract class LogicService
   /** utilidades */
   protected util = Util_Service.getInstance();
   /**
-   * @param _keyLogicContext contexto lógico (estructural o primitivo)
-   * @param _keySrc indentificadora del recurso asociado a modulo
+   * @param keyLogicContext contexto lógico (estructural o primitivo)
+   * @param keySrc indentificadora del recurso asociado a modulo
+   * @param keyDrive clave identificadora del drive a instanciar para este servicio
    */
-  constructor(keyLogicContext: TKeyLogicContext, keySrc: string) {
+  constructor(
+    keyLogicContext: TKeyLogicContext,
+    keySrc: string,
+    private _keyDrive: unknown
+  ) {
     super("service", keyLogicContext, keySrc);
   }
   protected override getDefault() {
@@ -88,11 +88,9 @@ export abstract class LogicService
     let res: IResponse;
     if (this.keyLogicContext === "primitive") {
       const iPrimitiveBag = iBag as IPrimitiveBag<any>;
-      const rH = this.buildPrimitiveReportHandler(iPrimitiveBag);
       res = await this.runRequestForPrimitive(iPrimitiveBag);
     } else if (this.keyLogicContext === "structure") {
       const iStructureBag = iBag as IStructureBag<any>;
-      const rH = this.buildStructureReportHandler(iStructureBag);
       res = await this.runRequestForStructure(iStructureBag);
     } else {
       throw new LogicError({
@@ -162,7 +160,7 @@ export abstract class LogicService
     const { data, literalCriteria, keyPath } = iBag;
     const { keyActionRequest, type, modifyType, keySrc } =
       literalCriteria as IStructureReadCriteria<any> &
-        IStructureModifyCriteria<any>;
+      IStructureModifyCriteria<any>;
     let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: "structureService",
@@ -190,12 +188,12 @@ export abstract class LogicService
   /**... */
   protected abstract adaptDriverResponseToPrimitiveLogicResponse(
     driverResponse: unknown,
-    option: unknown
+    ibag: IPrimitiveBag<any>,
   ): IPrimitiveResponse;
   /**... */
   protected abstract adaptDriverResponseToStructureLogicResponse(
     driverResponse: unknown,
-    option: unknown
+    ibag: IStructureBag<any>,
   ): IStructureResponse;
   /**
    * @returns el estado de respuesta reducido

@@ -11,7 +11,7 @@ import { PrimitiveLogicMutater } from "../mutaters/primitive-mutater";
 import { PrimitiveLogicValidation } from "../validators/primitive-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
 import { PrimitiveLogicHook } from "../hooks/primitive-hook";
-import { EKeyActionGroupForRes, IPrimitiveResponse } from "../reports/shared";
+import { EKeyActionGroupForRes, ELogicResStatusCode, IPrimitiveResponse } from "../reports/shared";
 import {
   PrimitiveLogicMetadataHandler,
   Trf_PrimitiveLogicMetadataHandler,
@@ -197,6 +197,15 @@ export abstract class PrimitiveLogicController<
     const diccATKeyCRUD = config.primitiveCtrl.diccATKeyCRUD;
     return diccATKeyCRUD;
   }
+  /**... */
+  protected getATKeyCRUDByKeyActionRequest(keyActionRequest: TKeyDiccCtrlCRUD) {
+    const schemaATKeyGlobal = this.getDiccATKeyCRUD();
+    const aTKeyGlobal = this.util.isObject(schemaATKeyGlobal)
+      && this.util.isArray(schemaATKeyGlobal[keyActionRequest])
+      ? schemaATKeyGlobal[keyActionRequest]
+      : [];
+    return aTKeyGlobal;
+  }
   public override buildCriteriaHandler(
     requestType: "read",
     keyActionRequest: TKeyDiccCtrlCRUD,
@@ -342,6 +351,18 @@ export abstract class PrimitiveLogicController<
     TPrimitiveHookInstance["dfDiccActionConfig"],
     TPrimitiveProviderInstance["dfDiccActionConfig"]
   > {
+    if (!this.util.isObject(bagCtrl)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${bagCtrl} is not bag controller valid`,
+      });
+    }
+    if (!this.util.isArrayTuple(aTupleGlobalActionConfig, [1, 2], true)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${aTupleGlobalActionConfig} is not array of tuple of action config valid`,
+      });
+    }
     const { data, criteriaHandler: criteriaCursor } = bagCtrl;
     const bag = new PrimitiveBag<
       TValue,
@@ -439,6 +460,35 @@ export abstract class PrimitiveLogicController<
     }
     return aTGlobalAC;
   }
+  /**obtiene la instancia de modulo de acuerdo a la clave identificadora
+   * 
+   * @param keyModuleContext clave identificadora del contexto del submodulo 
+   * con la accion a ejecutar
+   * 
+   * @returns la instancia seleccionada
+   */
+  private getModuleInstanceForActionContext(keyModuleContext: TKeyPrimitiveInternalACModuleContext): ActionModule<any> {
+    const {
+      primitiveMutate: mPM,
+      primitiveVal: mPV,
+      requestVal: mRV,
+      primitiveHook: mPH,
+      primitiveProvider: mPP,
+    } = this.metadataHandler.diccModuleIntanceContext;
+    let mFX: ActionModule<any>;
+    if (keyModuleContext === "primitiveMutate") mFX = mPM;
+    else if (keyModuleContext === "primitiveVal") mFX = mPV;
+    else if (keyModuleContext === "requestVal") mFX = mRV;
+    else if (keyModuleContext === "primitiveHook") mFX = mPH;
+    else if (keyModuleContext === "primitiveProvider") mFX = mPP;
+    else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyModuleContext} is not key action module context valid`,
+      });
+    }
+    return mFX;
+  }
   /**
    * ejecuta las acciones configuradas en el bag completo
    *
@@ -456,40 +506,31 @@ export abstract class PrimitiveLogicController<
       TPrimitiveProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IPrimitiveResponse> {
-    const {
-      primitiveMutate: mPM,
-      primitiveVal: mPV,
-      requestVal: mRV,
-      primitiveHook: mPH,
-      primitiveProvider: mPP,
-    } = this.metadataHandler.diccModuleIntanceContext;
     let keyCtrlAction: EKeyActionGroupForRes =
       EKeyActionGroupForRes.ctrlPrimitive;
-    this.preRunAction(bag, keyCtrlAction) as any;
+    const { data: dataBag, aTupleGlobalActionConfig } = bag;
     const rH = this.buildReportHandler(bag, keyCtrlAction);
-    let res = rH.mutateResponse(undefined, { data: bag.data });
-    for (const tGAC of bag.aTupleGlobalActionConfig) {
-      const { keyModule, keyModuleContext, keyAction } =
+    this.preRunAction(bag, keyCtrlAction);
+    let res = rH.mutateResponse(undefined, { data: dataBag });
+    if (aTupleGlobalActionConfig.length === 0) {
+      res = rH.mutateResponse(res, {
+        status: ELogicResStatusCode.WARNING,
+        msn: `${aTupleGlobalActionConfig} is array of global action config empty`
+      });
+      this.postRunAction(bag, res);
+      return res;
+    }
+    for (const tGAC of aTupleGlobalActionConfig) {
+      const { keyModuleContext, keyAction } =
         bag.getDiccKeysGlobalFromTupleGlobal(tGAC);
-      let resForAction: IPrimitiveResponse;
-      let mFX: ActionModule<any>;
-      if (keyModuleContext === "primitiveMutate") mFX = mPM;
-      else if (keyModuleContext === "primitiveVal") mFX = mPV;
-      else if (keyModuleContext === "requestVal") mFX = mRV;
-      else if (keyModuleContext === "primitiveHook") mFX = mPH;
-      else if (keyModuleContext === "primitiveProvider") mFX = mPP;
-      else {
-        throw new LogicError({
-          code: ELogicCodeError.MODULE_ERROR,
-          msn: `${keyModuleContext} is not key action module context valid`,
-        });
-      }
+      const mFX = this.getModuleInstanceForActionContext(keyModuleContext);
       if (this.isAllowRunAction(tGAC)) {
-        resForAction = await this.runRequestForAction(mFX, bag, keyAction);
+        const resForAction = await this.runRequestForAction(mFX, bag, keyAction);
         res.responses.push(resForAction);
+        if (resForAction.status > this.globalTolerance) break;
       }
     }
-    res = rH.mutateResponse(res, { data: bag.data });
+    res = rH.mutateResponse(res);
     this.postRunAction(bag, res);
     return res;
   }
@@ -526,8 +567,7 @@ export abstract class PrimitiveLogicController<
       });
     }
     bagCtrl = this.buildBagCtrl(bagCtrl); //reconstruccion OBLIGATORIA
-    const schemaATKeyGlobal = this.getDiccATKeyCRUD();
-    const aTKeyGlobal = schemaATKeyGlobal[keyActionRequest];
+    const aTKeyGlobal = this.getATKeyCRUDByKeyActionRequest(keyActionRequest);
     const aTGlobalAC = this.buildATupleForRequestCtrlFromBagCtrl(
       bagCtrl,
       aTKeyGlobal

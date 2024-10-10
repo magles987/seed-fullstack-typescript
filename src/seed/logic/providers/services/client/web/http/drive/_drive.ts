@@ -65,7 +65,9 @@ export abstract class HttpDrive implements IGenericDriver<IHttpResponse> {
       this.checkBag(bagService);
       const { literalCriteria } = bagService;
       const { keyActionRequest } = literalCriteria;
-    } catch (error) {}
+    } catch (error) {
+
+    }
     return localRes;
   }
   /**obtiene el metodo http correspondiente a la solicitud
@@ -101,5 +103,5 @@ export abstract class HttpDrive implements IGenericDriver<IHttpResponse> {
     return httpMethod;
   }
   /**... */
-  public buildUrl(criteria: IBagForService["literalCriteria"]): string {}
+  public buildUrl(criteria: IBagForService["literalCriteria"]): string { }
 }

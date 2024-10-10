@@ -31,15 +31,14 @@ export type Trf_StructureLocalStorageRepository =
  * ...
  */
 export class StructureLocalStorageRepository<
-    TKeyActionRequest extends TKeyFullRequest
-  >
+  TKeyActionRequest extends TKeyFullRequest
+>
   extends LocalStorageRepository<TKeyActionRequest>
   implements
-    ReturnType<
-      StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]
-    >,
-    Record<TKeyFullRequest, TActionFn>
-{
+  ReturnType<
+    StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]
+  >,
+  Record<TKeyFullRequest, TActionFn> {
   public static override readonly getDefault = () => {
     const superDf = LocalStorageRepository.getDefault();
     return {
@@ -62,8 +61,8 @@ export class StructureLocalStorageRepository<
     this._keyId = this.util.isString(v)
       ? v
       : this._keyId !== undefined
-      ? this._keyId
-      : this.getDefault().keyId;
+        ? this._keyId
+        : this.getDefault().keyId;
   }
   /**
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
@@ -154,12 +153,15 @@ export class StructureLocalStorageRepository<
       const r = dt[kId] === data[kId];
       return r;
     });
-    if (idxCData > 0) {
+    if (idxCData !== -1) {
       //elimina solo si existe
       currentData.splice(idxCData, 1);
       await this.setData(currentData, keySrcContext);
     }
-    return data;
+    //mutar data para la eliminacion:
+    let dData = {};
+    dData[kId] = data[kId]; //solo envia id
+    return dData;
   }
   //████ Request Actions ████████████████████████████████████████████████████████████
   /**

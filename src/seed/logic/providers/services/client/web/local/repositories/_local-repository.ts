@@ -7,7 +7,7 @@ import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../errors/logic-error";
-import { ILocalResponse, TActionFn, TKeyDiccLocalRepository } from "./shared";
+import { TActionFn, TKeyDiccLocalRepository } from "./shared";
 import { Util_LocalRepository } from "./_util-repository";
 import {
   IModifyCriteria,
@@ -15,6 +15,7 @@ import {
 } from "../../../../../../criterias/shared";
 import { QueryJsAdaptator } from "./_query-js-adaptador";
 import { IBagForService, IGenericDriver } from "../../../../shared";
+import { ILocalResponse } from "../shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -22,8 +23,7 @@ import { IBagForService, IGenericDriver } from "../../../../shared";
  *
  */
 export abstract class LocalRepository
-  implements IGenericDriver<ILocalResponse>
-{
+  implements IGenericDriver<ILocalResponse> {
   /**... */
   protected get keyDriver(): TKeyDiccLocalRepository {
     return this._keyDriver;
@@ -79,7 +79,8 @@ export abstract class LocalRepository
         //body: this.buildBodySimulated(error), //empaquetado como objeto ???
         ok: false,
         httpStatus: this.buildHttpResponseSimulated(
-          bagService?.literalCriteria
+          bagService?.literalCriteria,
+          error
         ),
         statusText: (<Error>error).message,
       };
@@ -180,22 +181,22 @@ export abstract class LocalRepository
         keyRequestType === "read"
           ? EHttpStatusCode.OK
           : keyRequestType === "modify"
-          ? keyModifyRequestType === "create"
-            ? EHttpStatusCode.CREATED
-            : keyModifyRequestType === "update"
-            ? EHttpStatusCode.OK
-            : EHttpStatusCode.NO_CONTENT //delete
-          : EHttpStatusCode.NO_CONTENT;
+            ? keyModifyRequestType === "create"
+              ? EHttpStatusCode.CREATED
+              : keyModifyRequestType === "update"
+                ? EHttpStatusCode.OK
+                : EHttpStatusCode.NO_CONTENT //delete
+            : EHttpStatusCode.NO_CONTENT;
     } else {
       if (error instanceof LogicError) {
         httpCode =
           error.code == ELogicCodeError.NOT_EXIST
             ? EHttpStatusCode.NOT_FOUND
             : error.code == ELogicCodeError.NOT_VALID
-            ? EHttpStatusCode.FORBIDDEN
-            : error.code == ELogicCodeError.OVERFLOW
-            ? EHttpStatusCode.PAYLOAD_TOO_LARGE
-            : EHttpStatusCode.BAD_REQUEST;
+              ? EHttpStatusCode.FORBIDDEN
+              : error.code == ELogicCodeError.OVERFLOW
+                ? EHttpStatusCode.PAYLOAD_TOO_LARGE
+                : EHttpStatusCode.BAD_REQUEST;
       } else {
         httpCode = EHttpStatusCode.INTERNAL_SERVER_ERROR;
       }
@@ -296,8 +297,8 @@ export abstract class LocalRepository
       targetPage <= 0
         ? 0 //no puede ser menor al inicial
         : targetPage > Math.floor(registersLen / limit)
-        ? Math.floor(registersLen / limit)
-        : targetPage;
+          ? Math.floor(registersLen / limit)
+          : targetPage;
     let startIdx = targetPage * limit;
     let endIdx = Math.min(startIdx + limit, registersLen);
     const pageData = registers.slice(startIdx, endIdx);

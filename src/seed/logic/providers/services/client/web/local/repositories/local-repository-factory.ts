@@ -4,6 +4,7 @@ import {
   LogicError,
 } from "../../../../../../errors/logic-error";
 import { IGenericDriver } from "../../../../shared";
+import { ILocalResponse } from "../shared";
 import { PrimitiveLocalCookieRepository } from "./local-cookie/primitive-local-cookie-repository";
 import { StructureLocalCookieRepository } from "./local-cookie/structure-local-cookie-repository";
 import { PrimitiveLocalIDBRepository } from "./local-idb/primitive-local-idb-repository";
@@ -14,7 +15,6 @@ import { PrimitiveLocalStorageRepository } from "./local-storage/primitive-local
 import { StructureLocalStorageRepository } from "./local-storage/structure-local-storage-repository";
 import {
   IDiccLocalRepositoryConfig,
-  ILocalResponse,
   TKeyDiccLocalRepository,
 } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████

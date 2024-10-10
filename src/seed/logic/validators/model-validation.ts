@@ -2,8 +2,8 @@ import { TZodSchemaForClose } from "./_validation";
 import { StructureLogicValidation } from "./_structure-validation";
 import { TStructureMetaAndValidator } from "../meta/metadata-shared";
 import {
-  TKeyStructureDeepValModuleContext,
   TModelConfigForVal,
+  TStructureValModuleConfigForModel
 } from "./shared";
 import {
   IStructureBagForActionModuleContext,
@@ -19,10 +19,8 @@ import {
   FieldLogicValidation,
   IDiccFieldValActionConfigG,
 } from "./field-validation";
-import { TGenericTupleActionConfig } from "../config/shared-modules";
 import { LogicController } from "../controllers/_controller";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { IBuildACOption } from "../config/module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipo exclusivo para adicionar una configuracion
  * a la accion isRequired */
@@ -57,21 +55,21 @@ export interface IDiccModelValActionConfigG<
   isRequired: boolean | TisRequiredConfig | undefined;
   /**configuracion para validar campos del modelo*/
   isModel:
-    | {
-        /**representa un modelo de diccionario
-         * de configuracion de acciones de validacion
-         * para cada campo
-         *
-         *
-         * ⚠ El tipo debería ser:
-         *
-         * `Record<keyof Model, TIDiccFieldValAction>`
-         *
-         * donde `TIADiccFieldValActionsConfig` es el diccionario personalizado
-         */
-        modelForDiccAC: Partial<Record<any, Partial<TIDiccFieldValAC>>>;
-      }
-    | undefined;
+  | {
+    /**representa un modelo de diccionario
+     * de configuracion de acciones de validacion
+     * para cada campo
+     *
+     *
+     * ⚠ El tipo debería ser:
+     *
+     * `Record<keyof Model, TIDiccFieldValAction>`
+     *
+     * donde `TIADiccFieldValActionsConfig` es el diccionario personalizado
+     */
+    modelForDiccAC: Partial<Record<any, Partial<TIDiccFieldValAC>>>;
+  }
+  | undefined;
 }
 /**claves identificadoras del diccionario de acciones de configuracion */
 export type TKeysDiccModelValActionConfigG =
@@ -84,12 +82,11 @@ export type Trf_ModelLogicValidation = ModelLogicValidation;
  * libreria de validadores para el model
  */
 export class ModelLogicValidation<
-    TIDiccAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG
-  >
+  TIDiccAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG
+>
   extends StructureLogicValidation<TIDiccAC>
   implements
-    Record<TKeysDiccModelValActionConfigG, TStructureFnBagForActionModule>
-{
+  Record<TKeysDiccModelValActionConfigG, TStructureFnBagForActionModule> {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = StructureLogicValidation.getDefault();
@@ -122,6 +119,37 @@ export class ModelLogicValidation<
   }
   protected override getDefault() {
     return ModelLogicValidation.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TStructureValModuleConfigForModel<TIDiccAC>,
+    newContextConfig: TStructureValModuleConfigForModel<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TStructureValModuleConfigForModel<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TStructureValModuleConfigForModel<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   protected override getMetadataWithContextModule(
     keyPath?: string
@@ -310,8 +338,10 @@ export class ModelLogicValidation<
           sub_keyAction
         )) as IStructureResponse;
         resForField.responses.push(resForFieldForAction);
+        if (resForFieldForAction.status > fieldVal["globalTolerance"]) break; //😉 trampa `globalTolerance` es protected pero se lllama asi para saltarse la proteccion
       }
       resForField = sub_rH.mutateResponse(resForField);
+
       return resForField;
     });
     const resesForField = await Promise.all(promForField);

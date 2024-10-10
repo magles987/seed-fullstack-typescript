@@ -1,24 +1,11 @@
-import { IBagForService, IGenericDriver } from "../../../../shared";
-import { EHttpStatusCode } from "../../../../../../util/http-utilities";
+import { IBagForService } from "../../../../shared";
 import { ILocalCookieRepositoryConfig } from "./local-cookie/shared";
 import { ILocalIDBRepositoryConfig } from "./local-idb/shared";
 import { ILocalStaticRepositoryConfig } from "./local-static/shared";
 import { ILocalStorageRepositoryConfig } from "./local-storage/shared";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**... */
-export interface ILocalResponse {
-  /**cuerpo de la respuesta */
-  body: string;
-  /**estado basico de la peticion */
-  ok: boolean;
-  /**mensaje adicional de estado de la peticion */
-  statusText: string;
-  /**simula un codigo HTTP response */
-  httpStatus: EHttpStatusCode;
-  /**error generico */
-  error?: any;
-}
+
 /**funcion base para acciones de consulta en local
  *
  * @param bagService el bag en contexto de este driver

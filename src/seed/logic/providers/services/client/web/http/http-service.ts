@@ -8,7 +8,7 @@ import {
   IStructureResponse,
 } from "../../../../../reports/shared";
 import { TExpectedDataType } from "../../../../../criterias/shared";
-import { httpClientDriverFactoryFn } from "./drive/http-driver-factory";
+import { httpClientDriverFactoryFn, TKeyHttpClientDriverInstance } from "./drive/http-driver-factory";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_HttpService = HttpWebClientService;
@@ -40,17 +40,19 @@ export class HttpWebClientService extends WebClientService {
     return this.fullConfig.client.web.http;
   }
   /**
-   * @param _keyLogicContext contexto lógico (estructural o primitivo)
-   * @param _keySrc indentificadora del recurso asociado a modulo
+   * @param keyLogicContext contexto lógico (estructural o primitivo)
+   * @param keySrc indentificadora del recurso asociado a modulo
+   * @param keyDrive clave identificadora del drive a instanciar para este servicio
    * @param serviceConfigBase configuracion base para el servicio
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
     keySrc: string,
+    keyDrive: unknown,
     serviceConfigBase: Partial<IServiceRequestConfig>,
     customDeepConfig: any = {}
   ) {
-    super(keyLogicContext, keySrc);
+    super(keyLogicContext, keySrc, keyDrive);
     this.fullConfig = this.buildConfig(serviceConfigBase, customDeepConfig);
   }
   protected override getDefault() {
@@ -73,31 +75,33 @@ export class HttpWebClientService extends WebClientService {
         ...cB,
         client: this.util.isObject(cB.client)
           ? {
-              ...cB.client,
-              web: this.util.isObject(cB.client.web)
-                ? {
-                    ...cB.client.web,
-                    http: this.util.isObject(cB.client.web.http)
-                      ? {
-                          ...cB.client.web.http,
-                          ...customDeepConfig, //agrega personalizacion
-                        }
-                      : {
-                          ...df.client.web.http,
-                          ...customDeepConfig, //agrega personalizacion
-                        },
+            ...cB.client,
+            web: this.util.isObject(cB.client.web)
+              ? {
+                ...cB.client.web,
+                http: this.util.isObject(cB.client.web.http)
+                  ? {
+                    ...cB.client.web.http,
+                    ...customDeepConfig, //agrega personalizacion
                   }
-                : df.client.web,
-            }
+                  : {
+                    ...df.client.web.http,
+                    ...customDeepConfig, //agrega personalizacion
+                  },
+              }
+              : df.client.web,
+          }
           : df.client,
       };
     }
     return rConfig;
   }
   protected override buildDriver(): IGenericDriver<IHttpResponse> {
-    const { keyHttpDriver } = this.config;
     const diccConfig = this.config.diccDriverConfig;
-    const driver = httpClientDriverFactoryFn(keyHttpDriver, diccConfig);
+    const driver = httpClientDriverFactoryFn(
+      this.keyDrive as TKeyHttpClientDriverInstance,
+      diccConfig
+    );
     return driver;
   }
   public override async runRequestForPrimitive(
@@ -106,13 +110,11 @@ export class HttpWebClientService extends WebClientService {
     const repo = this.buildDriver();
     const bagRepository = this.convertBagToBagService(iBag);
     const localResponse = await repo.runRequestFromDrive(bagRepository);
-    const rBag = this.adaptDriverResponseToPrimitiveLogicResponse(
+    const res = this.adaptDriverResponseToPrimitiveLogicResponse(
       localResponse,
-      {
-        expectedDataType: iBag.literalCriteria.expectedDataType,
-      }
+      iBag
     );
-    return rBag;
+    return res;
   }
   public override async runRequestForStructure(
     iBag: IStructureBag<any>
@@ -120,24 +122,20 @@ export class HttpWebClientService extends WebClientService {
     const repo = this.buildDriver();
     const bagRepository = this.convertBagToBagService(iBag);
     const localResponse = await repo.runRequestFromDrive(bagRepository);
-    const rBag = this.adaptDriverResponseToStructureLogicResponse(
+    const res = this.adaptDriverResponseToStructureLogicResponse(
       localResponse,
-      {
-        expectedDataType: iBag.literalCriteria.expectedDataType,
-      }
+      iBag
     );
-    return rBag;
+    return res;
   }
   protected override adaptDriverResponseToPrimitiveLogicResponse(
     driverResponse: IHttpResponse,
-    option: {
-      expectedDataType: TExpectedDataType;
-    }
+    iBag: IPrimitiveBag<any>
   ): IPrimitiveResponse {
     const { body, httpStatus, ok, statusText, error } = driverResponse;
-    const rH = this.reportPrimitiveHandler;
+    const rH = this.buildPrimitiveReportHandler(iBag);
     let res = rH.mutateResponse(undefined, {
-      data: this.reBuildRxDataFromHttpResponse(body, option.expectedDataType),
+      data: this.reBuildRxDataFromHttpResponse(body, iBag.literalCriteria.expectedDataType),
       status: this.convertHttpStatusCodeToLogicStatusCode(httpStatus),
       extResponse: error,
       msn: statusText,
@@ -146,14 +144,12 @@ export class HttpWebClientService extends WebClientService {
   }
   protected override adaptDriverResponseToStructureLogicResponse(
     driverResponse: IHttpResponse,
-    option: {
-      expectedDataType: TExpectedDataType;
-    }
+    iBag: IStructureBag<any>
   ): IStructureResponse {
     const { body, httpStatus, ok, statusText, error } = driverResponse;
-    const rH = this.reportStructureHandler;
+    const rH = this.buildStructureReportHandler(iBag);
     let res = rH.mutateResponse(undefined, {
-      data: this.reBuildRxDataFromHttpResponse(body, option.expectedDataType),
+      data: this.reBuildRxDataFromHttpResponse(body, iBag.literalCriteria.expectedDataType),
       status: this.convertHttpStatusCodeToLogicStatusCode(httpStatus),
       extResponse: error,
       msn: statusText,

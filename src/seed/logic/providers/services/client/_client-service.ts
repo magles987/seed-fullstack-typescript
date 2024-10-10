@@ -14,11 +14,12 @@ export abstract class ClientService extends LogicService {
     } as IServiceRequestConfig;
   };
   /**
-   * @param _keyLogicContext contexto lógico (estructural o primitivo)
-   * @param _keySrc indentificadora del recurso asociado a modulo
+   * @param keyLogicContext contexto lógico (estructural o primitivo)
+   * @param keySrc indentificadora del recurso asociado a modulo
+   * @param keyDrive clave identificadora del drive a instanciar para este servicio
    */
-  constructor(keyLogicContext: TKeyLogicContext, keySrc: string) {
-    super(keyLogicContext, keySrc);
+  constructor(keyLogicContext: TKeyLogicContext, keySrc: string, keyDrive: unknown) {
+    super(keyLogicContext, keySrc, keyDrive);
   }
   protected override getDefault() {
     return ClientService.getDefault();

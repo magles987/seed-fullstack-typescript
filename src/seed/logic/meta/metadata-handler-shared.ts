@@ -64,9 +64,9 @@ export interface IDiccPrimitiveModuleInstanceContext<
   TPrimitiveHookInstance extends PrimitiveLogicHook<any> = PrimitiveLogicHook,
   TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider
 > extends IPrimitiveMutateContext<TPrimitiveFormatInstance>,
-    IPrimitiveValContext<TPrimitiveValInstance, TRequestValInstance>,
-    IPrimitiveHookContext<TPrimitiveHookInstance>,
-    IPrimitiveProviderContext<TPrimitiveProviderInstance> {}
+  IPrimitiveValContext<TPrimitiveValInstance, TRequestValInstance>,
+  IPrimitiveHookContext<TPrimitiveHookInstance>,
+  IPrimitiveProviderContext<TPrimitiveProviderInstance> { }
 /**refactorizacion del tipo*/
 export type Trf_IDiccPrimitiveModuleInstanceContext =
   IDiccPrimitiveModuleInstanceContext<any>;
@@ -172,13 +172,13 @@ export interface IDiccStructureModuleInstanceContext<
   TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
   TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider
 > extends IStructureDeepValContext<
-      TFieldValInstance,
-      TModelValInstance,
-      TRequestValInstance
-    >,
-    IStructureDeepMutateContext<TFieldMutateInstance, TModelMutateInstance>,
-    IStructureHookContext<TStructureHookInstance>,
-    IStructureProviderContext<TStructureProviderInstance> {}
+  TFieldValInstance,
+  TModelValInstance,
+  TRequestValInstance
+>,
+  IStructureDeepMutateContext<TFieldMutateInstance, TModelMutateInstance>,
+  IStructureHookContext<TStructureHookInstance>,
+  IStructureProviderContext<TStructureProviderInstance> { }
 /**refactorizacion del tipo*/
 export type Trf_IDiccStructureModuleInstanceContext =
   IDiccStructureModuleInstanceContext<any>;
@@ -219,38 +219,6 @@ export interface IStructureMetadataModuleConfig<TModelOrEmbModel>
      * ❗ ver propiedad `isMany`
      */
     __isArray: boolean;
-    /**
-     * esta propiedad es para determinar
-     *  cardinalidad en campos con metapropiedad
-     * `isArray`
-     *
-     * ````
-     * //⚠ SOLO SI esta configuracion
-     * fieldType = EFieldType.objEmbedded
-     *
-     * //🚫 no puede existir esta configuracion:
-     * configValidator.diccValidators.isRequired = {...//configuracion};
-     * isMany = false || undefined || null;
-     *
-     * //=========================================
-     * //es cardinalidad 0a1
-     * isArray = false;
-     * isMany = true;
-     * //=========================================
-     * //es cardinalidad 1a1
-     * isArray = false;
-     * isMany = false;
-     * //=========================================
-     * //es cardinalidad 0aM
-     * isArray = true;
-     * isMany = true;
-     * //=========================================
-     * //es cardinalidad 1aM
-     * isArray = true;
-     * isMany = false;
-     * ````
-     */
-    __isMany: boolean;
     /**
      * Determina si es un campo para pre
      * procesamiento pero no será enviado

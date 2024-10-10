@@ -2,7 +2,7 @@ import { StructureLogicValidation } from "./_structure-validation";
 import { TFieldType } from "../meta/metadata-handler-shared";
 import { TZodSchemaForClose } from "./_validation";
 import { TStructureFieldMetaAndValidator } from "../meta/metadata-shared";
-import { TFieldConfigForVal } from "./shared";
+import { TFieldConfigForVal, TStructureValModuleConfigForField } from "./shared";
 import {
   IStructureBagForActionModuleContext,
   TStructureFnBagForActionModule,
@@ -268,12 +268,11 @@ export type Trf_FieldLogicValidation = FieldLogicValidation;
 //████Clases████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class FieldLogicValidation<
-    TIDiccAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
-  >
+  TIDiccAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
+>
   extends StructureLogicValidation<TIDiccAC>
   implements
-    Record<TKeysDiccFieldValActionConfigG, TStructureFnBagForActionModule>
-{
+  Record<TKeysDiccFieldValActionConfigG, TStructureFnBagForActionModule> {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = StructureLogicValidation.getDefault();
@@ -317,6 +316,40 @@ export class FieldLogicValidation<
   }
   protected override getDefault() {
     return FieldLogicValidation.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TStructureValModuleConfigForField<TIDiccAC>,
+    newContextConfig: TStructureValModuleConfigForField<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TStructureValModuleConfigForField<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TStructureValModuleConfigForField<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+              //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    const { diccActionsConfig } = rConfig
+
+    return rConfig;
   }
   protected override getMetadataWithContextModule(
     keyPath?: string

@@ -52,6 +52,8 @@ export abstract class LogicProvider<TIDiccAC> extends ActionModule<TIDiccAC> {
     return;
   }
   public override postRunAction(bag: Trf_BagModule, res: IResponse): void {
+    //mutar data de res a bag
+    bag.data = res.data;
     return;
   }
   /**
