@@ -3,7 +3,6 @@
  */
 import { openDB, deleteDB, wrap, unwrap, DBSchema, IDBPDatabase } from "idb";
 import { Util_Provider } from "../../../../../../_util-provider";
-import { Model } from "../../../../../../../models/_model";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define tipo configuracion para un esquema de datos */
 type TSchemaConfig = ReturnType<
@@ -34,11 +33,11 @@ export class IDBConnection {
          * seria el identificador en **plural**
          * del modelo).
          */
-        keyCollection: <string>undefined,
+        keyCollection: undefined as string,
         /**la llave primaria de la coleccion
          * o tabla
          */
-        keyPrimary: <keyof Model>"_id",
+        keyPrimary: "_id",
         /**los identificadores de los campos
          * que serán a configurar como indexables
          * (que se usan para consultas)
@@ -67,7 +66,7 @@ export class IDBConnection {
   /**Almacena la instancia única de esta clase*/
   private static instance: IDBConnection;
   /** */
-  constructor() {}
+  constructor() { }
   /**devuelve la instancia única de esta clase
    * ya sea que la crea o la que ya a sido creada
    */
@@ -150,10 +149,10 @@ export class IDBConnection {
       ) => {
         aSchemasConfig.forEach((sC) => this.setSchemaAtDB(db, sC));
       }).bind(this),
-      blocked: ((currentVersion: number, blockedVersion: number) => {}).bind(
+      blocked: ((currentVersion: number, blockedVersion: number) => { }).bind(
         this
       ),
-      blocking: ((currentVersion: number, blockedVersion: number) => {}).bind(
+      blocking: ((currentVersion: number, blockedVersion: number) => { }).bind(
         this
       ),
       terminated: (() => {
@@ -219,5 +218,5 @@ export class IDBConnection {
    * y lo registra en el mapa
    *
    */
-  protected createSchema(keyCollection: string) {}
+  protected createSchema(keyCollection: string) { }
 }

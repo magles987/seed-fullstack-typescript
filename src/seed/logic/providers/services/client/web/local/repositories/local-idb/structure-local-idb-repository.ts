@@ -92,11 +92,11 @@ export class StructureLocalIDBRepository<
   // }
   protected override createAndSetSchemaConfig(
     keyCollection: string,
-    keyPrimary: keyof Model = "_id"
+    keyPrimary = this._keyId,
   ) {
     this.connection.setSchemaConfig({
       keyCollection,
-      keyPrimary,
+      keyPrimary: keyPrimary as any,
     });
   }
   protected override async readCommon(
@@ -115,11 +115,11 @@ export class StructureLocalIDBRepository<
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
     const tx = await this.getTransaction(keySrcContext, "readwrite");
-    const isExist = this.util.isObject(await tx.store.get(data.id));
+    const isExist = this.util.isObject(await tx.store.get(data[kId]));
     if (isExist) return undefined; //❗ no se creó porque ya existe ❗
     //❗creacion de id:❗
     data[kId] = this.generateID(data);
-    await tx.store.add(data);
+    data[kId] = await tx.store.add(data);
     await tx.done; //cerrar la trasaccion
     return data;
   }
@@ -127,11 +127,12 @@ export class StructureLocalIDBRepository<
     data: any,
     criteria: IBagForService["literalCriteria"]
   ) {
+    const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
     const tx = await this.getTransaction(keySrcContext, "readwrite");
-    const isExist = this.util.isObject(await tx.store.get(data.id));
+    const isExist = this.util.isObject(await tx.store.get(data[kId]));
     if (!isExist) return undefined; //❗no existe❗
-    await tx.store.put(data);
+    data[kId] = await tx.store.put(data);
     await tx.done; //cerrar la trasaccion
     return data;
   }
@@ -142,7 +143,7 @@ export class StructureLocalIDBRepository<
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
     const tx = await this.getTransaction(keySrcContext, "readwrite");
-    const isExist = this.util.isObject(await tx.store.get(data.id));
+    const isExist = this.util.isObject(await tx.store.get(data[kId]));
     if (isExist) {
       await tx.store.delete(data[kId]);
       await tx.done;
