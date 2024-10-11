@@ -4,6 +4,7 @@ import { TPrimitiveMetaAndValidator } from "../meta/metadata-shared";
 import {
   TKeyPrimitiveValModuleContext,
   TPrimitiveConfigForVal,
+  TPrimitiveValModuleConfigForPrimitive,
 } from "./shared";
 import {
   IPrimitiveBagForActionModuleContext,
@@ -14,7 +15,7 @@ import {
   ELogicResStatusCode,
   IPrimitiveResponse,
 } from "../reports/shared";
-import { PrimitiveBag } from "../bag-module/primitive-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
 import { TGenericTupleActionConfig } from "../config/shared-modules";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
@@ -222,57 +223,57 @@ export interface IDiccPrimitiveValActionConfigG {
    * usar con modelos embebidos
    */
   isAnonimusObject:
-    | {
-        //❓POSIBLES ERRORES DE CONFIGURACION❓
-        //se aplicará a cada propiedad del objeto por
-        //lo que deben ser validaciones muy genericas
-        /**recursivo para los subcampos */
-        anonimuSchemaForATupleAC: Record<
-          any,
-          Array<TGenericTupleActionConfig<IDiccPrimitiveValActionConfigG>> //tupla de acciones [keyAction, ActionConfig]
-        >; //Modelo o esquema con los campos asinando a cada uno un array de diccionarios de acciones de configuracion (ADiccAC)
-        /**determina si se permite propiedades
-         * adicionales en el dato que no esten
-         * en la configuracion de `schemaADiccActionsConfig`
-         *
-         * Ejemplo:
-         * ````
-         * isObjectAnonimus = {
-         *   isEmbbeded: false,
-         *   schemaADiccActionsConfig: {
-         *     field1: [
-         *       { isTypeOf: { fieldType: "string" } },
-         *       { isRequired: true }
-         *     ],
-         *   },
-         *   isAllowedExtraProp: true
-         * }
-         *
-         * data = {
-         *   field1: "algun dato",
-         *   field2: 99,
-         * }
-         * //`data` es valido aunque tenga
-         * //una propiedad extra `field2`
-         *
-         * **⚠Importante:** el permitir propiedades
-         * extras estas no se validan asi que
-         * pueden incluir cualquier tipo de información
-         * ````
-         *
-         */
-        isAllowedExtraProp?: boolean;
-      }
-    | undefined;
+  | {
+    //❓POSIBLES ERRORES DE CONFIGURACION❓
+    //se aplicará a cada propiedad del objeto por
+    //lo que deben ser validaciones muy genericas
+    /**recursivo para los subcampos */
+    anonimuSchemaForATupleAC: Record<
+      any,
+      Array<TGenericTupleActionConfig<IDiccPrimitiveValActionConfigG>> //tupla de acciones [keyAction, ActionConfig]
+    >; //Modelo o esquema con los campos asinando a cada uno un array de diccionarios de acciones de configuracion (ADiccAC)
+    /**determina si se permite propiedades
+     * adicionales en el dato que no esten
+     * en la configuracion de `schemaADiccActionsConfig`
+     *
+     * Ejemplo:
+     * ````
+     * isObjectAnonimus = {
+     *   isEmbbeded: false,
+     *   schemaADiccActionsConfig: {
+     *     field1: [
+     *       { isTypeOf: { fieldType: "string" } },
+     *       { isRequired: true }
+     *     ],
+     *   },
+     *   isAllowedExtraProp: true
+     * }
+     *
+     * data = {
+     *   field1: "algun dato",
+     *   field2: 99,
+     * }
+     * //`data` es valido aunque tenga
+     * //una propiedad extra `field2`
+     *
+     * **⚠Importante:** el permitir propiedades
+     * extras estas no se validan asi que
+     * pueden incluir cualquier tipo de información
+     * ````
+     *
+     */
+    isAllowedExtraProp?: boolean;
+  }
+  | undefined;
   /** */
   isAnonimusArray:
-    | {
-        /**array de diccionarios de acciones para cada elemento del array del dato*/
-        aTupleAC: Array<
-          TGenericTupleActionConfig<IDiccPrimitiveValActionConfigG>
-        >;
-      }
-    | undefined;
+  | {
+    /**array de diccionarios de acciones para cada elemento del array del dato*/
+    aTupleAC: Array<
+      TGenericTupleActionConfig<IDiccPrimitiveValActionConfigG>
+    >;
+  }
+  | undefined;
 }
 /**claves identificadoras del diccionario
  * de acciones de configuracion */
@@ -283,12 +284,11 @@ export type Trf_PrimitiveLogicValidation = PrimitiveLogicValidation;
 //████Clases████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class PrimitiveLogicValidation<
-    TIDiccAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG
-  >
+  TIDiccAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG
+>
   extends LogicValidation<TIDiccAC>
   implements
-    Record<TKeysDiccPrimitiveValActionConfigG, TPrimitiveFnBagForActionModule>
-{
+  Record<TKeysDiccPrimitiveValActionConfigG, TPrimitiveFnBagForActionModule> {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = LogicValidation.getDefault();
@@ -329,15 +329,41 @@ export class PrimitiveLogicValidation<
    */
   constructor(keySrc: string) {
     super("primitive", keySrc);
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: this.keyModuleContext,
-      status: this.globalStatus,
-      tolerance: this.globalTolerance,
-    });
   }
   protected override getDefault() {
     return PrimitiveLogicValidation.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TPrimitiveValModuleConfigForPrimitive<TIDiccAC>,
+    newContextConfig: TPrimitiveValModuleConfigForPrimitive<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TPrimitiveValModuleConfigForPrimitive<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TPrimitiveValModuleConfigForPrimitive<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+              //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   public override get metadataHandler(): Trf_PrimitiveLogicMetadataHandler {
     const mH = super.metadataHandler as Trf_PrimitiveLogicMetadataHandler;
@@ -345,13 +371,6 @@ export class PrimitiveLogicValidation<
   }
   public override set metadataHandler(mH: Trf_PrimitiveLogicMetadataHandler) {
     super.metadataHandler = mH;
-  }
-  public override get reportHandler(): Trf_PrimitiveReportHandler {
-    const rH = super.reportHandler as Trf_PrimitiveReportHandler;
-    return rH;
-  }
-  public override set reportHandler(rH: Trf_PrimitiveReportHandler) {
-    super.reportHandler = rH;
   }
   public override get keyModuleContext(): TKeyPrimitiveValModuleContext {
     return "primitiveVal";
@@ -429,9 +448,45 @@ export class PrimitiveLogicValidation<
       actionConfig,
       responses: bag.responses,
       criteriaHandler: bag.criteriaHandler,
-      middlewareReportStatus: bag.middlewareReportStatus,
     };
     return bagFC;
+  }
+  public override buildReportHandler(
+    bag: Trf_PrimitiveBag,
+    keyAction: keyof TIDiccAC
+  ): PrimitiveReportHandler {
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    let rH = new PrimitiveReportHandler(this.keySrc, {
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction: keyAction as any,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyLogic: this.keySrc,
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag,
+    keyAction: keyof TIDiccAC
+  ): void {
+    super.preRunAction(bag, keyAction as any) as any;
+    return;
+  }
+  public override postRunAction(
+    bag: Trf_PrimitiveBag,
+    res: IPrimitiveResponse
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   protected checkEmptyData(
     data: any,
@@ -458,9 +513,9 @@ export class PrimitiveLogicValidation<
     return isEmpty;
   }
   protected checkEmptyDataWithRes(
+    reportHandler: PrimitiveReportHandler,
     bag: PrimitiveBag<any>,
-    data: any,
-    res: IPrimitiveResponse
+    data: any
   ): IPrimitiveResponse {
     const tGlobalAC = bag.findTupleGlobalActionConfig([
       this.keyModule as any,
@@ -472,9 +527,10 @@ export class PrimitiveLogicValidation<
       ? tIsRequired[1] //la configuracion de la accion sin envoltura
       : undefined;
     const isEmpty = this.checkEmptyData(data, isRequired as any);
+    let res: IPrimitiveResponse = undefined;
     //comprobacion de vacio
     if (isEmpty) {
-      const rH = this.reportHandler;
+      const rH = reportHandler;
       if (isRequired === undefined) {
         res = rH.mutateResponse(res, {
           status: ELogicResStatusCode.WARNING_DATA,
@@ -491,13 +547,12 @@ export class PrimitiveLogicValidation<
   //================================================================
   public async isTypeOf(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, keyAction, actionConfig, responses, middlewareReportStatus } =
-      this.adapBagForContext(bag, "isTypeOf");
-    const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-    });
+    const { data, keyAction, actionConfig } = this.adapBagForContext(
+      bag,
+      "isTypeOf"
+    );
+    const rH = this.buildReportHandler(bag, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
     const { isArray, type } = actionConfig;
     //❗❗❗isTypeof no necesita saber si es dato vacio o no❗❗❗
     //validaciones primitivas con zod:
@@ -540,13 +595,12 @@ export class PrimitiveLogicValidation<
   }
   public async isRequired(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, keyAction, actionConfig, responses, middlewareReportStatus } =
-      this.adapBagForContext(bag, "isRequired");
-    const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-    });
+    const { data, keyAction, actionConfig } = this.adapBagForContext(
+      bag,
+      "isRequired"
+    );
+    const rH = this.buildReportHandler(bag, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
     //❗se verifica el vacion sin res❗
     const isEmptyData = this.checkEmptyData(
       data,
@@ -563,22 +617,20 @@ export class PrimitiveLogicValidation<
     }
     return res;
   }
-
   public async isAnonimusObject(
     bag: PrimitiveBag<any>
   ): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, keyAction, actionConfig, responses, middlewareReportStatus } =
-      this.adapBagForContext(bag, "isAnonimusObject");
-    const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-    });
+    const { data, keyAction, actionConfig } = this.adapBagForContext(
+      bag,
+      "isAnonimusObject"
+    );
+    const rH = this.buildReportHandler(bag, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
     let { anonimuSchemaForATupleAC, isAllowedExtraProp } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(bag, data, res);
+    res = this.checkEmptyDataWithRes(rH, bag, data);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
     if (!this.util.isObject(anonimuSchemaForATupleAC)) {
@@ -620,7 +672,6 @@ export class PrimitiveLogicValidation<
             aTupleAC as any[]
           ),
         criteriaHandler: bag.criteriaHandler,
-        middlewareReportStatus,
       });
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];
@@ -639,17 +690,16 @@ export class PrimitiveLogicValidation<
     bag: PrimitiveBag<any>
   ): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, keyAction, actionConfig, responses, middlewareReportStatus } =
-      this.adapBagForContext(bag, "isAnonimusArray");
-    const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-    });
+    const { data, keyAction, actionConfig, responses } = this.adapBagForContext(
+      bag,
+      "isAnonimusArray"
+    );
+    const rH = this.buildReportHandler(bag, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
     let { aTupleAC } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(bag, data, res);
+    res = this.checkEmptyDataWithRes(rH, bag, data);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
     if (!this.util.isArray(data, true)) {
@@ -675,7 +725,6 @@ export class PrimitiveLogicValidation<
             aTupleAC as any[]
           ),
         criteriaHandler: bag.criteriaHandler,
-        middlewareReportStatus,
       });
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];

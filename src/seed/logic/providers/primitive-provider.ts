@@ -1,4 +1,4 @@
-import { PrimitiveBag } from "../bag-module/primitive-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
 import {
   IPrimitiveBagForActionModuleContext,
   TPrimitiveFnBagForActionModule,
@@ -10,11 +10,15 @@ import {
   PrimitiveReportHandler,
   Trf_PrimitiveReportHandler,
 } from "../reports/primitive-report-handler";
-import { IPrimitiveResponse } from "../reports/shared";
+import { ELogicResStatusCode, IPrimitiveResponse } from "../reports/shared";
 import { LogicProvider } from "./_provider";
+import { httpClientDriverFactoryFn } from "./services/client/web/http/drive/http-driver-factory";
+import { localRepositoryFactoryFn } from "./services/client/web/local/repositories/local-repository-factory";
+import { serviceFactory } from "./services/service-factory";
 import {
   TKeyPrimitiveProviderModuleContext,
   TPrimitiveConfigForProvider,
+  TPrimitiveProviderModuleConfigForPrimitive,
 } from "./shared";
 import { IRunProvider } from "./shared-for-external-module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -31,15 +35,14 @@ export type Trf_PrimitiveLogicProvider = PrimitiveLogicProvider<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class PrimitiveLogicProvider<
-    TIDiccAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
-  >
+  TIDiccAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
+>
   extends LogicProvider<TIDiccAC>
   implements
-    Record<
-      TKeysDiccPrimitiveProviderActionConfigG,
-      TPrimitiveFnBagForActionModule
-    >
-{
+  Record<
+    TKeysDiccPrimitiveProviderActionConfigG,
+    TPrimitiveFnBagForActionModule
+  > {
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = LogicProvider.getDefault();
@@ -47,14 +50,53 @@ export class PrimitiveLogicProvider<
       ...superDf,
       dfDiccActionConfig: {
         ...(superDf.dfDiccActionConfig as any),
-        runProvider: true,
+        runProvider: {
+          customServiceFactoryFn: serviceFactory,
+          serviceConfig: {
+            client: {
+              app: {},
+              web: {
+                local: {
+                  keyLocalRepository: "cookie",
+                  customLocalRepositoryFn: localRepositoryFactoryFn,
+                  diccRepositoryConfig: {
+                    static: {},
+                    cookie: {},
+                    storage: {},
+                    idb: {},
+                  },
+                },
+                http: {
+                  keyHttpDriver: "fetch",
+                  customHttpClientFactoryFn: httpClientDriverFactoryFn,
+                  urlConfig: {
+                    urlRoot: "",
+                    urlPostfix: "",
+                    urlPrefix: "",
+                  },
+                  diccDriverConfig: {
+                    fetch: {},
+                    axios: {},
+                  },
+                },
+              },
+            },
+            //server:{},
+          },
+          serviceToRun: {
+            //❗❗Obligatorio definirlo en los metadatos❗❗
+            keyService: undefined,
+            keyDriver: undefined,
+            customDeepServiceConfig: {}
+          },
+        },
       } as IDiccPrimitiveProviderActionConfigG,
-      // topPriorityKeysAction: [
-      //   ...superDf.topPriorityKeysAction,
-      // ] as Array<TKeysDiccPrimitiveProviderActionConfigG>,
-      // topMandatoryKeysAction: [
-      //   ...superDf.topMandatoryKeysAction,
-      // ] as Array<TKeysDiccPrimitiveProviderActionConfigG>,
+      topPriorityKeysAction: [
+        ...superDf.topPriorityKeysAction,
+      ] as Array<TKeysDiccPrimitiveProviderActionConfigG>,
+      topMandatoryKeysAction: [
+        ...superDf.topMandatoryKeysAction,
+      ] as Array<TKeysDiccPrimitiveProviderActionConfigG>,
     };
   };
   public override get metadataHandler(): Trf_PrimitiveLogicMetadataHandler {
@@ -62,12 +104,6 @@ export class PrimitiveLogicProvider<
   }
   public override set metadataHandler(mH: Trf_PrimitiveLogicMetadataHandler) {
     super.metadataHandler = mH;
-  }
-  public override get reportHandler(): Trf_PrimitiveReportHandler {
-    return super.reportHandler as any;
-  }
-  public override set reportHandler(rH: Trf_PrimitiveReportHandler) {
-    super.reportHandler = rH;
   }
   public override get keyModuleContext(): TKeyPrimitiveProviderModuleContext {
     return "primitiveProvider";
@@ -77,15 +113,40 @@ export class PrimitiveLogicProvider<
    */
   constructor(keySrc: string) {
     super("structure", keySrc);
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: this.keyModuleContext,
-      status: this.globalStatus,
-      tolerance: this.globalTolerance,
-    });
   }
   protected override getDefault() {
     return PrimitiveLogicProvider.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TPrimitiveProviderModuleConfigForPrimitive<TIDiccAC>,
+    newContextConfig: TPrimitiveProviderModuleConfigForPrimitive<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TPrimitiveProviderModuleConfigForPrimitive<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TPrimitiveProviderModuleConfigForPrimitive<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   protected override getMetadataWithContextModule(): TPrimitiveMetaAndProvider<TIDiccAC> {
     let extractMetadataByContext: TPrimitiveMetaAndProvider<TIDiccAC>;
@@ -164,14 +225,84 @@ export class PrimitiveLogicProvider<
       actionConfig,
       responses: bag.responses,
       criteriaHandler: bag.criteriaHandler,
-      middlewareReportStatus: bag.middlewareReportStatus,
     };
     return bagFC;
+  }
+  public override buildReportHandler(
+    bag: Trf_PrimitiveBag,
+    keyAction: keyof TIDiccAC
+  ): PrimitiveReportHandler {
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    let rH = new PrimitiveReportHandler(this.keySrc, {
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction: keyAction as any,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyLogic: this.keySrc,
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag,
+    keyAction: keyof TIDiccAC
+  ): void {
+    super.preRunAction(bag, keyAction as any) as any;
+    return;
+  }
+  public override postRunAction(
+    bag: Trf_PrimitiveBag,
+    res: IPrimitiveResponse
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   //================================================================
   public async runProvider(
     bag: PrimitiveBag<any>
   ): Promise<IPrimitiveResponse> {
+    const { data, keyAction, actionConfig, responses } = this.adapBagForContext(
+      bag,
+      "runProvider"
+    );
+    let { customServiceFactoryFn, serviceConfig, serviceToRun } = actionConfig;
+    const rH = this.buildReportHandler(bag, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
+    let { keyService, keyDriver, customDeepServiceConfig } = serviceToRun;
+    if (!this.util.isString(keyService)) {
+      res = rH.mutateResponse(res, {
+        status: ELogicResStatusCode.ERROR,
+        msn: `${keyService} is not key service instance valid`
+      });
+      return res;
+    }
+    if (!this.util.isString(keyDriver)) {
+      res = rH.mutateResponse(res, {
+        status: ELogicResStatusCode.ERROR,
+        msn: `${keyDriver} is not key driver for service instance valid`
+      });
+      return res;
+    }
+    const serviceInstance = customServiceFactoryFn(
+      keyService,
+      keyDriver,
+      this.keyLogicContext,
+      this.keySrc,
+      serviceConfig,
+      customDeepServiceConfig
+    );
+    const serviceRes = await serviceInstance.runRequestFromService(
+      bag.getLiteralBag()
+    );
+    res = rH.mutateResponse(res, serviceRes as any);
     return res;
   }
 }

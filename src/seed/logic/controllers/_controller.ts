@@ -1,10 +1,16 @@
-import { TKeyLogicContext } from "../config/shared-modules";
+import { TKeyLogicContext, TKeyRequestType } from "../config/shared-modules";
 import { Util_Ctrl } from "./_util-ctrl";
-import { ELogicResStatusCode, IResponse } from "../reports/shared";
+import {
+  ELogicResStatusCode,
+  IResponse,
+  TResponseForMutate,
+} from "../reports/shared";
 import { ActionModule, LogicModuleWithReport } from "../config/module";
 import { BagModule } from "../bag-module/_bag";
 import { IBuilderBaseMetadata } from "../meta/metadata-builder-shared";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
+import { ReportHandler } from "../reports/_reportHandler";
+import { CriteriaHandler } from "../criterias/_criteria-handler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TKeyReadRequestController = "readAll" | "readOne" | "readMany";
 export type TKeyModifyRequestController = "create" | "update" | "delete";
@@ -111,14 +117,71 @@ export abstract class LogicController extends LogicModuleWithReport {
     r = !(actionConfig === null);
     return r;
   }
+  /**construye una instancia de criterai
+   *
+   * @param base parametros iniciales de inicalizacion
+   *
+   * @returns instancia de criteria
+   */
+  public abstract buildCriteriaHandler(
+    requestType: TKeyRequestType,
+    base?: unknown
+  ): CriteriaHandler;
+  /**micro hook embebido que se ejecuta antes de ejecutar la accion
+   *
+   * @param bag
+   * @param keyAction
+   * @returns el objeto bag (posiblemente mutado)
+   */
+  public preRunAction(bag: unknown, keyAction: unknown): void {
+    return;
+  }
+  /**micro hook embebido que se ejecuta despues de ejecutar la accion
+   *
+   * @param bag
+   * @param res
+   * @returns el objeto res (posiblemente mutado), el bag puede tambien mutarse
+   */
+  public postRunAction(bag: unknown, res: unknown): void {
+    //mutar data de res a bag
+    bag["data"] = res["data"];
+    return;
+  }
   /**... */
   protected async runRequestForAction(
     actionModuleInstContext: ActionModule<any>,
     bag: BagModule,
     keyAction: any
   ): Promise<IResponse> {
+    const res = (await LogicController.runRequestForAction(
+      actionModuleInstContext,
+      bag,
+      keyAction
+    )) as IResponse;
+    return res;
+  }
+  /**... */
+  public static async runRequestForAction(
+    actionModuleInstContext: ActionModule<any>,
+    bag: BagModule,
+    keyAction: any
+  ): Promise<IResponse> {
     const actionFn = actionModuleInstContext.getActionFnByKey(keyAction);
-    const res = await actionFn(bag);
+    let res: IResponse = undefined;
+    if (typeof actionFn !== "function") {
+      const rH = actionModuleInstContext.buildReportHandler(
+        bag,
+        keyAction
+      ) as ReportHandler;
+      res = rH.mutateResponse(res, {
+        keyAction,
+        status: ELogicResStatusCode.ERROR,
+        msn: `${keyAction} is not action function valid`,
+      }) as IResponse;
+    }
+    actionModuleInstContext.preRunAction(bag, keyAction) as any;
+    res = await actionFn(bag);
+    actionModuleInstContext.postRunAction(bag, res);
     return res;
   }
   /**

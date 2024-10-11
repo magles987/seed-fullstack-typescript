@@ -8,193 +8,144 @@ import { ReportHandler } from "./_reportHandler";
 import {
   ELogicResStatusCode,
   IStructureResponse,
-  TBaseStructureResponse,
-  TKeyStructureResponseModuleContext,
   Trf_IStructureResponse,
+  TStructureModuleContext,
+  TStructureResponseForMutate,
 } from "./shared";
+import { LogicService } from "../providers/services/_service";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_StructureReportHandler = StructureReportHandler;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**
+/** *selfcontructor*
  *
+ * ...
  */
-export class StructureReportHandler extends ReportHandler {
-  /** configuracion de valores predefinidos para el modulo*/
-  public static readonly getDefault = () => {
+export class StructureReportHandler
+  extends ReportHandler
+  implements ReturnType<StructureReportHandler["getDefault"]> {
+  public static override readonly getDefault = () => {
     const superDf = ReportHandler.getDefault();
     return {
       ...superDf,
-      response: {
-        ...superDf.response,
-      } as IStructureResponse,
+      keyPath: undefined,
+    } as IStructureResponse;
+  };
+  protected static override readonly getCONSTANTS = () => {
+    const superCONST = ReportHandler.getCONSTANTS();
+    return {
+      ...superCONST,
+      //..aqui las constantes
     };
   };
-  public override get keyModuleContext(): TKeyStructureResponseModuleContext {
-    return "structureResponse";
+  private _keyPath: string;
+  public get keyPath(): string {
+    return this._keyPath;
   }
-  protected override get dfReportConfigForModule(): IStructureResponse {
-    return super.dfReportConfigForModule as any;
+  public set keyPath(v: string) {
+    this._keyPath = this.util.isString(v)
+      ? v
+      : this._keyPath !== undefined
+        ? this._keyPath
+        : this.getDefault().keyPath;
   }
-  /**... */
-  protected override set dfReportConfigForModule(
-    newDfReport: IStructureResponse
-  ) {
-    super.dfReportConfigForModule = newDfReport;
-    return;
+  public override get keyRepModuleContext(): TStructureModuleContext {
+    return super.keyRepModuleContext as any;
+  }
+  protected override set keyRepModuleContext(v: TStructureModuleContext) {
+    super.keyRepModuleContext = v;
+  }
+  public override get responses(): IStructureResponse[] {
+    return super.responses as any;
+  }
+  protected override set responses(v: IStructureResponse[]) {
+    super.responses = v;
   }
   /**
    * @param keySrc indentificadora del recurso asociado a modulo
-   * @param baseResponse configuracion base  de acuerdo al
-   * contexto del modulo que requiera el manejador de
-   * reporte
-   *
+   * @param base objeto literal con valores personalizados para iniicalizar las propiedades
+   * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
-  constructor(keySrc: string, baseResponse: TBaseStructureResponse) {
-    super("structure", keySrc);
-    this.dfReportConfigForModule = this.buildDfReportConfig(baseResponse);
+  constructor(
+    keySrc: string,
+    base: Partial<ReturnType<StructureReportHandler["getDefault"]>> = {},
+    isInit = true
+  ) {
+    super("structure", keySrc, base, false);
+    if (isInit) this.initProps(base);
   }
   protected override getDefault() {
     return StructureReportHandler.getDefault();
   }
-  protected override buildDfReportConfig(
-    baseResponse: TBaseStructureResponse
-  ): IStructureResponse {
-    const bR = baseResponse;
-    const df = this.getDefault().response;
-    let rResponse: IStructureResponse;
-    if (!this.util.isObject(bR)) {
-      rResponse = df;
-    } else {
-      rResponse = {
-        data: df.data,
-        keySrc: this.keySrc,
-        keyModule: this.util.isString(bR.keyModule)
-          ? bR.keyModule
-          : df.keyModule,
-        keyModuleContext: this.util.isString(bR.keyModuleContext)
-          ? bR.keyModuleContext
-          : df.keyModuleContext,
-        status: this.util.isNumber(bR.status) ? bR.status : df.status,
-        tolerance: this.util.isNumber(bR.tolerance)
-          ? bR.tolerance
-          : df.tolerance,
-        keyAction: df.keyAction,
-        keyPath: df.keyPath,
-        keyLogic: this.keyLogicContext,
-        msn: df.msn,
-        responses: df.responses,
-        extResponse: df.extResponse,
-        tRecordMutate: df.tRecordMutate,
-      };
-    }
-    return rResponse;
+  protected override getCONST() {
+    return StructureReportHandler.getCONSTANTS();
   }
-  public override checkInitResponseKeyMissing(
-    resParam: Partial<IStructureResponse>,
-    keys: Array<keyof IStructureResponse>
-  ): void {
-    return super.checkInitResponseKeyMissing(resParam, keys as any);
-  }
-  protected override buildResponse(
-    param?: Partial<IStructureResponse>,
-    dfParam?: Trf_IStructureResponse
+  //❗normalmente definidas en el padre, salvo que se quieran sobreescribir❗
+  // /**reinicia una propiedad al valor predefinido
+  //  *
+  //  * @param key clave identificadora de la propiedad a reiniciar
+  //  */
+  // public override resetPropByKey(key: keyof ReturnType<StructureReportHandler["getDefault"]>): void {
+  //   const df = this.getDefault();
+  //   this[key] = df[key];
+  //   return;
+  // }
+  // protected override getLiteral(): ReturnType<
+  //   StructureReportHandler["getDefault"]
+  // > {
+  //   return super.getLiteral() as any;
+  // }
+  public override startResponse(
+    param?: Partial<IStructureResponse>
   ): IStructureResponse {
-    let res: IStructureResponse;
-    const df = this.util.isObject(dfParam)
-      ? dfParam
-      : this.dfReportConfigForModule;
-    const pa = param;
-    if (!this.util.isObject(pa)) {
-      res = df;
-    } else {
-      const keyPath = this.util.isString(pa.keyPath) ? pa.keyPath : df.keyPath;
-      res = {
-        data: "data" in pa ? pa.data : df.data, //verifica existencia ya que los valores undefined y null son validos
-        fisrtCtrlData: df.fisrtCtrlData ? df.fisrtCtrlData : pa.fisrtCtrlData, //❗seleccion invertida❗
-        keyPath,
-        keySrc: this.keySrc,
-        keyLogic: this.dfReportConfigForModule.keyLogic, //obligatorio el predefinido
-        keyModule: this.dfReportConfigForModule.keyModule, //obligatorio el predefinido
-        keyModuleContext: this.dfReportConfigForModule.keyModuleContext, //obligatorio el predefinido
-        keyAction: this.util.isString(pa.keyAction)
-          ? pa.keyAction
-          : df.keyAction,
-        msn: this.util.isString(pa.msn) ? pa.msn : df.msn,
-        extResponse: this.util.isObject(pa.extResponse)
-          ? pa.extResponse
-          : df.extResponse,
-        responses: this.util.isArray(pa.responses)
-          ? pa.responses
-          : df.responses,
-        status: this.util.isNotUndefinedAndNotNull(pa.status)
-          ? pa.status
-          : df.status,
-        tolerance: this.util.isNumber(pa.tolerance)
-          ? pa.tolerance
-          : df.tolerance,
-        tRecordMutate: this.util.isTuple(pa.tRecordMutate, 2)
-          ? pa.tRecordMutate
-          : df.tRecordMutate,
-      };
-    }
-    return res;
+    return super.startResponse(param) as IStructureResponse;
   }
   public override mutateResponse(
     res: IStructureResponse,
-    param?: Partial<IStructureResponse>
+    param?: TStructureResponseForMutate
   ): IStructureResponse {
-    //verificacion especial de propiedades
-    if (res === undefined && this.util.isObject(param)) {
-      this.checkInitResponseKeyMissing(param, ["data", "keyPath"]);
-    }
-    res = !this.util.isObject(res)
-      ? this.buildResponse(param, undefined)
-      : this.buildResponse(param, res as IStructureResponse);
-    res = this.reduceResponses(res);
-    return res;
+    return super.mutateResponse(res, param) as IStructureResponse;
   }
   protected override reduceResponses(
     response: IStructureResponse
   ): IStructureResponse {
-    const keyModule = response.keyModule as TKeyModuleWithReport;
-    let aStatus: ELogicResStatusCode[] = [];
+    const { keyRepModule, keyRepModuleContext } = response;
     const res = response as Trf_IStructureResponse;
-    aStatus = res.responses.map((embRes, idx) => {
-      embRes = this.reduceResponses(embRes);
-      //⚠ muta la respuesta internamente ⚠
-      res.responses[idx] = embRes;
-      return embRes.status;
-    });
+    const reses = res.responses;
     /**funcion lanzadora de reductoras personalizadas */
     let lanchReducerFn = (
       currentStatus: ELogicResStatusCode,
       nextStatus: ELogicResStatusCode
     ) => {
       let stateStatus: ELogicResStatusCode;
-      if (keyModule === "controller")
+      if (keyRepModule === "controller")
         stateStatus = LogicController.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "mutater")
+      else if (keyRepModule === "mutater")
         stateStatus = LogicMutater.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "validator")
+      else if (keyRepModule === "validator")
         stateStatus = LogicValidation.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "hook")
+      else if (keyRepModule === "hook")
         stateStatus = LogicHook.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
-      else if (keyModule === "provider")
+      else if (keyRepModule === "provider")
         stateStatus = LogicProvider.getControlReduceStatusResponse(
+          currentStatus,
+          nextStatus
+        );
+      else if (keyRepModule === "service")
+        stateStatus = LogicService.getControlReduceStatusResponse(
           currentStatus,
           nextStatus
         );
@@ -202,10 +153,20 @@ export class StructureReportHandler extends ReportHandler {
       return stateStatus;
     };
     lanchReducerFn.bind(this);
-    (response as Trf_IStructureResponse).status = aStatus.reduce(
-      lanchReducerFn,
-      res.status
-    );
+    for (let idx = 0; idx < reses.length; idx++) {
+      const embRes = this.reduceResponses(reses[idx]); //recursivo para res embebidos internos      
+      res.status = lanchReducerFn(res.status, embRes.status);
+      const isFieldContext = embRes.keyRepModuleContext === "fieldCtrl"
+        || embRes.keyRepModuleContext === "fieldMutate"
+        || embRes.keyRepModuleContext === "fieldVal";
+      const isModelContext = res.keyRepModuleContext === "modelCtrl"
+        || res.keyRepModuleContext === "modelMutate"
+        || res.keyRepModuleContext === "modelVal";
+      if (!(isFieldContext && isModelContext)) {
+        //solo muta si la reduccion no compromete de campo a modelo
+        this.mutateData(embRes.data, res);
+      }
+    }
     return response;
   }
 }

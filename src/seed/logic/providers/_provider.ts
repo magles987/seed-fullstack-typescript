@@ -1,6 +1,13 @@
+import { BagModule, Trf_BagModule } from "../bag-module/_bag";
 import { ActionModule } from "../config/module";
 import { TKeyLogicContext } from "../config/shared-modules";
-import { ELogicResStatusCode } from "../reports/shared";
+import { LogicError, ELogicCodeError } from "../errors/logic-error";
+import { ReportHandler } from "../reports/_reportHandler";
+import {
+  ELogicResStatusCode,
+  IResponse,
+  TResponseForMutate,
+} from "../reports/shared";
 import { Util_Provider } from "./_util-provider";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
@@ -37,6 +44,17 @@ export abstract class LogicProvider<TIDiccAC> extends ActionModule<TIDiccAC> {
     const df = this.getDefault();
     const r = df.dfDiccActionConfig as TIDiccAC;
     return r;
+  }
+  public override preRunAction(
+    bag: Trf_BagModule,
+    keyAction: keyof TIDiccAC
+  ): void {
+    return;
+  }
+  public override postRunAction(bag: Trf_BagModule, res: IResponse): void {
+    //mutar data de res a bag
+    bag.data = res.data;
+    return;
   }
   /**
    * @returns el estado de respuesta reducido

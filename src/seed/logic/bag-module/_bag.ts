@@ -1,7 +1,6 @@
 import { HandlerModule } from "../config/module";
 import { TKeyLogicContext } from "../config/shared-modules";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { IMiddlewareReportStatus } from "../middleware/module/shared";
 import { IResponse } from "../reports/shared";
 import { Util_Bag } from "./_util-bag";
 import {
@@ -11,7 +10,7 @@ import {
   TKeysGlobal,
 } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**... */
+/**refactorizacion de la clase */
 export type Trf_BagModule = BagModule;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *abstract*
@@ -27,7 +26,6 @@ export abstract class BagModule extends HandlerModule {
       literalCriteria: undefined,
       aTupleGlobalActionConfig: [],
       responses: [],
-      middlewareReportStatus: undefined,
     } as IBagModule<any>;
   };
   /**clave identificadora del contexto del modulo */
@@ -69,16 +67,6 @@ export abstract class BagModule extends HandlerModule {
     const r = [...this._responses]; //clonacion sencilla
     return r;
   }
-  /**reporte del estado actual del middleware */
-  private _middlewareReportStatus = {} as IMiddlewareReportStatus;
-  public get middlewareReportStatus(): IMiddlewareReportStatus {
-    const r = this.util.clone(this._middlewareReportStatus, "lodash"); //clonacion fuerte
-    return r;
-  }
-  public set middlewareReportStatus(value: IMiddlewareReportStatus) {
-    if (!this.util.isObject(value)) return;
-    this._middlewareReportStatus = value;
-  }
   /**almacena instantaneas de las diferentes modificaciones
    * que sufrió el dato durante la peticions */
   private _snapShotsdata: any[] = [];
@@ -106,12 +94,7 @@ export abstract class BagModule extends HandlerModule {
       });
     }
     const df = this.getDefault();
-    const {
-      data,
-      responses,
-      aTupleGlobalActionConfig,
-      middlewareReportStatus,
-    } = baseBag;
+    const { data, responses, aTupleGlobalActionConfig } = baseBag;
     this._data = data;
     this._firstData = data;
     this._criteriaHandler = baseBag.criteriaHandler;
@@ -122,9 +105,6 @@ export abstract class BagModule extends HandlerModule {
       ? aTupleGlobalActionConfig
       : df.aTupleGlobalActionConfig;
     this._responses = this.util.isArray(responses) ? responses : df.responses;
-    this._middlewareReportStatus = this.util.isObject(middlewareReportStatus)
-      ? middlewareReportStatus
-      : df.middlewareReportStatus;
   }
   /**@returns los valores de configuracion predefinidos */
   protected override getDefault() {
@@ -237,7 +217,7 @@ export abstract class BagModule extends HandlerModule {
     const sp = util.charSeparatorBagGlobalKeyAction;
     const keyModule = actionModule.keyModule;
     const keyActionModuleContext = actionModule.keyModuleContext;
-    let keyGlobal = util.buildGenericPathFromArray(
+    let keyGlobal = util.buildPath(
       [keyModule, keyActionModuleContext, keyAction],
       { charSeparator: sp }
     );
@@ -344,7 +324,7 @@ export abstract class BagModule extends HandlerModule {
         msn: `${actionModule} is not instance of action module valid`,
       });
     }
-    if (!util.isTuple(aTupleAC, 2)) {
+    if (!util.isArrayTuple(aTupleAC, 2, true)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
         msn: `${aTupleAC} is not array of tuple of action config valid`,
@@ -390,7 +370,7 @@ export abstract class BagModule extends HandlerModule {
     const aTGAC = customATupleGlobalActionConfig;
     const rATGAC = aTGAC.filter((tGAC) => {
       const r = aTKeysFilter.some((tKeyF) => {
-        const strForRe = util.buildGenericPathFromArray(tKeyF as string[], {
+        const strForRe = util.buildPath(tKeyF as string[], {
           charSeparator: sp,
           isInitWithSeparator: false,
           pathInit: "^",

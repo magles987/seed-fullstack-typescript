@@ -2,7 +2,7 @@ import { StructureLogicValidation } from "./_structure-validation";
 import { TFieldType } from "../meta/metadata-handler-shared";
 import { TZodSchemaForClose } from "./_validation";
 import { TStructureFieldMetaAndValidator } from "../meta/metadata-shared";
-import { TFieldConfigForVal } from "./shared";
+import { TFieldConfigForVal, TStructureValModuleConfigForField } from "./shared";
 import {
   IStructureBagForActionModuleContext,
   TStructureFnBagForActionModule,
@@ -14,6 +14,7 @@ import {
 } from "../reports/shared";
 import { StructureBag } from "../bag-module/structure-bag";
 import { TGenericTupleActionConfig } from "../config/shared-modules";
+import { StructureReportHandler } from "../reports/structure-report-handler";
 //████tipos e interfaces████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipo exclusivo para adicionar una configuracion
  * a la accion isRequired */
@@ -267,12 +268,11 @@ export type Trf_FieldLogicValidation = FieldLogicValidation;
 //████Clases████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class FieldLogicValidation<
-    TIDiccAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
-  >
+  TIDiccAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
+>
   extends StructureLogicValidation<TIDiccAC>
   implements
-    Record<TKeysDiccFieldValActionConfigG, TStructureFnBagForActionModule>
-{
+  Record<TKeysDiccFieldValActionConfigG, TStructureFnBagForActionModule> {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = StructureLogicValidation.getDefault();
@@ -317,6 +317,40 @@ export class FieldLogicValidation<
   protected override getDefault() {
     return FieldLogicValidation.getDefault();
   }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TStructureValModuleConfigForField<TIDiccAC>,
+    newContextConfig: TStructureValModuleConfigForField<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TStructureValModuleConfigForField<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TStructureValModuleConfigForField<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+              //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    const { diccActionsConfig } = rConfig
+
+    return rConfig;
+  }
   protected override getMetadataWithContextModule(
     keyPath?: string
   ): TStructureFieldMetaAndValidator<TIDiccAC> {
@@ -359,9 +393,9 @@ export class FieldLogicValidation<
     return isEmpty;
   }
   protected override checkEmptyDataWithRes(
+    reportHandler: StructureReportHandler,
     bag: StructureBag<any>,
-    data: any,
-    res: IStructureResponse
+    data: any
   ): IStructureResponse {
     const tGlobalAC = bag.findTupleGlobalActionConfig([
       this.keyModule as any,
@@ -373,9 +407,10 @@ export class FieldLogicValidation<
       ? tIsRequired[1] //la configuracion de la accion sin envoltura
       : undefined;
     const isEmpty = this.checkEmptyData(data, isRequired as any);
+    const rH = reportHandler;
+    let res = rH.mutateResponse(undefined);
     //comprobacion de vacio
     if (isEmpty) {
-      const rH = this.reportHandler;
       if (isRequired === undefined) {
         res = rH.mutateResponse(res, {
           status: ELogicResStatusCode.WARNING_DATA,
@@ -392,20 +427,10 @@ export class FieldLogicValidation<
   //================================================================
   public async isTypeOf(bag: StructureBag<any>): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "isTypeOf");
-    const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-      keyPath,
-    });
+    const { data, keyAction, keyPath, actionConfig, responses } =
+      this.adapBagForContext(bag, "isTypeOf");
+    const rH = this.buildReportHandler(bag, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
     const { isArray, fieldType } = actionConfig;
     //❗❗❗isTypeof no necesita saber si es dato vacio o no❗❗❗
     //validaciones primitivas con zod:
@@ -448,20 +473,12 @@ export class FieldLogicValidation<
   }
   public async isRequired(bag: StructureBag<any>): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "isRequired");
-    const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-      keyPath,
-    });
+    const { data, keyAction, actionConfig } = this.adapBagForContext(
+      bag,
+      "isRequired"
+    );
+    const rH = this.buildReportHandler(bag, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
     //❗se verifica el vacion sin res❗
     const isEmptyData = this.checkEmptyData(
       data,
@@ -731,24 +748,14 @@ export class FieldLogicValidation<
     bag: StructureBag<any>
   ): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "isAnonimusObject");
-    const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-      keyPath,
-    });
+    const { data, keyAction, keyPath, actionConfig, responses } =
+      this.adapBagForContext(bag, "isAnonimusObject");
+    const rH = this.buildReportHandler(bag, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
     let { anonimuSchemaForATupleAC, isAllowedExtraProp } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(bag, data, res);
+    res = this.checkEmptyDataWithRes(rH, bag, data);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
     if (!this.util.isObject(anonimuSchemaForATupleAC)) {
@@ -793,7 +800,6 @@ export class FieldLogicValidation<
           ),
         keyPath: embResForProp.keyPath,
         criteriaHandler: bag.criteriaHandler,
-        middlewareReportStatus,
       });
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];
@@ -812,24 +818,14 @@ export class FieldLogicValidation<
     bag: StructureBag<any>
   ): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const {
-      data,
-      keyAction,
-      keyPath,
-      actionConfig,
-      responses,
-      middlewareReportStatus,
-    } = this.adapBagForContext(bag, "isAnonimusArray");
-    const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-      keyPath,
-    });
+    const { data, keyAction, keyPath, actionConfig, responses } =
+      this.adapBagForContext(bag, "isAnonimusArray");
+    const rH = this.buildReportHandler(bag, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
     let { aTupleAC } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(bag, data, res);
+    res = this.checkEmptyDataWithRes(rH, bag, data);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
     if (!this.util.isArray(data, true)) {
@@ -858,7 +854,6 @@ export class FieldLogicValidation<
           ),
         keyPath: embResForItem.keyPath,
         criteriaHandler: bag.criteriaHandler,
-        middlewareReportStatus,
       });
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];

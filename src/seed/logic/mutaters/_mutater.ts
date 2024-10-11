@@ -2,8 +2,13 @@ import { TKeyLogicContext } from "../config/shared-modules";
 import { Util_Mutater } from "./_util-mutater";
 import { ActionModule } from "../config/module";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { ELogicResStatusCode, IResponse } from "../reports/shared";
-import { BagModule } from "../bag-module/_bag";
+import {
+  ELogicResStatusCode,
+  IResponse,
+  TResponseForMutate,
+} from "../reports/shared";
+import { BagModule, Trf_BagModule } from "../bag-module/_bag";
+import { ReportHandler } from "../reports/_reportHandler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**calves identificadoras del los
  * drivers (librerias) a usar
@@ -35,30 +40,6 @@ export abstract class LogicMutater<TIDiccAC> extends ActionModule<TIDiccAC> {
   }
   protected getDefault() {
     return LogicMutater.getDefault();
-  }
-  /**
-   * realiza el proceso comun de mutacion
-   * del dato actualizando en el objeto Bag,
-   * como en el reporte
-   *
-   * @param newData el valor del nuevo dato
-   * @param bag la instancia que contiene la
-   * informacion que esta dicponible en todos
-   * los modulos
-   * @param res el objeto de respuesta sencillo,
-   *
-   * ⚠ las modificaciones que sufre `res` en este metodo son explicitas, no se usa fusion  ⚠
-   *
-   */
-  protected mutateDataIntoBag(
-    newData: any,
-    bag: BagModule,
-    res: IResponse
-  ): void {
-    res.tRecordMutate = [bag.data, newData]; //modificacion explicita
-    res.data = newData; //modificacion explicita
-    bag.data = newData; //❗Hace la mutacion❗
-    return;
   }
   /**obtenie un diccionario con funciones de validacion basicas con tipo de retorno booleano, para se usadas en modulos de accion.
    *
@@ -101,6 +82,17 @@ export abstract class LogicMutater<TIDiccAC> extends ActionModule<TIDiccAC> {
         return r;
       },
     };
+  }
+  public override preRunAction(
+    bag: Trf_BagModule,
+    keyAction: keyof TIDiccAC
+  ): void {
+    return;
+  }
+  public override postRunAction(bag: Trf_BagModule, res: IResponse): void {
+    //mutar data de res a bag
+    bag.data = res.data;
+    return;
   }
   /**
    * @returns el estado de respuesta reducido

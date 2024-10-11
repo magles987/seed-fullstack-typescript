@@ -38,7 +38,7 @@ import { BagModule } from "./_bag";
 export interface IBagForActionModuleContext<
   TIDiccAC,
   TKey extends keyof TIDiccAC
-> extends Pick<BagModule, "data" | "responses" | "middlewareReportStatus"> {
+> extends Pick<BagModule, "data" | "responses"> {
   /**clave identificadora de la accion */
   keyAction: TKey;
   /**configuracion de la accion a ejecutar */
@@ -71,10 +71,7 @@ export type TFnBagForActionModule<
 export interface IPrimitiveBagForActionModuleContext<
   TIDiccAC,
   TKey extends keyof TIDiccAC
-> extends Pick<
-    PrimitiveBag<any>,
-    "data" | "responses" | "criteriaHandler" | "middlewareReportStatus"
-  > {
+> extends Pick<PrimitiveBag<any>, "data" | "responses" | "criteriaHandler"> {
   /**clave identificadora de la accion */
   keyAction: TKey;
   /**configuracion de la accion a ejecutar */
@@ -100,14 +97,14 @@ export type TPrimitiveFnBagForActionModule<
 > = (bag: TBag) => Promise<TIResponse>;
 /**... */
 export interface IPrimitiveBagForCtrlContext<
-    TValue,
-    TPrimitiveCriteriaHandler extends PrimitiveCriteriaHandler<TValue> = PrimitiveCriteriaHandler<TValue>,
-    TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
-    TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
-    TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-    TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-    TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
-  >
+  TValue,
+  TPrimitiveCriteriaHandler extends PrimitiveCriteriaHandler<TValue> = PrimitiveCriteriaHandler<TValue>,
+  TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
+  TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
+  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
+  TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
+  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
+>
   //obligatorias:
   extends Pick<
     PrimitiveBag<
@@ -126,7 +123,7 @@ export interface IPrimitiveBagForCtrlContext<
    *
    * ⚠ no se tiene en cuenta el modulo provider ⚠
    */
-  diccGlobalAC: Partial<
+  diccGlobalAC?: Partial<
     IPrimitiveMutateContext<
       Partial<
         | TIDiccPrimitiveMutateAC
@@ -134,32 +131,32 @@ export interface IPrimitiveBagForCtrlContext<
         | Record<keyof TIDiccPrimitiveMutateAC, null>
       >
     > &
-      IPrimitiveValContext<
-        Partial<
-          | TIDiccPrimitiveValAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccPrimitiveValAC, null>
-        >,
-        Partial<
-          | TIDiccRequestValAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccRequestValAC, null>
-        >
-      > &
-      IPrimitiveHookContext<
-        Partial<
-          | TIDiccPrimitiveHookAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccPrimitiveHookAC, null>
-        >
-      > &
-      IPrimitiveProviderContext<
-        Partial<
-          | TIDiccPrimitiveProviderAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccPrimitiveProviderAC, null>
-        >
+    IPrimitiveValContext<
+      Partial<
+        | TIDiccPrimitiveValAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccPrimitiveValAC, null>
+      >,
+      Partial<
+        | TIDiccRequestValAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccRequestValAC, null>
       >
+    > &
+    IPrimitiveHookContext<
+      Partial<
+        | TIDiccPrimitiveHookAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccPrimitiveHookAC, null>
+      >
+    > &
+    IPrimitiveProviderContext<
+      Partial<
+        | TIDiccPrimitiveProviderAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccPrimitiveProviderAC, null>
+      >
+    >
   >;
 }
 /**refactoriacion de la interfaz */
@@ -185,13 +182,9 @@ export interface IStructureBagForActionModuleContext<
   TIDiccAC,
   TKey extends keyof TIDiccAC
 > extends Pick<
-    StructureBag<any>,
-    | "data"
-    | "keyPath"
-    | "responses"
-    | "criteriaHandler"
-    | "middlewareReportStatus"
-  > {
+  StructureBag<any>,
+  "data" | "keyPath" | "responses" | "criteriaHandler"
+> {
   /**clave identificadora de la accion */
   keyAction: TKey;
   /**configuracion de la accion a ejecutar */
@@ -217,16 +210,16 @@ export type TStructureFnBagForActionModule<
 > = (bag: TBag) => Promise<TIResponse>;
 /**estructura de bag adaptada (extracto y adaptacion) pare un bag esclusivo para el controller*/
 export interface IStructureBagForCtrlContext<
-    TModel,
-    TStructureCriteriaHandler extends StructureCriteriaHandler<TModel> = StructureCriteriaHandler<TModel>,
-    TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
-    TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-    TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG,
-    TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-    TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-    TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-    TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
-  >
+  TModel,
+  TStructureCriteriaHandler extends StructureCriteriaHandler<TModel> = StructureCriteriaHandler<TModel>,
+  TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
+  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
+  TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG,
+  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
+  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
+  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
+  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
+>
   //obligatorias:
   extends Pick<
     StructureBag<
@@ -247,7 +240,7 @@ export interface IStructureBagForCtrlContext<
    *
    * ⚠ no se tiene en cuenta el modulo provider ⚠
    */
-  diccGlobalAC: Partial<
+  diccGlobalAC?: Partial<
     IStructureDeepMutateContext<
       Partial<
         | TIDiccFieldMutateAC
@@ -260,47 +253,48 @@ export interface IStructureBagForCtrlContext<
         | Record<keyof TIDiccModelMutateAC, null>
       >
     > &
-      IStructureDeepValContext<
-        Partial<
-          | TIDiccFieldValAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccFieldValAC, null>
-        >,
-        Partial<
-          | TIDiccModelValAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccModelValAC, null>
-        >,
-        Partial<
-          | TIDiccRequestValAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccRequestValAC, null>
-        >
-      > &
-      IStructureHookContext<
-        Partial<
-          | TIDiccStructureHookAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccStructureHookAC, null>
-        >
-      > &
-      IStructureProviderContext<
-        Partial<
-          | TIDiccStructureProviderAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccStructureProviderAC, null>
-        >
+    IStructureDeepValContext<
+      Partial<
+        | TIDiccFieldValAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccFieldValAC, null>
+      >,
+      Partial<
+        | TIDiccModelValAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccModelValAC, null>
+      >,
+      Partial<
+        | TIDiccRequestValAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccRequestValAC, null>
       >
+    > &
+    IStructureHookContext<
+      Partial<
+        | TIDiccStructureHookAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccStructureHookAC, null>
+      >
+    > &
+    IStructureProviderContext<
+      Partial<
+        | TIDiccStructureProviderAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccStructureProviderAC, null>
+      >
+    >
   >;
 }
 /**refactorizacion de la interfaz */
 export type Trf_IStructureBagForCtrlContext = IStructureBagForCtrlContext<any>;
-/**estructura de bag adaptada (extracto y adaptacion) pare un
- * bag esclusivo para el controller en contexto campo*/
+/**estructura de bag adaptada (extracto y adaptacion) para un
+ * bag exclusivo para el controller en contexto campo*/
 export interface IStructureBagForFieldCtrlContext<
   TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
   TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
-> extends IStructureBagForCtrlContext<
+> extends Omit<
+  IStructureBagForCtrlContext<
     any,
     any,
     TIDiccFieldMutateAC,
@@ -309,8 +303,10 @@ export interface IStructureBagForFieldCtrlContext<
     any,
     any,
     any
-  > {
-  diccGlobalAC: Partial<
+  >,
+  "criteriaHandler"
+> {
+  diccGlobalAC?: Partial<
     Pick<
       IStructureDeepMutateContext<
         Partial<
@@ -322,17 +318,18 @@ export interface IStructureBagForFieldCtrlContext<
       >,
       "fieldMutate"
     > &
-      Pick<
-        IStructureDeepValContext<
-          Partial<
-            | TIDiccFieldValAC
-            //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-            | Record<keyof TIDiccFieldValAC, null>
-          >,
-          any
+    Pick<
+      IStructureDeepValContext<
+        Partial<
+          | TIDiccFieldValAC
+          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+          | Record<keyof TIDiccFieldValAC, null>
         >,
-        "fieldVal"
-      >
+        any,
+        any
+      >,
+      "fieldVal"
+    >
   >;
 }
 /**refactoriacion de la interfaz */
@@ -365,21 +362,21 @@ export interface IStructureBagForModelCtrlContext<
   TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
   TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
 > extends IStructureBagForCtrlContext<
-    TModel,
-    TStructureCriteriaHandler,
-    any,
-    TIDiccModelMutateAC,
-    any,
-    TIDiccModelValAC,
-    TIDiccRequestValAC,
-    TIDiccStructureHookAC
-  > {
+  TModel,
+  TStructureCriteriaHandler,
+  any,
+  TIDiccModelMutateAC,
+  any,
+  TIDiccModelValAC,
+  TIDiccRequestValAC,
+  TIDiccStructureHookAC
+> {
   //personalizadas:
   /**diccionario con acciones globales
    *
    * ⚠ no se tiene en cuenta el modulo provider ⚠
    */
-  diccGlobalAC: Partial<
+  diccGlobalAC?: Partial<
     Pick<
       IStructureDeepMutateContext<
         any,
@@ -391,36 +388,36 @@ export interface IStructureBagForModelCtrlContext<
       >,
       "modelMutate"
     > &
-      Pick<
-        IStructureDeepValContext<
-          any,
-          Partial<
-            | TIDiccModelValAC
-            //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-            | Record<keyof TIDiccModelValAC, null>
-          >,
-          Partial<
-            | TIDiccRequestValAC
-            //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-            | Record<keyof TIDiccRequestValAC, null>
-          >
+    Pick<
+      IStructureDeepValContext<
+        any,
+        Partial<
+          | TIDiccModelValAC
+          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+          | Record<keyof TIDiccModelValAC, null>
         >,
-        "modelVal" | "requestVal"
-      > &
-      IStructureHookContext<
         Partial<
-          | TIDiccStructureHookAC
+          | TIDiccRequestValAC
           //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccStructureHookAC, null>
+          | Record<keyof TIDiccRequestValAC, null>
         >
-      > & //no necesita Pick
-      IStructureProviderContext<
-        Partial<
-          | TIDiccStructureProviderAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccStructureProviderAC, null>
-        >
-      > //no necesita Pick
+      >,
+      "modelVal" | "requestVal"
+    > & //no necesita Pick
+    IStructureHookContext<
+      Partial<
+        | TIDiccStructureHookAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccStructureHookAC, null>
+      >
+    > & //no necesita Pick
+    IStructureProviderContext<
+      Partial<
+        | TIDiccStructureProviderAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccStructureProviderAC, null>
+      >
+    >
   >;
 }
 /**refactoriacion de la interfaz */

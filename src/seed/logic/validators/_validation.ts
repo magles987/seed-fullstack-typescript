@@ -3,7 +3,13 @@ import { TKeyLogicContext } from "../config/shared-modules";
 import { Util_Validator } from "./_util-validator";
 import { ActionModule } from "../config/module";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { ELogicResStatusCode } from "../reports/shared";
+import {
+  ELogicResStatusCode,
+  IResponse,
+  TResponseForMutate,
+} from "../reports/shared";
+import { ReportHandler } from "../reports/_reportHandler";
+import { Trf_BagModule } from "../bag-module/_bag";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**calves identificadoras del los
  * drivers (librerias) a usar
@@ -164,9 +170,9 @@ export abstract class LogicValidation<TIDiccAC> extends ActionModule<TIDiccAC> {
       ) => {
         let r = false;
         if (keyDriver === "Util") {
-          r = util.isSignNumber(v, sign, isZeroIncluded); //
+          r = util.isNumberSign(v, sign, isZeroIncluded); //
         } else if (keyDriver === "Lodash") {
-          r = util.isSignNumber(v, sign, isZeroIncluded); // Lodash no tiene el metodo
+          r = util.isNumberSign(v, sign, isZeroIncluded); // Lodash no tiene el metodo
         } else if (keyDriver === "Zod") {
           if (sign === "+") {
             r = isZeroIncluded
@@ -321,6 +327,17 @@ export abstract class LogicValidation<TIDiccAC> extends ActionModule<TIDiccAC> {
         return r;
       },
     };
+  }
+  public override preRunAction(
+    bag: Trf_BagModule,
+    keyAction: keyof TIDiccAC
+  ): void {
+    return;
+  }
+  public override postRunAction(bag: Trf_BagModule, res: IResponse): void {
+    //mutar data de res a bag
+    bag.data = res.data;
+    return;
   }
   /**
    * @returns el estado de respuesta reducido

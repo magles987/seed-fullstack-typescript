@@ -2,6 +2,7 @@ import { LogicMutater } from "./_mutater";
 import {
   TPrimitiveConfigForMutate,
   TKeyPrimitiveMutateModuleContext,
+  TPrimitiveMutateModuleConfigForPrimitive,
 } from "./shared";
 import {
   IPrimitiveBagForActionModuleContext,
@@ -9,7 +10,7 @@ import {
 } from "../bag-module/shared-for-external-module";
 import { IPrimitiveResponse } from "../reports/shared";
 import { TPrimitiveMetaAndMutater } from "../meta/metadata-shared";
-import { PrimitiveBag } from "../bag-module/primitive-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import {
   PrimitiveReportHandler,
@@ -161,15 +162,14 @@ export type Trf_PrimitiveLogicMutater = PrimitiveLogicMutater;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class PrimitiveLogicMutater<
-    TIDiccAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG
-  >
+  TIDiccAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG
+>
   extends LogicMutater<TIDiccAC>
   implements
-    Record<
-      TKeysDiccPrimitiveMutateActionConfigG,
-      TPrimitiveFnBagForActionModule
-    >
-{
+  Record<
+    TKeysDiccPrimitiveMutateActionConfigG,
+    TPrimitiveFnBagForActionModule
+  > {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = LogicMutater.getDefault();
@@ -194,12 +194,6 @@ export class PrimitiveLogicMutater<
   public override set metadataHandler(mH: Trf_PrimitiveLogicMetadataHandler) {
     super.metadataHandler = mH;
   }
-  public override get reportHandler(): Trf_PrimitiveReportHandler {
-    return super.reportHandler as any;
-  }
-  public override set reportHandler(rH: Trf_PrimitiveReportHandler) {
-    super.reportHandler = rH;
-  }
   public override get keyModuleContext(): TKeyPrimitiveMutateModuleContext {
     return "primitiveMutate";
   }
@@ -208,15 +202,41 @@ export class PrimitiveLogicMutater<
    */
   constructor(keySrc: string) {
     super("primitive", keySrc);
-    this.reportHandler = new PrimitiveReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: this.keyModuleContext,
-      status: this.globalStatus,
-      tolerance: this.globalTolerance,
-    });
   }
   protected override getDefault() {
     return PrimitiveLogicMutater.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TPrimitiveMutateModuleConfigForPrimitive<TIDiccAC>,
+    newContextConfig: TPrimitiveMutateModuleConfigForPrimitive<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TPrimitiveMutateModuleConfigForPrimitive<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TPrimitiveMutateModuleConfigForPrimitive<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+              //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   protected override getMetadataWithContextModule(): TPrimitiveMetaAndMutater<TIDiccAC> {
     const metadata =
@@ -259,6 +279,29 @@ export class PrimitiveLogicMutater<
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
+  public override buildReportHandler(
+    bag: Trf_PrimitiveBag,
+    keyAction: keyof TIDiccAC
+  ): PrimitiveReportHandler {
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    let rH = new PrimitiveReportHandler(this.keySrc, {
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction: keyAction as any,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyLogic: this.keySrc,
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return rH;
+  }
   protected override adapBagForContext<TKey extends keyof TIDiccAC>(
     bag: PrimitiveBag<any>,
     keyAction: TKey
@@ -288,21 +331,33 @@ export class PrimitiveLogicMutater<
       actionConfig,
       responses: bag.responses,
       criteriaHandler: bag.criteriaHandler,
-      middlewareReportStatus: bag.middlewareReportStatus,
     };
     return bagFC;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag,
+    keyAction: keyof TIDiccAC
+  ): void {
+    super.preRunAction(bag, keyAction as any) as any;
+    return;
+  }
+  public override postRunAction(
+    bag: Trf_PrimitiveBag,
+    res: IPrimitiveResponse
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   //================================================================================================================================
   public async anyTrim(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, keyAction, actionConfig, responses, middlewareReportStatus } =
-      this.adapBagForContext(bag, "anyTrim");
-    const rH = this.reportHandler;
-    let res = rH.mutateResponse(undefined, {
-      data,
-      keyAction,
-    });
-    const {} = actionConfig;
+    const { data, keyAction, actionConfig, responses } = this.adapBagForContext(
+      bag,
+      "anyTrim"
+    );
+    const rH = this.buildReportHandler(bag, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
+    const { } = actionConfig;
 
     // //Desempaquetar la accion e inicializar
     // const keyAction: TLibKeyAction = "any_trim";

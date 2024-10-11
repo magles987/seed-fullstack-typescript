@@ -1,5 +1,7 @@
 import { TKeyLogicContext } from "../../config/shared-modules";
 import { ELogicCodeError, LogicError } from "../../errors/logic-error";
+import { TKeyAllDefaultServiceDriverInstance } from "../shared-for-external-module";
+import { HttpWebClientService } from "./client/web/http/http-service";
 import { LocalWebClientService } from "./client/web/local/local-service";
 import { IGenericService, IServiceRequestConfig } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -13,7 +15,7 @@ type TKeyClientService = TKeyWebService;
 //====Full===========================
 /**claves identificadoras de las instancias
  * de servicio disponibles para fabricar */
-export type TKeyServiceInstance = TKeyClientService;
+export type TKeyAllDefaultServiceInstance = TKeyClientService;
 //| TKeyServerService;
 /**factoria de servicios
  * @param keyService clave identificadora del servicio a construir
@@ -23,7 +25,8 @@ export type TKeyServiceInstance = TKeyClientService;
  * @param customDeepConfig configuracion personalizada profunda para este un contexto de servicio especifico(si se requiere)
  */
 export function serviceFactory(
-  keyService: TKeyServiceInstance,
+  keyService: TKeyAllDefaultServiceInstance,
+  keyDriver: TKeyAllDefaultServiceDriverInstance,
   keyLogicContext: TKeyLogicContext,
   keySrc: string,
   configBase: Partial<IServiceRequestConfig>,
@@ -34,13 +37,15 @@ export function serviceFactory(
     instance = new LocalWebClientService(
       keyLogicContext,
       keySrc,
+      keyDriver,
       configBase,
       customDeepConfig
     );
   else if (keyService === "http")
-    instance = new LocalHttpClientService(
+    instance = new HttpWebClientService(
       keyLogicContext,
       keySrc,
+      keyDriver,
       configBase,
       customDeepConfig
     );

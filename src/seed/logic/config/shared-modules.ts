@@ -13,7 +13,8 @@ export type TKeyExclusiveModule = "controller" | "middleware";
 /**clave identificadora de modulos con reportes de respuesta asignados */
 export type TKeyModuleWithReport =
   | TKeyActionModule
-  | Extract<TKeyExclusiveModule, "controller">;
+  | Extract<TKeyExclusiveModule, "controller">
+  | Extract<TKeyHandlerModule, "service">;
 /**Tipos de modulos para la logica de negocio*/
 export type TKeyModule =
   | TKeyActionModule
@@ -60,6 +61,9 @@ export type TDataType =
   //Utilitarios
   | "any" //⚠ Representa cualquier valor **Usar con precaucion**
   | "_system"; //❗ representa un tipo reservado par ael sistema (id, path o cualquier otro)
+/**seleccion de nombre del recurso (singular o plural) para
+ * la comunicacion con los drivers de gestio de peticion */
+export type TKeySrcSelector = "singular" | "plural";
 /**tipo generico estandar para una tupla de accion de configuracion
  *
  * `TIDiccAC` el diccionario de acciones

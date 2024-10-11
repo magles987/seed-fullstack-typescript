@@ -6,7 +6,6 @@ import {
   IStructureModifyCriteria,
 } from "../../criterias/shared";
 import { IResponse } from "../../reports/shared";
-import { IClientServiceRequestC } from "./client/shared";
 import { IServerServiceRequestC } from "./server/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras para el contexto de ejecucion para el modulo en primitive*/
@@ -16,10 +15,10 @@ export type TKeyStructureServiceModuleContext = "structureService";
 /**esquema de bag exclusivo para servicio */
 export interface IBagForService {
   literalCriteria:
-    | IPrimitiveReadCriteria
-    | IPrimitiveModifyCriteria
-    | IStructureReadCriteria<any>
-    | IStructureModifyCriteria<any>;
+  | IPrimitiveReadCriteria
+  | IPrimitiveModifyCriteria
+  | IStructureReadCriteria<any>
+  | IStructureModifyCriteria<any>;
   data: any;
 }
 /**... */
@@ -33,7 +32,6 @@ export interface IGenericDriver<TIResponseForDrive> {
 }
 /**esquema con parametros de configuracion de un servicio */
 export interface IServiceRequestConfig {
-  client?: IClientServiceRequestC;
   server?: IServerServiceRequestC;
 }
 /**refactorizacion de la interfaz */

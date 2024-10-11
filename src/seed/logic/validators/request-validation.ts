@@ -4,6 +4,8 @@ import {
   TKeyPrimitiveValModuleContext,
   TKeyStructureDeepValModuleContext,
   TModelConfigForVal,
+  TPrimitiveValModuleConfigForRequest,
+  TStructureValModuleConfigForRequest,
 } from "./shared";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
@@ -26,8 +28,8 @@ import {
 } from "../bag-module/shared-for-external-module";
 import { StructureReportHandler } from "../reports/structure-report-handler";
 import { Trf_ReportHandler } from "../reports/_reportHandler";
-import { StructureBag } from "../bag-module/structure-bag";
-import { PrimitiveBag } from "../bag-module/primitive-bag";
+import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 
@@ -57,19 +59,18 @@ export type Trf_RequestValLibGeneric = RequestLogicValidation;
  *
  */
 export class RequestLogicValidation<
-    TIDiccAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG
-  >
+  TIDiccAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG
+>
   extends LogicValidation<TIDiccAC>
   implements
-    Record<
-      TKeysDiccRequestValActionConfigG,
-      TFnBagForActionModule<
-        //❕se usa TFnBag para poder agrupar❕
-        StructureBag<any> | PrimitiveBag<any>,
-        IStructureResponse | IPrimitiveResponse
-      >
+  Record<
+    TKeysDiccRequestValActionConfigG,
+    TFnBagForActionModule<
+      //❕se usa TFnBag para poder agrupar❕
+      StructureBag<any> | PrimitiveBag<any>,
+      IStructureResponse | IPrimitiveResponse
     >
-{
+  > {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = LogicValidation.getDefault();
@@ -100,12 +101,6 @@ export class RequestLogicValidation<
   ) {
     super.metadataHandler = mH;
   }
-  public override get reportHandler(): Trf_ReportHandler {
-    return super.reportHandler as any;
-  }
-  public override set reportHandler(rH: Trf_ReportHandler) {
-    super.reportHandler = rH;
-  }
   public override get keyModuleContext():
     | Extract<TKeyPrimitiveValModuleContext, "requestVal">
     | Extract<TKeyStructureDeepValModuleContext, "requestVal"> {
@@ -117,30 +112,40 @@ export class RequestLogicValidation<
    */
   constructor(keyLogicContext: TKeyLogicContext, keySrc: string) {
     super(keyLogicContext, keySrc);
-    const df = this.getDefault();
-    if (keyLogicContext === "primitive") {
-      this.reportHandler = new PrimitiveReportHandler(this.keySrc, {
-        keyModule: this.keyModule,
-        keyModuleContext: this.keyModuleContext,
-        status: ELogicResStatusCode.VALID_DATA,
-        tolerance: df.globalTolerance,
-      });
-    } else if (keyLogicContext === "structure") {
-      this.reportHandler = new StructureReportHandler(this.keySrc, {
-        keyModule: this.keyModule,
-        keyModuleContext: this.keyModuleContext,
-        status: ELogicResStatusCode.VALID_DATA,
-        tolerance: df.globalTolerance,
-      });
-    } else {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${this.keyLogicContext} is not key logic context valid`,
-      });
-    }
   }
   protected override getDefault() {
     return RequestLogicValidation.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TStructureValModuleConfigForRequest<TIDiccAC> | TPrimitiveValModuleConfigForRequest<TIDiccAC>,
+    newContextConfig: TStructureValModuleConfigForRequest<TIDiccAC> | TPrimitiveValModuleConfigForRequest<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TStructureValModuleConfigForRequest<TIDiccAC> | TPrimitiveValModuleConfigForRequest<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TStructureValModuleConfigForRequest<TIDiccAC> | TPrimitiveValModuleConfigForRequest<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   protected override getMetadataWithContextModule(
     keyPath?: string
@@ -225,9 +230,72 @@ export class RequestLogicValidation<
       actionConfig,
       responses: bag.responses as any,
       criteriaHandler: bag.criteriaHandler as any,
-      middlewareReportStatus: bag.middlewareReportStatus,
     };
     return bagFC as any;
+  }
+  public override buildReportHandler(
+    bag: Trf_PrimitiveBag | Trf_StructureBag,
+    keyAction: keyof TIDiccAC
+  ): StructureReportHandler | PrimitiveReportHandler {
+    let rH: StructureReportHandler | PrimitiveReportHandler;
+    if (this.keyLogicContext === "primitive") {
+      const { data, criteriaHandler, firstData } = bag as Trf_PrimitiveBag;
+      const { type, modifyType, keyActionRequest } = criteriaHandler;
+      rH = new PrimitiveReportHandler(this.keySrc, {
+        keyRepModule: this.keyModule as any,
+        keyRepModuleContext: this.keyModuleContext,
+        keyRepLogicContext: this.keyLogicContext,
+        keyActionRequest: keyActionRequest,
+        keyAction: keyAction as any,
+        keyTypeRequest: type,
+        keyModifyTypeRequest: modifyType,
+        keyLogic: this.keySrc,
+        keyRepSrc: this.keySrc,
+        status: this.globalStatus,
+        tolerance: this.globalTolerance,
+        fisrtCtrlData: firstData,
+        data,
+      });
+    } else if (this.keyLogicContext === "structure") {
+      const { data, criteriaHandler, keyPath, firstData } = bag as Trf_StructureBag;
+      const { type, modifyType, keyActionRequest } = criteriaHandler;
+      rH = new StructureReportHandler(this.keySrc, {
+        keyRepModule: this.keyModule as any,
+        keyRepModuleContext: this.keyModuleContext,
+        keyRepLogicContext: this.keyLogicContext,
+        keyActionRequest: keyActionRequest,
+        keyAction: keyAction as any,
+        keyTypeRequest: type,
+        keyModifyTypeRequest: modifyType,
+        keyPath,
+        keyLogic: this.util.getKeyLogicByKeyPath(keyPath),
+        keyRepSrc: this.keySrc,
+        status: this.globalStatus,
+        tolerance: this.globalTolerance,
+        fisrtCtrlData: firstData,
+        data,
+      });
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${this.keyLogicContext} is not key logic context valid`
+      });
+    }
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_PrimitiveBag | Trf_StructureBag,
+    keyAction: keyof TIDiccAC
+  ): Trf_PrimitiveBag | Trf_StructureBag {
+    super.preRunAction(bag, keyAction as any) as any;
+    return;
+  }
+  public override postRunAction(
+    bag: Trf_PrimitiveBag | Trf_StructureBag,
+    res: IPrimitiveResponse | IStructureResponse
+  ): IStructureResponse {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   //================================================================================================================================
   public async isReadAllowed(

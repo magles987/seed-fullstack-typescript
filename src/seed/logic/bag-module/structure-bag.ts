@@ -21,7 +21,9 @@ import {
   TStructureATupleGlobalDiccAC,
   TStructureKeysGlobal,
 } from "./shared";
-
+//████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/**refactorización de la clase*/
+export type Trf_StructureBag = StructureBag<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
  * ...
@@ -115,7 +117,7 @@ export class StructureBag<
     this._keyPath = baseBag.keyPath;
     this.criteriaHandler = this.util.isInstance(this.criteriaHandler)
       ? this.criteriaHandler
-      : (new StructureCriteriaHandler(this.keySrc, "read", {}) as any);
+      : (new StructureCriteriaHandler(this.keySrc, { type: "read" }) as any);
     this.aTupleGlobalActionConfig =
       this.filterATupleGlobalActionConfigByDeepModelContext();
   }
@@ -127,10 +129,9 @@ export class StructureBag<
       data: this.data,
       keyPath: this.keyPath,
       keySrc: this.keySrc,
-      literalCriteria: this.criteriaHandler.getCriteriaByContext(),
+      literalCriteria: this.criteriaHandler.getLiteral(),
       aTupleGlobalActionConfig: this.aTupleGlobalActionConfig as any,
       responses: this.responses,
-      middlewareReportStatus: this.middlewareReportStatus,
     };
     return literalBag;
   }

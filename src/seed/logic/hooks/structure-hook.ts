@@ -4,6 +4,7 @@ import { LogicHook } from "./_hook";
 import {
   TStructureConfigForHook,
   TKeyStructureHookModuleContext,
+  TStructureHookModuleConfigForStructure,
 } from "./shared";
 import {
   IStructureBagForActionModuleContext,
@@ -15,7 +16,7 @@ import {
   Trf_StructureReportHandler,
 } from "../reports/structure-report-handler";
 import { TStructureMetaAndHook } from "../meta/metadata-shared";
-import { StructureBag } from "../bag-module/structure-bag";
+import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del hook */
 export interface IDiccStructureHookActionConfigG {
@@ -33,12 +34,11 @@ export type Trf_StructureLogicHook = StructureLogicHook<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class StructureLogicHook<
-    TIDiccAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG
-  >
+  TIDiccAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG
+>
   extends LogicHook<TIDiccAC>
   implements
-    Record<TKeysDiccStructureHookActionConfigG, TStructureFnBagForActionModule>
-{
+  Record<TKeysDiccStructureHookActionConfigG, TStructureFnBagForActionModule> {
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = LogicHook.getDefault();
@@ -64,13 +64,6 @@ export class StructureLogicHook<
   public override set metadataHandler(mH: Trf_StructureLogicMetadataHandler) {
     super.metadataHandler = mH;
   }
-  public override get reportHandler(): Trf_StructureReportHandler {
-    const rH = super.reportHandler as Trf_StructureReportHandler;
-    return rH;
-  }
-  public override set reportHandler(rH: Trf_StructureReportHandler) {
-    super.reportHandler = rH;
-  }
   public override get keyModuleContext(): TKeyStructureHookModuleContext {
     return "structureHook";
   }
@@ -79,15 +72,40 @@ export class StructureLogicHook<
    */
   constructor(keySrc: string) {
     super("structure", keySrc);
-    this.reportHandler = new StructureReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: this.keyModuleContext,
-      status: this.globalStatus,
-      tolerance: this.globalTolerance,
-    });
   }
   protected override getDefault() {
     return StructureLogicHook.getDefault();
+  }
+  protected override rebuildCustomConfigFromModuleContext(
+    currentContextConfig: TStructureHookModuleConfigForStructure<TIDiccAC>,
+    newContextConfig: TStructureHookModuleConfigForStructure<TIDiccAC>,
+    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
+  ): TStructureHookModuleConfigForStructure<TIDiccAC> {
+    const cCC = currentContextConfig;
+    const nCC = newContextConfig;
+    let rConfig: TStructureHookModuleConfigForStructure<TIDiccAC>;
+    if (!this.util.isObject(nCC)) {
+      rConfig = cCC;
+    } else {
+      rConfig = {
+        ...nCC,
+        diccActionsConfig: this.util.isObject(
+          nCC.diccActionsConfig
+        )
+          ? this.util.mergeDiccActionConfig(
+            [
+              cCC.diccActionsConfig,
+              nCC.diccActionsConfig,
+            ],
+            {
+              mode: mergeMode,
+            }
+          )
+          : cCC.diccActionsConfig,
+      };
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   protected override getMetadataWithContextModule(): TStructureMetaAndHook<
     any,
@@ -174,9 +192,46 @@ export class StructureLogicHook<
       actionConfig,
       responses: bag.responses,
       criteriaHandler: bag.criteriaHandler,
-      middlewareReportStatus: bag.middlewareReportStatus,
     };
     return bagFC;
+  }
+  public override buildReportHandler(
+    bag: Trf_StructureBag,
+    keyAction: keyof TIDiccAC
+  ): StructureReportHandler {
+    const { data, criteriaHandler, keyPath, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    let rH = new StructureReportHandler(this.keySrc, {
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction: keyAction as any,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyPath,
+      keyLogic: this.util.getKeyLogicByKeyPath(keyPath),
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_StructureBag,
+    keyAction: keyof TIDiccAC
+  ): void {
+    super.preRunAction(bag, keyAction) as any;
+    return;
+  }
+  public override postRunAction(
+    bag: Trf_StructureBag,
+    res: IStructureResponse
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   //================================================================
   public async read(bag: StructureBag<any>): Promise<IStructureResponse> {

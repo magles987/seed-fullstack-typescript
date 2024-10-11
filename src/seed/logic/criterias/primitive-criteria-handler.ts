@@ -7,6 +7,7 @@ import {
   ISingleCondition,
   TAConds,
   TKeyPrimitiveCriteriaModuleContext,
+  TPrimitiveBaseCriteria,
 } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfconstructor*
@@ -39,16 +40,17 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
     const metadata = mH.getMetadata();
     return metadata.__S_Key;
   }
+  protected set s_Key(v: string) {} //❗NO ASIGNABLE❗, pero es necesario para el selfconstructor
   public override get p_Key(): string {
     const mH = this.metadataHandler;
     const metadata = mH.getMetadata();
     return metadata.__P_Key;
   }
+  protected set p_Key(v: string) {} //❗NO ASIGNABLE❗, pero es necesario para el selfconstructor
   /**... */
   constructor(
     keySrc: string,
-    base: Partial<IPrimitiveReadCriteria & IPrimitiveModifyCriteria> &
-      Pick<IPrimitiveReadCriteria & IPrimitiveModifyCriteria, "type"> = {
+    base: TPrimitiveBaseCriteria = {
       type: "read",
     },
     isInit = true
@@ -67,6 +69,22 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
   ): void {
     return super.resetPropByKey(key as any);
   }
+  public override mutateProps(
+    base: Partial<
+      Omit<
+        ReturnType<PrimitiveCriteriaHandler<TValue>["getDefault"]>,
+        "keyLogicContext" | "keySrc" | "keysPath" | "p_Key" | "s_Key"
+      >
+    >
+  ): void {
+    super.mutateProps(base);
+    return;
+  }
+  public override getLiteral():
+    | IPrimitiveReadCriteria
+    | IPrimitiveModifyCriteria {
+    return super.getLiteral() as any;
+  }
   protected override checkQueryConds(conds: TAConds): void {
     const len = conds.length;
     //verificaciones solo cuando esta poblado
@@ -83,7 +101,7 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
         } else if (this.util.isArray(cond)) {
           this.checkQueryConds(cond as TAConds);
         } else if (
-          !this.util.isObjectAndExistEveryProperty(
+          !this.util.isObjectWithProperties(
             cond as ISingleCondition,
             false,
             ["op", "vCond"],
@@ -103,10 +121,5 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
       }
     }
     return;
-  }
-  public getCriteriaByContext():
-    | IPrimitiveReadCriteria
-    | IPrimitiveModifyCriteria {
-    return super.getCriteriaByContext();
   }
 }

@@ -47,7 +47,7 @@ export abstract class Module {
   /**
    * @param _keyModule clave identificadora del modulo
    */
-  constructor(private readonly _keyModule: TKeyModule) {}
+  constructor(private readonly _keyModule: TKeyModule) { }
   /**@returns los valores de configuracion predefinidos */
   protected getDefault() {
     return Module.getDefault();
@@ -149,8 +149,6 @@ export abstract class LogicModuleWithReport extends LogicModule {
   }
   /**instancia de manejador de metadatos de este recurso */
   private _metadataHandler: unknown;
-  /**instance de manejador de reporte de respuestas */
-  private _reportHandler: unknown;
   /**
    * @param keyModule clave identificadora del modulo
    * @param keyLogicContext contexto logico (primitivo o estructurado).
@@ -184,18 +182,14 @@ export abstract class LogicModuleWithReport extends LogicModule {
       return; //❗garantiza solo 1 vez inicializar❗
     this._metadataHandler = metadataHandler;
   }
-  /**instancia del manejador de reportes de respuestas para este modulo */
-  public get reportHandler(): unknown {
-    return this._reportHandler;
-  }
-  /**instancia del manejador de reportes de respuestas para este modulo */
-  public set reportHandler(reportHandler: unknown) {
-    const util = Util_Module.getInstance();
-    if (!util.isInstance(reportHandler) || util.isInstance(this._reportHandler))
-      return; //❗garantiza solo 1 vez inicializar❗
-    this._reportHandler = reportHandler;
-    return;
-  }
+  /**construye un reporte de manejador de respuesta para este modulo
+   *
+   * @param bag instancia bag de la peticion actual
+   * @param keyAction clave indentificadora de la accion
+   *
+   * @returns instancia del reporte de manejador de respuesta
+   */
+  public abstract buildReportHandler(bag: unknown, keyAction: unknown): unknown;
 }
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *abstract*
@@ -383,7 +377,7 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
   ): Array<[keyof TIDiccAC, TIDiccAC[keyof TIDiccAC]]> {
     const util = this.util as Util_Module;
     const diccBaseAC = this.getDiccBaseActionConfig(acOption);
-    const aTupleBaseAC = util.literalObjectToArrayTuple(diccBaseAC);
+    const aTupleBaseAC = util.convertObjectToArrayOfTuples(diccBaseAC);
     return [...aTupleBaseAC]; //clonacion sencilla necesaria
   }
   /**Obtener una tupla de tipo Entry de configuracion de acciones
@@ -506,6 +500,15 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
     }
     return tFnOrATFFn;
   }
+  /**Reconstruye la configuracion de los metadatos para este modulo con personalizacion adicional
+   * 
+   * ❕Solo acesible desde el manejador de metadatos❕
+  */
+  protected abstract rebuildCustomConfigFromModuleContext(
+    currentContextConfig: unknown,
+    newContextConfig: unknown,
+    mergeMode: unknown
+  ): unknown;
   /**Construye objeto de opciones o configuraciones para
    * solicitar un diccionario base de configuracion de acciones
    *
@@ -798,7 +801,7 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
       let diccActionConfig = containerOfActionsConfig as Partial<TIDiccAC>;
       let baseDiccAC = this.getDiccBaseActionConfig(builderACOption);
       //retirar acciones no requeridas y agrega las obligatorias (si no estan incluidas)
-      const selectionKeysAction = util.arrayRemoveDuplicate(
+      const selectionKeysAction = util.removeArrayDuplicate(
         [
           ...this.dfTopMandatoryKeysAction, //obligatorias
           ...Object.keys(diccActionConfig),
@@ -824,20 +827,19 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
       ) {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
-          msn: `${
-            containerOfActionsConfig as any as string
-          } is not array of tuple of action config valid`,
+          msn: `${containerOfActionsConfig as any as string
+            } is not array of tuple of action config valid`,
         });
       }
       let aTupleActionConfig = containerOfActionsConfig as Array<
         [TKey, TIDiccAC[TKey]]
       >;
       aTupleActionConfig =
-        util.removeDuplicateOfArrayTupleByKey(aTupleActionConfig);
+        util.removeTupleArrayDuplicateByKey(aTupleActionConfig);
       let aTupleBaseActionConfig =
         this.getATupleBaseActionConfig(builderACOption);
       //retirar acciones no requeridas y agrega las obligatorias (si no estan incluidas)
-      const selectionKeysAction = util.arrayRemoveDuplicate(
+      const selectionKeysAction = util.removeArrayDuplicate(
         [
           ...this.dfTopMandatoryKeysAction, //obligatorias
           ...aTupleActionConfig.map((tuple) => tuple[0]),
@@ -1009,4 +1011,18 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
     bag: unknown,
     keyAction: unknown
   ): unknown;
+  /**micro hook embebido que se ejecuta antes de ejecutar la accion
+   *
+   * @param bag
+   * @param keyAction
+   * @returns el objeto bag (posiblemente mutado)
+   */
+  public abstract preRunAction(bag: unknown, keyAction: unknown): void;
+  /**micro hook embebido que se ejecuta despues de ejecutar la accion
+   *
+   * @param bag
+   * @param res
+   * @returns el objeto res (posiblemente mutado), el bag puede tambien mutarse
+   */
+  public abstract postRunAction(bag: unknown, res: unknown): void;
 }

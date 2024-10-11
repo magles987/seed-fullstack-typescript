@@ -8,6 +8,7 @@ import {
   TAConds,
   TKeyCriteriaType,
   TKeyStructureCriteriaModuleContext,
+  TStructureBaseCriteria,
 } from "./shared";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -50,11 +51,13 @@ export class StructureCriteriaHandler<TModel> extends CriteriaHandler {
     const metadata = mH.getExtractMetadataByStructureContext("structureModel");
     return metadata.__S_Key;
   }
+  protected set s_Key(v: string) {} //❗NO ASIGNABLE❗, pero es necesario para el selfconstructor
   public override get p_Key(): string {
     const mH = this.metadataHandler;
     const metadata = mH.getExtractMetadataByStructureContext("structureModel");
     return metadata.__P_Key;
   }
+  protected set p_Key(v: string) {} //❗NO ASIGNABLE❗, pero es necesario para el selfconstructor
   private _keysPath: string[];
   public get keysPath(): string[] {
     return this._keysPath;
@@ -68,13 +71,7 @@ export class StructureCriteriaHandler<TModel> extends CriteriaHandler {
    */
   constructor(
     keySrc: string,
-    base: Partial<
-      IStructureReadCriteria<TModel> & IStructureModifyCriteria<TModel>
-    > &
-      Pick<
-        IStructureReadCriteria<TModel> & IStructureModifyCriteria<TModel>,
-        "type"
-      > = { type: "read" },
+    base: TStructureBaseCriteria<TModel> = { type: "read" },
     isInit = true
   ) {
     super("structure", keySrc, base, false);
@@ -90,6 +87,22 @@ export class StructureCriteriaHandler<TModel> extends CriteriaHandler {
     key: keyof ReturnType<StructureCriteriaHandler<TModel>["getDefault"]>
   ): void {
     return super.resetPropByKey(key as any);
+  }
+  public override mutateProps(
+    base: Partial<
+      Omit<
+        ReturnType<StructureCriteriaHandler<TModel>["getDefault"]>,
+        "keyLogicContext" | "keySrc" | "keysPath" | "p_Key" | "s_Key"
+      >
+    >
+  ): void {
+    super.mutateProps(base);
+    return;
+  }
+  public override getLiteral():
+    | IStructureReadCriteria<TModel>
+    | IStructureModifyCriteria<TModel> {
+    return super.getLiteral() as any;
   }
   protected override checkQueryConds(conds: TAConds): void {
     const len = conds.length;
@@ -107,7 +120,7 @@ export class StructureCriteriaHandler<TModel> extends CriteriaHandler {
         } else if (this.util.isArray(cond)) {
           this.checkQueryConds(cond as TAConds);
         } else if (
-          !this.util.isObjectAndExistEveryProperty(
+          !this.util.isObjectWithProperties(
             cond as ISingleCondition,
             false,
             ["op", "vCond", "keyPathForCond"],
@@ -127,10 +140,5 @@ export class StructureCriteriaHandler<TModel> extends CriteriaHandler {
       }
     }
     return;
-  }
-  public override getCriteriaByContext():
-    | IStructureReadCriteria<TModel>
-    | IStructureModifyCriteria<TModel> {
-    return super.getCriteriaByContext() as any;
   }
 }

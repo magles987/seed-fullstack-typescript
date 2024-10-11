@@ -26,6 +26,12 @@ import {
   TKeyPrimitiveServiceModuleContext,
   TKeyStructureServiceModuleContext,
 } from "../providers/services/shared";
+import {
+  TKeyLogicContext,
+  TKeyModuleWithReport,
+  TKeyRequestModifyType,
+  TKeyRequestType,
+} from "../config/shared-modules";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** Define los codigos de esdtado retornados
  * despues de la ejecucion de una accion en
@@ -170,15 +176,31 @@ export enum EKeyActionGroupForRes {
   /**indica grupo de sub acciones ejecutadas en el modulo
    * *provider*, del contexto *structure* */
   providerStructure = "#PROVIDER_STRUCTURE#",
+  /**indica grupo de sub acciones ejecutadas en el modulo
+   * *service*, del contexto *primitive* */
+  servicePrimitive = "#SERVICE_PRIMITIVE#",
+  /**indica grupo de sub acciones ejecutadas en el modulo
+   * *service*, del contexto *structure* */
+  serviceStructure = "#SERVICE_STRUCTURE#",
 }
 /** */
 export interface IResponse {
+  /**datos */
+  data: any;
+  /**clave identificadora del modulo */
+  keyRepModule: TKeyModuleWithReport;
+  /**clave identificadora del contexto logico que se usó para la petición */
+  keyRepLogicContext: TKeyLogicContext;
+  /**clave identificadora del contexto de modulo interno */
+  keyRepModuleContext: unknown;
+  /**clave identificadora del recurso*/
+  keyRepSrc: string;
   /**clave identificadora del recurso(modelo o campo), sin ruta */
   keyLogic?: string;
-  /**clave identificadora del recurso*/
-  keySrc: string;
-  /**clave identificadora del modulo que ejecutó el middleware */
-  keyModule: string;
+  /**clave identificadora del tipo de request */
+  keyTypeRequest: TKeyRequestType;
+  /**clave identificadora con contexto de modificacion (solo en peticiones de tipo "modify") */
+  keyModifyTypeRequest?: TKeyRequestModifyType;
   /**clave identificadora de la accion que ejecutó el middleware
    *
    * ❕Existen acciones especiales que agrupan subAcciones, no
@@ -186,10 +208,8 @@ export interface IResponse {
    * en mayuscula y comienzan y terminan con el caracter `"#"` ❕
    */
   keyAction: string | EKeyActionGroupForRes;
-  /**clave identificadora del middlaware */
-  keyModuleContext: unknown;
-  /**datos */
-  data: any;
+  /**clave identificadora de l apeticion de request */
+  keyActionRequest: string;
   /**el dato inicial con el que se inició la peticion en el controller*/
   fisrtCtrlData?: any;
   /**estado despues de la ejecucion del middleware */
@@ -204,18 +224,19 @@ export interface IResponse {
   tolerance: ELogicResStatusCode;
   /**reportes embebidos si los hay */
   responses: IResponse[];
-  /**tupla que indica (en caso de haber mutacion),
-   * el estado anterio `recordMutate[0]` y el estado
-   * posterior `recordMutate[1]` del dato cuando
-   * este ah mutado*/
-  tRecordMutate?: [any, any];
 }
 /**refactorizacion de la interfaz */
 export type Trf_IResponse = IResponse;
-/**tipado especial para la inicializaciuon del manejador */
-export type TBaseResponse = Pick<
-  IResponse,
-  "keyModule" | "keyModuleContext" | "status" | "tolerance"
+/**esquema especial para mutacion de response (tambien se usa para una inicializacion minimizada) */
+export type TResponseForMutate = Partial<
+  Omit<
+    IResponse,
+    | "keyRepModule"
+    | "keyRepLogicContext"
+    | "keyRepModuleContext"
+    | "keyRepSrc"
+    | "fisrtCtrlData"
+  >
 >;
 //====Primitive============================================================================================================================
 /**clave identificadora de este modulo segun su contexto */
@@ -231,15 +252,21 @@ export type TPrimitiveModuleContext =
   | TKeyPrimitiveServiceModuleContext;
 /**... */
 export interface IPrimitiveResponse extends IResponse {
-  keyModuleContext: TPrimitiveModuleContext;
+  keyRepModuleContext: TPrimitiveModuleContext;
   responses: IPrimitiveResponse[];
 }
 /**refactorizacion del tipo */
 export type Trf_IPrimitiveResponse = IPrimitiveResponse;
-/**tipado especial para la inicializaciuon del manejador */
-export type TBasePrimitiveResponse = Pick<
-  IPrimitiveResponse,
-  "keyModule" | "keyModuleContext" | "status" | "tolerance"
+/**esquema especial para mutacion de response  */
+export type TPrimitiveResponseForMutate = Partial<
+  Omit<
+    IPrimitiveResponse,
+    | "keyRepModule"
+    | "keyRepLogicContext"
+    | "keyRepModuleContext"
+    | "keyRepSrc"
+    | "fisrtCtrlData"
+  >
 >;
 //====Structure============================================================================================================================
 /**clave identificadora de este modulo segun su contexto */
@@ -259,17 +286,23 @@ export type TStructureModuleContext =
   | TKeyStructureServiceModuleContext;
 /**... */
 export interface IStructureResponse extends IResponse {
-  keyModuleContext: TStructureModuleContext;
+  keyRepModuleContext: TStructureModuleContext;
   /**ruta del recurso */
   keyPath: string;
   responses: IStructureResponse[];
 }
 /**refactorizacion del tipo */
 export type Trf_IStructureResponse = IStructureResponse;
-/**tipado especial para la inicializaciuon del manejador */
-export type TBaseStructureResponse = Pick<
-  IStructureResponse,
-  "keyModule" | "keyModuleContext" | "status" | "tolerance"
+/**esquema especial para mutacion de response (tambien se usa para una inicializacion minimizada) */
+export type TStructureResponseForMutate = Partial<
+  Omit<
+    IStructureResponse,
+    | "keyRepModule"
+    | "keyRepLogicContext"
+    | "keyRepModuleContext"
+    | "keyRepSrc"
+    | "fisrtCtrlData"
+  >
 >;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**retorna la clave identificadora
@@ -280,22 +313,22 @@ export function statusToKeyStatus(status: ELogicResStatusCode): TKeyStatus {
     status === ELogicResStatusCode.INFO
       ? "info"
       : status === ELogicResStatusCode.INFO_USER
-      ? "infoUser"
-      : status === ELogicResStatusCode.SUCCESS
-      ? "success"
-      : status === ELogicResStatusCode.VALID_DATA
-      ? "validUser"
-      : status === ELogicResStatusCode.WARNING
-      ? "warning"
-      : status === ELogicResStatusCode.WARNING_DATA
-      ? "warningUser"
-      : status === ELogicResStatusCode.BAD
-      ? "invalid"
-      : status === ELogicResStatusCode.INVALID_DATA
-      ? "invalidUser"
-      : status === ELogicResStatusCode.ERROR
-      ? "error"
-      : "success";
+        ? "infoUser"
+        : status === ELogicResStatusCode.SUCCESS
+          ? "success"
+          : status === ELogicResStatusCode.VALID_DATA
+            ? "validUser"
+            : status === ELogicResStatusCode.WARNING
+              ? "warning"
+              : status === ELogicResStatusCode.WARNING_DATA
+                ? "warningUser"
+                : status === ELogicResStatusCode.BAD
+                  ? "invalid"
+                  : status === ELogicResStatusCode.INVALID_DATA
+                    ? "invalidUser"
+                    : status === ELogicResStatusCode.ERROR
+                      ? "error"
+                      : "success";
 
   return r;
 }

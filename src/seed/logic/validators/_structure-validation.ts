@@ -19,7 +19,7 @@ import {
   TStructureFieldMetaAndValidator,
   TStructureMetaAndValidator,
 } from "../meta/metadata-shared";
-import { StructureBag } from "../bag-module/structure-bag";
+import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
 //████Interfaz y tipo████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_StructureLogicValidation = StructureLogicValidation<any>;
@@ -41,12 +41,6 @@ export abstract class StructureLogicValidation<
   public override set metadataHandler(mH: Trf_StructureLogicMetadataHandler) {
     super.metadataHandler = mH;
   }
-  public override get reportHandler(): Trf_StructureReportHandler {
-    return super.reportHandler as any;
-  }
-  public override set reportHandler(rH: Trf_StructureReportHandler) {
-    super.reportHandler = rH;
-  }
   public override get keyModuleContext(): Trf_StructureLogicValidation["_keyStructureModuleContext"] {
     return this._keyStructureModuleContext;
   }
@@ -62,12 +56,6 @@ export abstract class StructureLogicValidation<
     keySrc: string
   ) {
     super("structure", keySrc);
-    this.reportHandler = new StructureReportHandler(this.keySrc, {
-      keyModule: this.keyModule,
-      keyModuleContext: this.keyModuleContext,
-      status: this.globalStatus,
-      tolerance: this.globalTolerance,
-    });
   }
   protected override getDefault() {
     return StructureLogicValidation.getDefault();
@@ -198,9 +186,46 @@ export abstract class StructureLogicValidation<
       actionConfig,
       responses: bag.responses,
       criteriaHandler: bag.criteriaHandler,
-      middlewareReportStatus: bag.middlewareReportStatus,
     };
     return bagFC;
+  }
+  public override buildReportHandler(
+    bag: Trf_StructureBag,
+    keyAction: keyof TIDiccAC
+  ): StructureReportHandler {
+    const { data, criteriaHandler, keyPath, firstData } = bag;
+    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    let rH = new StructureReportHandler(this.keySrc, {
+      keyRepModule: this.keyModule as any,
+      keyRepModuleContext: this.keyModuleContext,
+      keyRepLogicContext: this.keyLogicContext,
+      keyActionRequest: keyActionRequest,
+      keyAction: keyAction as any,
+      keyTypeRequest: type,
+      keyModifyTypeRequest: modifyType,
+      keyPath,
+      keyLogic: this.util.getKeyLogicByKeyPath(keyPath),
+      keyRepSrc: this.keySrc,
+      status: this.globalStatus,
+      tolerance: this.globalTolerance,
+      fisrtCtrlData: firstData,
+      data,
+    });
+    return rH;
+  }
+  public override preRunAction(
+    bag: Trf_StructureBag,
+    keyAction: keyof TIDiccAC
+  ): void {
+    super.preRunAction(bag, keyAction) as any;
+    return;
+  }
+  public override postRunAction(
+    bag: Trf_StructureBag,
+    res: IStructureResponse
+  ): void {
+    super.postRunAction(bag, res) as any;
+    return;
   }
   /**... */
   protected abstract checkEmptyData(
@@ -218,8 +243,8 @@ export abstract class StructureLogicValidation<
    * (actual, ejecutados y por ejecutarse).
    */
   protected abstract checkEmptyDataWithRes(
+    reportHandler: StructureReportHandler,
     bag: StructureBag<any>,
-    data: any,
-    res: IStructureResponse
+    data: any
   ): IStructureResponse;
 }
