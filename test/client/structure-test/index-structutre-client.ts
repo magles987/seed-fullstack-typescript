@@ -185,6 +185,7 @@ async function runToLocalIDB() {
     },
     keyPath,
   });
+  console.log(res.status);
   return;
 }
 /**... */
