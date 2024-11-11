@@ -1,9 +1,15 @@
 import {
+  TKeyBasicCRUD,
   TKeyLogicContext,
   TKeySrcSelector,
 } from "../../../../../../../config/shared-modules";
+import {
+  ELogicCodeError,
+  LogicError,
+} from "../../../../../../../errors/logic-error";
 import { LocalRepository } from "../_local-repository";
-import { IDBConnection } from "./_connection";
+import { QueryJsAdaptator } from "../_query-js-adaptador";
+import { IDBConnection, TSchemaConfig } from "./_connection";
 import { ILocalIDBRepositoryConfig } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
@@ -69,17 +75,19 @@ export abstract class LocalIDBRepository<TKeyActionRequest>
   protected connection = IDBConnection.getInstance();
   /**
    * @param keyLogicContext clave identificadora del contexto logico
+   * @param queryJsAdaptator adaptador para consultas
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
+    queryJsAdaptator: QueryJsAdaptator,
     base: Partial<
       ReturnType<LocalIDBRepository<TKeyActionRequest>["getDefault"]>
     > = {},
     isInit = true
   ) {
-    super("idb", keyLogicContext);
+    super("idb", keyLogicContext, queryJsAdaptator);
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
@@ -90,7 +98,7 @@ export abstract class LocalIDBRepository<TKeyActionRequest>
   protected getCONST() {
     return LocalIDBRepository.getCONSTANTS();
   }
-  /**inicializa las propiedades de manera dinamica
+  /**inicializa las propiedades de manera dinámica
    *
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    */
@@ -124,6 +132,105 @@ export abstract class LocalIDBRepository<TKeyActionRequest>
     this[key as any] = df[key];
     return;
   }
+  /**muta las propiedades masivamente */
+  public mutateProps(
+    base: Partial<
+      Omit<
+        ReturnType<LocalIDBRepository<TKeyActionRequest>["getDefault"]>,
+        "" //se deja la opción de omitir abierta
+      >
+    >
+  ): void {
+    base = typeof base === "object" && base !== null ? base : ({} as any);
+    for (const key in base) {
+      this[key] = base[key];
+    }
+    return;
+  }
+  public override async sendRequest(
+    keyGenericSrc: string,
+    keyBasicCRUD: TKeyBasicCRUD,
+    txData: any,
+    partialSchemaConfig: Partial<
+      Pick<TSchemaConfig, "keysIndexable" | "prefixIndexable">
+    > = {}
+  ): Promise<any> {
+    if (!this.util.isString(keyGenericSrc)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyGenericSrc} is not generic src key valid`,
+      });
+    }
+    const fullSchemaConfig = this.connection.buildSchemaConfig({
+      ...partialSchemaConfig,
+      keyCollection: keyGenericSrc, //obligatorio sobrescrita
+      keyPrimary: "_id", //❗Obligatorio, esta primary key universal❗
+      autoIncrement: true, //❕necesario para la automatización❕
+    });
+    const _findIdxFn = (dt) => {
+      //desempaquetar solo para comparación
+      const modDt = dt[keyGenericSrc];
+      const r = this.util.isEquivalentTo([modDt, txData], {});
+      return r;
+    };
+    const tx = await this.getTransaction(fullSchemaConfig, "readwrite");
+    let rxData: any;
+    if (keyBasicCRUD === "read") {
+      rxData = await tx.store.getAll();
+      //desempaquetar objeto almacenado
+      rxData = (rxData as any[]).map((dt) => dt[keyGenericSrc]);
+    } else if (keyBasicCRUD === "create") {
+      const aData = await tx.store.getAll();
+      const fIdx = aData.findIndex(_findIdxFn);
+      const keyId = fullSchemaConfig.keyPrimary;
+      //empaquetar data a almacenar
+      let modTxData = {};
+      modTxData[keyGenericSrc] = txData;
+      if (fIdx === -1) {
+        modTxData[keyId] = undefined; //el autoincremento se encarga de esto.
+        await tx.store.add(modTxData); //creación
+      } else {
+        modTxData[keyId] = aData[fIdx][keyId]; //retomar el id ya almacenado.
+        await tx.store.put(modTxData); //actualización forzada
+      }
+      rxData = txData;
+    } else if (keyBasicCRUD === "update") {
+      const aData = await tx.store.getAll();
+      const fIdx = aData.findIndex(_findIdxFn);
+      const keyId = fullSchemaConfig.keyPrimary;
+      //empaquetar data a almacenar
+      let modTxData = {};
+      modTxData[keyGenericSrc] = txData;
+      if (fIdx === -1) {
+        modTxData[keyId] = undefined; //el autoincremento se encarga de esto.
+        await tx.store.add(txData); //crearlo forzado
+      } else {
+        modTxData[keyId] = aData[fIdx][keyId]; //retomar el id ya almacenado.
+        await tx.store.put(txData); //actualización
+      }
+      rxData = txData;
+    } else if (keyBasicCRUD === "delete") {
+      const aData = await tx.store.getAll();
+      const fIdx = aData.findIndex(_findIdxFn);
+      const keyId = fullSchemaConfig.keyPrimary;
+      //empaquetar data a almacenar
+      let modTxData = {};
+      modTxData[keyGenericSrc] = txData;
+      if (fIdx >= 0) {
+        modTxData[keyId] = aData[fIdx][keyId];
+        tx.store.delete(modTxData[keyId]); //Eliminación
+      }
+      rxData = txData;
+    } else {
+      await tx.done; //cerrar la transacción
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyBasicCRUD} is not basic CRUD key valid`,
+      });
+    }
+    await tx.done; //cerrar la transacción
+    return rxData;
+  }
   /**
    * ____
    * @param keyCollection la clave
@@ -133,28 +240,27 @@ export abstract class LocalIDBRepository<TKeyActionRequest>
    * identificador
    *
    */
-  protected abstract createAndSetSchemaConfig(
-    keyCollection: string,
-    keyPrimary?: string
-  ): void;
+  protected createAndSetSchemaConfig(schemaConfig: Partial<TSchemaConfig>) {
+    this.connection.setSchemaConfig(schemaConfig);
+  }
   /**
    * verifica si el esquema esta registrado
    * ____
    */
-  protected checkSchema(keySchema: string) {
+  private isSchemaRegistered(keySchema: string) {
     const mapSch = this.connection.mapSchemaConfig;
-    const isRegistered = mapSch.has(keySchema);
-    if (!isRegistered) {
-      this.createAndSetSchemaConfig(keySchema);
-    }
+    const r = mapSch.has(keySchema);
+    return r;
   }
   /**
    * ____
    * @returns la conexion abierta a la BD
    */
-  protected async getDB(keySrcContext: string) {
-    this.checkSchema(keySrcContext);
-    let db = await this.connection.openConnect(this.db_name, this.db_version);
+  protected async getDB(schemaConfig: Partial<TSchemaConfig>) {
+    const { keyCollection } = schemaConfig;
+    const isRegistered = this.isSchemaRegistered(keyCollection);
+    if (!isRegistered) this.createAndSetSchemaConfig(schemaConfig);
+    const db = await this.connection.openConnect(this.db_name, this.db_version);
     return db;
   }
   /**
@@ -172,11 +278,13 @@ export abstract class LocalIDBRepository<TKeyActionRequest>
    *
    */
   protected async getTransaction(
-    keySrcContext: string,
+    schemaConfig: Partial<TSchemaConfig> &
+      Pick<TSchemaConfig, "keyCollection" | "keyPrimary">,
     transactionType: "readonly" | "readwrite" | "versionchange"
   ) {
-    const db = await this.getDB(keySrcContext);
-    const tx = db.transaction(keySrcContext, transactionType);
+    const db = await this.getDB(schemaConfig);
+    const { keyCollection } = schemaConfig;
+    const tx = db.transaction(keyCollection, transactionType);
     return tx;
   }
   /**... */

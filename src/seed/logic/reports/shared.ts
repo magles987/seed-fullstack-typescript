@@ -185,8 +185,8 @@ export enum EKeyActionGroupForRes {
 }
 /** */
 export interface IResponse {
-  /**datos */
-  data: any;
+  /**datos recibidos */
+  data: any; //❗Puede ser cualquier dato❗
   /**clave identificadora del modulo */
   keyRepModule: TKeyModuleWithReport;
   /**clave identificadora del contexto logico que se usó para la petición */
@@ -313,22 +313,22 @@ export function statusToKeyStatus(status: ELogicResStatusCode): TKeyStatus {
     status === ELogicResStatusCode.INFO
       ? "info"
       : status === ELogicResStatusCode.INFO_USER
-        ? "infoUser"
-        : status === ELogicResStatusCode.SUCCESS
-          ? "success"
-          : status === ELogicResStatusCode.VALID_DATA
-            ? "validUser"
-            : status === ELogicResStatusCode.WARNING
-              ? "warning"
-              : status === ELogicResStatusCode.WARNING_DATA
-                ? "warningUser"
-                : status === ELogicResStatusCode.BAD
-                  ? "invalid"
-                  : status === ELogicResStatusCode.INVALID_DATA
-                    ? "invalidUser"
-                    : status === ELogicResStatusCode.ERROR
-                      ? "error"
-                      : "success";
+      ? "infoUser"
+      : status === ELogicResStatusCode.SUCCESS
+      ? "success"
+      : status === ELogicResStatusCode.VALID_DATA
+      ? "validUser"
+      : status === ELogicResStatusCode.WARNING
+      ? "warning"
+      : status === ELogicResStatusCode.WARNING_DATA
+      ? "warningUser"
+      : status === ELogicResStatusCode.BAD
+      ? "invalid"
+      : status === ELogicResStatusCode.INVALID_DATA
+      ? "invalidUser"
+      : status === ELogicResStatusCode.ERROR
+      ? "error"
+      : "success";
 
   return r;
 }

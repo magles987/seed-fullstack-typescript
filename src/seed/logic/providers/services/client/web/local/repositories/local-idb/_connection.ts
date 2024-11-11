@@ -5,7 +5,7 @@ import { openDB, deleteDB, wrap, unwrap, DBSchema, IDBPDatabase } from "idb";
 import { Util_Provider } from "../../../../../../_util-provider";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define tipo configuracion para un esquema de datos */
-type TSchemaConfig = ReturnType<
+export type TSchemaConfig = ReturnType<
   (typeof IDBConnection)["getDefault"]
 >["schemaConfig"];
 /**Refactorizacion de la clase */
@@ -18,7 +18,7 @@ export type Trf_IDBConnection = IDBConnection;
  * ____
 */
 export class IDBConnection {
-  protected static readonly getDefault = () => {
+  public static readonly getDefault = () => {
     return {
       schemaConfig: {
         /**determina si la llave primaria es
@@ -66,7 +66,7 @@ export class IDBConnection {
   /**Almacena la instancia única de esta clase*/
   private static instance: IDBConnection;
   /** */
-  constructor() { }
+  constructor() {}
   /**devuelve la instancia única de esta clase
    * ya sea que la crea o la que ya a sido creada
    */
@@ -91,7 +91,7 @@ export class IDBConnection {
    * @returns el schema ya construido
    *
    */
-  private buildSchemaConfig(param?: Partial<TSchemaConfig>) {
+  public buildSchemaConfig(param?: Partial<TSchemaConfig>) {
     let schemaConfig: TSchemaConfig;
     const df = IDBConnection.getDefault().schemaConfig;
     if (!this.util.isObject(param)) {
@@ -149,10 +149,10 @@ export class IDBConnection {
       ) => {
         aSchemasConfig.forEach((sC) => this.setSchemaAtDB(db, sC));
       }).bind(this),
-      blocked: ((currentVersion: number, blockedVersion: number) => { }).bind(
+      blocked: ((currentVersion: number, blockedVersion: number) => {}).bind(
         this
       ),
-      blocking: ((currentVersion: number, blockedVersion: number) => { }).bind(
+      blocking: ((currentVersion: number, blockedVersion: number) => {}).bind(
         this
       ),
       terminated: (() => {
@@ -205,11 +205,11 @@ export class IDBConnection {
    * @returns ``
    *
    */
-  public setSchemaConfig(newSchemaConfig: Partial<TSchemaConfig>) {
+  public setSchemaConfig(schemaConfig: Partial<TSchemaConfig>) {
     const mapSch = this.mapSchemaConfig;
     mapSch.set(
-      newSchemaConfig.keyCollection,
-      this.buildSchemaConfig(newSchemaConfig)
+      schemaConfig.keyCollection,
+      this.buildSchemaConfig(schemaConfig)
     );
     return;
   }
@@ -218,5 +218,5 @@ export class IDBConnection {
    * y lo registra en el mapa
    *
    */
-  protected createSchema(keyCollection: string) { }
+  protected createSchema(keyCollection: string) {}
 }

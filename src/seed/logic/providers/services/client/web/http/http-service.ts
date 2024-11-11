@@ -1,18 +1,19 @@
 import { IGenericDriver, IServiceRequestConfig } from "../../../shared";
-import { WebClientService } from "../_web-service-client";
-import { IHttpResponse, IHttpWebClientServiceRequestC } from "./shared";
-import { TKeyLogicContext } from "../../../../../config/shared-modules";
 import { IPrimitiveBag, IStructureBag } from "../../../../../bag-module/shared";
 import {
   IPrimitiveResponse,
   IStructureResponse,
 } from "../../../../../reports/shared";
-import { TExpectedDataType } from "../../../../../criterias/shared";
-import { httpClientDriverFactoryFn, TKeyHttpClientDriverInstance } from "./drive/http-driver-factory";
+import { IHttpResponse, IHttpWebClientServiceRequestC } from "./shared";
+import { TKeyLogicContext } from "../../../../../config/shared-modules";
+import { WebClientService } from "../_web-service-client";
+import {
+  httpClientDriverFactoryFn,
+  TKeyHttpClientDriverInstance,
+} from "./drive/http-driver-factory";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_HttpService = HttpWebClientService;
-
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
  * descrip...
@@ -75,22 +76,22 @@ export class HttpWebClientService extends WebClientService {
         ...cB,
         client: this.util.isObject(cB.client)
           ? {
-            ...cB.client,
-            web: this.util.isObject(cB.client.web)
-              ? {
-                ...cB.client.web,
-                http: this.util.isObject(cB.client.web.http)
-                  ? {
-                    ...cB.client.web.http,
-                    ...customDeepConfig, //agrega personalizacion
+              ...cB.client,
+              web: this.util.isObject(cB.client.web)
+                ? {
+                    ...cB.client.web,
+                    http: this.util.isObject(cB.client.web.http)
+                      ? {
+                          ...cB.client.web.http,
+                          ...customDeepConfig, //agrega personalizacion
+                        }
+                      : {
+                          ...df.client.web.http,
+                          ...customDeepConfig, //agrega personalizacion
+                        },
                   }
-                  : {
-                    ...df.client.web.http,
-                    ...customDeepConfig, //agrega personalizacion
-                  },
-              }
-              : df.client.web,
-          }
+                : df.client.web,
+            }
           : df.client,
       };
     }
@@ -107,11 +108,11 @@ export class HttpWebClientService extends WebClientService {
   public override async runRequestForPrimitive(
     iBag: IPrimitiveBag<any>
   ): Promise<IPrimitiveResponse> {
-    const repo = this.buildDriver();
+    const drive = this.buildDriver();
     const bagRepository = this.convertBagToBagService(iBag);
-    const localResponse = await repo.runRequestFromDrive(bagRepository);
+    const driveResponse = await drive.sendRequestFromService(bagRepository);
     const res = this.adaptDriverResponseToPrimitiveLogicResponse(
-      localResponse,
+      driveResponse,
       iBag
     );
     return res;
@@ -119,11 +120,11 @@ export class HttpWebClientService extends WebClientService {
   public override async runRequestForStructure(
     iBag: IStructureBag<any>
   ): Promise<IStructureResponse> {
-    const repo = this.buildDriver();
+    const drive = this.buildDriver();
     const bagRepository = this.convertBagToBagService(iBag);
-    const localResponse = await repo.runRequestFromDrive(bagRepository);
+    const driveResponse = await drive.sendRequestFromService(bagRepository);
     const res = this.adaptDriverResponseToStructureLogicResponse(
-      localResponse,
+      driveResponse,
       iBag
     );
     return res;
@@ -135,7 +136,10 @@ export class HttpWebClientService extends WebClientService {
     const { body, httpStatus, ok, statusText, error } = driverResponse;
     const rH = this.buildPrimitiveReportHandler(iBag);
     let res = rH.mutateResponse(undefined, {
-      data: this.reBuildRxDataFromHttpResponse(body, iBag.literalCriteria.expectedDataType),
+      data: this.reBuildRxDataFromHttpResponse(
+        body,
+        iBag.literalCriteria.expectedDataType
+      ),
       status: this.convertHttpStatusCodeToLogicStatusCode(httpStatus),
       extResponse: error,
       msn: statusText,
@@ -149,7 +153,10 @@ export class HttpWebClientService extends WebClientService {
     const { body, httpStatus, ok, statusText, error } = driverResponse;
     const rH = this.buildStructureReportHandler(iBag);
     let res = rH.mutateResponse(undefined, {
-      data: this.reBuildRxDataFromHttpResponse(body, iBag.literalCriteria.expectedDataType),
+      data: this.reBuildRxDataFromHttpResponse(
+        body,
+        iBag.literalCriteria.expectedDataType
+      ),
       status: this.convertHttpStatusCodeToLogicStatusCode(httpStatus),
       extResponse: error,
       msn: statusText,

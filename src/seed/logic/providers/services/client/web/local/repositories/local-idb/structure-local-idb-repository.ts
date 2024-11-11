@@ -1,10 +1,7 @@
-import { v4 as uuidv4 } from "uuid";
-import lodash from "lodash";
 import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../../errors/logic-error";
-import { Model } from "../../../../../../../models/_model";
 import { LocalIDBRepository } from "./_local-idb-repository";
 import {
   TKeyStructureModifyRequestController,
@@ -18,6 +15,9 @@ import {
   IStructureReadCriteria,
 } from "../../../../../../../criterias/shared";
 import { IBagForService } from "../../../../../shared";
+import { StructureQueryJsAdaptator } from "../_query-js-adaptador";
+import { getGlobalConfig } from "../../../../../../../config/global-config";
+import { getStrategyGeneratorIdFnByKey } from "../../../../../../../util/default-generators-id-fn";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras de todas las acciones de request */
 type TKeyFullRequest =
@@ -31,17 +31,18 @@ export type Trf_StructureLocalIDBRepository = StructureLocalIDBRepository<any>;
  * ...
  */
 export class StructureLocalIDBRepository<
-  TKeyActionRequest extends TKeyFullRequest
->
+    TKeyActionRequest extends TKeyFullRequest
+  >
   extends LocalIDBRepository<TKeyActionRequest>
   implements
-  ReturnType<StructureLocalIDBRepository<TKeyActionRequest>["getDefault"]>,
-  Record<TKeyFullRequest, TActionFn> {
+    ReturnType<StructureLocalIDBRepository<TKeyActionRequest>["getDefault"]>,
+    Record<TKeyFullRequest, TActionFn>
+{
   public static override readonly getDefault = () => {
     const superDf = LocalIDBRepository.getDefault();
     return {
       ...superDf,
-      keyId: "_id",
+      keyId: getGlobalConfig().keyId,
     };
   };
   protected static override readonly getCONSTANTS = () => {
@@ -58,8 +59,11 @@ export class StructureLocalIDBRepository<
     this._keyId = this.util.isString(v)
       ? v
       : this._keyId !== undefined
-        ? this._keyId
-        : this.getDefault().keyId;
+      ? this._keyId
+      : this.getDefault().keyId;
+  }
+  protected override get queryJsAdaptator(): StructureQueryJsAdaptator {
+    return super.queryJsAdaptator;
   }
   /**
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
@@ -71,7 +75,7 @@ export class StructureLocalIDBRepository<
     > = {},
     isInit = true
   ) {
-    super("structure", base, false);
+    super("structure", StructureQueryJsAdaptator.getInstance(), base, false);
     if (isInit) this.initProps(base);
   }
   protected override getDefault() {
@@ -79,6 +83,19 @@ export class StructureLocalIDBRepository<
   }
   protected override getCONST() {
     return StructureLocalIDBRepository.getCONSTANTS();
+  }
+  public override mutateProps(
+    base: Partial<
+      Omit<
+        ReturnType<
+          StructureLocalIDBRepository<TKeyActionRequest>["getDefault"]
+        >,
+        "" //se deja la opción de omitir abierta
+      >
+    >
+  ): void {
+    super.mutateProps(base);
+    return;
   }
   //❗normalmente definidas en el padre, salvo que se quieran sobreescribir❗
   // /**reinicia una propiedad al valor predefinido
@@ -90,20 +107,17 @@ export class StructureLocalIDBRepository<
   //   this[key] = df[key];
   //   return;
   // }
-  protected override createAndSetSchemaConfig(
-    keyCollection: string,
-    keyPrimary = this._keyId,
-  ) {
-    this.connection.setSchemaConfig({
-      keyCollection,
-      keyPrimary: keyPrimary as any,
-    });
-  }
   protected override async readCommon(
     criteria: IBagForService["literalCriteria"]
   ) {
     const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    const tx = await this.getTransaction(keySrcContext, "readonly");
+    const tx = await this.getTransaction(
+      {
+        keyCollection: keySrcContext,
+        keyPrimary: this.keyId,
+      },
+      "readonly"
+    );
     let data = await tx.store.getAll();
     await tx.done;
     return data;
@@ -114,13 +128,21 @@ export class StructureLocalIDBRepository<
   ) {
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    const tx = await this.getTransaction(keySrcContext, "readwrite");
+    const tx = await this.getTransaction(
+      {
+        keyCollection: keySrcContext,
+        keyPrimary: this.keyId,
+      },
+      "readwrite"
+    );
     const isExist = this.util.isObject(await tx.store.get(data[kId]));
     if (isExist) return undefined; //❗ no se creó porque ya existe ❗
     //❗creacion de id:❗
-    data[kId] = this.generateID(data);
+    const { strategyForIdBuild } = this._globalConfig_;
+    const buildIDFn = getStrategyGeneratorIdFnByKey(strategyForIdBuild);
+    data[kId] = buildIDFn(data[kId]);
     data[kId] = await tx.store.add(data);
-    await tx.done; //cerrar la trasaccion
+    await tx.done; //cerrar la transacción
     return data;
   }
   protected override async updateCommon(
@@ -129,11 +151,17 @@ export class StructureLocalIDBRepository<
   ) {
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    const tx = await this.getTransaction(keySrcContext, "readwrite");
+    const tx = await this.getTransaction(
+      {
+        keyCollection: keySrcContext,
+        keyPrimary: this.keyId,
+      },
+      "readwrite"
+    );
     const isExist = this.util.isObject(await tx.store.get(data[kId]));
     if (!isExist) return undefined; //❗no existe❗
     data[kId] = await tx.store.put(data);
-    await tx.done; //cerrar la trasaccion
+    await tx.done; //cerrar la transacción
     return data;
   }
   protected override async deleteCommon(
@@ -142,18 +170,43 @@ export class StructureLocalIDBRepository<
   ) {
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    const tx = await this.getTransaction(keySrcContext, "readwrite");
+    const tx = await this.getTransaction(
+      {
+        keyCollection: keySrcContext,
+        keyPrimary: this.keyId,
+      },
+      "readwrite"
+    );
     const isExist = this.util.isObject(await tx.store.get(data[kId]));
-    if (isExist) {
-      await tx.store.delete(data[kId]);
-      await tx.done;
-    }
+    if (isExist) await tx.store.delete(data[kId]);
+    await tx.done;
     //mutar data para la eliminacion:
     let dData = {};
     dData[kId] = data[kId]; //solo envia id
     return dData;
   }
   //████ Request Actions ████████████████████████████████████████████████████████████
+  public async exist(bagService: IBagForService): Promise<boolean> {
+    const { literalCriteria } = bagService;
+    const registers = await this.readCommon(literalCriteria);
+    const aData = await this.getMany(registers, literalCriteria);
+    const data = aData.length > 0;
+    return data;
+  }
+  public async count(bagService: IBagForService): Promise<number> {
+    const { literalCriteria } = bagService;
+    const registers = await this.readCommon(literalCriteria);
+    const aData = await this.getMany(registers, literalCriteria);
+    const data = aData.length;
+    return data;
+  }
+  public async inform(bagService: IBagForService): Promise<string> {
+    const { literalCriteria } = bagService;
+    const registers = await this.readCommon(literalCriteria);
+    const aData = await this.getMany(registers, literalCriteria);
+    const data = aData.length > 0 ? "exist" : "no exist";
+    return data;
+  }
   /**
    * descrip...
    * ____
@@ -196,7 +249,13 @@ export class StructureLocalIDBRepository<
       this.srcSelector,
       literalCriteria
     );
-    const tx = await this.getTransaction(keySrcContext, "readonly");
+    const tx = await this.getTransaction(
+      {
+        keyCollection: keySrcContext,
+        keyPrimary: this.keyId,
+      },
+      "readonly"
+    );
     const { query } = literalCriteria as IStructureReadCriteria<any>;
     const kId = this.keyId;
     const extractQ = query.find((q) => {
@@ -333,79 +392,4 @@ export class StructureLocalIDBRepository<
     return rxData;
   }
   //████ Util Registers █████████████████████████████████████████████████████
-  /**
-   * genera un id de alta precision (para uso de
-   * almacenamiento a diferencia del utilizadoe
-   * en la clase `Util_Logic` de la logica de
-   * negocio)
-   *
-   * ejemplo del formato que genera:
-   * ````
-   * "36b8f84d-df4e-4d49-b662-bcde71a8764f"
-   * ````
-   * ____
-   * @param registers registro para verificar
-   * si el id ya esta asignado
-   * ____
-   * @returns el id generado
-   *
-   */
-  public generateID(registers: any) {
-    let id: string;
-    if (
-      registers._id === undefined ||
-      registers._id === null ||
-      registers._id === ""
-    ) {
-      id = uuidv4();
-    } else {
-      id = registers._id;
-    }
-    return id;
-  }
-  public override async orderBy(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any[]> {
-    if (!this.util.isArray(registers)) return registers;
-    const { sort } = criteria as IStructureReadCriteria<any>;
-    if (!this.util.isArray(sort)) return registers;
-    let keysField: string[] = [];
-    let aSorts: any[] = [];
-    sort.forEach((s) => {
-      keysField.push(s[0]);
-      aSorts.push(s[1]);
-    });
-    registers = lodash.orderBy(registers, keysField, aSorts);
-    return registers;
-  }
-  /**... */
-  public override async filterByCondition(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any[]> {
-    const { query } = criteria as IStructureReadCriteria<any>;
-    const qAdapt = this.queryJsAdaptator;
-    const data = await qAdapt.adaptQuery(
-      this.keyLogicContext,
-      registers,
-      query
-    );
-    return data;
-  }
-  /**... */
-  public override async findByCondition(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any> {
-    const { query } = criteria as IStructureReadCriteria<any>;
-    const qAdapt = this.queryJsAdaptator;
-    const data = await qAdapt.adaptQuery(
-      this.keyLogicContext,
-      registers,
-      query
-    );
-    const dataOne = data[0]; //❗Solo se permite el primero❗
-    return dataOne;
-  }
 }

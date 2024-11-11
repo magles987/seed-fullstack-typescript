@@ -1,64 +1,58 @@
-import { LocalCookieRepository } from "./_local-cookie-repository";
 import {
   TKeyPrimitiveModifyRequestController,
   TKeyPrimitiveReadRequestController,
-} from "../../../../../../../controllers/_primitive-ctrl";
-import { TActionFn } from "../shared";
+} from "../../../../src/seed/logic/controllers/_primitive-ctrl";
 import {
   IPrimitiveModifyCriteria,
   IPrimitiveReadCriteria,
-} from "../../../../../../../criterias/shared";
-import { IBagForService } from "../../../../../shared";
-import {
-  ELogicCodeError,
-  LogicError,
-} from "../../../../../../../errors/logic-error";
-import { PrimitiveQueryJsAdaptator } from "../_query-js-adaptador";
+} from "../../../../src/seed/logic/criterias/shared";
+import { PrimitiveQueryJsAdaptator } from "../../../../src/seed/logic/providers/services/client/web/local/repositories/_query-js-adaptador";
+import { IBagForService } from "../../../../src/seed/logic/providers/services/shared";
+import { SimulatedMicroBackend } from "../_simulated-microbackend";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras de todas las acciones de request */
 type TKeyFullRequest =
   | TKeyPrimitiveReadRequestController
-  | TKeyPrimitiveModifyRequestController;
-/**refactorizacion de la clase */
-export type Trf_PrimitiveLocalCookieRepository =
-  PrimitiveLocalCookieRepository<any>;
+  | TKeyPrimitiveModifyRequestController; /**refactorización de la clase */
+export type Trf_PrimitiveSimulatedMicroBackend =
+  PrimitiveSimulatedMicroBackend<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
  * ...
  */
-export class PrimitiveLocalCookieRepository<
+export class PrimitiveSimulatedMicroBackend<
     TKeyActionRequest extends TKeyFullRequest
   >
-  extends LocalCookieRepository<TKeyActionRequest>
+  extends SimulatedMicroBackend
   implements
-    ReturnType<PrimitiveLocalCookieRepository<TKeyActionRequest>["getDefault"]>,
-    Record<TKeyFullRequest, TActionFn>
+    ReturnType<PrimitiveSimulatedMicroBackend<TKeyActionRequest>["getDefault"]>
 {
   public static override readonly getDefault = () => {
-    const superDf = LocalCookieRepository.getDefault();
+    const superDf = SimulatedMicroBackend.getDefault();
     return {
       ...superDf,
       //...aqui las propiedades
     };
   };
   protected static override readonly getCONSTANTS = () => {
-    const superCONST = LocalCookieRepository.getCONSTANTS();
+    const superCONST = SimulatedMicroBackend.getCONSTANTS();
     return {
       ...superCONST,
+      //..aqui las constantes
     };
   };
   protected override get queryJsAdaptator(): PrimitiveQueryJsAdaptator {
     return super.queryJsAdaptator;
   }
   /**
-   * @param base objeto literal con valores personalizados para iniicalizar las propiedades
-   * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
+   * @param base objeto literal con valores personalizados para inicializar las propiedades
+   * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedades
    */
   constructor(
     base: Partial<
       ReturnType<
-        PrimitiveLocalCookieRepository<TKeyActionRequest>["getDefault"]
+        PrimitiveSimulatedMicroBackend<TKeyActionRequest>["getDefault"]
       >
     > = {},
     isInit = true
@@ -67,80 +61,89 @@ export class PrimitiveLocalCookieRepository<
     if (isInit) this.initProps(base);
   }
   protected override getDefault() {
-    return PrimitiveLocalCookieRepository.getDefault();
+    return PrimitiveSimulatedMicroBackend.getDefault();
   }
   protected override getCONST() {
-    return PrimitiveLocalCookieRepository.getCONSTANTS();
+    return PrimitiveSimulatedMicroBackend.getCONSTANTS();
   }
+  //❗normalmente definidas en el padre, salvo que se quieran sobreescribir❗
+  // /**inicializa las propiedades de manera dinamica
+  //  *
+  //  * @param base objeto literal con valores personalizados para iniicalizar las propiedades
+  //  */
+  // protected override initProps(base: Partial<ReturnType<PrimitiveSimulatedMicroBackend["getDefault"]>>): void {
+  //   for (const key in this.getDefault()) {
+  //     this[key] = base[key];
+  //   }
+  //   return;
+  // }
+  // /**reinicia una propiedad al valor predefinido
+  //  *
+  //  * @param key clave identificadora de la propiedad a reiniciar
+  //  */
+  // public override resetPropByKey(key: keyof ReturnType<PrimitiveSimulatedMicroBackend["getDefault"]>): void {
+  //   const df = this.getDefault();
+  //   this[key] = df[key];
+  //   return;
+  // }
   public override mutateProps(
     base: Partial<
-      Omit<
-        ReturnType<
-          PrimitiveLocalCookieRepository<TKeyActionRequest>["getDefault"]
-        >,
-        "" //se deja la opción de omitir abierta
+      ReturnType<
+        PrimitiveSimulatedMicroBackend<TKeyActionRequest>["getDefault"]
       >
     >
   ): void {
     super.mutateProps(base);
     return;
   }
+  public override async receiveRequest(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any> {
+    const { keyActionRequest } = criteria;
+    const _that_ = this;
+    let actionFn = _that_[keyActionRequest] as Function;
+    if (typeof actionFn !== "function")
+      throw new Error(`${actionFn} is not function`);
+    actionFn = actionFn.bind(this);
+  }
   //████ common snippet for action request  ████████████████████████
   protected override async readCommon(
     criteria: IBagForService["literalCriteria"]
   ) {
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    let data = await this.getData(keySrcContext);
-    data = this.util.isNotUndefinedAndNotNull(data)
-      ? Array.isArray(data)
-        ? data
-        : [data]
-      : [];
-    //desempaquetar primitive data
-    data = (data as any[]).map((data) => data[keySrcContext]);
+    let data = this.bd_collection;
     return data;
   }
   protected override async createCommon(
     data: any,
     criteria: IBagForService["literalCriteria"]
   ) {
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    let currentData = (await this.getData(keySrcContext)) as any[];
-    currentData = Array.isArray(currentData) ? currentData : [currentData];
-    const idxCData = currentData.findIndex((dt) =>
+    const idxCData = this.bd_collection.findIndex((dt) =>
       this.util.isEquivalentTo([dt, data], {})
     );
     if (idxCData > -1) return undefined; //❗ no se creó porque ya existe ❗
-    currentData.push(data);
-    await this.setData(currentData, keySrcContext);
+    this.bd_collection.push(data);
     return data;
   }
   protected override async updateCommon(
     data: any,
     criteria: IBagForService["literalCriteria"]
   ) {
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    let currentData = await this.getData(keySrcContext);
-    const idxCData = currentData.findIndex((dt) =>
+    const idxCData = this.bd_collection.findIndex((dt) =>
       this.util.isEquivalentTo([dt, data], {})
     );
     if (idxCData === -1) return undefined; //❗no existe❗
-    currentData[idxCData] = data;
-    this.setData(currentData, keySrcContext);
+    this.bd_collection[idxCData] = data; //⚠ modifica this.bd_collection
     return data;
   }
   protected override async deleteCommon(
     data: any,
     criteria: IBagForService["literalCriteria"]
   ) {
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    let currentData = (await this.getData(keySrcContext)) as any[];
-    currentData = Array.isArray(currentData) ? currentData : [currentData];
-    const fIdx = currentData.findIndex((dt) =>
+    const fIdx = this.bd_collection.findIndex((dt) =>
       this.util.isEquivalentTo([dt, data], {})
     );
-    if (fIdx >= 0) currentData.splice(fIdx, 1); //Eliminación
-    await this.setData(currentData, keySrcContext);
+    if (fIdx >= 0) this.bd_collection.splice(fIdx, 1); //Eliminación
     return data;
   }
   //████ Request Actions ████████████████████████████████████████████████████████████
@@ -213,30 +216,19 @@ export class PrimitiveLocalCookieRepository<
     const { modifyType, isCreateOrUpdate } =
       literalCriteria as IPrimitiveModifyCriteria;
     if (!this.util.isLiteralObject(data)) {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `document with data = ${LogicError.valueToString(
-          data
-        )} is not valid`,
-      });
+      throw new Error(`document with data = ${data} is not valid`);
     }
     if (modifyType !== "create") {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `${modifyType} is not modify type valid`,
-      });
+      throw new Error(`${modifyType} is not modify type valid`);
     }
     let rxData = await this.createCommon(data, literalCriteria);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
         rxData = await this.updateCommon(data, literalCriteria);
       } else {
-        throw new LogicError({
-          code: ELogicCodeError.EXIST,
-          msn: `document with data : ${LogicError.valueToString(
-            data
-          )} id has not created because exist`,
-        });
+        throw new Error(
+          `document with data : ${data} id has not created because exist`
+        );
       }
     }
     return rxData;
@@ -254,30 +246,19 @@ export class PrimitiveLocalCookieRepository<
     const { modifyType, isCreateOrUpdate } =
       literalCriteria as IPrimitiveModifyCriteria;
     if (!this.util.isObject(data)) {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `document with data = ${LogicError.valueToString(
-          data
-        )} does not valid`,
-      });
+      throw new Error(`document with data = ${data} does not valid`);
     }
     if (modifyType !== "update") {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `${modifyType} is not modify type valid`,
-      });
+      throw new Error(`${modifyType} is not modify type valid`);
     }
     let rxData = await this.updateCommon(data, literalCriteria);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
         rxData = await this.createCommon(data, literalCriteria);
       } else {
-        throw new LogicError({
-          code: ELogicCodeError.NOT_EXIST,
-          msn: `document with data : ${LogicError.valueToString(
-            data
-          )} id has not updated because not exist`,
-        });
+        throw new Error(
+          `document with data : ${data} id has not updated because not exist`
+        );
       }
     }
     return rxData;
@@ -294,20 +275,13 @@ export class PrimitiveLocalCookieRepository<
     const { data, literalCriteria } = bagService;
     const { modifyType } = literalCriteria as IPrimitiveModifyCriteria;
     if (!this.util.isObject(data)) {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `document with data = ${LogicError.valueToString(
-          data
-        )} does not valid`,
-      });
+      throw new Error(`document with data = ${data} does not valid`);
     }
     if (modifyType !== "delete") {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `${modifyType} is not modify type valid`,
-      });
+      throw new Error(`${modifyType} is not modify type valid`);
     }
     let rxData = await this.deleteCommon(data, literalCriteria);
     return rxData;
   }
+  //████ Util Registers █████████████████████████████████████████████████████
 }

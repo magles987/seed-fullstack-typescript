@@ -1,4 +1,4 @@
-import { Model } from "../../../../../src/seed/logic/models/_model";
+import { Model } from "../../../../src/seed/logic/models/_model";
 //██ Modelo tipo clase ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** Define las propiedades del modelo*/
 //🛑 esta clase NO esta pensada en instanciacion

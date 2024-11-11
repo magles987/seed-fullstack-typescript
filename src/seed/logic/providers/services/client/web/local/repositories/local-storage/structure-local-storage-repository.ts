@@ -1,5 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
-import lodash from "lodash";
 import {
   ELogicCodeError,
   LogicError,
@@ -17,6 +15,9 @@ import {
   IStructureReadCriteria,
 } from "../../../../../../../criterias/shared";
 import { IBagForService } from "../../../../../shared";
+import { StructureQueryJsAdaptator } from "../_query-js-adaptador";
+import { getGlobalConfig } from "../../../../../../../config/global-config";
+import { getStrategyGeneratorIdFnByKey } from "../../../../../../../util/default-generators-id-fn";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras de todas las acciones de request */
 type TKeyFullRequest =
@@ -24,27 +25,27 @@ type TKeyFullRequest =
   | TKeyStructureModifyRequestController; /**refactorizacion de la clase */
 export type Trf_StructureLocalStorageRepository =
   StructureLocalStorageRepository<any>;
-
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
  * ...
  */
 export class StructureLocalStorageRepository<
-  TKeyActionRequest extends TKeyFullRequest
->
+    TKeyActionRequest extends TKeyFullRequest
+  >
   extends LocalStorageRepository<TKeyActionRequest>
   implements
-  ReturnType<
-    StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]
-  >,
-  Record<TKeyFullRequest, TActionFn> {
+    ReturnType<
+      StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]
+    >,
+    Record<TKeyFullRequest, TActionFn>
+{
   public static override readonly getDefault = () => {
     const superDf = LocalStorageRepository.getDefault();
     return {
       ...superDf,
-      /**clave identificadora del campo de identificacion del registro */
-      keyId: "_id",
+      /**clave identificadora del campo de identificación del registro */
+      keyId: getGlobalConfig().keyId,
     };
   };
   protected static override readonly getCONSTANTS = () => {
@@ -61,8 +62,11 @@ export class StructureLocalStorageRepository<
     this._keyId = this.util.isString(v)
       ? v
       : this._keyId !== undefined
-        ? this._keyId
-        : this.getDefault().keyId;
+      ? this._keyId
+      : this.getDefault().keyId;
+  }
+  protected override get queryJsAdaptator(): StructureQueryJsAdaptator {
+    return super.queryJsAdaptator;
   }
   /**
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
@@ -76,7 +80,7 @@ export class StructureLocalStorageRepository<
     > = {},
     isInit = true
   ) {
-    super("structure", base, false);
+    super("structure", StructureQueryJsAdaptator.getInstance(), base, false);
     if (isInit) this.initProps(base);
   }
   protected override getDefault() {
@@ -84,6 +88,19 @@ export class StructureLocalStorageRepository<
   }
   protected override getCONST() {
     return StructureLocalStorageRepository.getCONSTANTS();
+  }
+  public override mutateProps(
+    base: Partial<
+      Omit<
+        ReturnType<
+          StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]
+        >,
+        "" //se deja la opción de omitir abierta
+      >
+    >
+  ): void {
+    super.mutateProps(base);
+    return;
   }
   //❗normalmente definidas en el padre, salvo que se quieran sobreescribir❗
   // /**reinicia una propiedad al valor predefinido
@@ -114,14 +131,17 @@ export class StructureLocalStorageRepository<
   ) {
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    let currentData = await this.getData(keySrcContext);
+    let currentData = (await this.getData(keySrcContext)) as any[];
+    currentData = Array.isArray(currentData) ? currentData : [currentData];
     const idxCData = currentData.findIndex((dt) => {
       const r = dt[kId] === data[kId];
       return r;
     });
     if (idxCData > -1) return undefined; //❗ no se creó porque ya existe ❗
-    //creacion de id:
-    data[kId] = this.generateID(data);
+    //creación de id:
+    const { strategyForIdBuild } = this._globalConfig_;
+    const buildIDFn = getStrategyGeneratorIdFnByKey(strategyForIdBuild);
+    data[kId] = buildIDFn(data[kId]);
     currentData.push(data);
     await this.setData(currentData, keySrcContext);
     return data;
@@ -132,7 +152,8 @@ export class StructureLocalStorageRepository<
   ) {
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    let currentData = await this.getData(keySrcContext);
+    let currentData = (await this.getData(keySrcContext)) as any[];
+    currentData = Array.isArray(currentData) ? currentData : [currentData];
     const idxCData = currentData.findIndex((dt) => {
       const r = dt[kId] === data[kId];
       return r;
@@ -148,7 +169,8 @@ export class StructureLocalStorageRepository<
   ) {
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    let currentData = await this.getData(keySrcContext);
+    let currentData = (await this.getData(keySrcContext)) as any[];
+    currentData = Array.isArray(currentData) ? currentData : [currentData];
     const idxCData = currentData.findIndex((dt) => {
       const r = dt[kId] === data[kId];
       return r;
@@ -164,6 +186,27 @@ export class StructureLocalStorageRepository<
     return dData;
   }
   //████ Request Actions ████████████████████████████████████████████████████████████
+  public async exist(bagService: IBagForService): Promise<boolean> {
+    const { literalCriteria } = bagService;
+    const registers = await this.readCommon(literalCriteria);
+    const aData = await this.getMany(registers, literalCriteria);
+    const data = aData.length > 0;
+    return data;
+  }
+  public async count(bagService: IBagForService): Promise<number> {
+    const { literalCriteria } = bagService;
+    const registers = await this.readCommon(literalCriteria);
+    const aData = await this.getMany(registers, literalCriteria);
+    const data = aData.length;
+    return data;
+  }
+  public async inform(bagService: IBagForService): Promise<string> {
+    const { literalCriteria } = bagService;
+    const registers = await this.readCommon(literalCriteria);
+    const aData = await this.getMany(registers, literalCriteria);
+    const data = aData.length > 0 ? "exist" : "no exist";
+    return data;
+  }
   /**
    * descrip...
    * ____
@@ -342,79 +385,4 @@ export class StructureLocalStorageRepository<
     return rxData;
   }
   //████ Util Registers █████████████████████████████████████████████████████
-  /**
-   * genera un id de alta precision (para uso de
-   * almacenamiento a diferencia del utilizadoe
-   * en la clase `Util_Logic` de la logica de
-   * negocio)
-   *
-   * ejemplo del formato que genera:
-   * ````
-   * "36b8f84d-df4e-4d49-b662-bcde71a8764f"
-   * ````
-   * ____
-   * @param registers registro para verificar
-   * si el id ya esta asignado
-   * ____
-   * @returns el id generado
-   *
-   */
-  public generateID(registers: any) {
-    let id: string;
-    if (
-      registers._id === undefined ||
-      registers._id === null ||
-      registers._id === ""
-    ) {
-      id = uuidv4();
-    } else {
-      id = registers._id;
-    }
-    return id;
-  }
-  public override async orderBy(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any[]> {
-    if (!this.util.isArray(registers)) return registers;
-    const { sort } = criteria as IStructureReadCriteria<any>;
-    if (!this.util.isArray(sort)) return registers;
-    let keysField: string[] = [];
-    let aSorts: any[] = [];
-    sort.forEach((s) => {
-      keysField.push(s[0]);
-      aSorts.push(s[1]);
-    });
-    registers = lodash.orderBy(registers, keysField, aSorts);
-    return registers;
-  }
-  /**... */
-  public override async filterByCondition(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any[]> {
-    const { query } = criteria as IStructureReadCriteria<any>;
-    const qAdapt = this.queryJsAdaptator;
-    const data = await qAdapt.adaptQuery(
-      this.keyLogicContext,
-      registers,
-      query
-    );
-    return data;
-  }
-  /**... */
-  public override async findByCondition(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any> {
-    const { query } = criteria as IStructureReadCriteria<any>;
-    const qAdapt = this.queryJsAdaptator;
-    const data = await qAdapt.adaptQuery(
-      this.keyLogicContext,
-      registers,
-      query
-    );
-    const dataOne = data[0]; //❗Solo se permite el primero❗
-    return dataOne;
-  }
 }

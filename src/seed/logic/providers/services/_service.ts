@@ -38,7 +38,8 @@ export type Trf_LogicService = LogicService;
  */
 export abstract class LogicService
   extends HandlerModule
-  implements IGenericService {
+  implements IGenericService
+{
   /** configuracion predefinida para el manejador */
   public static readonly getDefault = () => {
     return {
@@ -82,9 +83,7 @@ export abstract class LogicService
     return LogicService.getDefault();
   }
   /**ejecutar la peticion en el servicio */
-  public async runRequestFromService(
-    iBag: IBagModule<any>
-  ): Promise<IResponse> {
+  public async sendRequestInService(iBag: IBagModule<any>): Promise<IResponse> {
     let res: IResponse;
     if (this.keyLogicContext === "primitive") {
       const iPrimitiveBag = iBag as IPrimitiveBag<any>;
@@ -160,7 +159,7 @@ export abstract class LogicService
     const { data, literalCriteria, keyPath } = iBag;
     const { keyActionRequest, type, modifyType, keySrc } =
       literalCriteria as IStructureReadCriteria<any> &
-      IStructureModifyCriteria<any>;
+        IStructureModifyCriteria<any>;
     let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: "structureService",
@@ -188,12 +187,12 @@ export abstract class LogicService
   /**... */
   protected abstract adaptDriverResponseToPrimitiveLogicResponse(
     driverResponse: unknown,
-    ibag: IPrimitiveBag<any>,
+    ibag: IPrimitiveBag<any>
   ): IPrimitiveResponse;
   /**... */
   protected abstract adaptDriverResponseToStructureLogicResponse(
     driverResponse: unknown,
-    ibag: IStructureBag<any>,
+    ibag: IStructureBag<any>
   ): IStructureResponse;
   /**
    * @returns el estado de respuesta reducido

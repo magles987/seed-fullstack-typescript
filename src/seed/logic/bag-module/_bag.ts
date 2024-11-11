@@ -372,7 +372,7 @@ export abstract class BagModule extends HandlerModule {
       const r = aTKeysFilter.some((tKeyF) => {
         const strForRe = util.buildPath(tKeyF as string[], {
           charSeparator: sp,
-          isInitWithSeparator: false,
+          isJoinInitWithSeparator: false,
           pathInit: "^",
         });
         const keyGlobal = tGAC[0];

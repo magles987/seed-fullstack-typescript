@@ -8,6 +8,7 @@ import {
   TKeyHandlerModule,
 } from "./shared-modules";
 import { TFnBagForActionModule } from "../bag-module/shared-for-external-module";
+import { getGlobalConfig } from "./global-config";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**interfaz especial para las opciones de
  * contruccion de una accion de configuracion */
@@ -37,6 +38,8 @@ export interface IBuildACOption {
  * clase estructural para  representar un modulo genérico
  */
 export abstract class Module {
+  /**configuración global */
+  protected readonly _globalConfig_ = getGlobalConfig();
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     //const superDf = Module.getDefault(); //no tiene padre
@@ -47,7 +50,7 @@ export abstract class Module {
   /**
    * @param _keyModule clave identificadora del modulo
    */
-  constructor(private readonly _keyModule: TKeyModule) { }
+  constructor(private readonly _keyModule: TKeyModule) {}
   /**@returns los valores de configuracion predefinidos */
   protected getDefault() {
     return Module.getDefault();
@@ -289,7 +292,7 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
    * clave identificadora del recurso
    */
   protected abstract getMetadataWithContextModule(
-    keyPath?: string //solo para los structurados, los primitivos lo deben asumir como undefined
+    keyPath?: string //solo para los estructurados, los primitivos lo deben asumir como undefined
   ): unknown;
   /**Obtiene la configuracion registrada en los
    * metadatos exclusiva para este modulo
@@ -298,7 +301,7 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
    * clave identificadora del recurso
    */
   protected abstract getMetadataOnlyModuleConfig(
-    keyPath?: string //solo para los structurados, los primitivos lo deben asumir como undefined
+    keyPath?: string //solo para los estructurados, los primitivos lo deben asumir como undefined
   ): unknown;
   /**Obtener el diccionario de acciones
    * de configuracion directamente desde
@@ -308,7 +311,7 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
    * clave identificadora del recurso
    */
   protected abstract getDiccMetadataActionConfig(
-    keyPath?: string //solo para los structurados, los primitivos lo deben asumir como undefined
+    keyPath?: string //solo para los estructurados, los primitivos lo deben asumir como undefined
   ): TIDiccAC;
   /**Obtener el diccionario de configuración de acciones base
    *
@@ -501,9 +504,9 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
     return tFnOrATFFn;
   }
   /**Reconstruye la configuracion de los metadatos para este modulo con personalizacion adicional
-   * 
+   *
    * ❕Solo acesible desde el manejador de metadatos❕
-  */
+   */
   protected abstract rebuildCustomConfigFromModuleContext(
     currentContextConfig: unknown,
     newContextConfig: unknown,
@@ -827,8 +830,9 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
       ) {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
-          msn: `${containerOfActionsConfig as any as string
-            } is not array of tuple of action config valid`,
+          msn: `${
+            containerOfActionsConfig as any as string
+          } is not array of tuple of action config valid`,
         });
       }
       let aTupleActionConfig = containerOfActionsConfig as Array<

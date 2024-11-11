@@ -6,9 +6,9 @@ import { IDiccHttpDriveConfig, TKeyDiccHttpDrive } from "./drive/shared";
 export interface IHttpResponse {
   /**cuerpo de la respuesta */
   body: string;
-  /**estado basico de la peticion */
+  /**estado básico de la petición */
   ok: boolean;
-  /**mensaje adicional de estado de la peticion */
+  /**mensaje adicional de estado de la petición */
   statusText: string;
   /**simula un codigo HTTP response */
   httpStatus: EHttpStatusCode;
@@ -23,27 +23,4 @@ export interface IHttpWebClientServiceRequestC {
   diccDriverConfig?: IDiccHttpDriveConfig;
   /** */
   customHttpClientFactoryFn?: typeof httpClientDriverFactoryFn;
-  /** */
-  urlConfig: {
-    /**url raiz del recurso */
-    urlRoot: string;
-    /**prefijo de la url (despues del root)
-     *
-     * Ejemplo:
-     * ````
-     * `${urlRoot}/${urlPrefix}....`
-     * ````
-     *
-     */
-    urlPrefix?: string;
-    /**prefijo de la url (despues del root)
-     *
-     * Ejemplo:
-     * ````
-     * `${urlRoot}/${urlPrefix}..../${urlPostfix}`
-     * ````
-     *
-     */
-    urlPostfix?: string;
-  };
 }

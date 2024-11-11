@@ -1,11 +1,8 @@
 import { IBagForService } from "../../../../shared";
 import { ILocalCookieRepositoryConfig } from "./local-cookie/shared";
 import { ILocalIDBRepositoryConfig } from "./local-idb/shared";
-import { ILocalStaticRepositoryConfig } from "./local-static/shared";
 import { ILocalStorageRepositoryConfig } from "./local-storage/shared";
-
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-
 /**funcion base para acciones de consulta en local
  *
  * @param bagService el bag en contexto de este driver
@@ -15,7 +12,6 @@ import { ILocalStorageRepositoryConfig } from "./local-storage/shared";
 export type TActionFn = (bagService: IBagForService) => Promise<any>;
 /**... */
 export interface IDiccLocalRepositoryConfig {
-  static?: Partial<ILocalStaticRepositoryConfig>;
   cookie?: Partial<ILocalCookieRepositoryConfig>;
   idb?: Partial<ILocalIDBRepositoryConfig>;
   storage?: Partial<ILocalStorageRepositoryConfig>;

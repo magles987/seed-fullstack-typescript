@@ -4,10 +4,12 @@ import {
 } from "../../../../../../../errors/logic-error";
 import { LocalRepository } from "../_local-repository";
 import {
+  TKeyBasicCRUD,
   TKeyLogicContext,
   TKeySrcSelector,
 } from "../../../../../../../config/shared-modules";
 import { ILocalStorageRepositoryConfig, TStorageType } from "./shared";
+import { QueryJsAdaptator } from "../_query-js-adaptador";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**Refactorizacion de la clase */
@@ -92,17 +94,19 @@ export abstract class LocalStorageRepository<TKeyActionRequest>
   }
   /**
    * @param keyLogicContext clave identificadora del contexto logico
+   * @param queryJsAdaptator adaptador para consultas
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
+    queryJsAdaptator: QueryJsAdaptator,
     base: Partial<
       ReturnType<LocalStorageRepository<TKeyActionRequest>["getDefault"]>
     > = {},
     isInit = true
   ) {
-    super("storage", keyLogicContext);
+    super("storage", keyLogicContext, queryJsAdaptator);
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
@@ -149,31 +153,65 @@ export abstract class LocalStorageRepository<TKeyActionRequest>
     this[key as any] = df[key];
     return;
   }
-  /**caulcular el tamaño actual del storage */
-  private async calcStorageSize(): Promise<number> {
-    let size = 0;
-    const utf_factor = 2; //los storages almacenan en utf-16 (2 bytes) por caracter
-    if (this.storageType === "local") {
-      const len = localStorage.length;
-      for (let idx = 0; idx < len; idx++) {
-        const keyItem = localStorage.key(idx);
-        const item = localStorage.getItem(keyItem);
-        size += (keyItem.length + item.length) * utf_factor;
-      }
-    } else if (this.storageType === "session") {
-      const len = sessionStorage.length;
-      for (let idx = 0; idx < len; idx++) {
-        const keyItem = sessionStorage.key(idx);
-        const item = sessionStorage.getItem(keyItem);
-        size += (keyItem.length + item.length) * utf_factor;
-      }
-    } else {
+  /**muta las propiedades masivamente */
+  public mutateProps(
+    base: Partial<
+      Omit<
+        ReturnType<LocalStorageRepository<TKeyActionRequest>["getDefault"]>,
+        "" //se deja la opción de omitir abierta
+      >
+    >
+  ): void {
+    base = typeof base === "object" && base !== null ? base : ({} as any);
+    for (const key in base) {
+      this[key] = base[key];
+    }
+    return;
+  }
+  public override async sendRequest(
+    keyGenericSrc: string,
+    keyBasicCRUD: TKeyBasicCRUD,
+    txData: any
+  ): Promise<any> {
+    if (!this.util.isString(keyGenericSrc)) {
       throw new LogicError({
-        code: ELogicCodeError.NOT_EXIST,
-        msn: `${this.storageType} does not valid storage type`,
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyGenericSrc} is not generic src key valid`,
       });
     }
-    return size;
+    let rxData: any;
+    const _findIdxFn = (dt) => {
+      const r = this.util.isEquivalentTo([dt, txData], {});
+      return r;
+    };
+    if (keyBasicCRUD === "read") {
+      rxData = await this.getData(keyGenericSrc);
+    } else if (keyBasicCRUD === "create") {
+      let aData = (await this.getData(keyGenericSrc)) as any[];
+      const fIdx = aData.findIndex(_findIdxFn);
+      if (fIdx === -1) aData.push(txData); //crearlo
+      else aData[fIdx] = txData; //actualizarlo forzado
+      await this.setData(aData, keyBasicCRUD);
+      rxData = txData;
+    } else if (keyBasicCRUD === "update") {
+      let aData = (await this.getData(keyGenericSrc)) as any[];
+      const fIdx = aData.findIndex(_findIdxFn);
+      if (fIdx === -1) aData.push(txData); //crearlo forzado
+      else aData[fIdx] = txData; //actualizarlo
+      await this.setData(aData, keyBasicCRUD);
+      rxData = txData;
+    } else if (keyBasicCRUD === "delete") {
+      let aData = (await this.getData(keyGenericSrc)) as any[];
+      const fIdx = aData.findIndex(_findIdxFn);
+      if (fIdx >= 0) aData.splice(fIdx, 1); //Eliminación
+      await this.setData(aData, keyBasicCRUD);
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyBasicCRUD} is not basic CRUD key valid`,
+      });
+    }
+    return rxData;
   }
   /**
    * descrip...
@@ -274,5 +312,31 @@ export abstract class LocalStorageRepository<TKeyActionRequest>
       });
     }
     return;
+  }
+  /**caulcular el tamaño actual del storage */
+  private async calcStorageSize(): Promise<number> {
+    let size = 0;
+    const utf_factor = 2; //los storages almacenan en utf-16 (2 bytes) por caracter
+    if (this.storageType === "local") {
+      const len = localStorage.length;
+      for (let idx = 0; idx < len; idx++) {
+        const keyItem = localStorage.key(idx);
+        const item = localStorage.getItem(keyItem);
+        size += (keyItem.length + item.length) * utf_factor;
+      }
+    } else if (this.storageType === "session") {
+      const len = sessionStorage.length;
+      for (let idx = 0; idx < len; idx++) {
+        const keyItem = sessionStorage.key(idx);
+        const item = sessionStorage.getItem(keyItem);
+        size += (keyItem.length + item.length) * utf_factor;
+      }
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.NOT_EXIST,
+        msn: `${this.storageType} does not valid storage type`,
+      });
+    }
+    return size;
   }
 }

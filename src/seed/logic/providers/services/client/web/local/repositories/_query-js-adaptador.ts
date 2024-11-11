@@ -1,17 +1,22 @@
+import lodash from "lodash";
 import { TKeyLogicContext } from "../../../../../../config/shared-modules";
 import {
   ELogicOperatorForGroup,
   ELogicOperatorForCondition,
   ISingleCondition,
   TAConds,
+  IReadCriteria,
+  IStructureReadCriteria,
+  IPrimitiveReadCriteria,
 } from "../../../../../../criterias/shared";
 import { Util_Logic } from "../../../../../../util/util-logic";
+import { IBagForService } from "../../../../shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *Singleton*
  *
  * ...
  */
-export class QueryJsAdaptator {
+export abstract class QueryJsAdaptator {
   protected get diccOperatorFn(): Record<
     ELogicOperatorForCondition,
     (value: any, vCond: any) => boolean
@@ -48,19 +53,8 @@ export class QueryJsAdaptator {
   }
   /**utilidades */
   protected util = Util_Logic.getInstance();
-  /**  Almacena la instancia única de esta clase */
-  private static QueryAdaptator_instance: QueryJsAdaptator;
   /**... */
-  constructor() {}
-  /** @returns la instancia unica de la clase*/
-  public static getInstance(): QueryJsAdaptator {
-    QueryJsAdaptator.QueryAdaptator_instance =
-      QueryJsAdaptator.QueryAdaptator_instance === undefined ||
-      QueryJsAdaptator.QueryAdaptator_instance === null
-        ? new QueryJsAdaptator()
-        : QueryJsAdaptator.QueryAdaptator_instance;
-    return QueryJsAdaptator.QueryAdaptator_instance;
-  }
+  constructor(protected keyLogicContext: TKeyLogicContext) {}
   /**... */
   protected adaptPrimitiveSingleCondition(
     data: any,
@@ -180,5 +174,183 @@ export class QueryJsAdaptator {
       return r;
     });
     return rData;
+  }
+
+  /**
+   * ordenamiento de datos
+   * ____
+   * @param registers registers recibida del repositorio ❗distinta a la recibida en *bag repository*❗
+   * @param criteria el bag con los datos y configuracion a procesar
+   * @returns los datos ya ordenados
+   */
+  public abstract orderBy(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any[]>;
+  /**
+   * paginacion basica de datos
+   * ____
+   * @param registers registers recibida del repositorio ❗distinta a la recibida en *bag repository*❗
+   * @param criteria el bag con los datos y configuracion a procesar
+   * ____
+   * @returns los datos segmentados
+   * por pagina
+   *
+   */
+  public async pageBy(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any[]> {
+    if (!this.util.isArray(registers)) return registers;
+    const {
+      limit,
+      targetPage: targetPageBase,
+      targetPageLogic,
+    } = criteria as IReadCriteria;
+    let targetPage = targetPageBase;
+    if (limit <= 0) {
+      return []; //el limite debe ser positivo
+    }
+    const registersLen = registers.length;
+    if (targetPageLogic === 1) {
+      //convertir a logica 0
+      targetPage = targetPage - 1;
+    }
+    targetPage =
+      targetPage <= 0
+        ? 0 //no puede ser menor al inicial
+        : targetPage > Math.floor(registersLen / limit)
+        ? Math.floor(registersLen / limit)
+        : targetPage;
+    let startIdx = targetPage * limit;
+    let endIdx = Math.min(startIdx + limit, registersLen);
+    const pageData = registers.slice(startIdx, endIdx);
+    return pageData;
+  }
+  /**... */
+  public abstract filterByCondition(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any[]>;
+  /**... */
+  public abstract findByCondition(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any>;
+}
+//████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/** *Singleton*
+ *
+ * ...
+ */
+export class PrimitiveQueryJsAdaptator extends QueryJsAdaptator {
+  /**  Almacena la instancia única de esta clase */
+  private static PrimitiveQueryJsAdaptator_instance: PrimitiveQueryJsAdaptator;
+  /** */
+  constructor() {
+    super("primitive");
+  }
+  /** devuelve la instancia única de esta clase
+   * ya sea que la crea o la que ya a sido creada
+   *
+   */
+  public static getInstance(): PrimitiveQueryJsAdaptator {
+    PrimitiveQueryJsAdaptator.PrimitiveQueryJsAdaptator_instance =
+      PrimitiveQueryJsAdaptator.PrimitiveQueryJsAdaptator_instance ===
+        undefined ||
+      PrimitiveQueryJsAdaptator.PrimitiveQueryJsAdaptator_instance == null
+        ? new PrimitiveQueryJsAdaptator()
+        : PrimitiveQueryJsAdaptator.PrimitiveQueryJsAdaptator_instance;
+    return PrimitiveQueryJsAdaptator.PrimitiveQueryJsAdaptator_instance;
+  }
+  public override async orderBy(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any[]> {
+    if (!this.util.isArray(registers)) return registers;
+    const { sort } = criteria as IPrimitiveReadCriteria;
+    registers = this.util.sortMixedArray(registers, { direction: sort });
+    //registers = lodash.orderBy(registers, keysField, aSorts); //como se hace con lodash???
+    return registers;
+  }
+  /**... */
+  public override async filterByCondition(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any[]> {
+    const { query } = criteria as IPrimitiveReadCriteria;
+    const data = await this.adaptQuery(this.keyLogicContext, registers, query);
+    return data;
+  }
+  /**... */
+  public override async findByCondition(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any> {
+    const { query } = criteria as IPrimitiveReadCriteria;
+    const data = await this.adaptQuery(this.keyLogicContext, registers, query);
+    const dataOne = data[0]; //❗Solo se permite el primero❗
+    return dataOne;
+  }
+}
+//████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/** *Singleton*
+ *
+ * ...
+ */
+export class StructureQueryJsAdaptator extends QueryJsAdaptator {
+  /**  Almacena la instancia única de esta clase */
+  private static StructureQueryJsAdaptator_instance: StructureQueryJsAdaptator;
+  /***/
+  constructor() {
+    super("structure");
+  }
+  /** devuelve la instancia única de esta clase
+   * ya sea que la crea o la que ya a sido creada
+   *
+   */
+  public static getInstance(): StructureQueryJsAdaptator {
+    StructureQueryJsAdaptator.StructureQueryJsAdaptator_instance =
+      StructureQueryJsAdaptator.StructureQueryJsAdaptator_instance ===
+        undefined ||
+      StructureQueryJsAdaptator.StructureQueryJsAdaptator_instance == null
+        ? new StructureQueryJsAdaptator()
+        : StructureQueryJsAdaptator.StructureQueryJsAdaptator_instance;
+    return StructureQueryJsAdaptator.StructureQueryJsAdaptator_instance;
+  }
+  public override async orderBy(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any[]> {
+    if (!this.util.isArray(registers)) return registers;
+    const { sort } = criteria as IStructureReadCriteria<any>;
+    if (!this.util.isArray(sort)) return registers;
+    let keysField: string[] = [];
+    let aSorts: any[] = [];
+    sort.forEach((s) => {
+      keysField.push(s[0]);
+      aSorts.push(s[1]);
+    });
+    registers = lodash.orderBy(registers, keysField, aSorts);
+    return registers;
+  }
+  /**... */
+  public override async filterByCondition(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any[]> {
+    const { query } = criteria as IStructureReadCriteria<any>;
+    const data = await this.adaptQuery(this.keyLogicContext, registers, query);
+    return data;
+  }
+  /**... */
+  public override async findByCondition(
+    registers: any[],
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any> {
+    const { query } = criteria as IStructureReadCriteria<any>;
+    const data = await this.adaptQuery(this.keyLogicContext, registers, query);
+    const dataOne = data[0]; //❗Solo se permite el primero❗
+    return dataOne;
   }
 }

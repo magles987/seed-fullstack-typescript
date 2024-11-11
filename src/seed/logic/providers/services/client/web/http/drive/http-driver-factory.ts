@@ -1,12 +1,12 @@
+import { IDiccHttpDriveConfig, TKeyDiccHttpDrive } from "./shared";
+import { IGenericDriver } from "../../../../shared";
+import { IHttpResponse } from "../shared";
 import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../errors/logic-error";
-import { IGenericDriver } from "../../../../shared";
-import { IHttpResponse } from "../shared";
 import { AxiosHttpDrive } from "./axios/axios-drive";
 import { FetchHttpDrive } from "./fetch/fetch-drive";
-import { IDiccHttpDriveConfig, TKeyDiccHttpDrive } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras de las instancias
  * de servicio disponibles para fabricar */

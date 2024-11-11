@@ -35,14 +35,15 @@ export type Trf_PrimitiveLogicProvider = PrimitiveLogicProvider<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class PrimitiveLogicProvider<
-  TIDiccAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
->
+    TIDiccAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
+  >
   extends LogicProvider<TIDiccAC>
   implements
-  Record<
-    TKeysDiccPrimitiveProviderActionConfigG,
-    TPrimitiveFnBagForActionModule
-  > {
+    Record<
+      TKeysDiccPrimitiveProviderActionConfigG,
+      TPrimitiveFnBagForActionModule
+    >
+{
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = LogicProvider.getDefault();
@@ -87,7 +88,7 @@ export class PrimitiveLogicProvider<
             //❗❗Obligatorio definirlo en los metadatos❗❗
             keyService: undefined,
             keyDriver: undefined,
-            customDeepServiceConfig: {}
+            customDeepServiceConfig: {},
           },
         },
       } as IDiccPrimitiveProviderActionConfigG,
@@ -130,18 +131,13 @@ export class PrimitiveLogicProvider<
     } else {
       rConfig = {
         ...nCC,
-        diccActionsConfig: this.util.isObject(
-          nCC.diccActionsConfig
-        )
+        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
           ? this.util.mergeDiccActionConfig(
-            [
-              cCC.diccActionsConfig,
-              nCC.diccActionsConfig,
-            ],
-            {
-              mode: mergeMode,
-            }
-          )
+              [cCC.diccActionsConfig, nCC.diccActionsConfig],
+              {
+                mode: mergeMode,
+              }
+            )
           : cCC.diccActionsConfig,
       };
     }
@@ -280,14 +276,14 @@ export class PrimitiveLogicProvider<
     if (!this.util.isString(keyService)) {
       res = rH.mutateResponse(res, {
         status: ELogicResStatusCode.ERROR,
-        msn: `${keyService} is not key service instance valid`
+        msn: `${keyService} is not key service instance valid`,
       });
       return res;
     }
     if (!this.util.isString(keyDriver)) {
       res = rH.mutateResponse(res, {
         status: ELogicResStatusCode.ERROR,
-        msn: `${keyDriver} is not key driver for service instance valid`
+        msn: `${keyDriver} is not key driver for service instance valid`,
       });
       return res;
     }
@@ -299,7 +295,7 @@ export class PrimitiveLogicProvider<
       serviceConfig,
       customDeepServiceConfig
     );
-    const serviceRes = await serviceInstance.runRequestFromService(
+    const serviceRes = await serviceInstance.sendRequestInService(
       bag.getLiteralBag()
     );
     res = rH.mutateResponse(res, serviceRes as any);

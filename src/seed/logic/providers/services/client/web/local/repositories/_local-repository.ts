@@ -1,5 +1,6 @@
 import { EHttpStatusCode } from "../../../../../../util/http-utilities";
 import {
+  TKeyBasicCRUD,
   TKeyLogicContext,
   TKeySrcSelector,
 } from "../../../../../../config/shared-modules";
@@ -16,43 +17,75 @@ import {
 import { QueryJsAdaptator } from "./_query-js-adaptador";
 import { IBagForService, IGenericDriver } from "../../../../shared";
 import { ILocalResponse } from "../shared";
-//████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-
+import { getGlobalConfig } from "../../../../../../config/global-config";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
  *
  */
 export abstract class LocalRepository
-  implements IGenericDriver<ILocalResponse> {
+  implements IGenericDriver<ILocalResponse>
+{
+  /**configuración global */
+  protected readonly _globalConfig_ = getGlobalConfig();
   /**... */
   protected get keyDriver(): TKeyDiccLocalRepository {
     return this._keyDriver;
   }
-  /**clave identificadora del contexto logico ya sea *primitive* o *structure* */
+  /**clave identificadora del contexto lógico ya sea *primitive* o *structure* */
   protected get keyLogicContext(): TKeyLogicContext {
     return this._keyLogicContext;
   }
-  // /**clave identificadora del recurso */
-  // protected get keySrc(): string {
-  //   return this._keySrc;
-  // }
   /**... */
-  protected queryJsAdaptator = QueryJsAdaptator.getInstance();
+  protected get queryJsAdaptator(): QueryJsAdaptator {
+    return this._queryJsAdaptator;
+  }
   /** utilidades */
   protected util: Util_LocalRepository = Util_LocalRepository.getInstance();
   /**
    * @param _keyDriver clave identificadora del tipo de repositorio
    * @param _keyLogicContext clave identificadora del contexto logico de esta clase
-   * @param _keySrc clave identificadora del recurso
+   * @param _queryJsAdaptator adaptador para consultas
    */
   constructor(
     private _keyDriver: TKeyDiccLocalRepository,
-    private _keyLogicContext: TKeyLogicContext //private _keySrc: string
+    private _keyLogicContext: TKeyLogicContext,
+    private _queryJsAdaptator: QueryJsAdaptator
   ) {
     this.util = Util_LocalRepository.getInstance();
   }
   /**... */
-  public async runRequestFromDrive(
+  private checkBag(bagService: IBagForService): void {
+    if (!this.util.isObject(bagService)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${bagService} is not bag repository valid`,
+      });
+    }
+    if (!this.util.isObject(bagService.literalCriteria)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${bagService.literalCriteria} is not criteria valid`,
+      });
+    }
+    if (!this.util.isString(bagService.literalCriteria.keyActionRequest)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${bagService.literalCriteria.keyActionRequest} is not key request action valid`,
+      });
+    }
+    const keyActionFn = bagService.literalCriteria.keyActionRequest;
+    if (typeof (this as any)[keyActionFn] !== "function") {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: ` ${keyActionFn} is not request action key funtion valid`,
+      });
+    }
+    return;
+  }
+  /**envía la petición a partir de un servicio
+   *
+   */
+  public async sendRequestFromService(
     bagService: IBagForService
   ): Promise<ILocalResponse> {
     let localRes = {
@@ -87,35 +120,52 @@ export abstract class LocalRepository
     }
     return localRes;
   }
+  /** envío genérico de petición a traves de del driver seleccionado
+   *
+   * @param keyGenericSrc  recurso que identifica la coleccion de datos almacenados
+   * @param keyBasicCRUD  clave identificador ade la accion CRUD basica.
+   * @param txData datos a enviar.
+   * @returns los datos obtenidos.
+   *
+   * ⚠ Las excepciones **no** son manejadas internamente ⚠
+   */
+  public abstract sendRequest(
+    keyGenericSrc: string,
+    keyBasicCRUD: TKeyBasicCRUD,
+    txData: any
+  ): Promise<unknown>;
   //████ handler method registers ████████████████████████████████████████████████████████████
   /**... */
-  public async getOne(
+  protected async getOne(
     registers: any[],
     criteria: IBagForService["literalCriteria"]
   ): Promise<any> {
     registers = Array.isArray(registers) ? registers : [registers];
-    const data = await this.findByCondition(registers, criteria);
+    const data = await this.queryJsAdaptator.findByCondition(
+      registers,
+      criteria
+    );
     return data;
   }
   /**... */
-  public async getMany(
+  protected async getMany(
     registers: any[],
     criteria: IBagForService["literalCriteria"]
   ): Promise<any[]> {
     registers = Array.isArray(registers) ? registers : [registers];
-    let data = await this.findByCondition(registers, criteria);
-    data = await this.orderBy(data, criteria);
-    data = await this.pageBy(data, criteria);
+    let data = await this.queryJsAdaptator.findByCondition(registers, criteria);
+    data = await this.queryJsAdaptator.orderBy(data, criteria);
+    data = await this.queryJsAdaptator.pageBy(data, criteria);
     return data;
   }
   /**... */
-  public async getAll(
+  protected async getAll(
     registers: any[],
     criteria: IBagForService["literalCriteria"]
   ): Promise<any[]> {
     registers = Array.isArray(registers) ? registers : [registers];
-    let data = await this.orderBy(registers, criteria);
-    data = await this.pageBy(data, criteria);
+    let data = await this.queryJsAdaptator.orderBy(registers, criteria);
+    data = await this.queryJsAdaptator.pageBy(data, criteria);
     return data;
   }
   //████ common CRUD ████████████████████████████████████████████████████████████
@@ -181,22 +231,22 @@ export abstract class LocalRepository
         keyRequestType === "read"
           ? EHttpStatusCode.OK
           : keyRequestType === "modify"
-            ? keyModifyRequestType === "create"
-              ? EHttpStatusCode.CREATED
-              : keyModifyRequestType === "update"
-                ? EHttpStatusCode.OK
-                : EHttpStatusCode.NO_CONTENT //delete
-            : EHttpStatusCode.NO_CONTENT;
+          ? keyModifyRequestType === "create"
+            ? EHttpStatusCode.CREATED
+            : keyModifyRequestType === "update"
+            ? EHttpStatusCode.OK
+            : EHttpStatusCode.NO_CONTENT //delete
+          : EHttpStatusCode.NO_CONTENT;
     } else {
       if (error instanceof LogicError) {
         httpCode =
           error.code == ELogicCodeError.NOT_EXIST
             ? EHttpStatusCode.NOT_FOUND
             : error.code == ELogicCodeError.NOT_VALID
-              ? EHttpStatusCode.FORBIDDEN
-              : error.code == ELogicCodeError.OVERFLOW
-                ? EHttpStatusCode.PAYLOAD_TOO_LARGE
-                : EHttpStatusCode.BAD_REQUEST;
+            ? EHttpStatusCode.FORBIDDEN
+            : error.code == ELogicCodeError.OVERFLOW
+            ? EHttpStatusCode.PAYLOAD_TOO_LARGE
+            : EHttpStatusCode.BAD_REQUEST;
       } else {
         httpCode = EHttpStatusCode.INTERNAL_SERVER_ERROR;
       }
@@ -213,35 +263,6 @@ export abstract class LocalRepository
     return body;
   }
   /**... */
-  private checkBag(bagService: IBagForService): void {
-    if (!this.util.isObject(bagService)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagService} is not bag repository valid`,
-      });
-    }
-    if (!this.util.isObject(bagService.literalCriteria)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagService.literalCriteria} is not criteria valid`,
-      });
-    }
-    if (!this.util.isString(bagService.literalCriteria.keyActionRequest)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagService.literalCriteria.keyActionRequest} is not key request action valid`,
-      });
-    }
-    const keyActionFn = bagService.literalCriteria.keyActionRequest;
-    if (typeof (this as any)[keyActionFn] !== "function") {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: ` ${keyActionFn} is not request action key funtion valid`,
-      });
-    }
-    return;
-  }
-  /**... */
   protected getKeySrcContext(
     srcSelector: TKeySrcSelector,
     critera: IBagForService["literalCriteria"]
@@ -253,65 +274,4 @@ export abstract class LocalRepository
     else keySrcContext = keySrc;
     return keySrcContext;
   }
-  /**
-   * ordenamiento de datos
-   * ____
-   * @param registers registers recibida del repositorio ❗distinta a la recibida en *bag repository*❗
-   * @param criteria el bag con los datos y configuracion a procesar
-   * @returns los datos ya ordenados
-   */
-  public abstract orderBy(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any[]>;
-  /**
-   * paginacion basica de datos
-   * ____
-   * @param registers registers recibida del repositorio ❗distinta a la recibida en *bag repository*❗
-   * @param criteria el bag con los datos y configuracion a procesar
-   * ____
-   * @returns los datos segmentados
-   * por pagina
-   *
-   */
-  public async pageBy(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any[]> {
-    if (!this.util.isArray(registers)) return registers;
-    const {
-      limit,
-      targetPage: targetPageBase,
-      targetPageLogic,
-    } = criteria as IReadCriteria;
-    let targetPage = targetPageBase;
-    if (limit <= 0) {
-      return []; //el limite debe ser positivo
-    }
-    const registersLen = registers.length;
-    if (targetPageLogic === 1) {
-      //convertir a logica 0
-      targetPage = targetPage - 1;
-    }
-    targetPage =
-      targetPage <= 0
-        ? 0 //no puede ser menor al inicial
-        : targetPage > Math.floor(registersLen / limit)
-          ? Math.floor(registersLen / limit)
-          : targetPage;
-    let startIdx = targetPage * limit;
-    let endIdx = Math.min(startIdx + limit, registersLen);
-    const pageData = registers.slice(startIdx, endIdx);
-    return pageData;
-  }
-  /**... */
-  public abstract filterByCondition(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any[]>;
-  /**... */
-  public abstract findByCondition(
-    registers: any[],
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any>;
 }

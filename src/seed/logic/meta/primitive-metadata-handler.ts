@@ -1,4 +1,5 @@
 import {
+  TKeyActionModule,
   TKeyHandlerModule,
   TKeyModuleWithReport,
 } from "../config/shared-modules";
@@ -10,7 +11,7 @@ import { PrimitiveLogicProvider } from "../providers/primitive-provider";
 import { Trf_TPrimitiveConfigForProvider } from "../providers/shared";
 import { PrimitiveLogicValidation } from "../validators/primitive-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
-import { Trf_TPrimitiveConfigForVal } from "../validators/shared";
+import { TKeyPrimitiveValModuleContext, Trf_TPrimitiveConfigForVal } from "../validators/shared";
 import { LogicMetadataHandler } from "./_metadata-handler";
 import { Util_Meta } from "./_util-meta";
 import {
@@ -30,6 +31,7 @@ import {
   TPrimitiveMetaAndCtrl,
 } from "./metadata-shared";
 import { Trf_TPrimitiveConfigForCtrl } from "../controllers/_shared";
+import { ELogicCodeError, LogicError } from "../errors/logic-error";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipado refactorizado del manejador */
@@ -701,6 +703,58 @@ export class PrimitiveLogicMetadataHandler<
     //si devuelve todos los metadatos del segmento❗❗❗
     const rMetadata = this.getMetadata();
     return rMetadata;
+  }
+  /**... */
+  public getDiccActionConfigByModuleContext(
+    keyModule: "mutater",
+  ): TPrimitiveMutateInstance["dfDiccActionConfig"];
+  public getDiccActionConfigByModuleContext(
+    keyModule: "validator",
+    keyModuleContext: "primitiveVal"
+  ): TPrimitiveValInstance["dfDiccActionConfig"];
+  public getDiccActionConfigByModuleContext(
+    keyModule: "validator",
+    keyModuleContext: "requestVal"
+  ): TPrimitiveValInstance["dfDiccActionConfig"];
+  public getDiccActionConfigByModuleContext(
+    keyModule: "hook",
+  ): TPrimitiveHookInstance["dfDiccActionConfig"];
+  public getDiccActionConfigByModuleContext(
+    keyModule: "provider",
+  ): TPrimitiveProviderInstance["dfDiccActionConfig"];
+  public getDiccActionConfigByModuleContext(
+    keyModule: TKeyActionModule,
+    keyModuleContext?: TKeyPrimitiveValModuleContext,
+  ): unknown {
+    let diccAC: unknown;
+    if (keyModule === "mutater") {
+      const metadataByModuleContext = this.getExtractMetadataByModuleContext(keyModule);
+      diccAC = metadataByModuleContext.__mutateConfig.primitiveMutate.diccActionsConfig;
+    } else if (keyModule === "validator") {
+      const metadataByModuleContext = this.getExtractMetadataByModuleContext(keyModule);
+      if (keyModuleContext === "primitiveVal") {
+        diccAC = metadataByModuleContext.__valConfig.primitiveVal.diccActionsConfig;
+      } else if (keyModuleContext === "requestVal") {
+        diccAC = metadataByModuleContext.__valConfig.requestVal.diccActionsConfig;
+      } else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${keyModuleContext} is not module context key valid into ${keyModule} module`
+        });
+      }
+    } else if (keyModule === "hook") {
+      const metadataByModuleContext = this.getExtractMetadataByModuleContext(keyModule);
+      diccAC = metadataByModuleContext.__hookConfig.primitiveHook.diccActionsConfig;
+    } else if (keyModule === "provider") {
+      const metadataByModuleContext = this.getExtractMetadataByModuleContext(keyModule);
+      diccAC = metadataByModuleContext.__providerConfig.primitiveProvider.diccActionsConfig;
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyModule} is not module key valid`
+      });
+    }
+    return diccAC;
   }
   /**... */
   public static getDfMetadataHandlerByContext(): Trf_IPrimitiveMetadataModuleConfig["primitiveMeta"] {

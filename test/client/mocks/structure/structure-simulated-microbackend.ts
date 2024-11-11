@@ -1,56 +1,51 @@
-import {
-  ELogicCodeError,
-  LogicError,
-} from "../../../../../../../errors/logic-error";
-import { LocalCookieRepository } from "./_local-cookie-repository";
+import { SimulatedMicroBackend } from "../_simulated-microbackend";
+import { IBagForService } from "../../../../src/seed/logic/providers/services/shared";
 import {
   TKeyStructureModifyRequestController,
   TKeyStructureReadRequestController,
-} from "../../../../../../../controllers/_structure-ctrl";
-import { TActionFn } from "../shared";
+} from "../../../../src/seed/logic/controllers/_structure-ctrl";
 import {
   ELogicOperatorForCondition,
   ISingleCondition,
   IStructureModifyCriteria,
   IStructureReadCriteria,
-} from "../../../../../../../criterias/shared";
-import { IBagForService } from "../../../../../shared";
-import { StructureQueryJsAdaptator } from "../_query-js-adaptador";
-import { getGlobalConfig } from "../../../../../../../config/global-config";
-import { getStrategyGeneratorIdFnByKey } from "../../../../../../../util/default-generators-id-fn";
+  TAConds,
+} from "../../../../src/seed/logic/criterias/shared";
+import { StructureQueryJsAdaptator } from "../../../../src/seed/logic/providers/services/client/web/local/repositories/_query-js-adaptador";
+import { getGlobalConfig } from "../../../../src/seed/logic/config/global-config";
+import { getStrategyGeneratorIdFnByKey } from "../../../../src/seed/logic/util/default-generators-id-fn";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras de todas las acciones de request */
 type TKeyFullRequest =
   | TKeyStructureReadRequestController
-  | TKeyStructureModifyRequestController;
-/**refactorización de la clase */
-export type Trf_StructureLocalCookieRepository =
-  StructureLocalCookieRepository<never>;
+  | TKeyStructureModifyRequestController; /**refactorización de la clase */
+export type Trf_StructureSimulatedMicroBackend =
+  StructureSimulatedMicroBackend<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
  * ...
  */
-export class StructureLocalCookieRepository<
+export class StructureSimulatedMicroBackend<
     TKeyActionRequest extends TKeyFullRequest
   >
-  extends LocalCookieRepository<TKeyActionRequest>
+  extends SimulatedMicroBackend
   implements
-    ReturnType<StructureLocalCookieRepository<TKeyActionRequest>["getDefault"]>,
-    Record<TKeyFullRequest, TActionFn>
+    ReturnType<StructureSimulatedMicroBackend<TKeyActionRequest>["getDefault"]>
 {
   public static override readonly getDefault = () => {
-    const superDf = LocalCookieRepository.getDefault();
+    const superDf = SimulatedMicroBackend.getDefault();
     return {
       ...superDf,
-      /**clave identificadora del campo de identificacion del registro */
+      /**clave identificadora del campo de identificación del registro */
       keyId: getGlobalConfig().keyId,
     };
   };
   protected static override readonly getCONSTANTS = () => {
-    const superCONST = LocalCookieRepository.getCONSTANTS();
+    const superCONST = SimulatedMicroBackend.getCONSTANTS();
     return {
       ...superCONST,
+      //..aqui las constantes
     };
   };
   private _keyId: string;
@@ -68,13 +63,13 @@ export class StructureLocalCookieRepository<
     return super.queryJsAdaptator;
   }
   /**
-   * @param base objeto literal con valores personalizados para iniicalizar las propiedades
-   * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
+   * @param base objeto literal con valores personalizados para inicializa las propiedades
+   * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedades
    */
   constructor(
     base: Partial<
       ReturnType<
-        StructureLocalCookieRepository<TKeyActionRequest>["getDefault"]
+        StructureSimulatedMicroBackend<TKeyActionRequest>["getDefault"]
       >
     > = {},
     isInit = true
@@ -83,45 +78,57 @@ export class StructureLocalCookieRepository<
     if (isInit) this.initProps(base);
   }
   protected override getDefault() {
-    return StructureLocalCookieRepository.getDefault();
+    return StructureSimulatedMicroBackend.getDefault();
   }
   protected override getCONST() {
-    return StructureLocalCookieRepository.getCONSTANTS();
+    return StructureSimulatedMicroBackend.getCONSTANTS();
   }
+  //❗normalmente definidas en el padre, salvo que se quieran sobreescribir❗
+  // /**inicializa las propiedades de manera dinamica
+  //  *
+  //  * @param base objeto literal con valores personalizados para iniicalizar las propiedades
+  //  */
+  // protected override initProps(base: Partial<ReturnType<StructureSimulatedMicroBackend["getDefault"]>>): void {
+  //   for (const key in this.getDefault()) {
+  //     this[key] = base[key];
+  //   }
+  //   return;
+  // }
+  // /**reinicia una propiedad al valor predefinido
+  //  *
+  //  * @param key clave identificadora de la propiedad a reiniciar
+  //  */
+  // public override resetPropByKey(key: keyof ReturnType<StructureSimulatedMicroBackend["getDefault"]>): void {
+  //   const df = this.getDefault();
+  //   this[key] = df[key];
+  //   return;
+  // }
   public override mutateProps(
     base: Partial<
-      Omit<
-        ReturnType<
-          StructureLocalCookieRepository<TKeyActionRequest>["getDefault"]
-        >,
-        "" //se deja la opción de omitir abierta
+      ReturnType<
+        StructureSimulatedMicroBackend<TKeyActionRequest>["getDefault"]
       >
     >
   ): void {
     super.mutateProps(base);
     return;
   }
-  //❗normalmente definidas en el padre, salvo que se quieran sobrescribir❗
-  // /**reinicia una propiedad al valor predefinido
-  //  *
-  //  * @param key clave identificadora de la propiedad a reiniciar
-  //  */
-  // public override resetPropByKey(key: keyof ReturnType<StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]>): void {
-  //   const df = this.getDefault();
-  //   this[key] = df[key];
-  //   return;
-  // }
+  public override async receiveRequest(
+    data: any,
+    criteria: IBagForService["literalCriteria"]
+  ): Promise<any> {
+    const { keyActionRequest } = criteria;
+    const _that_ = this;
+    let actionFn = _that_[keyActionRequest] as Function;
+    if (typeof actionFn !== "function")
+      throw new Error(`${actionFn} is not function`);
+    actionFn = actionFn.bind(this);
+  }
   //████ common snippet for action request  ████████████████████████
   protected override async readCommon(
     criteria: IBagForService["literalCriteria"]
   ) {
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    let data = await this.getData(keySrcContext);
-    data = this.util.isNotUndefinedAndNotNull(data)
-      ? Array.isArray(data)
-        ? data
-        : [data]
-      : [];
+    let data = this.bd_collection;
     return data;
   }
   protected override async createCommon(
@@ -129,17 +136,16 @@ export class StructureLocalCookieRepository<
     criteria: IBagForService["literalCriteria"]
   ) {
     const kId = this.keyId;
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    let currentData = (await this.getData(keySrcContext)) as any[];
-    currentData = Array.isArray(currentData) ? currentData : [currentData];
-    const idxCData = currentData.findIndex((dt) => dt[kId] === data[kId]);
+    const idxCData = this.bd_collection.findIndex((dt) => {
+      const r = dt[kId] === data[kId];
+      return r;
+    });
     if (idxCData > -1) return undefined; //❗ no se creó porque ya existe ❗
     //creacion de id:
     const { strategyForIdBuild } = this._globalConfig_;
     const buildIDFn = getStrategyGeneratorIdFnByKey(strategyForIdBuild);
     data[kId] = buildIDFn(data[kId]);
-    currentData.push(data);
-    await this.setData(currentData, keySrcContext);
+    this.bd_collection.push(data);
     return data;
   }
   protected override async updateCommon(
@@ -147,13 +153,12 @@ export class StructureLocalCookieRepository<
     criteria: IBagForService["literalCriteria"]
   ) {
     const kId = this.keyId;
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    let currentData = (await this.getData(keySrcContext)) as any[];
-    currentData = Array.isArray(currentData) ? currentData : [currentData];
-    const idxCData = currentData.findIndex((dt) => dt[kId] === data[kId]);
+    const idxCData = this.bd_collection.findIndex((dt) => {
+      const r = dt[kId] === data[kId];
+      return r;
+    });
     if (idxCData === -1) return undefined; //❗no existe❗
-    currentData[idxCData] = data;
-    await this.setData(currentData, keySrcContext);
+    this.bd_collection[idxCData] = data;
     return data;
   }
   protected override async deleteCommon(
@@ -161,15 +166,11 @@ export class StructureLocalCookieRepository<
     criteria: IBagForService["literalCriteria"]
   ) {
     const kId = this.keyId;
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    let currentData = (await this.getData(keySrcContext)) as any[];
-    currentData = Array.isArray(currentData) ? currentData : [currentData];
-    const idxCData = currentData.findIndex((dt) => dt[kId] === data[kId]);
-    if (idxCData !== -1) {
-      //elimina solo si existe
-      currentData.splice(idxCData, 1);
-      await this.setData(currentData, keySrcContext);
-    }
+    const idxCData = this.bd_collection.findIndex((dt) => {
+      const r = dt[kId] === data[kId];
+      return r;
+    });
+    if (idxCData !== -1) this.bd_collection.splice(idxCData, 1);
     //mutar data para la eliminacion:
     let dData = {};
     dData[kId] = data[kId]; //solo envia id
@@ -226,7 +227,7 @@ export class StructureLocalCookieRepository<
    * @returns ``
    *
    */
-  public async readOne(bagService: IBagForService): Promise<any> {
+  public async readOne(bagService: IBagForService) {
     let { literalCriteria } = bagService;
     const registers = await this.readCommon(literalCriteria);
     const data = await this.getOne(registers, literalCriteria);
@@ -244,21 +245,16 @@ export class StructureLocalCookieRepository<
     let { literalCriteria } = bagService;
     const kId = this.keyId;
     const { query } = literalCriteria as IStructureReadCriteria<any>;
-    const extractQ = query.find((q) => {
+    const extractQ = query!.find((q) => {
       const oQ = q as ISingleCondition;
       const r =
         this.util.isObject(oQ) &&
         oQ.op === ELogicOperatorForCondition.eq &&
-        oQ.keyPathForCond.includes(kId);
+        oQ.keyPathForCond!.includes(kId);
       return r;
     }) as ISingleCondition;
     if (extractQ === undefined) {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `${LogicError.valueToString(
-          query
-        )} is not valid query, because not 'id' valid`,
-      });
+      throw new Error(`is not valid query, because not 'id' valid`);
     }
     const registers = await this.readCommon(literalCriteria);
     const data = await this.getOne(registers, literalCriteria);
@@ -277,30 +273,19 @@ export class StructureLocalCookieRepository<
     const { modifyType, isCreateOrUpdate } =
       literalCriteria as IStructureModifyCriteria<any>;
     if (!this.util.isLiteralObject(data)) {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `document with data = ${LogicError.valueToString(
-          data
-        )} is not valid`,
-      });
+      throw new Error(`document with data = ${data} is not valid`);
     }
     if (modifyType !== "create") {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `${modifyType} is not modify type valid`,
-      });
+      throw new Error(`${modifyType} is not modify type valid`);
     }
     let rxData = await this.createCommon(data, literalCriteria);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
         rxData = await this.updateCommon(data, literalCriteria);
       } else {
-        throw new LogicError({
-          code: ELogicCodeError.EXIST,
-          msn: `document with data : ${LogicError.valueToString(
-            data
-          )} id has not created because exist`,
-        });
+        throw new Error(
+          `document with data : ${data} id has not created because exist`
+        );
       }
     }
     return rxData;
@@ -318,30 +303,19 @@ export class StructureLocalCookieRepository<
     const { modifyType, isCreateOrUpdate } =
       literalCriteria as IStructureModifyCriteria<any>;
     if (!this.util.isObject(data)) {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `document with data = ${LogicError.valueToString(
-          data
-        )} does not valid`,
-      });
+      throw new Error(`document with data = ${data} does not valid`);
     }
     if (modifyType !== "update") {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `${modifyType} is not modify type valid`,
-      });
+      throw new Error(`${modifyType} is not modify type valid`);
     }
     let rxData = await this.updateCommon(data, literalCriteria);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
         rxData = await this.createCommon(data, literalCriteria);
       } else {
-        throw new LogicError({
-          code: ELogicCodeError.NOT_EXIST,
-          msn: `document with data : ${LogicError.valueToString(
-            data
-          )} id has not updated because not exist`,
-        });
+        throw new Error(
+          `document with data : ${data} id has not updated because not exist`
+        );
       }
     }
     return rxData;
@@ -358,18 +332,10 @@ export class StructureLocalCookieRepository<
     const { data, literalCriteria } = bagService;
     const { modifyType } = literalCriteria as IStructureModifyCriteria<any>;
     if (!this.util.isObject(data)) {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `document with data = ${LogicError.valueToString(
-          data
-        )} does not valid`,
-      });
+      throw new Error(`document with data = ${data} does not valid`);
     }
     if (modifyType !== "delete") {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `${modifyType} is not modify type valid`,
-      });
+      throw new Error(`${modifyType} is not modify type valid`);
     }
     let rxData = await this.deleteCommon(data, literalCriteria);
     return rxData;

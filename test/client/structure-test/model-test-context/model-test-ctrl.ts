@@ -1,9 +1,7 @@
-import { ModelTest } from "../model/model-test";
-import {
-  StructureLogicController,
-} from "../../../../../src/seed/logic/controllers/_structure-ctrl";
-import { IStructureBuilderBaseMetadata } from "../../../../../src/seed/logic/meta/metadata-builder-shared";
-import { Util_Ctrl } from "../../../../../src/seed/logic/controllers/_util-ctrl";
+import { ModelTest } from "./model-test";
+import { StructureLogicController } from "../../../../src/seed/logic/controllers/_structure-ctrl";
+import { IStructureBuilderBaseMetadata } from "../../../../src/seed/logic/meta/metadata-builder-shared";
+import { Util_Ctrl } from "../../../../src/seed/logic/controllers/_util-ctrl";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class ModelTestCtrl extends StructureLogicController<ModelTest> {

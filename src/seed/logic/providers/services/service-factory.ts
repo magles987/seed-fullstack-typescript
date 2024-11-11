@@ -1,9 +1,9 @@
 import { TKeyLogicContext } from "../../config/shared-modules";
 import { ELogicCodeError, LogicError } from "../../errors/logic-error";
 import { TKeyAllDefaultServiceDriverInstance } from "../shared-for-external-module";
+import { IGenericService, IServiceRequestConfig } from "./shared";
 import { HttpWebClientService } from "./client/web/http/http-service";
 import { LocalWebClientService } from "./client/web/local/local-service";
-import { IGenericService, IServiceRequestConfig } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 //====Client===========================
 type TKeyWebService = "local" | "http";

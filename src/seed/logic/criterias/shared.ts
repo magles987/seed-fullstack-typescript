@@ -78,8 +78,14 @@ export type TAConds = Array<
   | ISingleCondition
   | TAConds //sub condiciones agrupadas
 >;
-/**tipo de agrupacion de dato esperado */
-export type TExpectedDataType = "single" | "object" | "array";
+/**tipo de agrupación de dato esperado */
+export type TExpectedDataType =
+  | "any"
+  | "boolean"
+  | "number"
+  | "string"
+  | "object"
+  | "array";
 /** */
 export interface ICriteria {
   /**clave identificadora del contexto lógico */
@@ -160,13 +166,13 @@ interface IPrimitiveCriteria extends ICriteria {
 /**... */
 export interface IPrimitiveReadCriteria
   extends IPrimitiveCriteria,
-  IReadCriteria {
+    IReadCriteria {
   sort: TSortDirection;
 }
 /** */
 export interface IPrimitiveModifyCriteria
   extends IPrimitiveCriteria,
-  IModifyCriteria { }
+    IModifyCriteria {}
 /**... */
 export type TPrimitiveBaseCriteria = Partial<
   IPrimitiveReadCriteria & IPrimitiveModifyCriteria
@@ -175,10 +181,17 @@ export type TPrimitiveBaseCriteria = Partial<
 /**... */
 export type TPrimitiveBaseCriteriaForCtrlRead = Partial<IPrimitiveReadCriteria>;
 /**... */
-export type TPrimitiveBaseCriteriaForCtrlModify =
-  Partial<
-    Omit<IPrimitiveModifyCriteria, "type" | "keyActionRequest" | "keyLogicContext" | "keySrc" | "p_Key" | "s_Key">
-  >;
+export type TPrimitiveBaseCriteriaForCtrlModify = Partial<
+  Omit<
+    IPrimitiveModifyCriteria,
+    | "type"
+    | "keyActionRequest"
+    | "keyLogicContext"
+    | "keySrc"
+    | "p_Key"
+    | "s_Key"
+  >
+>;
 //====Strcuture====================================================================================================================
 /**esquema de proposito general con los contextos estructurales del modulo*/
 export interface IStructureCriteriaContext<
@@ -201,22 +214,38 @@ interface IStructureCriteria extends ICriteria {
 /**... */
 export interface IStructureReadCriteria<TModel>
   extends IStructureCriteria,
-  IReadCriteria {
+    IReadCriteria {
   sort: Array<Record<keyof TModel, TSortDirection>>;
 }
 /** */
 export interface IStructureModifyCriteria<TModel>
   extends IStructureCriteria,
-  IModifyCriteria { }
+    IModifyCriteria {}
 /**... */
 export type TStructureBaseCriteria<TModel> = Partial<
   IStructureReadCriteria<TModel> & IStructureModifyCriteria<TModel>
 >;
 /**... */
 export type TStructureBaseCriteriaForCtrlRead<TModel> = Partial<
-  Omit<IStructureReadCriteria<TModel>, "type" | "keyActionRequest" | "keyLogicContext" | "keySrc" | "p_Key" | "s_Key">
+  Omit<
+    IStructureReadCriteria<TModel>,
+    | "type"
+    | "keyActionRequest"
+    | "keyLogicContext"
+    | "keySrc"
+    | "p_Key"
+    | "s_Key"
+  >
 >;
 /**... */
 export type TStructureBaseCriteriaForCtrlModify<TModel> = Partial<
-  Omit<IStructureModifyCriteria<TModel>, "type" | "keyActionRequest" | "keyLogicContext" | "keySrc" | "p_Key" | "s_Key">
+  Omit<
+    IStructureModifyCriteria<TModel>,
+    | "type"
+    | "keyActionRequest"
+    | "keyLogicContext"
+    | "keySrc"
+    | "p_Key"
+    | "s_Key"
+  >
 >;

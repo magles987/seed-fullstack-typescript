@@ -12,7 +12,13 @@ import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { ReportHandler } from "../reports/_reportHandler";
 import { CriteriaHandler } from "../criterias/_criteria-handler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-export type TKeyReadRequestController = "readAll" | "readOne" | "readMany";
+export type TKeyReadRequestController =
+  | "exist"
+  | "count"
+  | "inform"
+  | "readAll"
+  | "readOne"
+  | "readMany";
 export type TKeyModifyRequestController = "create" | "update" | "delete";
 /**refactorizacion de la clase*/
 export type Trf_LogicController = LogicController;

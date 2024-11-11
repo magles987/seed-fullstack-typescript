@@ -7,10 +7,10 @@ import { TStrCase, TExtPrimitiveTypes, IConfigEqGtLt } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
  *
- * utilidades nativas sin extensiones ni librerias
+ * utilidades nativas sin extensiones ni librerías
  */
 export class UtilNative {
-  /**Utilidades implicitas en Node JS*/
+  /**Utilidades implícitas en Node JS*/
   public readonly util_Node = Util_Node;
   /**
    * Carácter separador de ruta lógica.
@@ -51,31 +51,44 @@ export class UtilNative {
    * `"."` ej. formato: `dd.mm.yyyy`
    */
   public readonly sepDateRegExp = /\-|\/|\.|\#|\_|\:/;
+  /**determina si ya esta definido el valor predefinido*/
+  private static _isDfValue: boolean = false;
+  /**valor predefinido global */
+  private static _dfValue: null | undefined = undefined;
+  /**valor predefinido global*/ //para uso de instancia
+  public get dfValue(): null | undefined {
+    return UtilNative._dfValue;
+  }
   /**
    * Almacena la instancia única de esta clase
-   * ____
    */
   private static UtilNative_instance: UtilNative;
   /**
-   * @param _dfValue es el valor que se va a asumir
+   * @param dfValue es el valor que se va a asumir
    * como valor predefinido cuando haya ausencia de valor
    */
   constructor(
     /**es el valor que se va a asumir como valor
      * predefinido cuando haya ausencia de valor */
-    public readonly dfValue: null | undefined
-  ) {}
+    dfValue: null | undefined
+  ) {
+    //❗solo se puede modificar una vez❗
+    if (!UtilNative._isDfValue) {
+      UtilNative._dfValue = dfValue;
+      UtilNative._isDfValue = true;
+    }
+  }
   /**
    * devuelve la instancia única de esta clase
    * ya sea que la crea o la que ya a sido creada
    * @param dfValue es el valor que se va a asumir como valor
    * predefinido cuando haya ausencia de valor
    */
-  public static getInstance(defaultValue: null | undefined): UtilNative {
+  public static getInstance(dfValue: null | undefined): UtilNative {
     UtilNative.UtilNative_instance =
       UtilNative.UtilNative_instance === undefined ||
       UtilNative.UtilNative_instance === null
-        ? new UtilNative(defaultValue)
+        ? new UtilNative(dfValue)
         : UtilNative.UtilNative_instance;
     return UtilNative.UtilNative_instance;
   }
@@ -677,8 +690,10 @@ export class UtilNative {
    * @param {string[]} aKeys - El array de strings que se utilizará para construir el path.
    * @param {object} [option] - Opciones para personalizar la construcción del path:
    *  - `charSeparator` (string) `= "."`: El carácter separador a utilizar entre los elementos del path.
-   *  - `isInitWithSeparator` (boolean) `= false`: Determina si el path debe iniciar con el carácter separador.
-   *  - `isEndtWithSeparator` (boolean) `= false` : Determina si el path debe terminar con el carácter separador.
+   *  - `isStartWithSeparator` (boolean) `= false` Determina si el path debe iniciar con el caracter separador.
+   *  - `isStartWithSeparator` (boolean) `= false` Determina si el path debe iniciar con el caracter separador.
+   *  - `isInitWithSeparator` (boolean) `= false`: Determina si el `pathInit` debe unirse al path con caracter separador.
+   *  - `isEndtWithSeparator` (boolean) `= false` : Determina si el `pathEnd` debe unirse al path con caracter separador.
    *  - `pathInit` (string) `= ""`: El prefijo a añadir al inicio del path.
    *  - `pathEnd` (string) `= ""`: El sufijo a añadir al final del path.
    * @returns el string del path ya construido
@@ -689,23 +704,24 @@ export class UtilNative {
    * const keys = ["home", "user", "documents"];
    * let path: string;
    * //ejemplo 1:
-   * path = buildPath(keys, { charSeparator: "/", isInitWithSeparator: true });
+   * path = buildPath(keys, { charSeparator: "/", isStartWithSeparator: true });
    * console.log(path); // salida: "/home/user/documents"
    *
    * //ejemplo 2:
    * path = buildPath(keys, {
    *   charSeparator: "/",
-   *   isInitWithSeparator: true,
-   *   isEndtWithSeparator: true
+   *   isStartWithSeparator: false, //no inicializar con "/"
+   *   isFinishWithSeparator: true, //si finalizar con "/"
    * });
-   * console.log(path); // salida: "/home/user/documents/"
+   * console.log(path); // salida: "home/user/documents/"
    *
    * //ejemplo 3:
    * path = buildPath(keys, {
    *   charSeparator: "/",
-   *   isInitWithSeparator: true,
-   *   isEndtWithSeparator: true,
-   *   pathInit: ".."
+   *   isStartWithSeparator: false, //no inicializar con "/"
+   *   isFinishWithSeparator: true, //si finalizar con "/"
+   *   pathInit: "..",
+   *   isJoinInitWithSeparator: true //unir ".." al path con "/"
    * });
    * console.log(path); // salida: "../home/user/documents/"
    * ```
@@ -715,10 +731,14 @@ export class UtilNative {
     option?: {
       /** `= "."`: El carácter separador a utilizar entre los elementos del path. */
       charSeparator?: string;
-      /** `= false`: Determina si el path debe iniciar con el carácter separador. */
-      isInitWithSeparator?: boolean;
-      /** `= false` : Determina si el path debe terminar con el carácter separador. */
-      isEndtWithSeparator?: boolean;
+      /** `= false`: Determina si el path debe iniciar con el caracter separador */
+      isStartWithSeparator?: boolean;
+      /** `= false`: Determina si el path debe terminar con el caracter separador */
+      isFinishWithSeparator?: boolean;
+      /** `= false`: Determina si el `pathInit` debe unirse al path con caracter separador. */
+      isJoinInitWithSeparator?: boolean;
+      /** `= false` : Determina si el `pathEnd` debe unirse al path con caracter separador. */
+      isJoinEndtWithSeparator?: boolean;
       /** `= ""`: El prefijo a añadir al inicio del path. */
       pathInit?: string;
       /** `= ""`: El sufijo a añadir al final del path.*/
@@ -727,8 +747,10 @@ export class UtilNative {
   ): string {
     const dfOp: typeof option = {
       charSeparator: this.charSeparatorLogicPath,
-      isInitWithSeparator: false, //❗No inicia con caracter separador❗,
-      isEndtWithSeparator: false, //❗No termina con caracter separador❗,
+      isStartWithSeparator: false, //❗No inicia con caracter separador❗,
+      isFinishWithSeparator: false, //❗No termina con caracter separador❗
+      isJoinInitWithSeparator: false, //no une con caracter separador
+      isJoinEndtWithSeparator: false, //no une con caracter separador
       pathInit: "",
       pathEnd: "",
     };
@@ -742,12 +764,18 @@ export class UtilNative {
         charSeparator: this.isString(op.charSeparator)
           ? op.charSeparator
           : dfOp.charSeparator,
-        isInitWithSeparator: this.isBoolean(op.isInitWithSeparator)
-          ? op.isInitWithSeparator
-          : dfOp.isInitWithSeparator,
-        isEndtWithSeparator: this.isBoolean(op.isEndtWithSeparator)
-          ? op.isEndtWithSeparator
-          : dfOp.isEndtWithSeparator,
+        isStartWithSeparator: this.isBoolean(op.isStartWithSeparator)
+          ? op.isStartWithSeparator
+          : dfOp.isStartWithSeparator,
+        isFinishWithSeparator: this.isBoolean(op.isFinishWithSeparator)
+          ? op.isFinishWithSeparator
+          : dfOp.isFinishWithSeparator,
+        isJoinInitWithSeparator: this.isBoolean(op.isJoinInitWithSeparator)
+          ? op.isJoinInitWithSeparator
+          : dfOp.isJoinInitWithSeparator,
+        isJoinEndtWithSeparator: this.isBoolean(op.isJoinEndtWithSeparator)
+          ? op.isJoinEndtWithSeparator
+          : dfOp.isJoinEndtWithSeparator,
         pathInit:
           this.isString(op.pathInit) || this.isNumber(op.pathInit, true)
             ? op.pathInit
@@ -760,19 +788,37 @@ export class UtilNative {
     }
     const {
       charSeparator: sp,
-      isInitWithSeparator,
-      isEndtWithSeparator,
+      isStartWithSeparator,
+      isFinishWithSeparator,
+      isJoinInitWithSeparator,
+      isJoinEndtWithSeparator,
       pathEnd,
       pathInit,
     } = option;
-    let path = aKeys.reduce((prePath, cKey, idx) => {
-      let r: string;
-      if (idx === 0 && !isInitWithSeparator) r = `${prePath}${cKey}`;
-      else r = `${prePath}${sp}${cKey}`;
+    /**permitirá eliminar caracteres separadores de
+     * cada item si los tiene iniciado o terminando el key */
+    const re = new RegExp(`^\\${sp}+|\\${sp}+$`, "g");
+    let aKeys_clon = [...aKeys]; //clonacion sencilla
+    //reducir:
+    let path = aKeys_clon.reduce((prePath, cKey, idx) => {
+      const keyCC = cKey.replace(re, "");
+      let r = prePath;
+      if (keyCC !== "") {
+        r = idx !== 0 ? `${prePath}${sp}${keyCC}` : `${prePath}${keyCC}`;
+      }
       return r;
-    }, pathInit);
-    if (pathEnd !== "") path = `${path}${sp}${pathEnd}`;
-    if (isEndtWithSeparator) path = `${path}${sp}`;
+    }, "");
+    //formateo adicional:
+    if (pathInit !== "")
+      path = isJoinInitWithSeparator
+        ? `${pathInit}${sp}${path}`
+        : `${pathInit}${path}`;
+    if (pathEnd !== "")
+      path = isJoinEndtWithSeparator
+        ? `${path}${sp}${pathEnd}`
+        : `${path}${pathEnd}`;
+    if (isStartWithSeparator) path = `${sp}${path}`;
+    if (isFinishWithSeparator) path = `${path}${sp}`;
     return path;
   }
   //████Objetos████████████████████████████████████████████████████
@@ -1320,7 +1366,7 @@ export class UtilNative {
       if (typeof obj[keyFn] === "function" && keyFn !== "constructor") {
         newObj[keyFn] = obj[keyFn];
         newObj[keyFn] = this.isObject(thisBind)
-          ? (<Function>newObj[keyFn]).bind(thisBind)
+          ? (newObj[keyFn] as Function).bind(thisBind)
           : newObj[keyFn];
         continue;
       }
@@ -2945,7 +2991,7 @@ export class UtilNative {
             (emptyMode === "allow-empty" ||
               (emptyMode === "deny-empty" && anyValue.length > 0));
           if (r && this.isArray(subTypes, false)) {
-            r = (<any[]>anyValue).every((aV) =>
+            r = (anyValue as any[]).every((aV) =>
               this.isValueType(aV, "is", subTypes as any[], emptyMode)
             );
           }

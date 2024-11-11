@@ -1,32 +1,31 @@
-import { ModelTest } from "../model/model-test";
+import { ModelTest } from "./model-test";
 import {
   StructureLogicController,
   TKeyStructureModifyRequestController,
   TKeyStructureReadRequestController,
-} from "../../../../../src/seed/logic/controllers/_structure-ctrl";
-import { IStructureBuilderBaseMetadata } from "../../../../../src/seed/logic/meta/metadata-builder-shared";
-import { StructureCriteriaHandler } from "../../../../../src/seed/logic/criterias/structure-criteria-handler";
-import { StructureLogicHook } from "../../../../../src/seed/logic/hooks/structure-hook";
-import { FieldLogicMutater } from "../../../../../src/seed/logic/mutaters/field-mutater";
-import { ModelLogicMutater } from "../../../../../src/seed/logic/mutaters/model-mutater";
-import { StructureLogicProvider } from "../../../../../src/seed/logic/providers/structure-provider";
-import { FieldLogicValidation } from "../../../../../src/seed/logic/validators/field-validation";
-import { ModelLogicValidation } from "../../../../../src/seed/logic/validators/model-validation";
-import { RequestLogicValidation } from "../../../../../src/seed/logic/validators/request-validation";
+} from "../../../../src/seed/logic/controllers/_structure-ctrl";
+import { IStructureBuilderBaseMetadata } from "../../../../src/seed/logic/meta/metadata-builder-shared";
+import { StructureCriteriaHandler } from "../../../../src/seed/logic/criterias/structure-criteria-handler";
+import { StructureLogicHook } from "../../../../src/seed/logic/hooks/structure-hook";
+import { FieldLogicMutater } from "../../../../src/seed/logic/mutaters/field-mutater";
+import { ModelLogicMutater } from "../../../../src/seed/logic/mutaters/model-mutater";
+import { StructureLogicProvider } from "../../../../src/seed/logic/providers/structure-provider";
+import { FieldLogicValidation } from "../../../../src/seed/logic/validators/field-validation";
+import { ModelLogicValidation } from "../../../../src/seed/logic/validators/model-validation";
+import { RequestLogicValidation } from "../../../../src/seed/logic/validators/request-validation";
 import {
   IStructureBagForFieldCtrlContext,
   IStructureBagForModelCtrlContext,
   TFieldFnBagForCtrl,
   TModelFnBagForCtrl,
-} from "../../../../../src/seed/logic/bag-module/shared-for-external-module";
-import { TCapitalizeFirstLetter } from "../../../../../src/seed/util/shared";
-import { IStructureResponse } from "../../../../../src/seed/logic/reports/shared";
-import { Util_Ctrl } from "../../../../../src/seed/logic/controllers/_util-ctrl";
-
+} from "../../../../src/seed/logic/bag-module/shared-for-external-module";
+import { TCapitalizeFirstLetter } from "../../../../src/seed/util/shared";
+import { IStructureResponse } from "../../../../src/seed/logic/reports/shared";
+import { Util_Ctrl } from "../../../../src/seed/logic/controllers/_util-ctrl";
 //████ REQUEST ACTIONS ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**claves identificadoras de las acciones de peticion para el modo lectura de datos */
+/**claves identificadoras de las acciones de petición para el modo lectura de datos */
 export type TKeyModelTestReadRequestController =
-  //...aqui los nombres de las acciones de peticion a usar en este controller
+  //...aqui los nombres de las acciones de petición a usar en este controller
   TKeyStructureReadRequestController;
 /**claves identificadoras de las acciones de peticion para el modo modificacion de datos */
 export type TKeyModelTestModifyRequestController =
@@ -82,7 +81,8 @@ export class ModelTestCtrl__full
     TStructureProviderInstance,
     TKeyDiccCtrlCRUD
   >
-  implements TRecordModelRequestController, TRecordFieldRequestController {
+  implements TRecordModelRequestController, TRecordFieldRequestController
+{
   /**... */
   private static buildBaseMetadata(): IStructureBuilderBaseMetadata<
     TModel,
@@ -149,16 +149,16 @@ export class ModelTestCtrl__full
           __structureType: undefined,
           __mutateConfig: {
             fieldMutate: {
-              diccActionsConfig: { anyTrim: true }
-            }
+              diccActionsConfig: { anyTrim: true },
+            },
           },
           __valConfig: {
             fieldVal: {
               diccActionsConfig: {
                 isTypeOf: { fieldType: "string" },
                 isRequired: true,
-              }
-            }
+              },
+            },
           },
           __ctrlConfig: {
             fieldCtrl: {
@@ -166,9 +166,9 @@ export class ModelTestCtrl__full
                 ["fieldMutate", "anyTrim"],
                 ["fieldVal", "isTypeOf"],
                 ["fieldVal", "isRequired"],
-              ]
-            }
-          }
+              ],
+            },
+          },
         },
         __valConfig: {
           modelVal: {
@@ -184,7 +184,24 @@ export class ModelTestCtrl__full
           structureProvider: {
             diccActionsConfig: {
               runProvider: {
-                serviceToRun: { keyService: "local", keyDriver: "cookie" },
+                serviceToRun: { keyService: "http", keyDriver: "fetch" },
+                serviceConfig: {
+                  client: {
+                    web: {
+                      http: {
+                        diccDriverConfig: {
+                          axios: {
+                            urlRoot: "http://www.mytest.com",
+                          },
+                          fetch: {
+                            urlRoot: "http://www.mytest.com",
+                          },
+                        },
+                      },
+                    },
+                    app: {},
+                  },
+                },
               },
             },
           },
@@ -207,9 +224,7 @@ export class ModelTestCtrl__full
                 ["modelVal", "isModel"],
                 ["structureProvider", "runProvider"],
               ],
-              delete: [
-                ["structureProvider", "runProvider"]
-              ],
+              delete: [["structureProvider", "runProvider"]],
               //createMany: [[]],
               //updateMany: [],
               //deleteMany: [],

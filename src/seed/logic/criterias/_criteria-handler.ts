@@ -21,11 +21,12 @@ export type Trf_CriteriaCursor = CriteriaHandler;
  */
 export abstract class CriteriaHandler
   extends HandlerModule
-  implements ReturnType<CriteriaHandler["getDefault"]> {
+  implements ReturnType<CriteriaHandler["getDefault"]>
+{
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
     return {
-      expectedDataType: "single",
+      expectedDataType: "any",
       keyActionRequest: undefined,
       //keyLogicContext: undefined,
       //keySrc: undefined,
@@ -85,8 +86,8 @@ export abstract class CriteriaHandler
       this.util.isNumber(v) && MIN_LIMIT_ALLOW < v && v <= MAX_LIMIT_ALLOW
         ? v
         : this._limit !== undefined
-          ? this._limit
-          : this.getDefault().limit;
+        ? this._limit
+        : this.getDefault().limit;
   }
   private _sort: unknown;
   public get sort(): unknown {
@@ -96,8 +97,8 @@ export abstract class CriteriaHandler
     this._sort = this.util.isNotUndefinedAndNotNull(v)
       ? v
       : this._sort !== undefined
-        ? this._sort
-        : this.getDefault().sort;
+      ? this._sort
+      : this.getDefault().sort;
   }
   public abstract get s_Key(): string;
   public abstract get p_Key(): string;
@@ -109,8 +110,8 @@ export abstract class CriteriaHandler
     this._targetPage = this.util.isNumber(v)
       ? v
       : this._targetPage !== undefined
-        ? this._targetPage
-        : this.getDefault().targetPage;
+      ? this._targetPage
+      : this.getDefault().targetPage;
   }
   private _targetPageLogic?: 0 | 1;
   public get targetPageLogic(): 0 | 1 {
@@ -121,8 +122,8 @@ export abstract class CriteriaHandler
       this.util.isNumber(v) && (v === 0 || v === 1)
         ? v
         : this._targetPageLogic !== undefined
-          ? this._targetPageLogic
-          : this.getDefault().targetPageLogic;
+        ? this._targetPageLogic
+        : this.getDefault().targetPageLogic;
   }
   private _query?: TAConds;
   public get query(): TAConds {
@@ -132,8 +133,8 @@ export abstract class CriteriaHandler
     this._query = this.util.isArray(v)
       ? v
       : this._query !== undefined
-        ? this._query
-        : this.getDefault().query;
+      ? this._query
+      : this.getDefault().query;
     this.checkQueryConds(this._query);
   }
   private _type?: TKeyRequestType;
@@ -145,8 +146,8 @@ export abstract class CriteriaHandler
       this.util.isString(v) && (v === "read" || v === "modify")
         ? v
         : this._type !== undefined
-          ? this._type
-          : this.getDefault().type;
+        ? this._type
+        : this.getDefault().type;
   }
   private _keyActionRequest: string;
   public get keyActionRequest(): string {
@@ -156,8 +157,8 @@ export abstract class CriteriaHandler
     this._keyActionRequest = this.util.isString(v)
       ? v
       : this._keyActionRequest !== undefined
-        ? this._keyActionRequest
-        : this.getDefault().keyActionRequest;
+      ? this._keyActionRequest
+      : this.getDefault().keyActionRequest;
   }
   private _expectedDataType: TExpectedDataType;
   public get expectedDataType(): TExpectedDataType {
@@ -166,11 +167,16 @@ export abstract class CriteriaHandler
   public set expectedDataType(v: TExpectedDataType) {
     this._expectedDataType =
       this.util.isString(v) &&
-        (v === "single" || v === "array" || v === "object")
+      (v === "any" ||
+        v === "boolean" ||
+        v === "number" ||
+        v === "string" ||
+        v === "array" ||
+        v === "object")
         ? v
         : this._expectedDataType !== undefined
-          ? this._expectedDataType
-          : this.getDefault().expectedDataType;
+        ? this._expectedDataType
+        : this.getDefault().expectedDataType;
   }
   private _modifyType?: TKeyRequestModifyType;
   public get modifyType(): TKeyRequestModifyType {
@@ -179,11 +185,11 @@ export abstract class CriteriaHandler
   public set modifyType(v: TKeyRequestModifyType) {
     this._modifyType =
       this.util.isString(v) &&
-        (v === "create" || v === "update" || v === "delete")
+      (v === "create" || v === "update" || v === "delete")
         ? v
         : this._modifyType !== undefined
-          ? this._modifyType
-          : this.getDefault().modifyType;
+        ? this._modifyType
+        : this.getDefault().modifyType;
   }
   private _isCreateOrUpdate: boolean;
   public get isCreateOrUpdate(): boolean {
@@ -193,8 +199,8 @@ export abstract class CriteriaHandler
     this._isCreateOrUpdate = this.util.isBoolean(v)
       ? v
       : this._isCreateOrUpdate !== undefined
-        ? this._isCreateOrUpdate
-        : this.getDefault().isCreateOrUpdate;
+      ? this._isCreateOrUpdate
+      : this.getDefault().isCreateOrUpdate;
   }
   protected override util: Util_Criteria = Util_Criteria.getInstance();
   /**
@@ -219,7 +225,7 @@ export abstract class CriteriaHandler
   protected getCONST() {
     return CriteriaHandler.getCONSTANTS();
   }
-  /**inicializa las propiedades de manera dinamica
+  /**inicializa las propiedades de manera dinámica
    *
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    */
@@ -251,7 +257,7 @@ export abstract class CriteriaHandler
     this[key as any] = df[key];
     return;
   }
-  /**... */
+  /**muta las propiedades masivamente */
   public mutateProps(
     base: Partial<
       Omit<

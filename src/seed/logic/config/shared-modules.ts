@@ -33,6 +33,8 @@ export type TKeyStructureContextFull =
 export type TKeyRequestType = "read" | "modify";
 /**sub agrupa los tipos de consulta en contexto de modificacion */
 export type TKeyRequestModifyType = "create" | "update" | "delete";
+/**clave identificadoras de acciones CRUD básicas */
+export type TKeyBasicCRUD = Exclude<TKeyRequestType, "modify"> | TKeyRequestModifyType;
 /**tipos de datos usados en la logica
  * de negocio.
  *

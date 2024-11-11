@@ -1,4 +1,5 @@
 import {
+  TKeyBasicCRUD,
   TKeyLogicContext,
   TKeySrcSelector,
 } from "../../../../../../../config/shared-modules";
@@ -7,6 +8,7 @@ import {
   LogicError,
 } from "../../../../../../../errors/logic-error";
 import { LocalRepository } from "../_local-repository";
+import { QueryJsAdaptator } from "../_query-js-adaptador";
 import { ILocalCookieRepositoryConfig } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
@@ -93,17 +95,19 @@ export abstract class LocalCookieRepository<TKeyActionRequest>
   }
   /**
    * @param keyLogicContext clave identificadora del contexto logico
+   * @param queryJsAdaptator adaptador para consultas
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
+    queryJsAdaptator: QueryJsAdaptator,
     base: Partial<
       ReturnType<LocalCookieRepository<TKeyActionRequest>["getDefault"]>
     > = {},
     isInit = true
   ) {
-    super("cookie", keyLogicContext);
+    super("cookie", keyLogicContext, queryJsAdaptator);
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
@@ -150,7 +154,66 @@ export abstract class LocalCookieRepository<TKeyActionRequest>
     this[key as any] = df[key];
     return;
   }
-
+  /**muta las propiedades masivamente */
+  public mutateProps(
+    base: Partial<
+      Omit<
+        ReturnType<LocalCookieRepository<TKeyActionRequest>["getDefault"]>,
+        "" //se deja la opción de omitir abierta
+      >
+    >
+  ): void {
+    base = typeof base === "object" && base !== null ? base : ({} as any);
+    for (const key in base) {
+      this[key] = base[key];
+    }
+    return;
+  }
+  public override async sendRequest(
+    keyGenericSrc: string,
+    keyBasicCRUD: TKeyBasicCRUD,
+    txData: any
+  ): Promise<any> {
+    if (!this.util.isString(keyGenericSrc)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyGenericSrc} is not generic src key valid`,
+      });
+    }
+    const _findIdxFn = (dt) => {
+      const r = this.util.isEquivalentTo([dt, txData], {});
+      return r;
+    };
+    let rxData: any;
+    if (keyBasicCRUD === "read") {
+      rxData = await this.getData(keyGenericSrc);
+    } else if (keyBasicCRUD === "create") {
+      let aData = (await this.getData(keyGenericSrc)) as any[];
+      const fIdx = aData.findIndex(_findIdxFn);
+      if (fIdx === -1) aData.push(txData); //crearlo
+      else aData[fIdx] = txData; //actualizarlo forzado
+      await this.setData(aData, keyBasicCRUD);
+      rxData = txData;
+    } else if (keyBasicCRUD === "update") {
+      let aData = (await this.getData(keyGenericSrc)) as any[];
+      const fIdx = aData.findIndex(_findIdxFn);
+      if (fIdx === -1) aData.push(txData); //crearlo forzado
+      else aData[fIdx] = txData; //actualizarlo
+      await this.setData(aData, keyBasicCRUD);
+      rxData = txData;
+    } else if (keyBasicCRUD === "delete") {
+      let aData = (await this.getData(keyGenericSrc)) as any[];
+      const fIdx = aData.findIndex(_findIdxFn);
+      if (fIdx >= 0) aData.splice(fIdx, 1); //Eliminación
+      await this.setData(aData, keyBasicCRUD);
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyBasicCRUD} is not basic CRUD key valid`,
+      });
+    }
+    return rxData;
+  }
   /**
    * descrip...
    * ____
@@ -226,7 +289,7 @@ export abstract class LocalCookieRepository<TKeyActionRequest>
     const data = JSON.parse(strData);
     return data;
   }
-  /**🛑Elimina todas las coockies de la aplicacion🛑 */
+  /**🛑Elimina todas las cookies de la aplicación🛑 */
   public static async emptyAllCookies(): Promise<void> {
     const cookies = document.cookie.split(";");
     for (const cookie of cookies) {

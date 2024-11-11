@@ -1,3 +1,4 @@
+import { LogicProvider } from "./_provider";
 import {
   IStructureBagForActionModuleContext,
   TStructureFnBagForActionModule,
@@ -11,9 +12,8 @@ import {
   StructureReportHandler,
   Trf_StructureReportHandler,
 } from "../reports/structure-report-handler";
-import { LogicProvider } from "./_provider";
-import { httpClientDriverFactoryFn } from "./services/client/web/http/drive/http-driver-factory";
 import { localRepositoryFactoryFn } from "./services/client/web/local/repositories/local-repository-factory";
+import { httpClientDriverFactoryFn } from "./services/client/web/http/drive/http-driver-factory";
 import { serviceFactory } from "./services/service-factory";
 import {
   TKeyStructureProviderModuleContext,
@@ -35,14 +35,15 @@ export type Trf_StructureLogicProvider = StructureLogicProvider<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class StructureLogicProvider<
-  TIDiccAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
->
+    TIDiccAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
+  >
   extends LogicProvider<TIDiccAC>
   implements
-  Record<
-    TKeysDiccStructureProviderActionConfigG,
-    TStructureFnBagForActionModule
-  > {
+    Record<
+      TKeysDiccStructureProviderActionConfigG,
+      TStructureFnBagForActionModule
+    >
+{
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = LogicProvider.getDefault();
@@ -67,25 +68,29 @@ export class StructureLogicProvider<
                 },
                 http: {
                   customHttpClientFactoryFn: httpClientDriverFactoryFn,
-                  urlConfig: {
-                    urlRoot: "",
-                    urlPostfix: "",
-                    urlPrefix: "",
-                  },
                   diccDriverConfig: {
-                    fetch: {},
-                    axios: {},
+                    fetch: {
+                      urlRoot: "",
+                      urlPostfix: "",
+                      urlPrefix: "",
+                      option: {},
+                    },
+                    axios: {
+                      urlRoot: "",
+                      urlPostfix: "",
+                      urlPrefix: "",
+                      option: {},
+                    },
                   },
                 },
               },
             },
-            //server:{},
           },
           serviceToRun: {
             //❗❗Obligatorio definirlo en los metadatos❗❗
             keyService: undefined,
             keyDriver: undefined,
-            customDeepServiceConfig: {}
+            customDeepServiceConfig: {},
           },
         },
       } as IDiccStructureProviderActionConfigG,
@@ -128,18 +133,13 @@ export class StructureLogicProvider<
     } else {
       rConfig = {
         ...nCC,
-        diccActionsConfig: this.util.isObject(
-          nCC.diccActionsConfig
-        )
+        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
           ? this.util.mergeDiccActionConfig(
-            [
-              cCC.diccActionsConfig,
-              nCC.diccActionsConfig,
-            ],
-            {
-              mode: mergeMode,
-            }
-          )
+              [cCC.diccActionsConfig, nCC.diccActionsConfig],
+              {
+                mode: mergeMode,
+              }
+            )
           : cCC.diccActionsConfig,
       };
     }
@@ -287,14 +287,14 @@ export class StructureLogicProvider<
     if (!this.util.isString(keyService)) {
       res = rH.mutateResponse(res, {
         status: ELogicResStatusCode.ERROR,
-        msn: `${keyService} is not key service instance valid`
+        msn: `${keyService} is not key service instance valid`,
       });
       return res;
     }
     if (!this.util.isString(keyDriver)) {
       res = rH.mutateResponse(res, {
         status: ELogicResStatusCode.ERROR,
-        msn: `${keyDriver} is not key driver for service instance valid`
+        msn: `${keyDriver} is not key driver for service instance valid`,
       });
       return res;
     }
@@ -306,7 +306,7 @@ export class StructureLogicProvider<
       serviceConfig,
       customDeepServiceConfig
     );
-    const serviceRes = await serviceInstance.runRequestFromService(
+    const serviceRes = await serviceInstance.sendRequestInService(
       bag.getLiteralBag()
     );
     res.responses.push(serviceRes as any);

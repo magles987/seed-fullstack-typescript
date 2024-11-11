@@ -9,14 +9,9 @@ import { PrimitiveLocalCookieRepository } from "./local-cookie/primitive-local-c
 import { StructureLocalCookieRepository } from "./local-cookie/structure-local-cookie-repository";
 import { PrimitiveLocalIDBRepository } from "./local-idb/primitive-local-idb-repository";
 import { StructureLocalIDBRepository } from "./local-idb/structure-local-idb-repository";
-import { PrimitiveLocalStaticRepository } from "./local-static/primitive-local-static-repository";
-import { StructureLocalStaticRepository } from "./local-static/structure-local-static-repository";
 import { PrimitiveLocalStorageRepository } from "./local-storage/primitive-local-storage-repository";
 import { StructureLocalStorageRepository } from "./local-storage/structure-local-storage-repository";
-import {
-  IDiccLocalRepositoryConfig,
-  TKeyDiccLocalRepository,
-} from "./shared";
+import { IDiccLocalRepositoryConfig, TKeyDiccLocalRepository } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras de las instancias
  * de servicio disponibles para fabricar */
@@ -28,18 +23,7 @@ export function localRepositoryFactoryFn(
   diccConfig: IDiccLocalRepositoryConfig
 ): IGenericDriver<ILocalResponse> {
   let instance: IGenericDriver<ILocalResponse>;
-  if (keyInstance === "static") {
-    if (keyLogicContext === "primitive") {
-      instance = new PrimitiveLocalStaticRepository(diccConfig.static);
-    } else if (keyLogicContext === "structure") {
-      instance = new StructureLocalStaticRepository(diccConfig.static);
-    } else {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${keyLogicContext}is not valid key logic context valid`,
-      });
-    }
-  } else if (keyInstance === "cookie") {
+  if (keyInstance === "cookie") {
     if (keyLogicContext === "primitive") {
       instance = new PrimitiveLocalCookieRepository(diccConfig.cookie);
     } else if (keyLogicContext === "structure") {

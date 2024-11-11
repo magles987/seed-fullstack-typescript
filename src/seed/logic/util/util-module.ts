@@ -35,7 +35,7 @@ export class Util_Module extends Util_Logic {
   public static getInstance(): Util_Module {
     Util_Module.Util_Module_instance =
       Util_Module.Util_Module_instance === undefined ||
-      Util_Module.Util_Module_instance === null
+        Util_Module.Util_Module_instance === null
         ? new Util_Module()
         : Util_Module.Util_Module_instance;
     return Util_Module.Util_Module_instance;
@@ -98,9 +98,8 @@ export class Util_Module extends Util_Logic {
     if (!this.isTuple(tActionConfig, 2)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${
-          tActionConfig as any as string
-        } is not tuple of actionConfig valid`,
+        msn: `${tActionConfig as any as string
+          } is not tuple of actionConfig valid`,
       });
     }
     if (!this.isObject(config)) {
@@ -139,9 +138,8 @@ export class Util_Module extends Util_Logic {
     if (!this.isTuple(tDiccActionConfig, 2)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${
-          tDiccActionConfig as any as string
-        } is not tuple of actionConfig dictionary valid`,
+        msn: `${tDiccActionConfig as any as string
+          } is not tuple of actionConfig dictionary valid`,
       });
     }
     const [baseDiccAC, newADiccAC] = tDiccActionConfig;
@@ -176,9 +174,8 @@ export class Util_Module extends Util_Logic {
     if (!this.isTuple(tArrayTupleActionConfig, 2)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${
-          tArrayTupleActionConfig as any as string
-        } is not tuple of array of tuples of action Config`,
+        msn: `${tArrayTupleActionConfig as any as string
+          } is not tuple of array of tuples of action Config`,
       });
     }
     const [aTupleBaseAC, aTupleNewAC] = tArrayTupleActionConfig;
@@ -188,9 +185,8 @@ export class Util_Module extends Util_Logic {
     ) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${
-          aTupleBaseAC as any as string
-        } is not array of tuples of action Config base valid`,
+        msn: `${aTupleBaseAC as any as string
+          } is not array of tuples of action Config base valid`,
       });
     }
     if (
@@ -199,9 +195,8 @@ export class Util_Module extends Util_Logic {
     ) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${
-          aTupleNewAC as any as string
-        } is not array of tuples of action Config new valid`,
+        msn: `${aTupleNewAC as any as string
+          } is not array of tuples of action Config new valid`,
       });
     }
     let aT_fusion = [
@@ -342,8 +337,8 @@ export class Util_Module extends Util_Logic {
   public buildKeyPathForGeneralPropuse(aKeys: string[]): string {
     const keyPath = this.buildPath(aKeys, {
       charSeparator: this.charSeparatorLogicPath,
-      isInitWithSeparator: false,
-      isEndtWithSeparator: false,
+      isJoinInitWithSeparator: false,
+      isJoinEndtWithSeparator: false,
       pathInit: "",
       pathEnd: "",
     });

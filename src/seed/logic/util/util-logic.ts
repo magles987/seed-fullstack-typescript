@@ -1,10 +1,11 @@
 import { UtilExtension } from "../../util/extension-util";
+import { getGlobalConfig } from "../config/global-config";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** @info <hr>
  *
  * *Singleton*
- * utilidades comunes para la logica de aplicacion
+ * utilidades comunes para la lógica de aplicación
  * ____
  */
 export class Util_Logic extends UtilExtension {
@@ -15,7 +16,7 @@ export class Util_Logic extends UtilExtension {
   private static Util_Logic_instance: Util_Logic;
   /** */
   constructor() {
-    super(undefined);
+    super(getGlobalConfig().globalDefaultValue);
   }
   /**
    * devuelve la instancia única de esta clase

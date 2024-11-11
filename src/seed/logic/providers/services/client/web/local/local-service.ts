@@ -47,7 +47,7 @@ export class LocalWebClientService extends WebClientService {
    * @param keyLogicContext contexto lógico (estructural o primitivo)
    * @param keySrc indentificadora del recurso asociado a modulo
    * @param keyDrive clave identificadora del drive a instanciar para este servicio
-   * @param serviceConfigBase configuracion base para el servicio   
+   * @param serviceConfigBase configuracion base para el servicio
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
@@ -79,22 +79,22 @@ export class LocalWebClientService extends WebClientService {
         ...cB,
         client: this.util.isObject(cB.client)
           ? {
-            ...cB.client,
-            web: this.util.isObject(cB.client.web)
-              ? {
-                ...cB.client.web,
-                local: this.util.isObject(cB.client.web.local)
-                  ? {
-                    ...cB.client.web.local,
-                    ...customDeepConfig, //agrega personalizacion
+              ...cB.client,
+              web: this.util.isObject(cB.client.web)
+                ? {
+                    ...cB.client.web,
+                    local: this.util.isObject(cB.client.web.local)
+                      ? {
+                          ...cB.client.web.local,
+                          ...customDeepConfig, //agrega personalizacion
+                        }
+                      : {
+                          ...df.client.web.local,
+                          ...customDeepConfig, //agrega personalizacion
+                        },
                   }
-                  : {
-                    ...df.client.web.local,
-                    ...customDeepConfig, //agrega personalizacion
-                  },
-              }
-              : df.client.web,
-          }
+                : df.client.web,
+            }
           : df.client,
       };
     }
@@ -114,7 +114,7 @@ export class LocalWebClientService extends WebClientService {
   ): Promise<IPrimitiveResponse> {
     const drive = this.buildDriver();
     const bagService = this.convertBagToBagService(iBag);
-    const driverResponse = await drive.runRequestFromDrive(bagService);
+    const driverResponse = await drive.sendRequestFromService(bagService);
     const res = this.adaptDriverResponseToPrimitiveLogicResponse(
       driverResponse,
       iBag
@@ -126,21 +126,24 @@ export class LocalWebClientService extends WebClientService {
   ): Promise<IStructureResponse> {
     const drive = this.buildDriver();
     const bagService = this.convertBagToBagService(iBag);
-    const driverResponse = await drive.runRequestFromDrive(bagService);
+    const driverResponse = await drive.sendRequestFromService(bagService);
     const res = this.adaptDriverResponseToStructureLogicResponse(
       driverResponse,
-      iBag,
+      iBag
     );
     return res;
   }
   protected override adaptDriverResponseToPrimitiveLogicResponse(
     driverResponse: ILocalResponse,
-    iBag: IPrimitiveBag<any>,
+    iBag: IPrimitiveBag<any>
   ): IPrimitiveResponse {
     const { body, httpStatus, ok, statusText, error } = driverResponse;
     const rH = this.buildPrimitiveReportHandler(iBag);
     let res = rH.mutateResponse(undefined, {
-      data: this.reBuildRxDataFromHttpResponse(body, iBag.literalCriteria.expectedDataType),
+      data: this.reBuildRxDataFromHttpResponse(
+        body,
+        iBag.literalCriteria.expectedDataType
+      ),
       status: this.convertHttpStatusCodeToLogicStatusCode(httpStatus),
       extResponse: error,
       msn: statusText,
@@ -154,7 +157,10 @@ export class LocalWebClientService extends WebClientService {
     const { body, httpStatus, ok, statusText, error } = driverResponse;
     const rH = this.buildStructureReportHandler(iBag);
     let res = rH.mutateResponse(undefined, {
-      data: this.reBuildRxDataFromHttpResponse(body, iBag.literalCriteria.expectedDataType),
+      data: this.reBuildRxDataFromHttpResponse(
+        body,
+        iBag.literalCriteria.expectedDataType
+      ),
       status: this.convertHttpStatusCodeToLogicStatusCode(httpStatus),
       extResponse: error,
       msn: statusText,

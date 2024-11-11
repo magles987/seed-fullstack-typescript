@@ -23,12 +23,17 @@ export interface IBagForService {
 }
 /**... */
 export interface IGenericService {
-  /**ejecutar la peticion en el servicio */
-  runRequestFromService(iBag: IBagModule<any>): Promise<IResponse>;
+  /**ejecutar la petición en el servicio */
+  sendRequestInService(iBag: IBagModule<any>): Promise<IResponse>;
 }
 /**... */
 export interface IGenericDriver<TIResponseForDrive> {
-  runRequestFromDrive(bagService: IBagForService): Promise<TIResponseForDrive>;
+  /**envía la petición a partir de un servicio */
+  sendRequestFromService(
+    bagService: IBagForService
+  ): Promise<TIResponseForDrive>;
+  /**enviar petición de forma básica */
+  sendRequest: Function;
 }
 /**esquema con parametros de configuracion de un servicio */
 export interface IServiceRequestConfig {
