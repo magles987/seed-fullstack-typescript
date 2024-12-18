@@ -11,7 +11,10 @@ import { PrimitiveLogicProvider } from "../providers/primitive-provider";
 import { Trf_TPrimitiveConfigForProvider } from "../providers/shared";
 import { PrimitiveLogicValidation } from "../validators/primitive-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
-import { TKeyPrimitiveValModuleContext, Trf_TPrimitiveConfigForVal } from "../validators/shared";
+import {
+  TKeyPrimitiveValModuleContext,
+  Trf_TPrimitiveConfigForVal,
+} from "../validators/shared";
 import { LogicMetadataHandler } from "./_metadata-handler";
 import { Util_Meta } from "./_util-meta";
 import {
@@ -29,10 +32,15 @@ import {
   Trf_TPrimitiveFull,
   Trf_TPrimitiveMeta,
   TPrimitiveMetaAndCtrl,
+  TKeyPrimitiveInternalACModuleContext,
 } from "./metadata-shared";
-import { Trf_TPrimitiveConfigForCtrl } from "../controllers/_shared";
+import {
+  TPrimitiveConfigForCtrl,
+  Trf_TPrimitiveConfigForCtrl,
+} from "../controllers/_shared";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-
+import { ActionModule } from "../config/module";
+import { PrimitiveLogicController } from "../controllers/_primitive-ctrl";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipado refactorizado del manejador */
 export type Trf_PrimitiveLogicMetadataHandler = PrimitiveLogicMetadataHandler<
@@ -112,19 +120,19 @@ export class PrimitiveLogicMetadataHandler<
   protected override set metadata(v: Trf_TPrimitiveFull) {
     super.metadata = v;
   }
-  public override get diccModuleIntanceContext(): IDiccPrimitiveModuleInstanceContext<
+  public override get diccModuleInstanceContext(): IDiccPrimitiveModuleInstanceContext<
     TPrimitiveMutateInstance,
     TPrimitiveValInstance,
     TRequestValInstance,
     TPrimitiveHookInstance,
     TPrimitiveProviderInstance
   > {
-    return super.diccModuleIntanceContext as any;
+    return super.diccModuleInstanceContext as any;
   }
-  protected override set diccModuleIntanceContext(
+  protected override set diccModuleInstanceContext(
     v: IDiccPrimitiveModuleInstanceContext
   ) {
-    super.diccModuleIntanceContext = v;
+    super.diccModuleInstanceContext = v;
   }
   /**
    * @param keySrc clave identificadora del recurso,
@@ -144,7 +152,7 @@ export class PrimitiveLogicMetadataHandler<
     diccModuleContextInstance?: IDiccPrimitiveModuleInstanceContext
   ) {
     super("structure", keySrc);
-    this.diccModuleIntanceContext = this.buildDiccModuleContextIntance(
+    this.diccModuleInstanceContext = this.buildDiccModuleContextIntance(
       diccModuleContextInstance
     );
     this.metadata = this.buildMetadata(baseMetadata, undefined);
@@ -281,8 +289,8 @@ export class PrimitiveLogicMetadataHandler<
       newDfData !== undefined
         ? newDfData
         : currentDfData !== undefined
-          ? currentDfData
-          : undefined;
+        ? currentDfData
+        : undefined;
     //❓❓Que hacer si el valor predefinido si es undefined❓❓
     // if (dfValue === undefined) {
     //   throw new LogicError({
@@ -298,41 +306,42 @@ export class PrimitiveLogicMetadataHandler<
     currentMetadataMutateC: Trf_TPrimitiveConfigForMutate
   ): Trf_TPrimitiveConfigForMutate {
     const { primitiveMutate: primitiveMutateInstance } =
-      this.diccModuleIntanceContext;
+      this.diccModuleInstanceContext;
     let rMetadataMutateC: Trf_TPrimitiveConfigForMutate = {};
-    //😉 trampa `rebuildCustomConfigFromModuleContext` 
+    //😉 trampa `rebuildCustomConfigFromModuleContext`
     //es protected pero se llama asi para saltarse la proteccion
-    let reBuildPrimitiveFn = primitiveMutateInstance["rebuildCustomConfigFromModuleContext"];
+    let reBuildPrimitiveFn =
+      primitiveMutateInstance["rebuildCustomConfigFromModuleContext"];
     reBuildPrimitiveFn = reBuildPrimitiveFn.bind(primitiveMutateInstance);
     const mMC = metadataMutateC as Trf_TPrimitiveConfigForMutate;
     const cMMC = (
       this.util.isObject(currentMetadataMutateC)
         ? {
-          ...(currentMetadataMutateC as Trf_TPrimitiveConfigForMutate),
-          primitiveMutate: this.util.isObject(
-            (currentMetadataMutateC as Trf_TPrimitiveConfigForMutate)
-              .primitiveMutate
-          )
-            ? {
-              ...(currentMetadataMutateC as Trf_TPrimitiveConfigForMutate)
-                .primitiveMutate,
-              diccActionsConfig: this.util.isObject(
-                (currentMetadataMutateC as Trf_TPrimitiveConfigForMutate)
-                  .primitiveMutate.diccActionsConfig
-              )
-                ? (currentMetadataMutateC as Trf_TPrimitiveConfigForMutate)
-                  .primitiveMutate.diccActionsConfig
-                : primitiveMutateInstance.dfDiccActionConfig,
-            }
-            : {
+            ...(currentMetadataMutateC as Trf_TPrimitiveConfigForMutate),
+            primitiveMutate: this.util.isObject(
+              (currentMetadataMutateC as Trf_TPrimitiveConfigForMutate)
+                .primitiveMutate
+            )
+              ? {
+                  ...(currentMetadataMutateC as Trf_TPrimitiveConfigForMutate)
+                    .primitiveMutate,
+                  diccActionsConfig: this.util.isObject(
+                    (currentMetadataMutateC as Trf_TPrimitiveConfigForMutate)
+                      .primitiveMutate.diccActionsConfig
+                  )
+                    ? (currentMetadataMutateC as Trf_TPrimitiveConfigForMutate)
+                        .primitiveMutate.diccActionsConfig
+                    : primitiveMutateInstance.dfDiccActionConfig,
+                }
+              : {
+                  diccActionsConfig: primitiveMutateInstance.dfDiccActionConfig,
+                },
+          }
+        : {
+            primitiveMutate: {
               diccActionsConfig: primitiveMutateInstance.dfDiccActionConfig,
             },
-        }
-        : {
-          primitiveMutate: {
-            diccActionsConfig: primitiveMutateInstance.dfDiccActionConfig,
-          },
-        }
+          }
     ) as Trf_TPrimitiveConfigForMutate;
     if (!this.util.isObject(mMC)) {
       rMetadataMutateC = {
@@ -349,8 +358,8 @@ export class PrimitiveLogicMetadataHandler<
         primitiveMutate: reBuildPrimitiveFn(
           cMMC.primitiveMutate,
           mMC.primitiveMutate,
-          (this.util.isObject(currentMetadataMutateC) ? "soft" : "hard")
-        )
+          this.util.isObject(currentMetadataMutateC) ? "soft" : "hard"
+        ),
       };
     }
     return rMetadataMutateC;
@@ -363,76 +372,70 @@ export class PrimitiveLogicMetadataHandler<
     const {
       primitiveVal: primitiveValInstance,
       requestVal: requestValInstance,
-    } = this.diccModuleIntanceContext;
+    } = this.diccModuleInstanceContext;
     let rMetadataValC: Trf_TPrimitiveConfigForVal = {};
-    //😉 trampa `rebuildCustomConfigFromModuleContext` 
+    //😉 trampa `rebuildCustomConfigFromModuleContext`
     //es protected pero se llama asi para saltarse la proteccion
-    let reBuildPrimitiveFn = primitiveValInstance["rebuildCustomConfigFromModuleContext"];
+    let reBuildPrimitiveFn =
+      primitiveValInstance["rebuildCustomConfigFromModuleContext"];
     reBuildPrimitiveFn = reBuildPrimitiveFn.bind(primitiveValInstance);
-    let reBuildRequestFn = requestValInstance["rebuildCustomConfigFromModuleContext"];
+    let reBuildRequestFn =
+      requestValInstance["rebuildCustomConfigFromModuleContext"];
     reBuildRequestFn = reBuildRequestFn.bind(requestValInstance);
     const mVC = metadataValC as Trf_TPrimitiveConfigForVal;
     const cMVC = (
       this.util.isObject(currentMetadataValC)
         ? {
-          ...(currentMetadataValC as Trf_TPrimitiveConfigForVal),
-          primitiveVal: this.util.isObject(
-            (currentMetadataValC as Trf_TPrimitiveConfigForVal).primitiveVal
-          )
-            ? {
-              ...(currentMetadataValC as Trf_TPrimitiveConfigForVal)
-                .primitiveVal,
-              diccActionsConfig: this.util.isObject(
-                (currentMetadataValC as Trf_TPrimitiveConfigForVal)
-                  .primitiveVal.diccActionsConfig
-              )
-                ? (currentMetadataValC as Trf_TPrimitiveConfigForVal)
-                  .primitiveVal.diccActionsConfig
-                : primitiveValInstance.dfDiccActionConfig,
-            }
-            : {
+            ...(currentMetadataValC as Trf_TPrimitiveConfigForVal),
+            primitiveVal: this.util.isObject(
+              (currentMetadataValC as Trf_TPrimitiveConfigForVal).primitiveVal
+            )
+              ? {
+                  ...(currentMetadataValC as Trf_TPrimitiveConfigForVal)
+                    .primitiveVal,
+                  diccActionsConfig: this.util.isObject(
+                    (currentMetadataValC as Trf_TPrimitiveConfigForVal)
+                      .primitiveVal.diccActionsConfig
+                  )
+                    ? (currentMetadataValC as Trf_TPrimitiveConfigForVal)
+                        .primitiveVal.diccActionsConfig
+                    : primitiveValInstance.dfDiccActionConfig,
+                }
+              : {
+                  diccActionsConfig: primitiveValInstance.dfDiccActionConfig,
+                },
+            requestVal: this.util.isObject(
+              (currentMetadataValC as Trf_TPrimitiveConfigForVal).requestVal
+            )
+              ? {
+                  ...(currentMetadataValC as Trf_TPrimitiveConfigForVal)
+                    .requestVal,
+                  diccActionsConfig: this.util.isObject(
+                    (currentMetadataValC as Trf_TPrimitiveConfigForVal)
+                      .requestVal.diccActionsConfig
+                  )
+                    ? (currentMetadataValC as Trf_TPrimitiveConfigForVal)
+                        .requestVal.diccActionsConfig
+                    : requestValInstance.dfDiccActionConfig,
+                }
+              : {
+                  diccActionsConfig: requestValInstance.dfDiccActionConfig,
+                },
+          }
+        : {
+            primitiveVal: {
               diccActionsConfig: primitiveValInstance.dfDiccActionConfig,
             },
-          requestVal: this.util.isObject(
-            (currentMetadataValC as Trf_TPrimitiveConfigForVal).requestVal
-          )
-            ? {
-              ...(currentMetadataValC as Trf_TPrimitiveConfigForVal)
-                .requestVal,
-              diccActionsConfig: this.util.isObject(
-                (currentMetadataValC as Trf_TPrimitiveConfigForVal)
-                  .requestVal.diccActionsConfig
-              )
-                ? (currentMetadataValC as Trf_TPrimitiveConfigForVal)
-                  .requestVal.diccActionsConfig
-                : requestValInstance.dfDiccActionConfig,
-            }
-            : {
+            requestVal: {
               diccActionsConfig: requestValInstance.dfDiccActionConfig,
             },
-        }
-        : {
-          primitiveVal: {
-            diccActionsConfig: primitiveValInstance.dfDiccActionConfig,
-          },
-          requestVal: {
-            diccActionsConfig: requestValInstance.dfDiccActionConfig,
-          },
-        }
+          }
     ) as Trf_TPrimitiveConfigForVal;
     if (!this.util.isObject(mVC)) {
       rMetadataValC = {
         ...cMVC,
-        primitiveVal: reBuildPrimitiveFn(
-          cMVC.primitiveVal,
-          undefined,
-          "hard"
-        ),
-        requestVal: reBuildRequestFn(
-          cMVC.requestVal,
-          undefined,
-          "hard"
-        ),
+        primitiveVal: reBuildPrimitiveFn(cMVC.primitiveVal, undefined, "hard"),
+        requestVal: reBuildRequestFn(cMVC.requestVal, undefined, "hard"),
       };
     } else {
       rMetadataValC = {
@@ -440,12 +443,12 @@ export class PrimitiveLogicMetadataHandler<
         primitiveVal: reBuildPrimitiveFn(
           cMVC.primitiveVal,
           mVC.primitiveVal,
-          (this.util.isObject(currentMetadataValC) ? "soft" : "hard")
+          this.util.isObject(currentMetadataValC) ? "soft" : "hard"
         ),
         requestVal: reBuildRequestFn(
           cMVC.requestVal,
           mVC.requestVal,
-          (this.util.isObject(currentMetadataValC) ? "soft" : "hard")
+          this.util.isObject(currentMetadataValC) ? "soft" : "hard"
         ),
       };
     }
@@ -457,41 +460,42 @@ export class PrimitiveLogicMetadataHandler<
     currentMetadataHookC: Trf_TPrimitiveConfigForHook
   ): Trf_TPrimitiveConfigForHook {
     const { primitiveHook: primitiveHookInstance } =
-      this.diccModuleIntanceContext;
+      this.diccModuleInstanceContext;
     let rMetadataHookC: Trf_TPrimitiveConfigForHook = {};
-    //😉 trampa `rebuildCustomConfigFromModuleContext` 
+    //😉 trampa `rebuildCustomConfigFromModuleContext`
     //es protected pero se llama asi para saltarse la proteccion
-    let reBuildPrimitiveFn = primitiveHookInstance["rebuildCustomConfigFromModuleContext"];
+    let reBuildPrimitiveFn =
+      primitiveHookInstance["rebuildCustomConfigFromModuleContext"];
     reBuildPrimitiveFn = reBuildPrimitiveFn.bind(primitiveHookInstance);
     const mHC = metadataHookC as Trf_TPrimitiveConfigForHook;
     const cMHC = (
       this.util.isObject(currentMetadataHookC)
         ? {
-          ...(currentMetadataHookC as Trf_TPrimitiveConfigForHook),
-          primitiveHook: this.util.isObject(
-            (currentMetadataHookC as Trf_TPrimitiveConfigForHook)
-              .primitiveHook
-          )
-            ? {
-              ...(currentMetadataHookC as Trf_TPrimitiveConfigForHook)
-                .primitiveHook,
-              diccActionsConfig: this.util.isObject(
-                (currentMetadataHookC as Trf_TPrimitiveConfigForHook)
-                  .primitiveHook.diccActionsConfig
-              )
-                ? (currentMetadataHookC as Trf_TPrimitiveConfigForHook)
-                  .primitiveHook.diccActionsConfig
-                : primitiveHookInstance.dfDiccActionConfig,
-            }
-            : {
-              diccActionsConfig: primitiveHookInstance,
-            },
-        }
+            ...(currentMetadataHookC as Trf_TPrimitiveConfigForHook),
+            primitiveHook: this.util.isObject(
+              (currentMetadataHookC as Trf_TPrimitiveConfigForHook)
+                .primitiveHook
+            )
+              ? {
+                  ...(currentMetadataHookC as Trf_TPrimitiveConfigForHook)
+                    .primitiveHook,
+                  diccActionsConfig: this.util.isObject(
+                    (currentMetadataHookC as Trf_TPrimitiveConfigForHook)
+                      .primitiveHook.diccActionsConfig
+                  )
+                    ? (currentMetadataHookC as Trf_TPrimitiveConfigForHook)
+                        .primitiveHook.diccActionsConfig
+                    : primitiveHookInstance.dfDiccActionConfig,
+                }
+              : {
+                  diccActionsConfig: primitiveHookInstance,
+                },
+          }
         : {
-          primitiveHook: {
-            diccActionsConfig: primitiveHookInstance.dfDiccActionConfig,
-          },
-        }
+            primitiveHook: {
+              diccActionsConfig: primitiveHookInstance.dfDiccActionConfig,
+            },
+          }
     ) as Trf_TPrimitiveConfigForHook;
     if (!this.util.isObject(mHC)) {
       rMetadataHookC = {
@@ -500,7 +504,7 @@ export class PrimitiveLogicMetadataHandler<
           cMHC.primitiveHook,
           undefined,
           "hard"
-        )
+        ),
       };
     } else {
       rMetadataHookC = {
@@ -508,7 +512,7 @@ export class PrimitiveLogicMetadataHandler<
         primitiveHook: reBuildPrimitiveFn(
           cMHC.primitiveHook,
           mHC.primitiveHook,
-          (this.util.isObject(currentMetadataHookC) ? "soft" : "hard")
+          this.util.isObject(currentMetadataHookC) ? "soft" : "hard"
         ),
       } as Trf_TPrimitiveConfigForHook;
     }
@@ -519,46 +523,47 @@ export class PrimitiveLogicMetadataHandler<
     currentMetadataProviderC: Trf_TPrimitiveConfigForProvider
   ): Trf_TPrimitiveConfigForProvider {
     const { primitiveProvider: primitiveProviderInstance } =
-      this.diccModuleIntanceContext;
+      this.diccModuleInstanceContext;
     let rMetadataProviderC: Trf_TPrimitiveConfigForProvider = {};
-    //😉 trampa `rebuildCustomConfigFromModuleContext` 
+    //😉 trampa `rebuildCustomConfigFromModuleContext`
     //es protected pero se llama asi para saltarse la proteccion
-    let reBuildPrimitiveFn = primitiveProviderInstance["rebuildCustomConfigFromModuleContext"];
+    let reBuildPrimitiveFn =
+      primitiveProviderInstance["rebuildCustomConfigFromModuleContext"];
     reBuildPrimitiveFn = reBuildPrimitiveFn.bind(primitiveProviderInstance);
 
     const mPC = metadataProviderC as Trf_TPrimitiveConfigForProvider;
     const cMPC = (
       this.util.isObject(currentMetadataProviderC)
         ? {
-          ...(currentMetadataProviderC as Trf_TPrimitiveConfigForProvider),
-          primitiveProvider: this.util.isObject(
-            (currentMetadataProviderC as Trf_TPrimitiveConfigForProvider)
-              .primitiveProvider
-          )
-            ? {
-              ...(
-                currentMetadataProviderC as Trf_TPrimitiveConfigForProvider
-              ).primitiveProvider,
-              diccActionsConfig: this.util.isObject(
-                (
-                  currentMetadataProviderC as Trf_TPrimitiveConfigForProvider
-                ).primitiveProvider.diccActionsConfig
-              )
-                ? (
-                  currentMetadataProviderC as Trf_TPrimitiveConfigForProvider
-                ).primitiveProvider.diccActionsConfig
-                : primitiveProviderInstance.dfDiccActionConfig,
-            }
-            : {
-              diccActionsConfig:
-                primitiveProviderInstance.dfDiccActionConfig,
-            },
-        }
+            ...(currentMetadataProviderC as Trf_TPrimitiveConfigForProvider),
+            primitiveProvider: this.util.isObject(
+              (currentMetadataProviderC as Trf_TPrimitiveConfigForProvider)
+                .primitiveProvider
+            )
+              ? {
+                  ...(
+                    currentMetadataProviderC as Trf_TPrimitiveConfigForProvider
+                  ).primitiveProvider,
+                  diccActionsConfig: this.util.isObject(
+                    (
+                      currentMetadataProviderC as Trf_TPrimitiveConfigForProvider
+                    ).primitiveProvider.diccActionsConfig
+                  )
+                    ? (
+                        currentMetadataProviderC as Trf_TPrimitiveConfigForProvider
+                      ).primitiveProvider.diccActionsConfig
+                    : primitiveProviderInstance.dfDiccActionConfig,
+                }
+              : {
+                  diccActionsConfig:
+                    primitiveProviderInstance.dfDiccActionConfig,
+                },
+          }
         : {
-          primitiveProvider: {
-            diccActionsConfig: primitiveProviderInstance.dfDiccActionConfig,
-          },
-        }
+            primitiveProvider: {
+              diccActionsConfig: primitiveProviderInstance.dfDiccActionConfig,
+            },
+          }
     ) as Trf_TPrimitiveConfigForProvider;
     let rModelConfig = {} as Trf_TPrimitiveConfigForProvider;
     if (!this.util.isObject(mPC)) {
@@ -576,7 +581,7 @@ export class PrimitiveLogicMetadataHandler<
         primitiveProvider: reBuildPrimitiveFn(
           cMPC.primitiveProvider,
           mPC.primitiveProvider,
-          (this.util.isObject(currentMetadataProviderC) ? "soft" : "hard")
+          this.util.isObject(currentMetadataProviderC) ? "soft" : "hard"
         ),
       } as Trf_TPrimitiveConfigForProvider;
     }
@@ -593,44 +598,47 @@ export class PrimitiveLogicMetadataHandler<
     const cMCC = (
       this.util.isObject(currentMetadataCtrlC)
         ? {
-          ...(currentMetadataCtrlC as Trf_TPrimitiveConfigForCtrl),
-          primitiveCtrl: this.util.isObject(
-            (currentMetadataCtrlC as Trf_TPrimitiveConfigForCtrl)
-              .primitiveCtrl
-          )
-            ? {
-              ...(currentMetadataCtrlC as Trf_TPrimitiveConfigForCtrl)
-                .primitiveCtrl,
-              diccATKeyCRUD: this.util.isObject(
-                (currentMetadataCtrlC as Trf_TPrimitiveConfigForCtrl)
-                  .primitiveCtrl.diccATKeyCRUD
-              )
-                ? (currentMetadataCtrlC as Trf_TPrimitiveConfigForCtrl)
-                  .primitiveCtrl.diccATKeyCRUD
-                : dfCC.primitiveCtrl.diccATKeyCRUD,
-            }
-            : {
-              diccATKeyCRUD: dfCC.primitiveCtrl.diccATKeyCRUD,
-            },
-        }
+            ...(currentMetadataCtrlC as Trf_TPrimitiveConfigForCtrl),
+            primitiveCtrl: this.util.isObject(
+              (currentMetadataCtrlC as Trf_TPrimitiveConfigForCtrl)
+                .primitiveCtrl
+            )
+              ? {
+                  ...(currentMetadataCtrlC as Trf_TPrimitiveConfigForCtrl)
+                    .primitiveCtrl,
+                  diccATKeyCRUD: this.util.isObject(
+                    (currentMetadataCtrlC as Trf_TPrimitiveConfigForCtrl)
+                      .primitiveCtrl.diccATKeyCRUD
+                  )
+                    ? (currentMetadataCtrlC as Trf_TPrimitiveConfigForCtrl)
+                        .primitiveCtrl.diccATKeyCRUD
+                    : dfCC.primitiveCtrl.diccATKeyCRUD,
+                }
+              : {
+                  diccATKeyCRUD: dfCC.primitiveCtrl.diccATKeyCRUD,
+                },
+          }
         : {
-          primitiveCtrl: dfCC.primitiveCtrl,
-        }
+            primitiveCtrl: dfCC.primitiveCtrl,
+          }
     ) as Trf_TPrimitiveConfigForCtrl;
-
+    const reBuildPrimitiveFn =
+      PrimitiveLogicController.rebuildCustomConfigFromModuleContext;
     if (!this.util.isObject(mCC)) {
-      rMetadataCtrlC = cMCC;
+      rMetadataCtrlC = {
+        ...cMCC,
+        primitiveCtrl: reBuildPrimitiveFn(
+          cMCC.primitiveCtrl,
+          mCC.primitiveCtrl
+        ),
+      };
     } else {
       rMetadataCtrlC = {
         ...mCC,
-        primitiveCtrl: this.util.isObject(mCC.primitiveCtrl)
-          ? {
-            ...mCC.primitiveCtrl,
-            diccATKeyCRUD: this.util.isObject(mCC.primitiveCtrl.diccATKeyCRUD)
-              ? mCC.primitiveCtrl.diccATKeyCRUD
-              : cMCC.primitiveCtrl.diccATKeyCRUD,
-          }
-          : cMCC.primitiveCtrl,
+        primitiveCtrl: reBuildPrimitiveFn(
+          cMCC.primitiveCtrl,
+          mCC.primitiveCtrl
+        ),
       };
     }
     return rMetadataCtrlC;
@@ -706,7 +714,7 @@ export class PrimitiveLogicMetadataHandler<
   }
   /**... */
   public getDiccActionConfigByModuleContext(
-    keyModule: "mutater",
+    keyModule: "mutater"
   ): TPrimitiveMutateInstance["dfDiccActionConfig"];
   public getDiccActionConfigByModuleContext(
     keyModule: "validator",
@@ -717,41 +725,66 @@ export class PrimitiveLogicMetadataHandler<
     keyModuleContext: "requestVal"
   ): TPrimitiveValInstance["dfDiccActionConfig"];
   public getDiccActionConfigByModuleContext(
-    keyModule: "hook",
+    keyModule: "hook"
   ): TPrimitiveHookInstance["dfDiccActionConfig"];
   public getDiccActionConfigByModuleContext(
-    keyModule: "provider",
+    keyModule: "provider"
   ): TPrimitiveProviderInstance["dfDiccActionConfig"];
   public getDiccActionConfigByModuleContext(
-    keyModule: TKeyActionModule,
-    keyModuleContext?: TKeyPrimitiveValModuleContext,
+    keyModule: "controller"
+  ): TPrimitiveConfigForCtrl<
+    | TPrimitiveMutateInstance["dfDiccActionConfig"]
+    | TPrimitiveValInstance["dfDiccActionConfig"]
+    | TRequestValInstance["dfDiccActionConfig"]
+    | TPrimitiveHookInstance["dfDiccActionConfig"]
+    | TPrimitiveProviderInstance["dfDiccActionConfig"],
+    TKeyDiccCtrlCRUD
+  >["primitiveCtrl"]["diccATKeyCRUD"];
+  public getDiccActionConfigByModuleContext(
+    keyModule: Exclude<TKeyModuleWithReport, "service">,
+    keyModuleContext?: TKeyPrimitiveValModuleContext
   ): unknown {
     let diccAC: unknown;
     if (keyModule === "mutater") {
-      const metadataByModuleContext = this.getExtractMetadataByModuleContext(keyModule);
-      diccAC = metadataByModuleContext.__mutateConfig.primitiveMutate.diccActionsConfig;
+      const metadataByModuleContext =
+        this.getExtractMetadataByModuleContext(keyModule);
+      diccAC =
+        metadataByModuleContext.__mutateConfig.primitiveMutate
+          .diccActionsConfig;
     } else if (keyModule === "validator") {
-      const metadataByModuleContext = this.getExtractMetadataByModuleContext(keyModule);
+      const metadataByModuleContext =
+        this.getExtractMetadataByModuleContext(keyModule);
       if (keyModuleContext === "primitiveVal") {
-        diccAC = metadataByModuleContext.__valConfig.primitiveVal.diccActionsConfig;
+        diccAC =
+          metadataByModuleContext.__valConfig.primitiveVal.diccActionsConfig;
       } else if (keyModuleContext === "requestVal") {
-        diccAC = metadataByModuleContext.__valConfig.requestVal.diccActionsConfig;
+        diccAC =
+          metadataByModuleContext.__valConfig.requestVal.diccActionsConfig;
       } else {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
-          msn: `${keyModuleContext} is not module context key valid into ${keyModule} module`
+          msn: `${keyModuleContext} is not module context key valid into ${keyModule} module`,
         });
       }
     } else if (keyModule === "hook") {
-      const metadataByModuleContext = this.getExtractMetadataByModuleContext(keyModule);
-      diccAC = metadataByModuleContext.__hookConfig.primitiveHook.diccActionsConfig;
+      const metadataByModuleContext =
+        this.getExtractMetadataByModuleContext(keyModule);
+      diccAC =
+        metadataByModuleContext.__hookConfig.primitiveHook.diccActionsConfig;
     } else if (keyModule === "provider") {
-      const metadataByModuleContext = this.getExtractMetadataByModuleContext(keyModule);
-      diccAC = metadataByModuleContext.__providerConfig.primitiveProvider.diccActionsConfig;
+      const metadataByModuleContext =
+        this.getExtractMetadataByModuleContext(keyModule);
+      diccAC =
+        metadataByModuleContext.__providerConfig.primitiveProvider
+          .diccActionsConfig;
+    } else if (keyModule === "controller") {
+      const metadataByModuleContext =
+        this.getExtractMetadataByModuleContext(keyModule);
+      diccAC = metadataByModuleContext.__ctrlConfig.primitiveCtrl.diccATKeyCRUD;
     } else {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${keyModule} is not module key valid`
+        msn: `${keyModule} is not module key valid`,
       });
     }
     return diccAC;
@@ -796,5 +829,29 @@ export class PrimitiveLogicMetadataHandler<
       }
     }
     return modelGP;
+  }
+  public override getModuleInstanceForActionContext(
+    keyModuleContext: TKeyPrimitiveInternalACModuleContext
+  ): ActionModule<any> {
+    const {
+      primitiveMutate: mPM,
+      primitiveVal: mPV,
+      requestVal: mRV,
+      primitiveHook: mPH,
+      primitiveProvider: mPP,
+    } = this.diccModuleInstanceContext;
+    let actionModule: ActionModule<any>;
+    if (keyModuleContext === "primitiveMutate") actionModule = mPM;
+    else if (keyModuleContext === "primitiveVal") actionModule = mPV;
+    else if (keyModuleContext === "requestVal") actionModule = mRV;
+    else if (keyModuleContext === "primitiveHook") actionModule = mPH;
+    else if (keyModuleContext === "primitiveProvider") actionModule = mPP;
+    else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyModuleContext} is not key action module context valid`,
+      });
+    }
+    return actionModule;
   }
 }

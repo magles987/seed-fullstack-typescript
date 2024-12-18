@@ -7,6 +7,8 @@ import { Util_Module } from "../util/util-module";
  * ____
  */
 export class Util_Criteria extends Util_Module {
+  /**... */
+  public readonly charSeparatorBagGlobalKeyAction = ".";
   /**
    * Almacena la instancia única de esta clase
    * ____

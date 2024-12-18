@@ -4,13 +4,13 @@ import {
   IPrimitiveResponse,
   IStructureResponse,
 } from "../../../../../reports/shared";
-import { IHttpResponse, IHttpWebClientServiceRequestC } from "./shared";
+import { IHttpWebClientServiceRequestC } from "./shared";
 import { TKeyLogicContext } from "../../../../../config/shared-modules";
 import { WebClientService } from "../_web-service-client";
 import {
   httpClientDriverFactoryFn,
   TKeyHttpClientDriverInstance,
-} from "./drive/http-driver-factory";
+} from "./drivers/http-driver-factory";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_HttpService = HttpWebClientService;
@@ -97,7 +97,7 @@ export class HttpWebClientService extends WebClientService {
     }
     return rConfig;
   }
-  protected override buildDriver(): IGenericDriver<IHttpResponse> {
+  protected override buildDriver(): IGenericDriver {
     const diccConfig = this.config.diccDriverConfig;
     const driver = httpClientDriverFactoryFn(
       this.keyDrive as TKeyHttpClientDriverInstance,
@@ -106,61 +106,27 @@ export class HttpWebClientService extends WebClientService {
     return driver;
   }
   public override async runRequestForPrimitive(
-    iBag: IPrimitiveBag<any>
+    literalBag: IPrimitiveBag<any>
   ): Promise<IPrimitiveResponse> {
     const drive = this.buildDriver();
-    const bagRepository = this.convertBagToBagService(iBag);
+    const bagRepository = this.convertBagToBagService(literalBag);
     const driveResponse = await drive.sendRequestFromService(bagRepository);
     const res = this.adaptDriverResponseToPrimitiveLogicResponse(
       driveResponse,
-      iBag
+      literalBag
     );
     return res;
   }
   public override async runRequestForStructure(
-    iBag: IStructureBag<any>
+    literalBag: IStructureBag<any>
   ): Promise<IStructureResponse> {
     const drive = this.buildDriver();
-    const bagRepository = this.convertBagToBagService(iBag);
+    const bagRepository = this.convertBagToBagService(literalBag);
     const driveResponse = await drive.sendRequestFromService(bagRepository);
     const res = this.adaptDriverResponseToStructureLogicResponse(
       driveResponse,
-      iBag
+      literalBag
     );
-    return res;
-  }
-  protected override adaptDriverResponseToPrimitiveLogicResponse(
-    driverResponse: IHttpResponse,
-    iBag: IPrimitiveBag<any>
-  ): IPrimitiveResponse {
-    const { body, httpStatus, ok, statusText, error } = driverResponse;
-    const rH = this.buildPrimitiveReportHandler(iBag);
-    let res = rH.mutateResponse(undefined, {
-      data: this.reBuildRxDataFromHttpResponse(
-        body,
-        iBag.literalCriteria.expectedDataType
-      ),
-      status: this.convertHttpStatusCodeToLogicStatusCode(httpStatus),
-      extResponse: error,
-      msn: statusText,
-    });
-    return res;
-  }
-  protected override adaptDriverResponseToStructureLogicResponse(
-    driverResponse: IHttpResponse,
-    iBag: IStructureBag<any>
-  ): IStructureResponse {
-    const { body, httpStatus, ok, statusText, error } = driverResponse;
-    const rH = this.buildStructureReportHandler(iBag);
-    let res = rH.mutateResponse(undefined, {
-      data: this.reBuildRxDataFromHttpResponse(
-        body,
-        iBag.literalCriteria.expectedDataType
-      ),
-      status: this.convertHttpStatusCodeToLogicStatusCode(httpStatus),
-      extResponse: error,
-      msn: statusText,
-    });
     return res;
   }
 }

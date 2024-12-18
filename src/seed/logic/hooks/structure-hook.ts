@@ -6,17 +6,12 @@ import {
   TKeyStructureHookModuleContext,
   TStructureHookModuleConfigForStructure,
 } from "./shared";
-import {
-  IStructureBagForActionModuleContext,
-  TStructureFnBagForActionModule,
-} from "../bag-module/shared-for-external-module";
 import { IStructureResponse } from "../reports/shared";
-import {
-  StructureReportHandler,
-  Trf_StructureReportHandler,
-} from "../reports/structure-report-handler";
+import { StructureReportHandler } from "../reports/structure-report-handler";
 import { TStructureMetaAndHook } from "../meta/metadata-shared";
 import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
+import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
+import { TStructureFnBagForActionModule } from "../bag-module/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del hook */
 export interface IDiccStructureHookActionConfigG {
@@ -34,11 +29,12 @@ export type Trf_StructureLogicHook = StructureLogicHook<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class StructureLogicHook<
-  TIDiccAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG
->
+    TIDiccAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG
+  >
   extends LogicHook<TIDiccAC>
   implements
-  Record<TKeysDiccStructureHookActionConfigG, TStructureFnBagForActionModule> {
+    Record<TKeysDiccStructureHookActionConfigG, TStructureFnBagForActionModule>
+{
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = LogicHook.getDefault();
@@ -89,18 +85,13 @@ export class StructureLogicHook<
     } else {
       rConfig = {
         ...nCC,
-        diccActionsConfig: this.util.isObject(
-          nCC.diccActionsConfig
-        )
+        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
           ? this.util.mergeDiccActionConfig(
-            [
-              cCC.diccActionsConfig,
-              nCC.diccActionsConfig,
-            ],
-            {
-              mode: mergeMode,
-            }
-          )
+              [cCC.diccActionsConfig, nCC.diccActionsConfig],
+              {
+                mode: mergeMode,
+              }
+            )
           : cCC.diccActionsConfig,
       };
     }
@@ -156,51 +147,24 @@ export class StructureLogicHook<
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
-  protected override adapBagForContext<TKey extends keyof TIDiccAC>(
-    bag: StructureBag<any>,
+  protected override getTupleActionConfigFromCriteriaHandler<
+    TKey extends keyof TIDiccAC
+  >(
+    criteriaHandler: Trf_StructureCriteriaHandler,
     keyAction: TKey
-  ): IStructureBagForActionModuleContext<TIDiccAC, TKey> {
-    const tGlobalAC = bag.findTupleGlobalActionConfig([
-      this.keyModule as any,
-      this.keyModuleContext,
-      keyAction as never,
-    ]);
-    const tupleAC = bag.retrieveTupleActionConfig<TIDiccAC, any>(tGlobalAC);
-    let actionConfig = this.retriveActionConfigFromTuple(tupleAC);
-    if (actionConfig === undefined) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${actionConfig} is not action configuration valid`,
-      });
-    }
-    if (actionConfig === undefined) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${actionConfig} is not action configuration valid`,
-      });
-    }
-    actionConfig = this.buildSingleActionConfig(
-      "toActionConfig" as any,
-      keyAction as any,
-      actionConfig as any,
-      { keyPath: bag.keyPath, mergeMode: "soft" }
+  ): [TKey, TIDiccAC[TKey]] {
+    const tKeyGlobalAC = [this.keyModuleContext, keyAction];
+    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
+      tKeyGlobalAC as any
     );
-    const bagFC: IStructureBagForActionModuleContext<TIDiccAC, any> = {
-      data: bag.data,
-      keyPath: bag.keyPath,
-      keyAction,
-      actionConfig,
-      responses: bag.responses,
-      criteriaHandler: bag.criteriaHandler,
-    };
-    return bagFC;
+    return [keyAction, actionConfig];
   }
   public override buildReportHandler(
     bag: Trf_StructureBag,
     keyAction: keyof TIDiccAC
   ): StructureReportHandler {
-    const { data, criteriaHandler, keyPath, firstData } = bag;
-    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyPath, keyActionRequest } = criteriaHandler;
     let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
@@ -214,7 +178,7 @@ export class StructureLogicHook<
       keyRepSrc: this.keySrc,
       status: this.globalStatus,
       tolerance: this.globalTolerance,
-      fisrtCtrlData: firstData,
+      firstCtrlData: firstData,
       data,
     });
     return rH;

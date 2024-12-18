@@ -5,14 +5,12 @@ import {
 } from "./_controller";
 import {
   TFieldConfigForCtrl,
-  TKeyFieldInternalACModuleContext,
-  TKeyModelInternalACModuleContext,
+  TFieldCtrlActionFn,
   TKeyStructureCtrlModuleContext,
   TKeyStructureDeepCtrlModuleContext,
-  TKeyStructureInternalACModuleContext,
   TModelConfigForCtrl,
+  TModelCtrlActionFn,
   TStructureCtrlModuleConfigForField,
-  TStructureCtrlModuleConfigForModel,
 } from "./_shared";
 import {
   StructureLogicMetadataHandler,
@@ -30,20 +28,17 @@ import {
   IStructureResponse,
 } from "../reports/shared";
 import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
-import { ActionModule, IBuildACOption } from "../config/module";
+import { ActionModule } from "../config/module";
 import { IStructureBuilderBaseMetadata } from "../meta/metadata-builder-shared";
 import { StructureLogicHook } from "../hooks/structure-hook";
-import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
+import {
+  StructureCriteriaHandler,
+  Trf_StructureCriteriaHandler,
+} from "../criterias/structure-criteria-handler";
 import { StructureLogicProvider } from "../providers/structure-provider";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import {
-  IStructureBagForFieldCtrlContext,
-  IStructureBagForModelCtrlContext,
-  TModelFnBagForCtrl,
-  Trf_IStructureBagForCtrlContext,
-} from "../bag-module/shared-for-external-module";
-import { TKeyStructureDeepBagModuleContext } from "../bag-module/shared";
-import {
+  TKeyStructureInternalACModuleContext,
   Trf_TStructureFieldMetaAndCtrl,
   Trf_TStructureMetaAndCtrl,
   TStructureFieldMetaAndCtrl,
@@ -52,10 +47,14 @@ import {
 import { TKeyRequestType } from "../config/shared-modules";
 import {
   ELogicOperatorForCondition,
+  TStructureBaseCriteria,
+  TStructureBaseCriteriaForCtrlField,
   TStructureBaseCriteriaForCtrlModify,
   TStructureBaseCriteriaForCtrlRead,
 } from "../criterias/shared";
 import { Model } from "../models/_model";
+import { Util_Ctrl } from "./_util-ctrl";
+import { TCapitalizeFirstLetter } from "../../util/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TKeyStructureReadRequestController =
   | TKeyReadRequestController
@@ -81,7 +80,7 @@ export abstract class StructureLogicController<
     TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
     TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
     TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
-    TKeyDiccCtrlCRUD extends
+    TKeyDiccActionRequest extends
       | TKeyStructureReadRequestController
       | TKeyStructureModifyRequestController =
       | TKeyStructureReadRequestController
@@ -91,16 +90,21 @@ export abstract class StructureLogicController<
   implements
     Record<
       TKeyStructureReadRequestController | TKeyStructureModifyRequestController,
-      TModelFnBagForCtrl<
-        IStructureBagForModelCtrlContext<
-          TModel,
-          TStructureCriteriaInstance,
-          TModelMutateInstance["dfDiccActionConfig"],
-          TModelValInstance["dfDiccActionConfig"],
-          TRequestValInstance["dfDiccActionConfig"],
-          TStructureHookInstance["dfDiccActionConfig"],
-          TStructureProviderInstance["dfDiccActionConfig"]
-        >
+      TModelCtrlActionFn<
+        TModel,
+        TModelMutateInstance["dfDiccActionConfig"],
+        TModelValInstance["dfDiccActionConfig"],
+        TRequestValInstance["dfDiccActionConfig"],
+        TStructureHookInstance["dfDiccActionConfig"],
+        TStructureProviderInstance["dfDiccActionConfig"]
+      >
+    >,
+    Record<
+      `checkField${TCapitalizeFirstLetter<keyof Model>}`,
+      TFieldCtrlActionFn<
+        TModel,
+        TFieldMutateInstance["dfDiccActionConfig"],
+        TFieldValInstance["dfDiccActionConfig"]
       >
     >
 {
@@ -108,19 +112,6 @@ export abstract class StructureLogicController<
     const superDf = LogicController.getDefault();
     return {
       ...superDf,
-      bagCtrl: {
-        data: undefined,
-        keyPath: undefined,
-        criteriaHandler: undefined,
-        diccGlobalAC: {
-          fieldMutate: {},
-          fieldVal: {},
-          modelMutate: {},
-          modelVal: {},
-          requestVal: {},
-          structureHook: {},
-        },
-      } as Trf_IStructureBagForCtrlContext,
     };
   };
   public override get metadataHandler(): StructureLogicMetadataHandler<
@@ -132,7 +123,7 @@ export abstract class StructureLogicController<
     TRequestValInstance,
     TStructureHookInstance,
     TStructureProviderInstance,
-    TKeyDiccCtrlCRUD
+    TKeyDiccActionRequest
   > {
     return super.metadataHandler as any;
   }
@@ -146,37 +137,37 @@ export abstract class StructureLogicController<
   }
   /**... */
   public get fieldMutateModuleInstance() {
-    const r = this.metadataHandler.diccModuleIntanceContext.fieldMutate;
+    const r = this.metadataHandler.diccModuleInstanceContext.fieldMutate;
     return r;
   }
   /**... */
   public get modelMutateModuleInstance() {
-    const r = this.metadataHandler.diccModuleIntanceContext.modelMutate;
+    const r = this.metadataHandler.diccModuleInstanceContext.modelMutate;
     return r;
   }
   /**... */
   public get fieldValModuleInstance() {
-    const r = this.metadataHandler.diccModuleIntanceContext.fieldVal;
+    const r = this.metadataHandler.diccModuleInstanceContext.fieldVal;
     return r;
   }
   /**... */
   public get modelValModuleInstance() {
-    const r = this.metadataHandler.diccModuleIntanceContext.modelVal;
+    const r = this.metadataHandler.diccModuleInstanceContext.modelVal;
     return r;
   }
   /**... */
   public get requestValModuleInstance() {
-    const r = this.metadataHandler.diccModuleIntanceContext.requestVal;
+    const r = this.metadataHandler.diccModuleInstanceContext.requestVal;
     return r;
   }
   /**... */
   public get structureHookModuleInstance() {
-    const r = this.metadataHandler.diccModuleIntanceContext.structureHook;
+    const r = this.metadataHandler.diccModuleInstanceContext.structureHook;
     return r;
   }
   /**... */
   public get structureProviderModuleInstance() {
-    const r = this.metadataHandler.diccModuleIntanceContext.structureProvider;
+    const r = this.metadataHandler.diccModuleInstanceContext.structureProvider;
     return r;
   }
   /**
@@ -193,7 +184,7 @@ export abstract class StructureLogicController<
       TRequestValInstance,
       TStructureHookInstance,
       TStructureProviderInstance,
-      TKeyDiccCtrlCRUD
+      TKeyDiccActionRequest
     >
   ) {
     super("structure", baseStructureMetadata);
@@ -207,6 +198,73 @@ export abstract class StructureLogicController<
   }
   protected override getDefault() {
     return StructureLogicController.getDefault();
+  }
+  public static rebuildCustomConfigFromModuleContext( //estatica obligatoria
+    keyModuleDeepContext: "fieldCtrl",
+    currentContextConfig: TFieldConfigForCtrl<any>["fieldCtrl"],
+    newContextConfig: TFieldConfigForCtrl<any>["fieldCtrl"]
+  ): TFieldConfigForCtrl<any>["fieldCtrl"];
+  public static rebuildCustomConfigFromModuleContext( //estatica obligatoria
+    keyModuleDeepContext: "modelCtrl",
+    currentContextConfig: TModelConfigForCtrl<any, any>["modelCtrl"],
+    newContextConfig: TModelConfigForCtrl<any, any>["modelCtrl"]
+  ): TModelConfigForCtrl<any, any>["modelCtrl"];
+  public static rebuildCustomConfigFromModuleContext(
+    //estatica obligatoria
+    keyModuleDeepContext: unknown,
+    currentContextConfig: unknown,
+    newContextConfig: unknown
+  ): unknown {
+    const util = Util_Ctrl.getInstance();
+    let rConfig: unknown;
+    if (keyModuleDeepContext === "fieldCtrl") {
+      const cCC = currentContextConfig as TFieldConfigForCtrl<any>["fieldCtrl"];
+      const nCC = newContextConfig as TFieldConfigForCtrl<any>["fieldCtrl"];
+      let rFieldConfig: TFieldConfigForCtrl<any>["fieldCtrl"];
+      if (!util.isObject(nCC)) {
+        rFieldConfig = cCC;
+      } else {
+        rFieldConfig = {
+          ...nCC,
+          aTKeysActionRequest: util.isArray(nCC.aTKeysActionRequest)
+            ? nCC.aTKeysActionRequest
+            : cCC.aTKeysActionRequest,
+        };
+      }
+      //reordenar tuplas de diccionario global
+      //...falta
+      rConfig = rFieldConfig;
+    } else if (keyModuleDeepContext === "modelCtrl") {
+      const cCC = currentContextConfig as TModelConfigForCtrl<
+        any,
+        any
+      >["modelCtrl"];
+      const nCC = newContextConfig as TModelConfigForCtrl<
+        any,
+        any
+      >["modelCtrl"];
+      let rModelConfig: TModelConfigForCtrl<any, any>["modelCtrl"];
+      if (!util.isObject(nCC)) {
+        rModelConfig = cCC;
+      } else {
+        rModelConfig = {
+          ...nCC,
+          diccATKeysActionRequest: util.isObject(nCC.diccATKeysActionRequest)
+            ? nCC.diccATKeysActionRequest
+            : cCC.diccATKeysActionRequest,
+        };
+      }
+      //reordenar tuplas de diccionario global
+      //...falta
+      rConfig = rModelConfig;
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.NOT_VALID,
+        msn: `${keyModuleDeepContext} is not deep module context key valid`,
+      });
+    }
+    //...aqui configuracion refinada:
+    return rConfig;
   }
   protected getMetadataWithContextModule(
     keyModuleDeepContext: "fieldCtrl",
@@ -225,7 +283,7 @@ export abstract class StructureLogicController<
     TRequestValInstance["dfDiccActionConfig"],
     TStructureHookInstance["dfDiccActionConfig"],
     TStructureProviderInstance["dfDiccActionConfig"],
-    TKeyDiccCtrlCRUD
+    TKeyDiccActionRequest
   >;
   protected getMetadataWithContextModule(
     keyModuleDeepContext: TKeyStructureDeepCtrlModuleContext,
@@ -279,7 +337,7 @@ export abstract class StructureLogicController<
       TRequestValInstance["dfDiccActionConfig"] &
       TStructureHookInstance["dfDiccActionConfig"] &
       TStructureProviderInstance["dfDiccActionConfig"],
-    TKeyDiccCtrlCRUD
+    TKeyDiccActionRequest
   >;
   protected getMetadataOnlyModuleConfig(
     keyModuleDeepContext: TKeyStructureDeepCtrlModuleContext,
@@ -305,37 +363,39 @@ export abstract class StructureLogicController<
     return config;
   }
   /**... */
-  protected getATKeysForReq(
+  protected getATKeysActionRequest(
     keyPath: string
   ): TStructureCtrlModuleConfigForField<
     TFieldMutateInstance["dfDiccActionConfig"] &
       TFieldValInstance["dfDiccActionConfig"]
-  >["aTKeysForReq"] {
+  >["aTKeysActionRequest"] {
     const config = this.getMetadataOnlyModuleConfig("fieldCtrl", keyPath);
-    let aTKeysForReq = config.fieldCtrl.aTKeysForReq;
-    aTKeysForReq = this.util.isArray(aTKeysForReq) ? aTKeysForReq : [];
-    return aTKeysForReq;
+    let { aTKeysActionRequest } = config.fieldCtrl;
+    aTKeysActionRequest = this.util.isArray(aTKeysActionRequest)
+      ? aTKeysActionRequest
+      : [];
+    return aTKeysActionRequest;
   }
-  protected getDiccATKeyCRUD(
+  protected getDiccATKeysActionRequest(
     keyPath: string
-  ): TStructureCtrlModuleConfigForModel<
+  ): TModelConfigForCtrl<
     TModelMutateInstance["dfDiccActionConfig"] &
       TModelValInstance["dfDiccActionConfig"] &
       TRequestValInstance["dfDiccActionConfig"] &
       TStructureHookInstance["dfDiccActionConfig"] &
       TStructureProviderInstance["dfDiccActionConfig"],
-    TKeyDiccCtrlCRUD
-  >["diccATKeyCRUD"] {
+    TKeyDiccActionRequest
+  >["modelCtrl"]["diccATKeysActionRequest"] {
     const config = this.getMetadataOnlyModuleConfig("modelCtrl", keyPath);
-    let diccATKeyCRUD = config.modelCtrl.diccATKeyCRUD;
-    return diccATKeyCRUD;
+    let { diccATKeysActionRequest } = config.modelCtrl;
+    return diccATKeysActionRequest;
   }
   /**... */
-  protected getATKeyCRUDByKeyActionRequest(
+  protected getATKeysActionRequestByKeyActionRequest(
     keyPath: string,
-    keyActionRequest: TKeyDiccCtrlCRUD
+    keyActionRequest: TKeyDiccActionRequest
   ) {
-    const schemaATKeyGlobal = this.getDiccATKeyCRUD(keyPath);
+    const schemaATKeyGlobal = this.getDiccATKeysActionRequest(keyPath);
     const aTKeyGlobal =
       this.util.isObject(schemaATKeyGlobal) &&
       this.util.isArray(schemaATKeyGlobal[keyActionRequest])
@@ -343,45 +403,124 @@ export abstract class StructureLogicController<
         : [];
     return aTKeyGlobal;
   }
-  public override buildCriteriaHandler(
+  protected override buildCriteriaHandler(
     requestType: "read",
-    keyActionRequest: TKeyDiccCtrlCRUD,
-    base?: TStructureBaseCriteriaForCtrlRead<TModel>,
+    base?: TStructureBaseCriteriaForCtrlRead<
+      TModel,
+      TModelMutateInstance["dfDiccActionConfig"],
+      TModelValInstance["dfDiccActionConfig"],
+      TRequestValInstance["dfDiccActionConfig"],
+      TStructureHookInstance["dfDiccActionConfig"],
+      TStructureProviderInstance["dfDiccActionConfig"]
+    >,
     customCriteriaInstance?: StructureCriteriaHandler<TModel>
-  ): StructureCriteriaHandler<TModel>;
-  public override buildCriteriaHandler(
+  ): StructureCriteriaHandler<
+    TModel,
+    TFieldMutateInstance["dfDiccActionConfig"],
+    TModelMutateInstance["dfDiccActionConfig"],
+    TFieldValInstance["dfDiccActionConfig"],
+    TModelValInstance["dfDiccActionConfig"],
+    TRequestValInstance["dfDiccActionConfig"],
+    TStructureHookInstance["dfDiccActionConfig"],
+    TStructureProviderInstance["dfDiccActionConfig"]
+  >;
+  protected override buildCriteriaHandler(
     requestType: "modify",
-    keyActionRequest: TKeyDiccCtrlCRUD,
-    base?: TStructureBaseCriteriaForCtrlModify<TModel>,
+    base?: TStructureBaseCriteriaForCtrlModify<
+      TModel,
+      TModelMutateInstance["dfDiccActionConfig"],
+      TModelValInstance["dfDiccActionConfig"],
+      TRequestValInstance["dfDiccActionConfig"],
+      TStructureHookInstance["dfDiccActionConfig"],
+      TStructureProviderInstance["dfDiccActionConfig"]
+    >,
     customCriteriaInstance?: StructureCriteriaHandler<TModel>
-  ): StructureCriteriaHandler<TModel>;
-  public override buildCriteriaHandler(
+  ): StructureCriteriaHandler<
+    TModel,
+    TFieldMutateInstance["dfDiccActionConfig"],
+    TModelMutateInstance["dfDiccActionConfig"],
+    TFieldValInstance["dfDiccActionConfig"],
+    TModelValInstance["dfDiccActionConfig"],
+    TRequestValInstance["dfDiccActionConfig"],
+    TStructureHookInstance["dfDiccActionConfig"],
+    TStructureProviderInstance["dfDiccActionConfig"]
+  >;
+  protected override buildCriteriaHandler(
     requestType: TKeyRequestType,
-    keyActionRequest: TKeyDiccCtrlCRUD,
     base?:
       | TStructureBaseCriteriaForCtrlRead<TModel>
       | TStructureBaseCriteriaForCtrlModify<TModel>,
     customCriteriaInstance?: StructureCriteriaHandler<TModel>
-  ): StructureCriteriaHandler<TModel> {
+  ): StructureCriteriaHandler<
+    TModel,
+    TFieldMutateInstance["dfDiccActionConfig"],
+    TModelMutateInstance["dfDiccActionConfig"],
+    TFieldValInstance["dfDiccActionConfig"],
+    TModelValInstance["dfDiccActionConfig"],
+    TRequestValInstance["dfDiccActionConfig"],
+    TStructureHookInstance["dfDiccActionConfig"],
+    TStructureProviderInstance["dfDiccActionConfig"]
+  > {
     //establece la instancia de la critera con opcion personalizada
-    let cH = this.util.isInstance(customCriteriaInstance)
-      ? customCriteriaInstance
-      : new StructureCriteriaHandler(this.keySrc); //❗No se puede asignar parámetros base aun❗
-    cH.metadataHandler = this.metadataHandler; //actualización inmediata
     base = this.util.isObject(base) ? base : {};
-    cH.mutateProps({
-      ...base,
-      type: requestType,
-      keyActionRequest,
-    });
-    return cH as StructureCriteriaHandler<TModel>;
+    let cH: StructureCriteriaHandler<TModel>;
+    if (!this.util.isInstance(customCriteriaInstance)) {
+      cH = new StructureCriteriaHandler(this.keySrc, this.metadataHandler, {
+        ...base,
+        type: requestType,
+        keyStructureContext: "structureModel",
+      });
+    } else {
+      customCriteriaInstance.mutateProps({
+        ...base,
+        type: requestType,
+        keyStructureContext: "structureModel",
+      });
+      cH = customCriteriaInstance;
+    }
+    return cH;
+  }
+  /**... */
+  protected buildCriteriaHandlerForField(
+    base?: TStructureBaseCriteriaForCtrlField<
+      TModel,
+      TFieldMutateInstance["dfDiccActionConfig"],
+      TFieldValInstance["dfDiccActionConfig"]
+    >,
+    customCriteriaInstance?: StructureCriteriaHandler<TModel>
+  ): StructureCriteriaHandler<
+    TModel,
+    TFieldMutateInstance["dfDiccActionConfig"],
+    any,
+    TFieldValInstance["dfDiccActionConfig"],
+    any,
+    any,
+    any,
+    any
+  > {
+    //establece la instancia de la criteria con opción personalizada
+    base = this.util.isObject(base) ? base : {};
+    let cH: StructureCriteriaHandler<TModel>;
+    if (!this.util.isInstance(customCriteriaInstance)) {
+      cH = new StructureCriteriaHandler(this.keySrc, this.metadataHandler, {
+        ...base,
+        keyStructureContext: "structureField",
+      });
+    } else {
+      customCriteriaInstance.mutateProps({
+        ...base,
+        keyStructureContext: "structureField",
+      } as any);
+      cH = customCriteriaInstance;
+    }
+    return cH;
   }
   public override buildReportHandler(
     bag: Trf_StructureBag,
     keyAction: unknown
   ): StructureReportHandler {
-    const { data, criteriaHandler, keyPath, firstData } = bag;
-    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyPath, keyActionRequest } = criteriaHandler;
     let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext as any,
@@ -395,7 +534,7 @@ export abstract class StructureLogicController<
       keyRepSrc: this.keySrc,
       status: this.globalStatus,
       tolerance: this.globalTolerance,
-      fisrtCtrlData: firstData,
+      firstCtrlData: firstData,
       data,
     });
     return rH;
@@ -414,286 +553,38 @@ export abstract class StructureLogicController<
     super.postRunAction(bag, res) as any;
     return;
   }
-  /**costruye un literal bag controller en contexto de campo */
-  public buildBagCtrl(
-    keyBagCtrlContext: "fieldCtrl",
-    baseBagCtrl: IStructureBagForFieldCtrlContext<
-      TFieldMutateInstance["dfDiccActionConfig"],
-      TFieldValInstance["dfDiccActionConfig"]
-    >
-  ): IStructureBagForFieldCtrlContext<
-    TFieldMutateInstance["dfDiccActionConfig"],
-    TFieldValInstance["dfDiccActionConfig"]
-  >;
-  /**construye un literal bag controller en contexto de modelo */
-  public buildBagCtrl(
-    keyBagCtrlContext: "modelCtrl",
-    baseBagCtrl: IStructureBagForModelCtrlContext<
-      TModel,
-      TStructureCriteriaInstance,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"]
-    > &
-      //❗Obligatorias❗
-      Pick<
-        IStructureBagForModelCtrlContext<TModel, TStructureCriteriaInstance>,
-        "data" | "criteriaHandler" | "keyPath"
-      >
-  ): IStructureBagForModelCtrlContext<
-    TModel,
-    TStructureCriteriaInstance,
-    TModelMutateInstance["dfDiccActionConfig"],
-    TModelValInstance["dfDiccActionConfig"],
-    TRequestValInstance["dfDiccActionConfig"],
-    TStructureHookInstance["dfDiccActionConfig"],
-    TStructureProviderInstance["dfDiccActionConfig"]
-  >;
-  public buildBagCtrl(
-    keyBagCtrlContext: TKeyStructureDeepCtrlModuleContext,
-    baseBagCtrl: Trf_IStructureBagForCtrlContext
-  ): Trf_IStructureBagForCtrlContext {
-    const dfBC = this.getDefault().bagCtrl;
-    const bBC = baseBagCtrl;
-    let rBagCtrl: Trf_IStructureBagForCtrlContext;
-    if (!this.util.isObject(bBC)) {
-      rBagCtrl = {
-        ...dfBC,
-        criteriaHandler: this.buildCriteriaHandler("read", "readOne" as any),
-        keyPath: this.metadataHandler.keyModelPath,
-      };
-    } else {
-      rBagCtrl = {
-        data: bBC.data,
-        keyPath:
-          keyBagCtrlContext === "modelCtrl"
-            ? this.metadataHandler.keyModelPath //❗❗El inicial de modelo❗❗
-            : bBC.keyPath, //❗❗debe ser proporcionado❗❗
-        criteriaHandler: this.util.isInstance(bBC.criteriaHandler)
-          ? bBC.criteriaHandler
-          : this.buildCriteriaHandler("read", "readOne" as any),
-        diccGlobalAC: this.util.isObject(bBC.diccGlobalAC)
-          ? {
-              ...bBC.diccGlobalAC,
-              fieldMutate: this.util.isObject(bBC.diccGlobalAC.fieldMutate)
-                ? bBC.diccGlobalAC.fieldMutate
-                : dfBC.diccGlobalAC.fieldMutate,
-              modelMutate: this.util.isObject(bBC.diccGlobalAC.modelMutate)
-                ? bBC.diccGlobalAC.modelMutate
-                : dfBC.diccGlobalAC.modelMutate,
-              fieldVal: this.util.isObject(bBC.diccGlobalAC.fieldVal)
-                ? bBC.diccGlobalAC.fieldVal
-                : dfBC.diccGlobalAC.fieldVal,
-              modelVal: this.util.isObject(bBC.diccGlobalAC.modelVal)
-                ? bBC.diccGlobalAC.modelVal
-                : dfBC.diccGlobalAC.modelVal,
-              requestVal: this.util.isObject(bBC.diccGlobalAC.requestVal)
-                ? bBC.diccGlobalAC.requestVal
-                : dfBC.diccGlobalAC.requestVal,
-              structureHook: this.util.isObject(bBC.diccGlobalAC.structureHook)
-                ? bBC.diccGlobalAC.structureHook
-                : dfBC.diccGlobalAC.structureHook,
-            }
-          : dfBC.diccGlobalAC,
-      };
-    }
-    return rBagCtrl as any;
-  }
-  protected buildBag(
-    keyBagDeepContext: TKeyStructureDeepBagModuleContext,
-    bagCtrl: Trf_IStructureBagForCtrlContext,
-    aTupleGlobalActionConfig: [string, [any, any]]
-  ): StructureBag<
-    TModel,
-    TStructureCriteriaInstance,
-    TFieldMutateInstance["dfDiccActionConfig"],
-    TModelMutateInstance["dfDiccActionConfig"],
-    TFieldValInstance["dfDiccActionConfig"],
-    TModelValInstance["dfDiccActionConfig"],
-    TRequestValInstance["dfDiccActionConfig"],
-    TStructureHookInstance["dfDiccActionConfig"],
-    TStructureProviderInstance["dfDiccActionConfig"]
-  > {
-    if (!this.util.isObject(bagCtrl)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagCtrl} is not bag controller valid`,
-      });
-    }
-    if (!this.util.isArrayTuple(aTupleGlobalActionConfig, [1, 2], true)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${aTupleGlobalActionConfig} is not array of tuple of action config valid`,
-      });
-    }
-    const { data, keyPath, criteriaHandler } = bagCtrl;
-    const bag = new StructureBag(this.keySrc, keyBagDeepContext, {
-      criteriaHandler,
+  //████ runs commons ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+  protected async runCommonFieldRequest(
+    data: any,
+    criteriaHandler: Trf_StructureCriteriaHandler
+  ): Promise<IStructureResponse> {
+    let bag = new StructureBag(this.keySrc, "fieldBag", {
       data,
-      keyPath,
-      keySrc: this.keySrc,
-      aTupleGlobalActionConfig: aTupleGlobalActionConfig as any,
+      criteriaHandler: criteriaHandler as any,
     });
-    return bag as any;
+    const res = await this.runRequest("fieldCtrl", bag as any);
+    return res;
   }
-  protected override getActionConfigFromBagCtrl(
-    bagCtrl: IStructureBagForModelCtrlContext<any>,
-    keyModuleContext: keyof IStructureBagForModelCtrlContext<any>["diccGlobalAC"],
-    keyAction: string
-  ): any {
-    let aC = undefined;
-    if (!this.util.isLiteralObject(bagCtrl)) return aC;
-    if (!this.util.isLiteralObject(bagCtrl.diccGlobalAC)) return aC;
-    if (!this.util.isLiteralObject(bagCtrl.diccGlobalAC[keyModuleContext]))
-      return aC;
-    aC = bagCtrl.diccGlobalAC[keyModuleContext][keyAction];
-    return aC;
-  }
-  protected override getDefaultBuilderACOption(): IBuildACOption {
-    return {
-      keyPath: this.metadataHandler.keyModelPath,
-      mergeMode: "soft",
-    };
-  }
-  protected buildATupleForRequestCtrlFromBagCtrl<
-    TIDiccGlobalAC extends TFieldMutateInstance["dfDiccActionConfig"] &
-      TFieldValInstance["dfDiccActionConfig"],
-    TKeyAction extends keyof TIDiccGlobalAC = keyof TIDiccGlobalAC
-  >(
-    keyBagCtrlContext: "fieldCtrl", //❗❗solo para tipar retorno❗❗
-    bagCtrl: IStructureBagForFieldCtrlContext<
-      TFieldMutateInstance["dfDiccActionConfig"],
-      TFieldValInstance["dfDiccActionConfig"]
-    >,
-    aTupleKeyModuleCAndAction: Array<
-      [TKeyFieldInternalACModuleContext, TKeyAction]
-    >
-  ): Array<[string, [TKeyAction, TIDiccGlobalAC[TKeyAction]]]>;
-  protected buildATupleForRequestCtrlFromBagCtrl<
-    TIDiccGlobalAC = TModelMutateInstance["dfDiccActionConfig"] &
-      TModelValInstance["dfDiccActionConfig"] &
-      TRequestValInstance["dfDiccActionConfig"] &
-      TStructureHookInstance["dfDiccActionConfig"] &
-      TStructureProviderInstance["dfDiccActionConfig"],
-    TKeyAction extends keyof TIDiccGlobalAC = keyof TIDiccGlobalAC
-  >(
-    keyBagCtrlContext: "modelCtrl", //❗❗solo para tipar retorno❗❗
-    bagCtrl: IStructureBagForModelCtrlContext<
+  protected async runCommonModelRequest(
+    data: TModel,
+    criteriaHandler: Trf_StructureCriteriaHandler
+  ): Promise<IStructureResponse> {
+    let bag = new StructureBag<
       TModel,
       TStructureCriteriaInstance,
+      any,
       TModelMutateInstance["dfDiccActionConfig"],
+      any,
       TModelValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TStructureHookInstance["dfDiccActionConfig"],
       TStructureProviderInstance["dfDiccActionConfig"]
-    >,
-    aTupleKeyModuleCAndAction: Array<
-      [TKeyModelInternalACModuleContext, TKeyAction]
-    >
-  ): Array<[string, [TKeyAction, TIDiccGlobalAC[TKeyAction]]]>;
-  protected buildATupleForRequestCtrlFromBagCtrl<
-    TIDiccAC = TFieldMutateInstance["dfDiccActionConfig"] &
-      TFieldValInstance["dfDiccActionConfig"] &
-      TModelMutateInstance["dfDiccActionConfig"] &
-      TModelValInstance["dfDiccActionConfig"] &
-      TRequestValInstance["dfDiccActionConfig"] &
-      TStructureHookInstance["dfDiccActionConfig"] &
-      TStructureProviderInstance["dfDiccActionConfig"],
-    TKeyAction extends keyof TIDiccAC = keyof TIDiccAC
-  >(
-    keyBagCtrlContext: TKeyStructureDeepCtrlModuleContext, //❗❗solo para tipar retorno❗❗
-    bagCtrl: Trf_IStructureBagForCtrlContext,
-    aTupleKeyModuleCAndAction: Array<
-      [TKeyStructureInternalACModuleContext, TKeyAction]
-    >
-  ): Array<[string, [TKeyAction, TIDiccAC[TKeyAction]]]> {
-    if (!this.util.isArrayTuple(aTupleKeyModuleCAndAction, 2, true)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${aTupleKeyModuleCAndAction} is not array of tuple of module key and action key valid`,
-      });
-    }
-    let bACOp = {
-      ...this.getDefaultBuilderACOption(),
-      keyPath: bagCtrl.keyPath,
-    } as IBuildACOption;
-    let aTGlobalAC: any[] = [];
-    for (const itemAny of aTupleKeyModuleCAndAction) {
-      const item = itemAny as [
-        TKeyStructureInternalACModuleContext,
-        TKeyAction
-      ];
-      const keyModuleContext = item[0];
-      const keyAction = item[1];
-      let actionModule: ActionModule<any>;
-      if (keyModuleContext === "fieldMutate")
-        actionModule = this.fieldMutateModuleInstance;
-      else if (keyModuleContext === "modelMutate")
-        actionModule = this.modelMutateModuleInstance;
-      else if (keyModuleContext === "fieldVal")
-        actionModule = this.fieldValModuleInstance;
-      else if (keyModuleContext === "modelVal")
-        actionModule = this.modelValModuleInstance;
-      else if (keyModuleContext === "requestVal")
-        actionModule = this.requestValModuleInstance;
-      else if (keyModuleContext === "structureHook")
-        actionModule = this.structureHookModuleInstance;
-      else if (keyModuleContext === "structureProvider")
-        actionModule = this.structureProviderModuleInstance as any;
-      else {
-        throw new LogicError({
-          code: ELogicCodeError.MODULE_ERROR,
-          msn: `${keyModuleContext} is not key module context valid`,
-        });
-      }
-      const tupleGAC = this.buildTupleACFromBagCtrl(
-        bagCtrl,
-        actionModule,
-        keyModuleContext,
-        keyAction,
-        bACOp
-      ) as [string, [any, any]];
-      aTGlobalAC.push(tupleGAC);
-    }
-    return aTGlobalAC;
-  }
-  /**obtiene la instancia de modulo de acuerdo a la clave identificadora
-   *
-   * @param keyModuleContext clave identificadora del contexto del submodulo
-   * con la accion a ejecutar
-   *
-   * @returns la instancia seleccionada
-   */
-  private getModuleInstanceForActionContext(
-    keyModuleContext: TKeyStructureInternalACModuleContext
-  ): ActionModule<any> {
-    const {
-      fieldMutate: mFM,
-      modelMutate: mMM,
-      fieldVal: mFV,
-      modelVal: mMV,
-      requestVal: mRV,
-      structureHook: mSH,
-      structureProvider: mSP,
-    } = this.metadataHandler.diccModuleIntanceContext;
-    let mFX: ActionModule<any>;
-    if (keyModuleContext === "fieldMutate") mFX = mFM;
-    else if (keyModuleContext === "fieldVal") mFX = mFV;
-    else if (keyModuleContext === "modelMutate") mFX = mMM;
-    else if (keyModuleContext === "modelVal") mFX = mMV;
-    else if (keyModuleContext === "requestVal") mFX = mRV;
-    else if (keyModuleContext === "structureHook") mFX = mSH;
-    else if (keyModuleContext === "structureProvider")
-      mFX = mSP as any; //provider es un modulo de accion especial
-    else {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${keyModuleContext} is not key action module context valid`,
-      });
-    }
-    return mFX;
+    >(this.keySrc, "modelBag", {
+      data,
+      criteriaHandler: criteriaHandler as any,
+    });
+    const res = await this.runRequest("modelCtrl", bag);
+    return res;
   }
   /**
    * ejecuta las acciones configuradas en el bag completo
@@ -727,23 +618,26 @@ export abstract class StructureLogicController<
         msn: `${keyBagCtrlContext} is not key bag controller context valid`,
       });
     }
-    const { data: dataBag, aTupleGlobalActionConfig } = bag;
+    const { data, criteriaHandler: cH } = bag;
+    const { aTKeysGlobalActionConfig, diccGlobalAC } = cH;
     const rH = this.buildReportHandler(bag, keyCtrlAction);
+    let res = rH.mutateResponse(undefined, { data });
     this.preRunAction(bag, keyCtrlAction);
-    let res = rH.mutateResponse(undefined, { data: dataBag });
-    if (aTupleGlobalActionConfig.length === 0) {
+    //verificar si hay acciones para ejecutar
+    if (aTKeysGlobalActionConfig.length === 0) {
       res = rH.mutateResponse(res, {
         status: ELogicResStatusCode.WARNING,
-        msn: `${aTupleGlobalActionConfig} is array of global action config empty`,
+        msn: `${aTKeysGlobalActionConfig} is array of global action config empty`,
       });
       this.postRunAction(bag, res);
       return res;
     }
-    for (const tGAC of aTupleGlobalActionConfig) {
-      const { keyModuleContext, keyAction } =
-        bag.getDiccKeysGlobalFromTupleGlobal(tGAC);
-      const mFX = this.getModuleInstanceForActionContext(keyModuleContext);
-      if (this.isAllowRunAction(tGAC)) {
+    for (const tKeyGAC of aTKeysGlobalActionConfig) {
+      const [keyModuleContext, keyAction] = tKeyGAC;
+      const mFX = this.metadataHandler.getModuleInstanceForActionContext(
+        keyModuleContext as TKeyStructureInternalACModuleContext
+      );
+      if (this.util.isAllowRunAction(tKeyGAC, diccGlobalAC as object)) {
         const resForAction = await this.runRequestForAction(
           mFX,
           bag,
@@ -769,62 +663,55 @@ export abstract class StructureLogicController<
     )) as IStructureResponse;
     return res;
   }
-  //████ Acciones de peticion ████████████████████████████████████████████████████████████
-  public async runGenericFieldRequest(
-    bagCtrl: IStructureBagForFieldCtrlContext<
+  //████ Field Actions ████████████████████████████████████████████████████████████
+  public async checkField_id(
+    data: any,
+    baseCriteria: TStructureBaseCriteriaForCtrlField<
+      TModel,
       TFieldMutateInstance["dfDiccActionConfig"],
       TFieldValInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    bagCtrl = this.buildBagCtrl("fieldCtrl", bagCtrl); //reconstruccion OBLIGATORIA
-    const aTKeyGlobal = this.getATKeysForReq(bagCtrl.keyPath);
-    const aTGlobalAC = this.buildATupleForRequestCtrlFromBagCtrl(
-      "fieldCtrl",
-      bagCtrl,
-      aTKeyGlobal
-    );
-    let bag = this.buildBag("fieldBag", bagCtrl as any, aTGlobalAC as any);
-    const res = await this.runRequest("fieldCtrl", bag);
+    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
+    //criterios obligatorios para esta acción de petición
+    const cH = this.buildCriteriaHandlerForField({
+      ...(baseCriteria as any),
+      type: "read",
+      keyActionRequest: "checkField_id" as `checkField${TCapitalizeFirstLetter<
+        keyof Model
+      >}`,
+      expectedDataType: "any",
+    });
+    const res = await this.runCommonFieldRequest(data, cH);
     return res;
   }
-  public async runGenericModelRequest(
-    keyActionRequest: TKeyDiccCtrlCRUD,
-    bagCtrl: IStructureBagForModelCtrlContext<
+  public async checkField_pathDoc(
+    data: any,
+    baseCriteria: TStructureBaseCriteriaForCtrlField<
       TModel,
-      TStructureCriteriaInstance,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"]
+      TFieldMutateInstance["dfDiccActionConfig"],
+      TFieldValInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    if (!this.util.isString(keyActionRequest)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${keyActionRequest} is not request action key valid`,
-      });
-    }
-    bagCtrl = this.buildBagCtrl("modelCtrl", bagCtrl); //reconstrucción OBLIGATORIA
-    bagCtrl.criteriaHandler.keyActionRequest = keyActionRequest;
-    const aTKeyGlobal = this.getATKeyCRUDByKeyActionRequest(
-      bagCtrl.keyPath,
-      keyActionRequest
-    );
-    const aTGlobalAC = this.buildATupleForRequestCtrlFromBagCtrl(
-      "modelCtrl",
-      bagCtrl,
-      aTKeyGlobal
-    );
-    let bag = this.buildBag("modelBag", bagCtrl, aTGlobalAC as any);
-    const res = await this.runRequest("modelCtrl", bag);
+    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
+    //criterios obligatorios para esta acción de petición
+    const cH = this.buildCriteriaHandlerForField({
+      ...(baseCriteria as any),
+      type: "read",
+      keyActionRequest:
+        "checkField_pathDoc" as `checkField${TCapitalizeFirstLetter<
+          keyof Model
+        >}`,
+      expectedDataType: "any",
+    });
+    const res = await this.runCommonFieldRequest(data, cH);
     return res;
   }
+  //████ Acciones de peticion ████████████████████████████████████████████████████████████
   /**... */
   public async exist(
-    bagCtrl: IStructureBagForModelCtrlContext<
+    baseCriteria: TStructureBaseCriteriaForCtrlRead<
       TModel,
-      TStructureCriteriaInstance,
       TModelMutateInstance["dfDiccActionConfig"],
       TModelValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
@@ -832,22 +719,20 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    const keyActionRequest: TKeyStructureReadRequestController = "exist";
-    bagCtrl.criteriaHandler.mutateProps({
+    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
+    //criterios obligatorios para esta acción de petición
+    const cH = this.buildCriteriaHandler("read", {
+      ...(baseCriteria as any),
       type: "read",
-      keyActionRequest,
+      keyActionRequest: "exist" as TKeyStructureReadRequestController,
       expectedDataType: "boolean",
     });
-    const res = await this.runGenericModelRequest(
-      keyActionRequest as any,
-      bagCtrl
-    );
+    const res = await this.runCommonModelRequest(this.util.dfValue, cH);
     return res;
   }
   public async count(
-    bagCtrl: IStructureBagForModelCtrlContext<
+    baseCriteria: TStructureBaseCriteriaForCtrlRead<
       TModel,
-      TStructureCriteriaInstance,
       TModelMutateInstance["dfDiccActionConfig"],
       TModelValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
@@ -855,23 +740,20 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    const keyActionRequest: TKeyStructureReadRequestController = "count";
-    bagCtrl.criteriaHandler.mutateProps({
+    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
+    //criterios obligatorios para esta acción de petición
+    const cH = this.buildCriteriaHandler("read", {
+      ...(baseCriteria as any),
       type: "read",
-      keyActionRequest,
+      keyActionRequest: "count" as TKeyStructureReadRequestController,
       expectedDataType: "number",
     });
-    const res = await this.runGenericModelRequest(
-      keyActionRequest as any,
-      bagCtrl
-    );
+    const res = await this.runCommonModelRequest(this.util.dfValue, cH);
     return res;
   }
-  /** sdfsdfsd*/ //⚠Acción conceptual funcional⚠
   public async inform(
-    bagCtrl: IStructureBagForModelCtrlContext<
+    baseCriteria: TStructureBaseCriteriaForCtrlRead<
       TModel,
-      TStructureCriteriaInstance,
       TModelMutateInstance["dfDiccActionConfig"],
       TModelValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
@@ -879,22 +761,20 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    const keyActionRequest: TKeyStructureReadRequestController = "inform";
-    bagCtrl.criteriaHandler.mutateProps({
+    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
+    //criterios obligatorios para esta acción de petición
+    const cH = this.buildCriteriaHandler("read", {
+      ...(baseCriteria as any),
       type: "read",
-      keyActionRequest,
+      keyActionRequest: "inform" as TKeyStructureReadRequestController,
       expectedDataType: "string",
     });
-    const res = await this.runGenericModelRequest(
-      keyActionRequest as any,
-      bagCtrl
-    );
+    const res = await this.runCommonModelRequest(this.util.dfValue, cH);
     return res;
   }
   public async readAll(
-    bagCtrl: IStructureBagForModelCtrlContext<
+    baseCriteria: TStructureBaseCriteriaForCtrlRead<
       TModel,
-      TStructureCriteriaInstance,
       TModelMutateInstance["dfDiccActionConfig"],
       TModelValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
@@ -902,24 +782,21 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    const keyActionRequest: TKeyStructureReadRequestController = "readAll";
+    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
     //criterios obligatorios para esta acción de petición
-    bagCtrl.criteriaHandler.mutateProps({
+    const cH = this.buildCriteriaHandler("read", {
+      ...(baseCriteria as any),
       type: "read",
-      keyActionRequest,
-      query: [], //se leen todos (no hay condición de filtrador)
+      keyActionRequest: "readAll" as TKeyStructureReadRequestController,
       expectedDataType: "array",
+      query: [], //❗se leen todos (no hay condición de filtrador)❗
     });
-    const res = await this.runGenericModelRequest(
-      keyActionRequest as any,
-      bagCtrl
-    );
+    const res = await this.runCommonModelRequest(this.util.dfValue, cH);
     return res;
   }
   public async readMany(
-    bagCtrl: IStructureBagForModelCtrlContext<
+    baseCriteria: TStructureBaseCriteriaForCtrlRead<
       TModel,
-      TStructureCriteriaInstance,
       TModelMutateInstance["dfDiccActionConfig"],
       TModelValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
@@ -927,23 +804,20 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    const keyActionRequest: TKeyStructureReadRequestController = "readMany";
-    //criterios obligatorios para esta accion de peticion
-    bagCtrl.criteriaHandler.mutateProps({
+    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
+    //criterios obligatorios para esta acción de petición
+    const cH = this.buildCriteriaHandler("read", {
+      ...(baseCriteria as any),
       type: "read",
-      keyActionRequest,
+      keyActionRequest: "readMany" as TKeyStructureReadRequestController,
       expectedDataType: "array",
     });
-    const res = await this.runGenericModelRequest(
-      keyActionRequest as any,
-      bagCtrl
-    );
+    const res = await this.runCommonModelRequest(this.util.dfValue, cH);
     return res;
   }
   public async readOne(
-    bagCtrl: IStructureBagForModelCtrlContext<
+    baseCriteria: TStructureBaseCriteriaForCtrlRead<
       TModel,
-      TStructureCriteriaInstance,
       TModelMutateInstance["dfDiccActionConfig"],
       TModelValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
@@ -951,25 +825,23 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    const keyActionRequest: TKeyStructureReadRequestController = "readMany";
-    //criterios obligatorios para esta accion de peticion
-    bagCtrl.criteriaHandler.mutateProps({
+    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
+    //criterios obligatorios para esta acción de petición
+    const cH = this.buildCriteriaHandler("read", {
+      ...(baseCriteria as any),
       type: "read",
-      keyActionRequest,
-      expectedDataType: "object", //se espera solo un literal (modelo)
+      keyActionRequest: "readOne" as TKeyStructureReadRequestController,
+      expectedDataType: "object",
       limit: 1,
       sort: [],
     });
-    const res = await this.runGenericModelRequest(
-      keyActionRequest as any,
-      bagCtrl
-    );
+    const res = await this.runCommonModelRequest(this.util.dfValue, cH);
     return res;
   }
   public async readById(
-    bagCtrl: IStructureBagForModelCtrlContext<
+    _id: any,
+    baseCriteria: TStructureBaseCriteriaForCtrlRead<
       TModel,
-      TStructureCriteriaInstance,
       TModelMutateInstance["dfDiccActionConfig"],
       TModelValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
@@ -977,28 +849,25 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    const keyActionRequest: TKeyStructureReadRequestController = "readMany";
-    //criterios obligatorios para esta accion de peticion
+    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
+    //criterios obligatorios para esta acción de petición
     const key_id = "_id" as keyof Model;
-    const find_id = bagCtrl.data[key_id];
-    bagCtrl.criteriaHandler.mutateProps({
+    const cH = this.buildCriteriaHandler("read", {
+      ...(baseCriteria as any),
       type: "read",
-      keyActionRequest,
-      expectedDataType: "object", //se espera solo un literal (modelo)
+      keyActionRequest: "readById" as TKeyStructureReadRequestController,
+      expectedDataType: "boolean",
       limit: 1,
       sort: [],
-      query: [{ op: ELogicOperatorForCondition.eq, vCond: find_id }],
+      query: [{ op: ELogicOperatorForCondition.eq, vCond: _id }], //⚠Sobreescribe la query⚠
     });
-    const res = await this.runGenericModelRequest(
-      keyActionRequest as any,
-      bagCtrl
-    );
+    const res = await this.runCommonModelRequest(undefined, cH);
     return res;
   }
   public async create(
-    bagCtrl: IStructureBagForModelCtrlContext<
+    data: TModel,
+    baseCriteria: TStructureBaseCriteriaForCtrlModify<
       TModel,
-      TStructureCriteriaInstance,
       TModelMutateInstance["dfDiccActionConfig"],
       TModelValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
@@ -1006,24 +875,22 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    const keyActionRequest: TKeyStructureModifyRequestController = "create";
-    //criterios obligatorios para esta accion de peticion
-    bagCtrl.criteriaHandler.mutateProps({
+    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
+    //criterios obligatorios para esta acción de petición
+    const cH = this.buildCriteriaHandler("modify", {
+      ...(baseCriteria as any),
       type: "modify",
       modifyType: "create",
-      keyActionRequest,
+      keyActionRequest: "create" as TKeyStructureModifyRequestController,
       expectedDataType: "object",
     });
-    const res = await this.runGenericModelRequest(
-      keyActionRequest as any,
-      bagCtrl
-    );
+    const res = await this.runCommonModelRequest(data, cH);
     return res;
   }
   public async update(
-    bagCtrl: IStructureBagForModelCtrlContext<
+    data: TModel,
+    baseCriteria: TStructureBaseCriteriaForCtrlModify<
       TModel,
-      TStructureCriteriaInstance,
       TModelMutateInstance["dfDiccActionConfig"],
       TModelValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
@@ -1031,24 +898,22 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    const keyActionRequest: TKeyStructureModifyRequestController = "update";
-    //criterios obligatorios para esta accion de peticion
-    bagCtrl.criteriaHandler.mutateProps({
+    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
+    //criterios obligatorios para esta acción de petición
+    const cH = this.buildCriteriaHandler("modify", {
+      ...(baseCriteria as any),
       type: "modify",
       modifyType: "update",
-      keyActionRequest,
+      keyActionRequest: "update" as TKeyStructureModifyRequestController,
       expectedDataType: "object",
     });
-    const res = await this.runGenericModelRequest(
-      keyActionRequest as any,
-      bagCtrl
-    );
+    const res = await this.runCommonModelRequest(data, cH);
     return res;
   }
   public async delete(
-    bagCtrl: IStructureBagForModelCtrlContext<
+    data: TModel,
+    baseCriteria: TStructureBaseCriteriaForCtrlModify<
       TModel,
-      TStructureCriteriaInstance,
       TModelMutateInstance["dfDiccActionConfig"],
       TModelValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
@@ -1056,18 +921,16 @@ export abstract class StructureLogicController<
       TStructureProviderInstance["dfDiccActionConfig"]
     >
   ): Promise<IStructureResponse> {
-    const keyActionRequest: TKeyStructureModifyRequestController = "delete";
-    //criterios obligatorios para esta accion de peticion
-    bagCtrl.criteriaHandler.mutateProps({
+    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
+    //criterios obligatorios para esta acción de petición
+    const cH = this.buildCriteriaHandler("modify", {
+      ...(baseCriteria as any),
       type: "modify",
       modifyType: "delete",
-      keyActionRequest,
+      keyActionRequest: "delete" as TKeyStructureModifyRequestController,
       expectedDataType: "object",
     });
-    const res = await this.runGenericModelRequest(
-      keyActionRequest as any,
-      bagCtrl
-    );
+    const res = await this.runCommonModelRequest(data, cH);
     return res;
   }
   // public async createMany(

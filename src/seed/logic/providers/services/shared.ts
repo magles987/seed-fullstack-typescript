@@ -5,7 +5,7 @@ import {
   IStructureReadCriteria,
   IStructureModifyCriteria,
 } from "../../criterias/shared";
-import { IResponse } from "../../reports/shared";
+import { IDriverResponse, IResponse } from "../../reports/shared";
 import { IClientServiceRequestC } from "./client/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras para el contexto de ejecucion para el modulo en primitive*/
@@ -27,11 +27,9 @@ export interface IGenericService {
   sendRequestInService(iBag: IBagModule<any>): Promise<IResponse>;
 }
 /**... */
-export interface IGenericDriver<TIResponseForDrive> {
+export interface IGenericDriver {
   /**envía la petición a partir de un servicio */
-  sendRequestFromService(
-    bagService: IBagForService
-  ): Promise<TIResponseForDrive>;
+  sendRequestFromService(bagService: IBagForService): Promise<IDriverResponse>;
   /**enviar petición de forma básica */
   sendRequest: Function;
 }

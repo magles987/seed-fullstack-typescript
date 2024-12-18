@@ -7,8 +7,8 @@ import {
   TKeyLogicContext,
   TKeyHandlerModule,
 } from "./shared-modules";
-import { TFnBagForActionModule } from "../bag-module/shared-for-external-module";
 import { getGlobalConfig } from "./global-config";
+import { TFnBagForActionModule } from "../bag-module/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**interfaz especial para las opciones de
  * contruccion de una accion de configuracion */
@@ -40,7 +40,7 @@ export interface IBuildACOption {
 export abstract class Module {
   /**configuración global */
   protected readonly _globalConfig_ = getGlobalConfig();
-  /** configuracion de valores predefinidos para el modulo*/
+  /** configuración de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     //const superDf = Module.getDefault(); //no tiene padre
     return {};
@@ -66,8 +66,7 @@ export abstract class Module {
  * clase estructural para un modulo de tipo lógico
  */
 export abstract class LogicModule extends Module {
-  /** configuracion de valores predefinidos para el modulo*/
-  public static readonly getDefault = () => {
+  public static override readonly getDefault = () => {
     const superDf = Module.getDefault();
     return {
       ...superDf,
@@ -105,8 +104,7 @@ export abstract class LogicModule extends Module {
  *
  */
 export abstract class HandlerModule extends LogicModule {
-  /** configuracion de valores predefinidos para el modulo*/
-  public static readonly getDefault = () => {
+  public static override readonly getDefault = () => {
     const superDf = LogicModule.getDefault();
     return {
       ...superDf,
@@ -133,8 +131,7 @@ export abstract class HandlerModule extends LogicModule {
  *
  */
 export abstract class LogicModuleWithReport extends LogicModule {
-  /** configuracion de valores predefinidos para el modulo*/
-  public static readonly getDefault = () => {
+  public static override readonly getDefault = () => {
     return {
       /**tolerancia hacia la respuesta del modulo */
       globalTolerance: ELogicResStatusCode.ERROR,
@@ -201,8 +198,7 @@ export abstract class LogicModuleWithReport extends LogicModule {
  * se base acciones controladas por middlewares
  */
 export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
-  /** configuracion de valores predefinidos para el modulo*/
-  public static readonly getDefault = () => {
+  public static override readonly getDefault = () => {
     const superDf = LogicModuleWithReport.getDefault();
     return {
       ...superDf,
@@ -216,7 +212,7 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
   };
   /**diccionario con todas los metodos (funciones)
    * ejecutables por medio del middleware*/
-  private _diccActionFn: Record<keyof TIDiccAC, TFnBagForActionModule<any>>;
+  private _diccActionFn: Record<keyof TIDiccAC, TFnBagForActionModule>;
   /**predefinido las opciones de contruccion de acciones de configuracion*/
   private _dfBuilderACOption: IBuildACOption = {
     mergeMode: "soft",
@@ -431,7 +427,7 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
    */
   public getActionFnByKey<TKeys = keyof TIDiccAC>(
     keyAction: TKeys
-  ): TFnBagForActionModule<any>;
+  ): TFnBagForActionModule;
   /**obtiene un array de funciones de accion de acuerdo a sus claves identificadoras
    * preparadas para ser inyectadas en el middleware
    *
@@ -441,13 +437,11 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
    */
   public getActionFnByKey<TKeys = keyof TIDiccAC>(
     keysAction: TKeys[]
-  ): Array<TFnBagForActionModule<any>>;
+  ): Array<TFnBagForActionModule>;
   /**... */
   public getActionFnByKey(keyOrKeys: unknown): unknown {
     const util = this.util as Util_Module;
-    let fFnOrAFFn:
-      | TFnBagForActionModule<any>
-      | Array<TFnBagForActionModule<any>>;
+    let fFnOrAFFn: TFnBagForActionModule | Array<TFnBagForActionModule>;
     const diccACFn = this.getDiccActionFn();
     if (!Array.isArray(keyOrKeys)) {
       fFnOrAFFn = diccACFn[keyOrKeys as keyof TIDiccAC];
@@ -469,7 +463,7 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
    */
   public getTupleActionFnByKey<TKeys = keyof TIDiccAC>(
     key: TKeys
-  ): [TKeys, TFnBagForActionModule<any>];
+  ): [TKeys, TFnBagForActionModule];
   /**obtiene un array de tuplas de tipo Entry (`[keyAction, actionFn]`)
    * de funcion de accion de acuerdo a sus claves identificadoras
    * preparadas para ser inyectada en el middleware
@@ -481,12 +475,12 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
    */
   public getTupleActionFnByKey<TKeys = keyof TIDiccAC>(
     keys: TKeys[]
-  ): Array<[TKeys, TFnBagForActionModule<any>]>;
+  ): Array<[TKeys, TFnBagForActionModule]>;
   public getTupleActionFnByKey(keyOrKeys: unknown): unknown {
     const util = this.util as Util_Module;
     let tFnOrATFFn:
-      | [keyof TIDiccAC, TFnBagForActionModule<any>]
-      | Array<[keyof TIDiccAC, TFnBagForActionModule<any>]>;
+      | [keyof TIDiccAC, TFnBagForActionModule]
+      | Array<[keyof TIDiccAC, TFnBagForActionModule]>;
     if (!Array.isArray(keyOrKeys)) {
       tFnOrATFFn = [
         keyOrKeys as keyof TIDiccAC,
@@ -801,24 +795,25 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
     builderACOption = this.buildBACOption(builderACOption);
     let rACBuild = containerOfActionsConfig;
     if (buildToMode === "toActionConfig_DiccWrapped") {
-      let diccActionConfig = containerOfActionsConfig as Partial<TIDiccAC>;
+      let newDiccAC: Partial<TIDiccAC> = {};
+      //convertision a diccionario estandar
+      if (util.isObject(containerOfActionsConfig, true)) {
+        newDiccAC = containerOfActionsConfig as any;
+      } else if (
+        util.isArrayTuple(
+          containerOfActionsConfig as Array<[any, any]>,
+          2,
+          true
+        )
+      ) {
+        const map = new Map(containerOfActionsConfig as any);
+        newDiccAC = util.entriesToObject(map.entries());
+      } else {
+        newDiccAC = newDiccAC; //redundancia aclarativa
+      }
       let baseDiccAC = this.getDiccBaseActionConfig(builderACOption);
-      //retirar acciones no requeridas y agrega las obligatorias (si no estan incluidas)
-      const selectionKeysAction = util.removeArrayDuplicate(
-        [
-          ...this.dfTopMandatoryKeysAction, //obligatorias
-          ...Object.keys(diccActionConfig),
-        ],
-        { itemConflictMode: "first" }
-      );
-      //❕se debe recorrer por keys ya que internamente se elimina la propiedad❕
-      Object.keys(baseDiccAC).forEach((baseKeyAction) => {
-        if (!selectionKeysAction.includes(baseKeyAction)) {
-          delete baseDiccAC[baseKeyAction]; //❗Peligrosa pero necesaria❗
-        }
-      });
       //fusionar
-      rACBuild = util.mergeDiccActionConfig([baseDiccAC, diccActionConfig], {
+      rACBuild = util.mergeDiccActionConfig([baseDiccAC, newDiccAC], {
         mode: builderACOption.mergeMode,
       }) as Partial<TIDiccAC>;
     } else if (buildToMode === "toTupleActionConfig") {
@@ -1007,12 +1002,18 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
     return r;
   }
   /**
-   * @param bag
-   * @param keyAction
-   * ____
+   * obtiene una tupla con la clave identificadora y la configuración
+   *  de acción actualizada en el manejador de criterios
+   *
+   * @param criteriaHandler el manejador de criterios para la petición
+   * @param keyAction clave identificadora de la acción
+   *
+   * @returns la tupla de la configuracion de acción con el siguiente formato:
+   *  - `[0]` la clave identificadora de la accion *keyAction*
+   *  - `[1]` la conficuracion de accion *actionConfig*
    */
-  protected abstract adapBagForContext(
-    bag: unknown,
+  protected abstract getTupleActionConfigFromCriteriaHandler(
+    criteriaHandler: unknown,
     keyAction: unknown
   ): unknown;
   /**micro hook embebido que se ejecuta antes de ejecutar la accion

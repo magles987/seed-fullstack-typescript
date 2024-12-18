@@ -110,7 +110,10 @@ export class StructureLocalIDBRepository<
   protected override async readCommon(
     criteria: IBagForService["literalCriteria"]
   ) {
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
+    );
     const tx = await this.getTransaction(
       {
         keyCollection: keySrcContext,
@@ -127,7 +130,10 @@ export class StructureLocalIDBRepository<
     criteria: IBagForService["literalCriteria"]
   ) {
     const kId = this.keyId;
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
+    );
     const tx = await this.getTransaction(
       {
         keyCollection: keySrcContext,
@@ -150,7 +156,10 @@ export class StructureLocalIDBRepository<
     criteria: IBagForService["literalCriteria"]
   ) {
     const kId = this.keyId;
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
+    );
     const tx = await this.getTransaction(
       {
         keyCollection: keySrcContext,
@@ -169,7 +178,10 @@ export class StructureLocalIDBRepository<
     criteria: IBagForService["literalCriteria"]
   ) {
     const kId = this.keyId;
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
+    );
     const tx = await this.getTransaction(
       {
         keyCollection: keySrcContext,
@@ -245,7 +257,7 @@ export class StructureLocalIDBRepository<
    */
   public async readById(bagService: IBagForService) {
     const { literalCriteria } = bagService;
-    const keySrcContext = this.getKeySrcContext(
+    const keySrcContext = this.util.getKeySrcContext(
       this.srcSelector,
       literalCriteria
     );

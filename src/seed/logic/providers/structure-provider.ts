@@ -1,19 +1,11 @@
 import { LogicProvider } from "./_provider";
-import {
-  IStructureBagForActionModuleContext,
-  TStructureFnBagForActionModule,
-} from "../bag-module/shared-for-external-module";
 import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { TStructureMetaAndProvider } from "../meta/metadata-shared";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
 import { ELogicResStatusCode, IStructureResponse } from "../reports/shared";
-import {
-  StructureReportHandler,
-  Trf_StructureReportHandler,
-} from "../reports/structure-report-handler";
-import { localRepositoryFactoryFn } from "./services/client/web/local/repositories/local-repository-factory";
-import { httpClientDriverFactoryFn } from "./services/client/web/http/drive/http-driver-factory";
+import { StructureReportHandler } from "../reports/structure-report-handler";
+import { localRepositoryFactoryFn } from "./services/client/web/local/drivers/local-repository-factory";
+import { httpClientDriverFactoryFn } from "./services/client/web/http/drivers/http-driver-factory";
 import { serviceFactory } from "./services/service-factory";
 import {
   TKeyStructureProviderModuleContext,
@@ -21,6 +13,8 @@ import {
   TStructureProviderModuleConfigForStructure,
 } from "./shared";
 import { IRunProvider } from "./shared-for-external-module";
+import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
+import { TStructureFnBagForActionModule } from "../bag-module/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del provider */
 export interface IDiccStructureProviderActionConfigG {
@@ -197,51 +191,24 @@ export class StructureLogicProvider<
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
-  protected override adapBagForContext<TKey extends keyof TIDiccAC>(
-    bag: StructureBag<any>,
+  protected override getTupleActionConfigFromCriteriaHandler<
+    TKey extends keyof TIDiccAC
+  >(
+    criteriaHandler: Trf_StructureCriteriaHandler,
     keyAction: TKey
-  ): IStructureBagForActionModuleContext<TIDiccAC, TKey> {
-    const tGlobalAC = bag.findTupleGlobalActionConfig([
-      this.keyModule as any,
-      this.keyModuleContext,
-      keyAction as never,
-    ]);
-    const tupleAC = bag.retrieveTupleActionConfig<TIDiccAC, any>(tGlobalAC);
-    let actionConfig = this.retriveActionConfigFromTuple(tupleAC);
-    if (actionConfig === undefined) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${actionConfig} is not action configuration valid`,
-      });
-    }
-    if (actionConfig === undefined) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${actionConfig} is not action configuration valid`,
-      });
-    }
-    actionConfig = this.buildSingleActionConfig(
-      "toActionConfig" as any,
-      keyAction as any,
-      actionConfig as any,
-      { keyPath: bag.keyPath, mergeMode: "soft" }
+  ): [TKey, TIDiccAC[TKey]] {
+    const tKeyGlobalAC = [this.keyModuleContext, keyAction];
+    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
+      tKeyGlobalAC as any
     );
-    const bagFC: IStructureBagForActionModuleContext<TIDiccAC, any> = {
-      data: bag.data,
-      keyPath: bag.keyPath,
-      keyAction,
-      actionConfig,
-      responses: bag.responses,
-      criteriaHandler: bag.criteriaHandler,
-    };
-    return bagFC;
+    return [keyAction, actionConfig];
   }
   public override buildReportHandler(
     bag: Trf_StructureBag,
     keyAction: keyof TIDiccAC
   ): StructureReportHandler {
-    const { data, criteriaHandler, keyPath, firstData } = bag;
-    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyPath, keyActionRequest } = criteriaHandler;
     let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
@@ -255,7 +222,7 @@ export class StructureLogicProvider<
       keyRepSrc: this.keySrc,
       status: this.globalStatus,
       tolerance: this.globalTolerance,
-      fisrtCtrlData: firstData,
+      firstCtrlData: firstData,
       data,
     });
     return rH;
@@ -278,8 +245,12 @@ export class StructureLogicProvider<
   public async runProvider(
     bag: StructureBag<any>
   ): Promise<IStructureResponse> {
-    const { data, keyAction, keyPath, actionConfig, responses } =
-      this.adapBagForContext(bag, "runProvider");
+    const { data, criteriaHandler } = bag;
+    const [keyAction, actionConfig] =
+      this.getTupleActionConfigFromCriteriaHandler(
+        criteriaHandler,
+        "runProvider"
+      );
     let { customServiceFactoryFn, serviceConfig, serviceToRun } = actionConfig;
     const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });

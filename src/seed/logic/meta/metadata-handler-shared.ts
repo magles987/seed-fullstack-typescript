@@ -64,9 +64,9 @@ export interface IDiccPrimitiveModuleInstanceContext<
   TPrimitiveHookInstance extends PrimitiveLogicHook<any> = PrimitiveLogicHook,
   TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider
 > extends IPrimitiveMutateContext<TPrimitiveFormatInstance>,
-  IPrimitiveValContext<TPrimitiveValInstance, TRequestValInstance>,
-  IPrimitiveHookContext<TPrimitiveHookInstance>,
-  IPrimitiveProviderContext<TPrimitiveProviderInstance> { }
+    IPrimitiveValContext<TPrimitiveValInstance, TRequestValInstance>,
+    IPrimitiveHookContext<TPrimitiveHookInstance>,
+    IPrimitiveProviderContext<TPrimitiveProviderInstance> {}
 /**refactorizacion del tipo*/
 export type Trf_IDiccPrimitiveModuleInstanceContext =
   IDiccPrimitiveModuleInstanceContext<any>;
@@ -151,7 +151,9 @@ export type TPrimitiveMetadataModuleConfigForPrimitive = Partial<
 /**refactorizacion del tipo */
 export type Trf_TPrimitiveMetadataModuleConfigForPrimitive =
   TPrimitiveMetadataModuleConfigForPrimitive;
+
 //====Strcuture====================================================================================================================
+
 /** tipos de datos aplicables a un campo.
  *
  * ❗los tipos vacios (`undefined` o `null`)
@@ -172,13 +174,13 @@ export interface IDiccStructureModuleInstanceContext<
   TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
   TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider
 > extends IStructureDeepValContext<
-  TFieldValInstance,
-  TModelValInstance,
-  TRequestValInstance
->,
-  IStructureDeepMutateContext<TFieldMutateInstance, TModelMutateInstance>,
-  IStructureHookContext<TStructureHookInstance>,
-  IStructureProviderContext<TStructureProviderInstance> { }
+      TFieldValInstance,
+      TModelValInstance,
+      TRequestValInstance
+    >,
+    IStructureDeepMutateContext<TFieldMutateInstance, TModelMutateInstance>,
+    IStructureHookContext<TStructureHookInstance>,
+    IStructureProviderContext<TStructureProviderInstance> {}
 /**refactorizacion del tipo*/
 export type Trf_IDiccStructureModuleInstanceContext =
   IDiccStructureModuleInstanceContext<any>;

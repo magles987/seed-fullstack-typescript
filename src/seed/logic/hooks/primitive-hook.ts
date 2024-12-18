@@ -6,22 +6,18 @@ import {
   TPrimitiveConfigForHook,
   TPrimitiveHookModuleConfigForPrimitive,
 } from "./shared";
-import {
-  IPrimitiveBagForActionModuleContext,
-  TPrimitiveFnBagForActionModule,
-} from "../bag-module/shared-for-external-module";
 import { IPrimitiveResponse } from "../reports/shared";
-import {
-  PrimitiveReportHandler,
-} from "../reports/primitive-report-handler";
+import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import { TPrimitiveMetaAndHook } from "../meta/metadata-shared";
 import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
+import { TPrimitiveFnBagForActionModule } from "../bag-module/shared";
+import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del hook */
 export interface IDiccPrimitiveHookActionConfigG {
-  /**hook generico para la lectura de documentos de un modelo*/
+  /**hook genérico para la lectura de documentos de un modelo*/
   read: boolean | undefined;
-  /**hook generico para la modificacion de documentos de un modelo*/
+  /**hook genérico para la modificación de documentos de un modelo*/
   modify: boolean | undefined;
 }
 /**claves identificadoras del diccionario
@@ -33,11 +29,12 @@ export type Trf_PrimitiveLogicHook = PrimitiveLogicHook<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class PrimitiveLogicHook<
-  TIDiccAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG
->
+    TIDiccAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG
+  >
   extends LogicHook<TIDiccAC>
   implements
-  Record<TKeysDiccPrimitiveHookActionConfigG, TPrimitiveFnBagForActionModule> {
+    Record<TKeysDiccPrimitiveHookActionConfigG, TPrimitiveFnBagForActionModule>
+{
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = LogicHook.getDefault();
@@ -69,18 +66,13 @@ export class PrimitiveLogicHook<
     } else {
       rConfig = {
         ...nCC,
-        diccActionsConfig: this.util.isObject(
-          nCC.diccActionsConfig
-        )
+        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
           ? this.util.mergeDiccActionConfig(
-            [
-              cCC.diccActionsConfig,
-              nCC.diccActionsConfig,
-            ],
-            {
-              mode: mergeMode,
-            }
-          )
+              [cCC.diccActionsConfig, nCC.diccActionsConfig],
+              {
+                mode: mergeMode,
+              }
+            )
           : cCC.diccActionsConfig,
       };
     }
@@ -146,43 +138,17 @@ export class PrimitiveLogicHook<
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
-  protected override adapBagForContext<TKey extends keyof TIDiccAC>(
-    bag: PrimitiveBag<any>,
+  protected override getTupleActionConfigFromCriteriaHandler<
+    TKey extends keyof TIDiccAC
+  >(
+    criteriaHandler: Trf_PrimitiveCriteriaHandler,
     keyAction: TKey
-  ): IPrimitiveBagForActionModuleContext<TIDiccAC, TKey> {
-    const tGlobalAC = bag.findTupleGlobalActionConfig([
-      this.keyModule as any,
-      this.keyModuleContext,
-      keyAction as never,
-    ]);
-    const tupleAC = bag.retrieveTupleActionConfig<TIDiccAC, any>(tGlobalAC);
-    let actionConfig = this.retriveActionConfigFromTuple(tupleAC);
-    if (actionConfig === undefined) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${actionConfig} is not action configuration valid`,
-      });
-    }
-    if (actionConfig === undefined) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${actionConfig} is not action configuration valid`,
-      });
-    }
-    actionConfig = this.buildSingleActionConfig(
-      "toActionConfig" as any,
-      keyAction as any,
-      actionConfig as any,
-      { mergeMode: "soft" }
+  ): [TKey, TIDiccAC[TKey]] {
+    const tKeyGlobalAC = [this.keyModuleContext, keyAction];
+    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
+      tKeyGlobalAC as any
     );
-    const bagFC: IPrimitiveBagForActionModuleContext<TIDiccAC, any> = {
-      data: bag.data,
-      keyAction,
-      actionConfig,
-      responses: bag.responses,
-      criteriaHandler: bag.criteriaHandler,
-    };
-    return bagFC;
+    return [keyAction, actionConfig];
   }
   public override buildReportHandler(
     bag: Trf_PrimitiveBag,
@@ -202,7 +168,7 @@ export class PrimitiveLogicHook<
       keyRepSrc: this.keySrc,
       status: this.globalStatus,
       tolerance: this.globalTolerance,
-      fisrtCtrlData: firstData,
+      firstCtrlData: firstData,
       data,
     });
     return rH;

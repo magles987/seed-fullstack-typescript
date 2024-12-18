@@ -1,10 +1,13 @@
 import { http, HttpHandler, HttpResponse, RequestHandler } from "msw";
 import { LogicController } from "../../../../src/seed/logic/controllers/_controller";
 import { StructureLogicController } from "../../../../src/seed/logic/controllers/_structure-ctrl";
-import { PrimitiveLogicController } from "../../../../src/seed/logic/controllers/_primitive-ctrl";
-import { IUrlConfig } from "../../../../src/seed/logic/providers/services/client/web/http/drive/shared";
-import { EncriptAndCompressDataHandler } from "../../../../src/seed/logic/util/encripter-handler";
+import { EncryptAndCompressDataHandler } from "../../../../src/seed/logic/util/encripter-handler";
 import { IMockServerOption, MockServerHandler } from "../_mock-server";
+import {
+  StructureSimulatedMicroBackend,
+  TStructureKeyFullRequest,
+} from "./structure-simulated-microbackend";
+import { IBagForService } from "../../../../src/seed/logic/providers/services/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**  */
 export class StructureMockServerHandler<
@@ -13,20 +16,26 @@ export class StructureMockServerHandler<
   protected override getHttpHandlers = () => {
     const { _read_, _create_, _update_, _delete_ } =
       this.diccKeyCRUDBasicAction;
+    const util = this.util;
+    const eH = EncryptAndCompressDataHandler.getInstance();
+    const mBackend = this.microBackend;
+    const idxCriteriaParam = 0; //el identificador de en que posición de los parámetros esta el criteria comprimido y cifrado
     return [
       http.get(`${this.urlBase}/`, ({ request, params, cookies }) => {
         return HttpResponse.html(`<h1>miApp</h1>`);
       }),
       http.get(
         `${this.urlBase}/${this.keyUrlSrc}/${_read_}/*`,
-        ({ request, params, cookies }) => {
+        async ({ request, params, cookies }) => {
           const d = request;
-          const eH = EncriptAndCompressDataHandler.getInstance();
-          const strCriteria = params[0];
-          const f = eH.unencriptAndUncompressUrlBase64ToObject(
-            strCriteria as string
+          const literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
+            params[idxCriteriaParam] as string
+          ) as IBagForService["literalCriteria"];
+          const driverResponse = await mBackend.receiveMockRequest(
+            undefined,
+            literalCriteria
           );
-          return HttpResponse.json(this.table);
+          return HttpResponse.json(driverResponse);
         }
       ),
       http.post(
@@ -49,14 +58,17 @@ export class StructureMockServerHandler<
       ),
     ];
   };
+  protected override microBackend: StructureSimulatedMicroBackend<TStructureKeyFullRequest>;
   /**... */
   constructor(ctrl: LogicController, option: IMockServerOption) {
     super(ctrl, option);
+    this.initConfig();
+    this.selectRunServer();
   }
   protected override initConfig(): void {
     this.keyLogicContext = this.ctrl.keyLogicContext;
     const { keySrcSelector, bd_collection } = this.option;
-    this.bd_collection = bd_collection;
+    this.db_collection = bd_collection;
     if (this.keyLogicContext !== "structure")
       throw new Error(`${this.keyLogicContext} is not key logic context valid`);
     const ctrl = this.ctrl as StructureLogicController<any>;
@@ -69,6 +81,9 @@ export class StructureMockServerHandler<
       "structureModel",
       "provider"
     );
+    this.microBackend = new StructureSimulatedMicroBackend({
+      bd_collection,
+    });
     this.initUrlConfig(diccProviderAC.runProvider);
     this.initKeyUrlSrc(keySrcSelector, metadata);
   }

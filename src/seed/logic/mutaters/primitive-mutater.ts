@@ -4,19 +4,14 @@ import {
   TKeyPrimitiveMutateModuleContext,
   TPrimitiveMutateModuleConfigForPrimitive,
 } from "./shared";
-import {
-  IPrimitiveBagForActionModuleContext,
-  TPrimitiveFnBagForActionModule,
-} from "../bag-module/shared-for-external-module";
 import { IPrimitiveResponse } from "../reports/shared";
 import { TPrimitiveMetaAndMutater } from "../meta/metadata-shared";
 import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
-import {
-  PrimitiveReportHandler,
-  Trf_PrimitiveReportHandler,
-} from "../reports/primitive-report-handler";
+import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
+import { TPrimitiveFnBagForActionModule } from "../bag-module/shared";
+import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** define las propiedades de cada formateo
  * que puede configurar y ejecutar un campo
@@ -162,14 +157,15 @@ export type Trf_PrimitiveLogicMutater = PrimitiveLogicMutater;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class PrimitiveLogicMutater<
-  TIDiccAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG
->
+    TIDiccAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG
+  >
   extends LogicMutater<TIDiccAC>
   implements
-  Record<
-    TKeysDiccPrimitiveMutateActionConfigG,
-    TPrimitiveFnBagForActionModule
-  > {
+    Record<
+      TKeysDiccPrimitiveMutateActionConfigG,
+      TPrimitiveFnBagForActionModule
+    >
+{
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = LogicMutater.getDefault();
@@ -219,19 +215,14 @@ export class PrimitiveLogicMutater<
     } else {
       rConfig = {
         ...nCC,
-        diccActionsConfig: this.util.isObject(
-          nCC.diccActionsConfig
-        )
+        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
           ? this.util.mergeDiccActionConfig(
-            [
-              cCC.diccActionsConfig,
-              nCC.diccActionsConfig,
-            ],
-            {
-              mode: mergeMode,
-              //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
-            }
-          )
+              [cCC.diccActionsConfig, nCC.diccActionsConfig],
+              {
+                mode: mergeMode,
+                //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
+              }
+            )
           : cCC.diccActionsConfig,
       };
     }
@@ -263,7 +254,7 @@ export class PrimitiveLogicMutater<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keyAction: TKeys): TPrimitiveFnBagForActionModule<PrimitiveBag<any>>;
+  >(keyAction: TKeys): TPrimitiveFnBagForActionModule;
   /**obtiene un array de funciones de accion de acuerdo a sus claves identificadoras
    * preparadas para ser inyectadas en el middleware
    *
@@ -273,9 +264,7 @@ export class PrimitiveLogicMutater<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(
-    keysAction: TKeys[]
-  ): Array<TPrimitiveFnBagForActionModule<PrimitiveBag<any>>>;
+  >(keysAction: TKeys[]): Array<TPrimitiveFnBagForActionModule>;
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
@@ -297,42 +286,22 @@ export class PrimitiveLogicMutater<
       keyRepSrc: this.keySrc,
       status: this.globalStatus,
       tolerance: this.globalTolerance,
-      fisrtCtrlData: firstData,
+      firstCtrlData: firstData,
       data,
     });
     return rH;
   }
-  protected override adapBagForContext<TKey extends keyof TIDiccAC>(
-    bag: PrimitiveBag<any>,
+  protected override getTupleActionConfigFromCriteriaHandler<
+    TKey extends keyof TIDiccAC
+  >(
+    criteriaHandler: Trf_PrimitiveCriteriaHandler,
     keyAction: TKey
-  ): IPrimitiveBagForActionModuleContext<TIDiccAC, TKey> {
-    const tGlobalAC = bag.findTupleGlobalActionConfig([
-      this.keyModule as any,
-      this.keyModuleContext,
-      keyAction as never,
-    ]);
-    const tupleAC = bag.retrieveTupleActionConfig<TIDiccAC, any>(tGlobalAC);
-    let actionConfig = this.retriveActionConfigFromTuple(tupleAC);
-    if (actionConfig === undefined) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${actionConfig} is not action configuration valid`,
-      });
-    }
-    actionConfig = this.buildSingleActionConfig(
-      "toActionConfig" as any,
-      keyAction as any,
-      actionConfig as any,
-      { mergeMode: "soft" }
+  ): [TKey, TIDiccAC[TKey]] {
+    const tKeyGlobalAC = [this.keyModuleContext, keyAction];
+    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
+      tKeyGlobalAC as any
     );
-    const bagFC: IPrimitiveBagForActionModuleContext<TIDiccAC, any> = {
-      data: bag.data,
-      keyAction,
-      actionConfig,
-      responses: bag.responses,
-      criteriaHandler: bag.criteriaHandler,
-    };
-    return bagFC;
+    return [keyAction, actionConfig];
   }
   public override preRunAction(
     bag: Trf_PrimitiveBag,
@@ -351,13 +320,12 @@ export class PrimitiveLogicMutater<
   //================================================================================================================================
   public async anyTrim(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, keyAction, actionConfig, responses } = this.adapBagForContext(
-      bag,
-      "anyTrim"
-    );
+    const { data, criteriaHandler } = bag;
+    const [keyAction, actionConfig] =
+      this.getTupleActionConfigFromCriteriaHandler(criteriaHandler, "anyTrim");
     const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    const { } = actionConfig;
+    const {} = actionConfig;
 
     // //Desempaquetar la accion e inicializar
     // const keyAction: TLibKeyAction = "any_trim";

@@ -1,4 +1,4 @@
-import { LogicModule } from "../config/module";
+import { ActionModule, LogicModule } from "../config/module";
 import { TKeyLogicContext } from "../config/shared-modules";
 import { Util_Meta } from "./_util-meta";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -27,22 +27,22 @@ export abstract class LogicMetadataHandler extends LogicModule {
   }
   /**diccionario con todas las instancias de todos los modulos
    * necesarios para la logica en contexto de este recurso*/
-  private _diccModuleIntanceContext: unknown;
+  private _diccModuleInstanceContext: unknown;
   /**diccionario con todas las instancias de todos los modulos
    * necesarios para la logica en contexto de este recurso*/
-  public get diccModuleIntanceContext() {
+  public get diccModuleInstanceContext() {
     let rDicc = {};
     // evitar modificaciones al diccionario actual
-    const keysDicc = Object.keys(this._diccModuleIntanceContext);
+    const keysDicc = Object.keys(this._diccModuleInstanceContext);
     for (const keyDicc of keysDicc) {
-      rDicc[keyDicc] = this._diccModuleIntanceContext[keyDicc];
+      rDicc[keyDicc] = this._diccModuleInstanceContext[keyDicc];
     }
     return rDicc;
   }
   /**diccionario con todas las instancias de todos los modulos
    * necesarios para la logica en contexto de este recurso*/
-  protected set diccModuleIntanceContext(v: unknown) {
-    this._diccModuleIntanceContext = v;
+  protected set diccModuleInstanceContext(v: unknown) {
+    this._diccModuleInstanceContext = v;
   }
   /**Array con prefijos de propiedades que
    * corresponden a configuracion comun
@@ -100,4 +100,11 @@ export abstract class LogicMetadataHandler extends LogicModule {
     const metadataClon = this.util.clone(this.metadata, "lodash");
     return metadataClon;
   }
+  /**obtiene una instancia de un modulo de tipo `actionModule`
+   * @param keyModuleContext clave identificadora del modulo (específicamente su contexto)
+   * @returns la instancia del modulo de acciones correspondiente
+   */
+  public abstract getModuleInstanceForActionContext(
+    keyModuleContext: unknown
+  ): ActionModule<any>;
 }

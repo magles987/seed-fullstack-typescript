@@ -1,22 +1,6 @@
-import { EHttpStatusCode } from "../../../../../util/http-utilities";
-import { httpClientDriverFactoryFn } from "./drive/http-driver-factory";
-import { IDiccHttpDriveConfig, TKeyDiccHttpDrive } from "./drive/shared";
+import { httpClientDriverFactoryFn } from "./drivers/http-driver-factory";
+import { IDiccHttpDriveConfig, TKeyDiccHttpDrive } from "./drivers/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**... */
-export interface IHttpResponse {
-  /**cuerpo de la respuesta */
-  body: string;
-  /**estado básico de la petición */
-  ok: boolean;
-  /**mensaje adicional de estado de la petición */
-  statusText: string;
-  /**simula un codigo HTTP response */
-  httpStatus: EHttpStatusCode;
-  /**error generico */
-  error?: any;
-  /**cabecera de respuesta generica */
-  header?: any;
-}
 /**... */
 export interface IHttpWebClientServiceRequestC {
   /** */

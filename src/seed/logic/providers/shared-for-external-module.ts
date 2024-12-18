@@ -1,5 +1,5 @@
-import { TKeyHttpClientDriverInstance } from "./services/client/web/http/drive/http-driver-factory";
-import { TKeyLocalRepositoryInstance } from "./services/client/web/local/repositories/local-repository-factory";
+import { TKeyHttpClientDriverInstance } from "./services/client/web/http/drivers/http-driver-factory";
+import { TKeyLocalRepositoryInstance } from "./services/client/web/local/drivers/local-repository-factory";
 import {
   serviceFactory,
   TKeyAllDefaultServiceInstance,
@@ -7,9 +7,11 @@ import {
 import { IServiceRequestConfig } from "./services/shared";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**claves identificadoras de las instancias de todos 
+/**claves identificadoras de las instancias de todos
  * los drivers para servicio predefinidos disponibles */
-export type TKeyAllDefaultServiceDriverInstance = TKeyHttpClientDriverInstance | TKeyLocalRepositoryInstance;
+export type TKeyAllDefaultServiceDriverInstance =
+  | TKeyHttpClientDriverInstance
+  | TKeyLocalRepositoryInstance;
 /**... */
 export interface IRunProvider<
   TKeyServiceInst extends TKeyAllDefaultServiceInstance = TKeyAllDefaultServiceInstance,

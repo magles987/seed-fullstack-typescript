@@ -1,5 +1,15 @@
+import { ActionModule, IBuildACOption } from "../config/module";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
+import { IDiccPrimitiveHookActionConfigG } from "../hooks/primitive-hook";
+import { TKeyPrimitiveHookModuleContext } from "../hooks/shared";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
+import { IDiccPrimitiveMutateActionConfigG } from "../mutaters/primitive-mutater";
+import { TKeyPrimitiveMutateModuleContext } from "../mutaters/shared";
+import { IDiccPrimitiveProviderActionConfigG } from "../providers/primitive-provider";
+import { TKeyPrimitiveProviderModuleContext } from "../providers/shared";
+import { IDiccPrimitiveValActionConfigG } from "../validators/primitive-validation";
+import { IDiccRequestValActionConfigG } from "../validators/request-validation";
+import { TKeyPrimitiveValModuleContext } from "../validators/shared";
 import { CriteriaHandler } from "./_criteria-handler";
 import {
   IPrimitiveModifyCriteria,
@@ -10,10 +20,20 @@ import {
   TPrimitiveBaseCriteria,
 } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/**refactorización de la clase*/
+export type Trf_PrimitiveCriteriaHandler = PrimitiveCriteriaHandler<any>;
+//████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfconstructor*
  *
  */
-export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
+export class PrimitiveCriteriaHandler<
+  TValue,
+  TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
+  TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
+  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
+  TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
+  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
+> extends CriteriaHandler {
   public static override getDefault = () => {
     const superDf = CriteriaHandler.getDefault();
     return {
@@ -24,13 +44,22 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
     const superCONST = CriteriaHandler.getCONSTANTS();
     return {
       ...superCONST,
+      KEYS_GLOBAL_AC: [
+        "primitiveMutate",
+        "primitiveVal",
+        "requestVal",
+        "primitiveHook",
+        "primitiveProvider",
+      ] as Array<
+        | TKeyPrimitiveMutateModuleContext
+        | TKeyPrimitiveValModuleContext
+        | TKeyPrimitiveHookModuleContext
+        | TKeyPrimitiveProviderModuleContext
+      >,
     };
   };
   public override get metadataHandler(): Trf_PrimitiveLogicMetadataHandler {
     return super.metadataHandler as Trf_PrimitiveLogicMetadataHandler;
-  }
-  public override set metadataHandler(mH: Trf_PrimitiveLogicMetadataHandler) {
-    super.metadataHandler = mH;
   }
   public override get keyModuleContext(): TKeyPrimitiveCriteriaModuleContext {
     return "primitiveCriteria";
@@ -50,19 +79,28 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
   /**... */
   constructor(
     keySrc: string,
-    base: TPrimitiveBaseCriteria = {
+    metadataHandler: Trf_PrimitiveLogicMetadataHandler,
+    base: TPrimitiveBaseCriteria<
+      TIDiccPrimitiveMutateAC,
+      TIDiccPrimitiveValAC,
+      TIDiccRequestValAC,
+      TIDiccPrimitiveHookAC,
+      TIDiccPrimitiveProviderAC
+    > = {
       type: "read",
     },
     isInit = true
   ) {
-    super("primitive", keySrc, base);
+    super("primitive", keySrc, metadataHandler, base, false);
     if (isInit) this.initProps(base);
+    this.initMergeDiccGlobalAC();
+    this.initAKeysGlobalAC();
   }
   protected override getDefault() {
     return PrimitiveCriteriaHandler.getDefault();
   }
   protected override getCONST() {
-    return CriteriaHandler.getCONSTANTS();
+    return PrimitiveCriteriaHandler.getCONSTANTS();
   }
   public override resetPropByKey(
     key: keyof ReturnType<PrimitiveCriteriaHandler<TValue>["getDefault"]>
@@ -84,6 +122,90 @@ export class PrimitiveCriteriaHandler<TValue> extends CriteriaHandler {
     | IPrimitiveReadCriteria
     | IPrimitiveModifyCriteria {
     return super.getLiteral() as any;
+  }
+  protected override initMergeDiccGlobalAC(): void {
+    let bf_diccGlobalAC = {};
+    const keysModuleContext = this.getCONST().KEYS_GLOBAL_AC;
+    const mH = this.metadataHandler;
+    if (this.util.isObject(this.diccGlobalAC)) {
+      const bACOption: IBuildACOption = {
+        mergeMode: "soft",
+      };
+      for (const keyModuleContext of keysModuleContext) {
+        if (
+          keyModuleContext !== "primitiveMutate" &&
+          keyModuleContext !== "primitiveVal" &&
+          keyModuleContext !== "requestVal" &&
+          keyModuleContext !== "primitiveHook" &&
+          keyModuleContext === "primitiveProvider"
+        )
+          continue;
+        let actionModule =
+          mH.getModuleInstanceForActionContext(keyModuleContext);
+        const newDicc = this.util.isObject(this.diccGlobalAC[keyModuleContext])
+          ? this.diccGlobalAC[keyModuleContext]
+          : {};
+        bf_diccGlobalAC[keyModuleContext] =
+          actionModule.buildContainerActionsConfig(
+            "toActionConfig_DiccWrapped",
+            newDicc,
+            bACOption
+          );
+      }
+    } else {
+      const diccModelMutate = mH.getDiccActionConfigByModuleContext("mutater");
+      const diccModelVal = mH.getDiccActionConfigByModuleContext(
+        "validator",
+        "primitiveVal"
+      );
+      const diccReqVal = mH.getDiccActionConfigByModuleContext(
+        "validator",
+        "requestVal"
+      );
+      const diccStructureHook = mH.getDiccActionConfigByModuleContext("hook");
+      const diccStructureProvider =
+        mH.getDiccActionConfigByModuleContext("provider");
+      for (const keyModuleContext of keysModuleContext) {
+        if (keyModuleContext === "primitiveMutate") {
+          bf_diccGlobalAC[keyModuleContext] = diccModelMutate;
+        } else if (keyModuleContext === "primitiveVal") {
+          bf_diccGlobalAC[keyModuleContext] = diccModelVal;
+        } else if (keyModuleContext === "requestVal") {
+          bf_diccGlobalAC[keyModuleContext] = diccReqVal;
+        } else if (keyModuleContext === "primitiveHook") {
+          bf_diccGlobalAC[keyModuleContext] = diccStructureHook;
+        } else if (keyModuleContext === "primitiveProvider") {
+          bf_diccGlobalAC[keyModuleContext] = diccStructureProvider;
+        } else {
+          continue;
+        }
+      }
+      this.diccGlobalAC = bf_diccGlobalAC;
+    }
+    return;
+  }
+  protected override initAKeysGlobalAC(): void {
+    const mH = this.metadataHandler;
+    const diccACtrl = mH.getDiccActionConfigByModuleContext("controller");
+    this.aTKeysGlobalActionConfig = diccACtrl[this.keyActionRequest] as Array<
+      [string, string]
+    >;
+    return;
+  }
+  public override getGlobalActionByTKeyGlobalAC<TKeyActionConfig>(
+    tKeyGlobalAC: Array<
+      [
+        (
+          | TKeyPrimitiveMutateModuleContext
+          | TKeyPrimitiveValModuleContext
+          | TKeyPrimitiveHookModuleContext
+          | TKeyPrimitiveProviderModuleContext
+        ),
+        TKeyActionConfig
+      ]
+    >
+  ): any {
+    return super.getGlobalActionByTKeyGlobalAC(tKeyGlobalAC);
   }
   protected override checkQueryConds(conds: TAConds): void {
     const len = conds.length;

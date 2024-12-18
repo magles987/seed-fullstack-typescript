@@ -189,7 +189,7 @@ export interface IResponse {
   data: any; //❗Puede ser cualquier dato❗
   /**clave identificadora del modulo */
   keyRepModule: TKeyModuleWithReport;
-  /**clave identificadora del contexto logico que se usó para la petición */
+  /**clave identificadora del contexto lógico que se usó para la petición */
   keyRepLogicContext: TKeyLogicContext;
   /**clave identificadora del contexto de modulo interno */
   keyRepModuleContext: unknown;
@@ -211,7 +211,7 @@ export interface IResponse {
   /**clave identificadora de l apeticion de request */
   keyActionRequest: string;
   /**el dato inicial con el que se inició la peticion en el controller*/
-  fisrtCtrlData?: any;
+  firstCtrlData?: any;
   /**estado despues de la ejecucion del middleware */
   status: ELogicResStatusCode;
   /**mensaje auxiliar (Lógico) */
@@ -235,9 +235,14 @@ export type TResponseForMutate = Partial<
     | "keyRepLogicContext"
     | "keyRepModuleContext"
     | "keyRepSrc"
-    | "fisrtCtrlData"
+    | "firstCtrlData"
   >
 >;
+/**esquema de respuesta proveída por driver (de una api a otra)*/
+export interface IDriverResponse
+  extends Pick<IResponse, "data" | "status" | "msn" | "extResponse"> {
+  error?: any;
+}
 //====Primitive============================================================================================================================
 /**clave identificadora de este modulo segun su contexto */
 export type TKeyPrimitiveResponseModuleContext = "primitiveResponse";
@@ -265,7 +270,7 @@ export type TPrimitiveResponseForMutate = Partial<
     | "keyRepLogicContext"
     | "keyRepModuleContext"
     | "keyRepSrc"
-    | "fisrtCtrlData"
+    | "firstCtrlData"
   >
 >;
 //====Structure============================================================================================================================
@@ -301,7 +306,7 @@ export type TStructureResponseForMutate = Partial<
     | "keyRepLogicContext"
     | "keyRepModuleContext"
     | "keyRepSrc"
-    | "fisrtCtrlData"
+    | "firstCtrlData"
   >
 >;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████

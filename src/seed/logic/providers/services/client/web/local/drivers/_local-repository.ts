@@ -1,30 +1,21 @@
-import { EHttpStatusCode } from "../../../../../../util/http-utilities";
 import {
   TKeyBasicCRUD,
   TKeyLogicContext,
-  TKeySrcSelector,
 } from "../../../../../../config/shared-modules";
-import {
-  ELogicCodeError,
-  LogicError,
-} from "../../../../../../errors/logic-error";
-import { TActionFn, TKeyDiccLocalRepository } from "./shared";
+import { TKeyDiccLocalRepository } from "./shared";
 import { Util_LocalRepository } from "./_util-repository";
-import {
-  IModifyCriteria,
-  IReadCriteria,
-} from "../../../../../../criterias/shared";
 import { QueryJsAdaptator } from "./_query-js-adaptador";
 import { IBagForService, IGenericDriver } from "../../../../shared";
-import { ILocalResponse } from "../shared";
 import { getGlobalConfig } from "../../../../../../config/global-config";
+import {
+  ELogicResStatusCode,
+  IDriverResponse,
+} from "../../../../../../reports/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
  *
  */
-export abstract class LocalRepository
-  implements IGenericDriver<ILocalResponse>
-{
+export abstract class LocalRepositoryDriver implements IGenericDriver {
   /**configuración global */
   protected readonly _globalConfig_ = getGlobalConfig();
   /**... */
@@ -53,72 +44,25 @@ export abstract class LocalRepository
   ) {
     this.util = Util_LocalRepository.getInstance();
   }
-  /**... */
-  private checkBag(bagService: IBagForService): void {
-    if (!this.util.isObject(bagService)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagService} is not bag repository valid`,
-      });
-    }
-    if (!this.util.isObject(bagService.literalCriteria)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagService.literalCriteria} is not criteria valid`,
-      });
-    }
-    if (!this.util.isString(bagService.literalCriteria.keyActionRequest)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagService.literalCriteria.keyActionRequest} is not key request action valid`,
-      });
-    }
-    const keyActionFn = bagService.literalCriteria.keyActionRequest;
-    if (typeof (this as any)[keyActionFn] !== "function") {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: ` ${keyActionFn} is not request action key funtion valid`,
-      });
-    }
-    return;
-  }
   /**envía la petición a partir de un servicio
    *
    */
   public async sendRequestFromService(
     bagService: IBagForService
-  ): Promise<ILocalResponse> {
-    let localRes = {
-      body: "",
-      httpStatus: EHttpStatusCode.INTERNAL_SERVER_ERROR, //comienza con logica negativa
-    } as ILocalResponse;
+  ): Promise<IDriverResponse> {
+    let driverRes: IDriverResponse;
     try {
-      this.checkBag(bagService);
-      const { literalCriteria } = bagService;
-      const { keyActionRequest } = literalCriteria;
-      let actionFn = (this as any)[keyActionRequest] as TActionFn;
-      actionFn = actionFn.bind(this);
+      let actionFn = this.util.getActionRequestFn(this, bagService);
       const rxData = await actionFn(bagService);
-      localRes = {
-        ...localRes,
-        body: this.buildBodySimulated(rxData),
-        ok: true,
-        httpStatus: this.buildHttpResponseSimulated(literalCriteria),
-        statusText: `request to ${literalCriteria.keyActionRequest} has Succeeded`,
-      };
+      driverRes = this.buildDriverResponse(bagService.literalCriteria, rxData);
     } catch (error) {
-      localRes = {
-        ...localRes,
-        //body: this.buildBodySimulated(error), //empaquetado como objeto ???
-        ok: false,
-        httpStatus: this.buildHttpResponseSimulated(
-          bagService?.literalCriteria,
-          error
-        ),
-        statusText: (<Error>error).message,
-      };
+      driverRes = this.buildDriverResponse(
+        bagService.literalCriteria,
+        this.util.dfValue,
+        error
+      );
     }
-    return localRes;
+    return driverRes;
   }
   /** envío genérico de petición a traves de del driver seleccionado
    *
@@ -134,6 +78,43 @@ export abstract class LocalRepository
     keyBasicCRUD: TKeyBasicCRUD,
     txData: any
   ): Promise<unknown>;
+  /**... */
+  protected buildDriverResponse(
+    literalCriteria: IBagForService["literalCriteria"],
+    rxData: any,
+    error?: any
+  ): IDriverResponse {
+    let driverRes = {
+      data: rxData,
+      status: ELogicResStatusCode.SUCCESS,
+      msn: ``,
+      error,
+    } as IDriverResponse;
+    const { expectedDataType } = literalCriteria;
+    const dfValue = this.util.dfValue;
+    if (this.util.isUndefinedOrNull(error)) {
+      //verificación de data recibida
+      if (this.util.checkRxData(rxData, expectedDataType)) {
+        driverRes.data = rxData;
+        driverRes.status = ELogicResStatusCode.SUCCESS;
+        driverRes.msn = `ok`;
+      } else {
+        driverRes.data = dfValue;
+        driverRes.status = ELogicResStatusCode.BAD;
+        driverRes.msn = `data has not been as expected`;
+      }
+    } else {
+      driverRes.data = dfValue;
+      driverRes.status = ELogicResStatusCode.ERROR;
+      driverRes.error = error;
+      driverRes.msn = this.util.isObject(error)
+        ? (error as Error).message ?? `internal error in local driver`
+        : this.util.isString(error)
+        ? error
+        : `internal error in local driver`;
+    }
+    return driverRes;
+  }
   //████ handler method registers ████████████████████████████████████████████████████████████
   /**... */
   protected async getOne(
@@ -153,7 +134,10 @@ export abstract class LocalRepository
     criteria: IBagForService["literalCriteria"]
   ): Promise<any[]> {
     registers = Array.isArray(registers) ? registers : [registers];
-    let data = await this.queryJsAdaptator.findByCondition(registers, criteria);
+    let data = await this.queryJsAdaptator.filterByCondition(
+      registers,
+      criteria
+    );
     data = await this.queryJsAdaptator.orderBy(data, criteria);
     data = await this.queryJsAdaptator.pageBy(data, criteria);
     return data;
@@ -216,62 +200,4 @@ export abstract class LocalRepository
     data: any,
     criteria: IBagForService["literalCriteria"]
   ): Promise<any>;
-  //████ Utilitaries ████████████████████████████████████████████████████████████
-  /**... */
-  private buildHttpResponseSimulated(
-    literalCriteria: IBagForService["literalCriteria"],
-    error?: any
-  ): EHttpStatusCode {
-    let httpCode: EHttpStatusCode;
-    if (this.util.isUndefinedOrNull(error)) {
-      const keyRequestType = literalCriteria.type;
-      const keyModifyRequestType = (literalCriteria as IModifyCriteria)
-        .modifyType;
-      httpCode =
-        keyRequestType === "read"
-          ? EHttpStatusCode.OK
-          : keyRequestType === "modify"
-          ? keyModifyRequestType === "create"
-            ? EHttpStatusCode.CREATED
-            : keyModifyRequestType === "update"
-            ? EHttpStatusCode.OK
-            : EHttpStatusCode.NO_CONTENT //delete
-          : EHttpStatusCode.NO_CONTENT;
-    } else {
-      if (error instanceof LogicError) {
-        httpCode =
-          error.code == ELogicCodeError.NOT_EXIST
-            ? EHttpStatusCode.NOT_FOUND
-            : error.code == ELogicCodeError.NOT_VALID
-            ? EHttpStatusCode.FORBIDDEN
-            : error.code == ELogicCodeError.OVERFLOW
-            ? EHttpStatusCode.PAYLOAD_TOO_LARGE
-            : EHttpStatusCode.BAD_REQUEST;
-      } else {
-        httpCode = EHttpStatusCode.INTERNAL_SERVER_ERROR;
-      }
-    }
-    return httpCode;
-  }
-  /**... */
-  private buildBodySimulated(data: any): string {
-    let body: string = "";
-    if (typeof data === "object" && data !== null) {
-      //incluye arrays
-      body = JSON.stringify(data);
-    }
-    return body;
-  }
-  /**... */
-  protected getKeySrcContext(
-    srcSelector: TKeySrcSelector,
-    critera: IBagForService["literalCriteria"]
-  ): string {
-    const { p_Key, s_Key, keySrc } = critera;
-    let keySrcContext: string;
-    if (srcSelector === "singular") keySrcContext = s_Key;
-    else if (srcSelector === "plural") keySrcContext = p_Key;
-    else keySrcContext = keySrc;
-    return keySrcContext;
-  }
 }

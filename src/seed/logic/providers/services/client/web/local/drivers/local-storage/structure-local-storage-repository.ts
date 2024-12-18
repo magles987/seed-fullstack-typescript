@@ -1,54 +1,71 @@
 import {
-  TKeyPrimitiveModifyRequestController,
-  TKeyPrimitiveReadRequestController,
-} from "../../../../../../../controllers/_primitive-ctrl";
-import {
-  IPrimitiveModifyCriteria,
-  IPrimitiveReadCriteria,
-} from "../../../../../../../criterias/shared";
-import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../../errors/logic-error";
-import { IBagForService } from "../../../../../shared";
-import { PrimitiveQueryJsAdaptator } from "../_query-js-adaptador";
+import { LocalStorageRepository } from "./_local-storage-repository";
+import {
+  TKeyStructureModifyRequestController,
+  TKeyStructureReadRequestController,
+} from "../../../../../../../controllers/_structure-ctrl";
 import { TActionFn } from "../shared";
-import { LocalIDBRepository } from "./_local-idb-repository";
+import {
+  ELogicOperatorForCondition,
+  ISingleCondition,
+  IStructureModifyCriteria,
+  IStructureReadCriteria,
+} from "../../../../../../../criterias/shared";
+import { IBagForService } from "../../../../../shared";
+import { StructureQueryJsAdaptator } from "../_query-js-adaptador";
+import { getGlobalConfig } from "../../../../../../../config/global-config";
+import { getStrategyGeneratorIdFnByKey } from "../../../../../../../util/default-generators-id-fn";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras de todas las acciones de request */
 type TKeyFullRequest =
-  | TKeyPrimitiveReadRequestController
-  | TKeyPrimitiveModifyRequestController;
-/**Refactorizacion de la clase */
-export type Trf_PrimitiveLocalIDBRepository = PrimitiveLocalIDBRepository<any>;
+  | TKeyStructureReadRequestController
+  | TKeyStructureModifyRequestController; /**refactorizacion de la clase */
+export type Trf_StructureLocalStorageRepository =
+  StructureLocalStorageRepository<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
  * ...
  */
-export class PrimitiveLocalIDBRepository<
+export class StructureLocalStorageRepository<
     TKeyActionRequest extends TKeyFullRequest
   >
-  extends LocalIDBRepository<TKeyActionRequest>
+  extends LocalStorageRepository<TKeyActionRequest>
   implements
-    ReturnType<PrimitiveLocalIDBRepository<TKeyActionRequest>["getDefault"]>,
+    ReturnType<
+      StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]
+    >,
     Record<TKeyFullRequest, TActionFn>
 {
   public static override readonly getDefault = () => {
-    const superDf = LocalIDBRepository.getDefault();
+    const superDf = LocalStorageRepository.getDefault();
     return {
       ...superDf,
-      //...aqui las propiedades
+      /**clave identificadora del campo de identificación del registro */
+      keyId: getGlobalConfig().keyId,
     };
   };
   protected static override readonly getCONSTANTS = () => {
-    const superCONST = LocalIDBRepository.getCONSTANTS();
+    const superCONST = LocalStorageRepository.getCONSTANTS();
     return {
       ...superCONST,
-      keyId: "_Id", //❗Obligatoria para empaquetar el primitivo❗
     };
   };
-  protected override get queryJsAdaptator(): PrimitiveQueryJsAdaptator {
+  private _keyId: string;
+  public get keyId(): string {
+    return this._keyId;
+  }
+  protected set keyId(v: string) {
+    this._keyId = this.util.isString(v)
+      ? v
+      : this._keyId !== undefined
+      ? this._keyId
+      : this.getDefault().keyId;
+  }
+  protected override get queryJsAdaptator(): StructureQueryJsAdaptator {
     return super.queryJsAdaptator;
   }
   /**
@@ -57,35 +74,26 @@ export class PrimitiveLocalIDBRepository<
    */
   constructor(
     base: Partial<
-      ReturnType<PrimitiveLocalIDBRepository<TKeyActionRequest>["getDefault"]>
+      ReturnType<
+        StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]
+      >
     > = {},
     isInit = true
   ) {
-    super("primitive", PrimitiveQueryJsAdaptator.getInstance(), base, false);
+    super("structure", StructureQueryJsAdaptator.getInstance(), base, false);
     if (isInit) this.initProps(base);
   }
   protected override getDefault() {
-    return PrimitiveLocalIDBRepository.getDefault();
+    return StructureLocalStorageRepository.getDefault();
   }
   protected override getCONST() {
-    return PrimitiveLocalIDBRepository.getCONSTANTS();
+    return StructureLocalStorageRepository.getCONSTANTS();
   }
-
-  //❗normalmente definidas en el padre, salvo que se quieran sobreescribir❗
-  // /**reinicia una propiedad al valor predefinido
-  //  *
-  //  * @param key clave identificadora de la propiedad a reiniciar
-  //  */
-  // public override resetPropByKey(key: keyof ReturnType<PrimitiveLocalIDBRepository<TKeyActionRequest>["getDefault"]>): void {
-  //   const df = this.getDefault();
-  //   this[key] = df[key];
-  //   return;
-  // }
   public override mutateProps(
     base: Partial<
       Omit<
         ReturnType<
-          PrimitiveLocalIDBRepository<TKeyActionRequest>["getDefault"]
+          StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]
         >,
         "" //se deja la opción de omitir abierta
       >
@@ -94,108 +102,100 @@ export class PrimitiveLocalIDBRepository<
     super.mutateProps(base);
     return;
   }
+  //❗normalmente definidas en el padre, salvo que se quieran sobreescribir❗
+  // /**reinicia una propiedad al valor predefinido
+  //  *
+  //  * @param key clave identificadora de la propiedad a reiniciar
+  //  */
+  // public override resetPropByKey(key: keyof ReturnType<StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]>): void {
+  //   const df = this.getDefault();
+  //   this[key] = df[key];
+  //   return;
+  // }
+  //████ common snippet for action request  ████████████████████████
   protected override async readCommon(
     criteria: IBagForService["literalCriteria"]
   ) {
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    const tx = await this.getTransaction(
-      {
-        keyCollection: keySrcContext,
-        keyPrimary: this.getCONST().keyId,
-        autoIncrement: true,
-      },
-      "readonly"
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
     );
-    let data = await tx.store.getAll();
-    await tx.done;
-    //desempaquetar
-    data = data.map((dt) => dt[keySrcContext]);
+    let data = await this.getData(keySrcContext);
+    data = this.util.isNotUndefinedAndNotNull(data)
+      ? Array.isArray(data)
+        ? data
+        : [data]
+      : [];
     return data;
   }
   protected override async createCommon(
     data: any,
     criteria: IBagForService["literalCriteria"]
   ) {
-    const kId = this.getCONST().keyId;
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    const tx = await this.getTransaction(
-      {
-        keyCollection: keySrcContext,
-        keyPrimary: this.getCONST().keyId,
-        autoIncrement: true,
-      },
-      "readwrite"
+    const kId = this.keyId;
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
     );
-    const cDataIdx = (await tx.store.getAll()).findIndex((dt) => {
-      //desempaquetar:
-      const cData = dt[keySrcContext];
-      const r = this.util.isEquivalentTo([cData, data], {});
+    let currentData = (await this.getData(keySrcContext)) as any[];
+    currentData = Array.isArray(currentData) ? currentData : [currentData];
+    const idxCData = currentData.findIndex((dt) => {
+      const r = dt[kId] === data[kId];
       return r;
     });
-    if (cDataIdx > -1) return undefined; //❗ no se creó porque ya existe ❗
-    //empaquetar
-    let modData = {};
-    modData[kId] = undefined; //el autoincrementar se encarga "de esa vuelta"
-    modData[keySrcContext] = data;
-    await tx.store.add(modData);
-    await tx.done; //cerrar la transacción
+    if (idxCData > -1) return undefined; //❗ no se creó porque ya existe ❗
+    //creación de id:
+    const { strategyForIdBuild } = this._globalConfig_;
+    const buildIDFn = getStrategyGeneratorIdFnByKey(strategyForIdBuild);
+    data[kId] = buildIDFn(data[kId]);
+    currentData.push(data);
+    await this.setData(currentData, keySrcContext);
     return data;
   }
   protected override async updateCommon(
     data: any,
     criteria: IBagForService["literalCriteria"]
   ) {
-    const kId = this.getCONST().keyId;
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    const tx = await this.getTransaction(
-      {
-        keyCollection: keySrcContext,
-        keyPrimary: this.getCONST().keyId,
-        autoIncrement: true,
-      },
-      "readwrite"
+    const kId = this.keyId;
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
     );
-    const cDataIdx = (await tx.store.getAll()).findIndex((dt) => {
-      //desempaquetar:
-      const cData = dt[keySrcContext];
-      const r = this.util.isEquivalentTo([cData, data], {});
+    let currentData = (await this.getData(keySrcContext)) as any[];
+    currentData = Array.isArray(currentData) ? currentData : [currentData];
+    const idxCData = currentData.findIndex((dt) => {
+      const r = dt[kId] === data[kId];
       return r;
     });
-    if (cDataIdx === -1) return undefined; //❗ no se actualizó porque no existe ❗
-    //empaquetar
-    let modData = {};
-    modData[kId] = data[cDataIdx][kId];
-    modData[keySrcContext] = data;
-    await tx.store.put(modData);
-    await tx.done; //cerrar la transacción
+    if (idxCData === -1) return undefined; //❗no existe❗
+    currentData[idxCData] = data;
+    await this.setData(currentData, keySrcContext);
     return data;
   }
   protected override async deleteCommon(
     data: any,
     criteria: IBagForService["literalCriteria"]
   ) {
-    const kId = this.getCONST().keyId;
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
-    const tx = await this.getTransaction(
-      {
-        keyCollection: keySrcContext,
-        keyPrimary: this.getCONST().keyId,
-        autoIncrement: true,
-      },
-      "readwrite"
+    const kId = this.keyId;
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
     );
-    const cDataIdx = (await tx.store.getAll()).findIndex((dt) => {
-      //desempaquetar:
-      const cData = dt[keySrcContext];
-      const r = this.util.isEquivalentTo([cData, data], {});
+    let currentData = (await this.getData(keySrcContext)) as any[];
+    currentData = Array.isArray(currentData) ? currentData : [currentData];
+    const idxCData = currentData.findIndex((dt) => {
+      const r = dt[kId] === data[kId];
       return r;
     });
-    if (cDataIdx > -1) await tx.store.delete(cDataIdx);
-    await tx.done;
-    //mutar data para la eliminación:
-    let modData = {};
-    modData[kId] = cDataIdx; //solo envía id
-    return modData;
+    if (idxCData !== -1) {
+      //elimina solo si existe
+      currentData.splice(idxCData, 1);
+      await this.setData(currentData, keySrcContext);
+    }
+    //mutar data para la eliminacion:
+    let dData = {};
+    dData[kId] = data[kId]; //solo envia id
+    return dData;
   }
   //████ Request Actions ████████████████████████████████████████████████████████████
   public async exist(bagService: IBagForService): Promise<boolean> {
@@ -227,25 +227,64 @@ export class PrimitiveLocalIDBRepository<
    * @returns ``
    *
    */
-  public async readAll(bagService: IBagForService) {
+  public async readAll(bagService: IBagForService): Promise<any[]> {
     const { literalCriteria } = bagService;
     const registers = await this.readCommon(literalCriteria);
-    const rxData = await this.getAll(registers, literalCriteria);
-    return rxData;
+    const data = await this.getAll(registers, literalCriteria);
+    return data;
   }
   /**... */
   public async readMany(bagService: IBagForService): Promise<any[]> {
     const { literalCriteria } = bagService;
     const registers = await this.readCommon(literalCriteria);
-    const rxData = await this.getMany(registers, literalCriteria);
-    return rxData;
+    const data = await this.getMany(registers, literalCriteria);
+    return data;
   }
-  /** */
+  /**
+   * descrip...
+   * ____
+   * @param
+   * ____
+   * @returns ``
+   *
+   */
   public async readOne(bagService: IBagForService) {
-    const { literalCriteria } = bagService;
+    let { literalCriteria } = bagService;
     const registers = await this.readCommon(literalCriteria);
-    const rxData = await this.getOne(registers, literalCriteria);
-    return rxData;
+    const data = await this.getOne(registers, literalCriteria);
+    return data;
+  }
+  /**
+   * descrip...
+   * ____
+   * @param
+   * ____
+   * @returns ``
+   *
+   */
+  public async readById(bagService: IBagForService) {
+    let { literalCriteria } = bagService;
+    const kId = this.keyId;
+    const { query } = literalCriteria as IStructureReadCriteria<any>;
+    const extractQ = query.find((q) => {
+      const oQ = q as ISingleCondition;
+      const r =
+        this.util.isObject(oQ) &&
+        oQ.op === ELogicOperatorForCondition.eq &&
+        oQ.keyPathForCond.includes(kId);
+      return r;
+    }) as ISingleCondition;
+    if (extractQ === undefined) {
+      throw new LogicError({
+        code: ELogicCodeError.NOT_VALID,
+        msn: `${LogicError.valueToString(
+          query
+        )} is not valid query, because not 'id' valid`,
+      });
+    }
+    const registers = await this.readCommon(literalCriteria);
+    const data = await this.getOne(registers, literalCriteria);
+    return data;
   }
   /**
    * descrip...
@@ -258,7 +297,7 @@ export class PrimitiveLocalIDBRepository<
   public async create(bagService: IBagForService) {
     const { data, literalCriteria } = bagService;
     const { modifyType, isCreateOrUpdate } =
-      literalCriteria as IPrimitiveModifyCriteria;
+      literalCriteria as IStructureModifyCriteria<any>;
     if (!this.util.isLiteralObject(data)) {
       throw new LogicError({
         code: ELogicCodeError.NOT_VALID,
@@ -299,7 +338,7 @@ export class PrimitiveLocalIDBRepository<
   public async update(bagService: IBagForService) {
     const { data, literalCriteria } = bagService;
     const { modifyType, isCreateOrUpdate } =
-      literalCriteria as IPrimitiveModifyCriteria;
+      literalCriteria as IStructureModifyCriteria<any>;
     if (!this.util.isObject(data)) {
       throw new LogicError({
         code: ELogicCodeError.NOT_VALID,
@@ -323,7 +362,7 @@ export class PrimitiveLocalIDBRepository<
           code: ELogicCodeError.NOT_EXIST,
           msn: `document with data : ${LogicError.valueToString(
             data
-          )} id has not created because not exist`,
+          )} id has not updated because not exist`,
         });
       }
     }
@@ -339,7 +378,7 @@ export class PrimitiveLocalIDBRepository<
    */
   public async delete(bagService: IBagForService) {
     const { data, literalCriteria } = bagService;
-    const { modifyType } = literalCriteria as IPrimitiveModifyCriteria;
+    const { modifyType } = literalCriteria as IStructureModifyCriteria<any>;
     if (!this.util.isObject(data)) {
       throw new LogicError({
         code: ELogicCodeError.NOT_VALID,
@@ -354,8 +393,8 @@ export class PrimitiveLocalIDBRepository<
         msn: `${modifyType} is not modify type valid`,
       });
     }
-    await this.deleteCommon(data, literalCriteria);
-    return null; //⚠Que retorna el primitivo❓❓
+    let rxData = await this.deleteCommon(data, literalCriteria);
+    return rxData;
   }
   //████ Util Registers █████████████████████████████████████████████████████
 }

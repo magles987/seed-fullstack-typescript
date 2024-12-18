@@ -1,5 +1,4 @@
 import { IBagForService } from "../../../../../shared";
-import { IHttpResponse } from "../../shared";
 import { IFetchConfig } from "./shared";
 import {
   ELogicCodeError,
@@ -10,6 +9,10 @@ import {
   EHttpStatusCode,
   TKeyHttpMethod,
 } from "../../../../../../../util/http-utilities";
+import {
+  ELogicResStatusCode,
+  IDriverResponse,
+} from "../../../../../../../reports/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *singleton*
  * *selfconstructor*
@@ -132,104 +135,130 @@ export class FetchHttpDrive
   ): Promise<Response> {
     //agregar opciones obligatorias
     let option = this.util.clone(this.option);
-    option.body = this.getBodyForFetch(txData);
+    option.body = this.util.dataToBody(txData);
     option.method = httpMethod;
     //ejecutar el envío
     let response: Response;
     response = await fetch(url, option);
-    const rxData = await this.getDataFromFetch(response);
+    const rxData = await this.getResponseDataFromFetch(response);
     return rxData;
   }
   /**... */
-  protected override async _sendRequestFromService(
-    iBag: IBagForService
-  ): Promise<IHttpResponse> {
-    const { data, literalCriteria: criteria } = iBag;
-    //configuracion de opciones obligatorias
+  public override async sendRequestFromService(
+    bagService: IBagForService
+  ): Promise<IDriverResponse> {
     let option = this.util.clone(this.option);
-    option.method = this.getHttpMethodFromBag(criteria);
-    option.body = this.getBodyForFetch(data);
     //try-catch especializado para fetch
     let response: Response;
-    let httpBasicResponse: IHttpResponse;
+    let driverResponse: IDriverResponse;
     try {
+      this.util.checkBag(bagService);
+      const { data: txData, literalCriteria: criteria } = bagService;
+      //configuración de opciones obligatorias
+      option.method = this.util.getHttpMethodFromCriteria(criteria);
+      option.body = this.util.dataToBody(txData);
       const urlBodyParts = this.getUrlBodyPartsFromBag(criteria);
       const url = this.buildUrl(urlBodyParts);
       response = await fetch(url, option);
-      httpBasicResponse = await this.adaptToHttpResponseBasic(response);
+      driverResponse = await this.adaptHttpResponseToIDriveResponse(response);
     } catch (error) {
       response = {
         ok: false,
         headers: option.headers,
         status: EHttpStatusCode.CONFLICT,
       } as Response;
-      httpBasicResponse = await this.adaptToHttpResponseBasic(response, error);
+      driverResponse = await this.adaptHttpResponseToIDriveResponse(
+        response,
+        error
+      );
     }
-    return httpBasicResponse;
+    return driverResponse;
   }
-  /**... */
-  protected getBodyForFetch(txData: any): string {
-    let body: string = undefined;
-    if (
-      typeof txData !== "undefined" &&
-      typeof txData !== "function" &&
-      typeof txData !== "symbol"
-    ) {
-      body = JSON.stringify(txData);
-    }
-    return body;
-  }
-  /**... */
-  protected async getDataFromFetch(
-    response: Response //es el response del fetch
-  ): Promise<any> {
-    const contentType = response.headers.get("Content-Type");
-    let data;
-    if (contentType.includes("application/json")) {
-      data = await response.json();
-    } else if (contentType.includes("text/")) {
-      data = await response.text();
-    } else if (contentType.includes("image/")) {
-      data = await response.blob();
-    } else if (contentType.includes("application/pdf")) {
-      data = await response.blob();
-    } else if (contentType.includes("application/octet-stream")) {
-      data = await response.arrayBuffer();
-    } else if (contentType.includes("multipart/form-data")) {
-      data = await response.formData();
-    } else {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_EXIST,
-        msn: `${contentType} is not http header content type valid`,
-      });
-    }
-    return data;
-  }
-  protected override async adaptToHttpResponseBasic(
+  protected override async adaptHttpResponseToIDriveResponse(
     responseToAdapt: Response,
     error?: any
-  ): Promise<IHttpResponse> {
-    let httpBasicResponse: IHttpResponse;
-    const { ok, status, statusText, headers } = responseToAdapt;
+  ): Promise<IDriverResponse> {
+    let driverResponse: IDriverResponse;
+    const { status, statusText, headers } = responseToAdapt;
     if (this.util.isUndefinedOrNull(error)) {
-      const rxData = await this.getDataFromFetch(responseToAdapt);
-      httpBasicResponse = {
-        ok,
-        body: JSON.stringify(rxData), //conversion a string 😥 no debería tener que volverse a convertir
-        httpStatus: status,
-        statusText,
-        header: headers,
-      };
+      const contentType = headers.get("Content-Type");
+      if (contentType.includes("application/json")) {
+        const fetchData = (await responseToAdapt.json()) as IDriverResponse;
+        if (
+          this.util.isObjectWithProperties(
+            fetchData,
+            false,
+            ["data", "status"],
+            "it-exist"
+          )
+        ) {
+          driverResponse = {
+            ...fetchData,
+            status:
+              fetchData.status ??
+              this.util.convertHttpStatusCodeToLogicStatusCode(status),
+            msn: fetchData.msn ?? statusText,
+            extResponse: responseToAdapt,
+          };
+        } else {
+          driverResponse = {
+            data: fetchData,
+            msn: `data is not as expected`,
+            status: ELogicResStatusCode.BAD,
+            extResponse: responseToAdapt,
+          };
+        }
+      } else if (contentType.includes("text/")) {
+        const fetchData = await responseToAdapt.text();
+        driverResponse = {
+          data: fetchData,
+          msn: statusText,
+          status: this.util.convertHttpStatusCodeToLogicStatusCode(status),
+        };
+      } else if (contentType.includes("image/")) {
+        const fetchData = await responseToAdapt.blob();
+        driverResponse = {
+          data: fetchData,
+          msn: statusText,
+          status: this.util.convertHttpStatusCodeToLogicStatusCode(status),
+        };
+      } else if (contentType.includes("application/pdf")) {
+        const fetchData = await responseToAdapt.blob();
+        driverResponse = {
+          data: fetchData,
+          msn: statusText,
+          status: this.util.convertHttpStatusCodeToLogicStatusCode(status),
+        };
+      } else if (contentType.includes("application/octet-stream")) {
+        const fetchData = await responseToAdapt.arrayBuffer();
+        driverResponse = {
+          data: fetchData,
+          msn: statusText,
+          status: this.util.convertHttpStatusCodeToLogicStatusCode(status),
+        };
+      } else if (contentType.includes("multipart/form-data")) {
+        const fetchData = await responseToAdapt.formData();
+        driverResponse = {
+          data: fetchData,
+          msn: statusText,
+          status: this.util.convertHttpStatusCodeToLogicStatusCode(status),
+        };
+      } else {
+        driverResponse = {
+          data: this.util.dfValue,
+          msn: `${contentType} is a content type unknown`,
+          status: ELogicResStatusCode.ERROR,
+          extResponse: responseToAdapt,
+        };
+      }
     } else {
-      httpBasicResponse = {
-        body: undefined,
-        ok,
-        httpStatus: status,
-        statusText,
-        header: headers,
+      driverResponse = {
+        data: this.util.dfValue,
+        msn: statusText,
+        status: status ?? ELogicResStatusCode.ERROR,
         error,
       };
     }
-    return httpBasicResponse;
+    return driverResponse;
   }
 }

@@ -1,18 +1,26 @@
 import {
   TFieldConfigForVal,
+  TKeyPrimitiveValModuleContext,
+  TKeyStructureDeepValModuleContext,
   TModelConfigForVal,
   TPrimitiveConfigForVal,
 } from "../validators/shared";
 import {
   TFieldConfigForMutate,
+  TKeyPrimitiveMutateModuleContext,
+  TKeyStructureDeepMutateModuleContext,
   TModelConfigForMutate,
   TPrimitiveConfigForMutate,
 } from "../mutaters/shared";
 import {
   TStructureConfigForHook,
   TPrimitiveConfigForHook,
+  TKeyPrimitiveHookModuleContext,
+  TKeyStructureHookModuleContext,
 } from "../hooks/shared";
 import {
+  TKeyPrimitiveProviderModuleContext,
+  TKeyStructureProviderModuleContext,
   TModelConfigForProvider,
   TPrimitiveConfigForProvider,
 } from "../providers/shared";
@@ -22,6 +30,8 @@ import {
   TPrimitiveMetadataModuleConfigForPrimitive,
   IPrimitiveMetadataModuleConfig,
   IStructureMetadataModuleConfig,
+  TKeyPrimitiveMetadataModuleContext,
+  TKeyStructureMetadataModuleContext,
 } from "./metadata-handler-shared";
 import { IDiccFieldMutateActionConfigG } from "../mutaters/field-mutater";
 import { IDiccModelMutateActionConfigG } from "../mutaters/model-mutater";
@@ -39,6 +49,18 @@ import {
   TModelConfigForCtrl,
   TPrimitiveConfigForCtrl,
 } from "../controllers/_shared";
+import {
+  TKeyPrimitiveBagModuleContext,
+  TKeyStructureBagModuleContext,
+} from "../bag-module/shared";
+import {
+  TKeyPrimitiveCriteriaModuleContext,
+  TKeyStructureCriteriaModuleContext,
+} from "../criterias/shared";
+import {
+  TKeyPrimitiveResponseModuleContext,
+  TKeyStructureResponseModuleContext,
+} from "../reports/shared";
 
 //████PRIMITIVE████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
@@ -118,7 +140,7 @@ export type TPrimitiveMetaAndCtrl<
   TIDiccRequestValAC = IDiccRequestValActionConfigG,
   TIDiccPrimitiveHookAC = IDiccPrimitiveHookActionConfigG,
   TIDiccPrimitiveProviderAC = IDiccPrimitiveProviderActionConfigG,
-  TKeyDiccCtrlCRUD extends string = string
+  TKeyDiccActionRequest extends string = string
 > = TPrimitiveMetadataModuleConfigForPrimitive &
   Partial<
     //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
@@ -133,7 +155,7 @@ export type TPrimitiveMetaAndCtrl<
           TIDiccRequestValAC &
           TIDiccPrimitiveHookAC &
           TIDiccPrimitiveProviderAC,
-        TKeyDiccCtrlCRUD
+        TKeyDiccActionRequest
       >
     >
   >;
@@ -146,7 +168,7 @@ export type TPrimitiveFull<
   TIDiccRequestValAC = IDiccRequestValActionConfigG,
   TIDiccPrimitiveHookAC = IDiccPrimitiveHookActionConfigG,
   TIDiccPrimitiveProviderAC = IDiccPrimitiveProviderActionConfigG,
-  TKeyDiccCtrlCRUD extends string = string
+  TKeyDiccActionRequest extends string = string
 > = TPrimitiveMetadataModuleConfigForPrimitive &
   Partial<
     //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
@@ -192,12 +214,32 @@ export type TPrimitiveFull<
             TIDiccRequestValAC &
             TIDiccPrimitiveHookAC &
             TIDiccPrimitiveProviderAC,
-          TKeyDiccCtrlCRUD
+          TKeyDiccActionRequest
         >
       >
   >;
 /**Refactorizacion del tipo */
 export type Trf_TPrimitiveFull = TPrimitiveFull<any>;
+
+/**claves identificadoras de todos los contextos
+ * de módulos internos */
+export type TKeyPrimitiveInternalModuleContext =
+  | TKeyPrimitiveBagModuleContext
+  | TKeyPrimitiveResponseModuleContext
+  | TKeyPrimitiveMetadataModuleContext
+  | TKeyPrimitiveCriteriaModuleContext
+  | TKeyPrimitiveMutateModuleContext
+  | TKeyPrimitiveValModuleContext
+  | TKeyPrimitiveHookModuleContext
+  | TKeyPrimitiveProviderModuleContext;
+
+/**claves identificadoras de todos los contextos
+ * de módulos internos */
+export type TKeyPrimitiveInternalACModuleContext =
+  | TKeyPrimitiveMutateModuleContext
+  | TKeyPrimitiveValModuleContext
+  | TKeyPrimitiveHookModuleContext
+  | TKeyPrimitiveProviderModuleContext;
 
 //████STRUCTURED████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
@@ -205,7 +247,6 @@ export type Trf_TPrimitiveFull = TPrimitiveFull<any>;
 
 //❗se debe usar tipo y no interfaz para poder hacer interseccion
 //con los subtipos (modelo, campos o embebidos)❗
-
 /**... */
 export type TStructureFieldMeta<TEmbModel> =
   TStructureMetadataModuleConfigForField & {
@@ -360,11 +401,6 @@ export type Trf_TStructureFieldFull = TStructureFieldFull<
   any,
   any
 >;
-
-//===== Contexto MODEL ===========================================================================================================================
-
-//❗se debe usar typo y no interfaz para poder hacer interseccion
-//con los subtipos (modelo, campos o embebidos)❗
 /**
  * Estructura o esquema de un modelo con las propiedades
  * generales y campos (puede usarse como embebido)
@@ -502,7 +538,7 @@ export type TStructureMetaAndCtrl<
   TIDiccRequestValAC = IDiccRequestValActionConfigG,
   TIDiccStructureHookAC = IDiccStructureHookActionConfigG,
   TIDiccStructureProviderAC = IDiccStructureProviderActionConfigG,
-  TKeyDiccCtrlCRUD extends string = string
+  TKeyDiccActionRequest extends string = string
 > = TStructureMetadataModuleConfigForModel<TModel> &
   //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
   Partial<
@@ -517,7 +553,7 @@ export type TStructureMetaAndCtrl<
           TIDiccRequestValAC &
           TIDiccStructureHookAC &
           TIDiccStructureProviderAC,
-        TKeyDiccCtrlCRUD
+        TKeyDiccActionRequest
       >
     >
   >;
@@ -533,7 +569,7 @@ export type TStructureFull<
   TIDiccRequestValAC = IDiccRequestValActionConfigG,
   TIDiccStructureHookAC = IDiccStructureHookActionConfigG,
   TIDiccStructureProviderAC = IDiccStructureProviderActionConfigG,
-  TKeyDiccCtrlCRUD extends string = string
+  TKeyDiccActionRequest extends string = string
 > = TStructureMetadataModuleConfigForModel<TModel> &
   //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
   Partial<
@@ -579,7 +615,7 @@ export type TStructureFull<
             TIDiccRequestValAC &
             TIDiccStructureHookAC &
             TIDiccStructureProviderAC,
-          TKeyDiccCtrlCRUD
+          TKeyDiccActionRequest
         >
       >
   > &
@@ -606,3 +642,57 @@ export type Trf_TStructureFull = TStructureFull<
   any,
   any
 >;
+/**claves identificadoras de todos los contextos
+ * de módulos internos */
+export type TKeyStructureInternalModuleContext =
+  | TKeyStructureBagModuleContext
+  | TKeyStructureResponseModuleContext
+  | TKeyStructureMetadataModuleContext
+  | TKeyStructureCriteriaModuleContext
+  | TKeyStructureDeepMutateModuleContext
+  | TKeyStructureDeepValModuleContext
+  | TKeyStructureHookModuleContext
+  | TKeyStructureProviderModuleContext;
+
+/**claves identificadoras de todos los contextos
+ * de módulos internos usados en el controller */
+export type TKeyStructureInternalACModuleContext =
+  | TKeyStructureDeepMutateModuleContext
+  | TKeyStructureDeepValModuleContext
+  | TKeyStructureHookModuleContext
+  | TKeyStructureProviderModuleContext;
+/**claves identificadoras de todos los contextos
+ * de módulos internos usados en el controller
+ * en contexto model */
+export type TKeyFieldInternalModuleContext =
+  | TKeyStructureBagModuleContext
+  | TKeyStructureResponseModuleContext
+  | TKeyStructureMetadataModuleContext
+  | Extract<TKeyStructureDeepMutateModuleContext, "fieldMutate">
+  | Extract<TKeyStructureDeepValModuleContext, "fieldVal">;
+/**claves identificadoras de todos los contextos
+ * de módulos internos usados en el controller
+ * en contexto model*/
+export type TKeyFieldInternalACModuleContext =
+  | Extract<TKeyStructureDeepMutateModuleContext, "fieldMutate">
+  | Extract<TKeyStructureDeepValModuleContext, "fieldVal">;
+/**claves identificadoras de todos los contextos
+ * de módulos internos usados en el controller
+ * en contexto model */
+export type TKeyModelInternalModuleContext =
+  | TKeyStructureBagModuleContext
+  | TKeyStructureResponseModuleContext
+  | Extract<TKeyStructureMetadataModuleContext, "modelMeta">
+  | TKeyStructureCriteriaModuleContext
+  | Extract<TKeyStructureDeepMutateModuleContext, "modelMutate">
+  | Extract<TKeyStructureDeepValModuleContext, "modelVal">
+  | TKeyStructureHookModuleContext
+  | TKeyStructureProviderModuleContext;
+/**claves identificadoras de todos los contextos
+ * de módulos internos usados en el controller
+ * en contexto model*/
+export type TKeyModelInternalACModuleContext =
+  | Extract<TKeyStructureDeepMutateModuleContext, "modelMutate">
+  | Extract<TKeyStructureDeepValModuleContext, "modelVal">
+  | TKeyStructureHookModuleContext
+  | TKeyStructureProviderModuleContext;

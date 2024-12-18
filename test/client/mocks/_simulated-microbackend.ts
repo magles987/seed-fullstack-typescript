@@ -1,13 +1,16 @@
 import { getGlobalConfig } from "../../../src/seed/logic/config/global-config";
 import { TKeyLogicContext } from "../../../src/seed/logic/config/shared-modules";
-import { IReadCriteria } from "../../../src/seed/logic/criterias/shared";
-import { QueryJsAdaptator } from "../../../src/seed/logic/providers/services/client/web/local/repositories/_query-js-adaptador";
+import { QueryJsAdaptator } from "../../../src/seed/logic/providers/services/client/web/local/drivers/_query-js-adaptador";
 import { IBagForService } from "../../../src/seed/logic/providers/services/shared";
-import { Util_Logic } from "../../../src/seed/logic/util/util-logic";
+import {
+  ELogicResStatusCode,
+  IDriverResponse,
+} from "../../../src/seed/logic/reports/shared";
+import { Util_Mock } from "./_util-mock";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export interface ISimulatedMicroBackend {
-  receiveRequest: (
+  receiveMockRequest: (
     data: any,
     criteria: IBagForService["literalCriteria"]
   ) => Promise<unknown>;
@@ -57,7 +60,7 @@ export abstract class SimulatedMicroBackend
     return this._queryJsAdaptator;
   }
   /**utilidades */
-  protected util = Util_Logic.getInstance();
+  protected util = Util_Mock.getInstance();
   /**
    * @param _keyLogicContext clave identificadora del contexto lógico de esta clase
    * @param _queryJsAdaptator adaptador para consultas
@@ -70,7 +73,7 @@ export abstract class SimulatedMicroBackend
     base: Partial<ReturnType<SimulatedMicroBackend["getDefault"]>> = {},
     isInit = true
   ) {
-    this.util = Util_Logic.getInstance();
+    this.util = Util_Mock.getInstance();
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
@@ -81,7 +84,7 @@ export abstract class SimulatedMicroBackend
   protected getCONST() {
     return SimulatedMicroBackend.getCONSTANTS();
   }
-  /**inicializa las propiedades de manera dinamica
+  /**inicializa las propiedades de manera dinámica
    *
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    */
@@ -127,10 +130,61 @@ export abstract class SimulatedMicroBackend
     return;
   }
   /**... */
-  public abstract receiveRequest(
+  public async receiveMockRequest(
     data: any,
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<unknown>;
+    literalCriteria: IBagForService["literalCriteria"]
+  ): Promise<IDriverResponse> {
+    let driverRes: IDriverResponse;
+    try {
+      let actionFn = this.util.getActionRequestFn(this, literalCriteria);
+      const rxData = await actionFn(data, literalCriteria);
+      driverRes = this.buildDriverResponse(literalCriteria, rxData);
+    } catch (error) {
+      driverRes = this.buildDriverResponse(
+        literalCriteria,
+        this.util.dfValue,
+        error
+      );
+    }
+    return driverRes;
+  }
+  /**... */
+  protected buildDriverResponse(
+    literalCriteria: IBagForService["literalCriteria"],
+    rxData: any,
+    error?: any
+  ): IDriverResponse {
+    let driverRes = {
+      data: rxData,
+      status: ELogicResStatusCode.SUCCESS,
+      msn: ``,
+      error,
+    } as IDriverResponse;
+    const { expectedDataType } = literalCriteria;
+    const dfValue = this.util.dfValue;
+    if (this.util.isUndefinedOrNull(error)) {
+      //verificación de data recibida
+      if (this.util.checkRxData(rxData, expectedDataType)) {
+        driverRes.data = rxData;
+        driverRes.status = ELogicResStatusCode.SUCCESS;
+        driverRes.msn = `ok`;
+      } else {
+        driverRes.data = dfValue;
+        driverRes.status = ELogicResStatusCode.BAD;
+        driverRes.msn = `data has not been as expected`;
+      }
+    } else {
+      driverRes.data = dfValue;
+      driverRes.status = ELogicResStatusCode.ERROR;
+      driverRes.error = error;
+      driverRes.msn = this.util.isObject(error)
+        ? (error as Error).message ?? `internal error in local driver`
+        : this.util.isString(error)
+        ? error
+        : `internal error in local driver`;
+    }
+    return driverRes;
+  }
   //████ handler method registers ████████████████████████████████████████████████████████████
   /**... */
   protected async getOne(
@@ -150,7 +204,10 @@ export abstract class SimulatedMicroBackend
     criteria: IBagForService["literalCriteria"]
   ): Promise<any[]> {
     registers = Array.isArray(registers) ? registers : [registers];
-    let data = await this.queryJsAdaptator.findByCondition(registers, criteria);
+    let data = await this.queryJsAdaptator.filterByCondition(
+      registers,
+      criteria
+    );
     data = await this.queryJsAdaptator.orderBy(data, criteria);
     data = await this.queryJsAdaptator.pageBy(data, criteria);
     return data;
@@ -213,5 +270,4 @@ export abstract class SimulatedMicroBackend
     data: any,
     criteria: IBagForService["literalCriteria"]
   ): Promise<any>;
-  //████ Utilitaries ████████████████████████████████████████████████████████████
 }

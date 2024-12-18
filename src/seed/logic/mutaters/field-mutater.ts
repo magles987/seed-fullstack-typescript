@@ -1,12 +1,12 @@
 import { StructureLogicMutater } from "./_structure-mutater";
-import { TFieldConfigForMutate, TStructureMutateModuleConfigForField } from "./shared";
 import {
-  IStructureBagForActionModuleContext,
-  TStructureFnBagForActionModule,
-} from "../bag-module/shared-for-external-module";
+  TFieldConfigForMutate,
+  TStructureMutateModuleConfigForField,
+} from "./shared";
 import { ELogicResStatusCode, IStructureResponse } from "../reports/shared";
 import { TStructureFieldMetaAndMutater } from "../meta/metadata-shared";
 import { StructureBag } from "../bag-module/structure-bag";
+import { TStructureFnBagForActionModule } from "../bag-module/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** define las propiedades de cada formateo
  * que puede configurar y ejecutar un campo
@@ -152,11 +152,12 @@ export type Trf_FieldLogicMutater = FieldLogicMutater;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class FieldLogicMutater<
-  TIDiccAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG
->
+    TIDiccAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG
+  >
   extends StructureLogicMutater<TIDiccAC>
   implements
-  Record<TKeysDiccFieldMutateActionConfigG, TStructureFnBagForActionModule> {
+    Record<TKeysDiccFieldMutateActionConfigG, TStructureFnBagForActionModule>
+{
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = StructureLogicMutater.getDefault();
@@ -197,19 +198,14 @@ export class FieldLogicMutater<
     } else {
       rConfig = {
         ...nCC,
-        diccActionsConfig: this.util.isObject(
-          nCC.diccActionsConfig
-        )
+        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
           ? this.util.mergeDiccActionConfig(
-            [
-              cCC.diccActionsConfig,
-              nCC.diccActionsConfig,
-            ],
-            {
-              mode: mergeMode,
-              //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
-            }
-          )
+              [cCC.diccActionsConfig, nCC.diccActionsConfig],
+              {
+                mode: mergeMode,
+                //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
+              }
+            )
           : cCC.diccActionsConfig,
       };
     }
@@ -227,18 +223,12 @@ export class FieldLogicMutater<
   ): TFieldConfigForMutate<TIDiccAC> {
     return super.getMetadataOnlyModuleConfig(keyPath);
   }
-  protected override adapBagForContext<TKey extends keyof TIDiccAC>(
-    bag: StructureBag<any>,
-    keyAction: TKey
-  ): IStructureBagForActionModuleContext<TIDiccAC, TKey> {
-    const r = super.adapBagForContext(bag, keyAction);
-    return r;
-  }
   //================================================================================================================================
   public async anyTrim(bag: StructureBag<any>): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, keyAction, keyPath, actionConfig, responses } =
-      this.adapBagForContext(bag, "anyTrim");
+    const { data, criteriaHandler: cH } = bag;
+    const [keyAction, actionConfig] =
+      this.getTupleActionConfigFromCriteriaHandler(cH, "anyTrim");
     const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     //const {} = actionConfig;

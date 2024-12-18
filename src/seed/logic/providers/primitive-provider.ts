@@ -1,19 +1,14 @@
 import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
-import {
-  IPrimitiveBagForActionModuleContext,
-  TPrimitiveFnBagForActionModule,
-} from "../bag-module/shared-for-external-module";
+import { TPrimitiveFnBagForActionModule } from "../bag-module/shared";
+import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { TPrimitiveMetaAndProvider } from "../meta/metadata-shared";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
-import {
-  PrimitiveReportHandler,
-  Trf_PrimitiveReportHandler,
-} from "../reports/primitive-report-handler";
+import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import { ELogicResStatusCode, IPrimitiveResponse } from "../reports/shared";
 import { LogicProvider } from "./_provider";
-import { httpClientDriverFactoryFn } from "./services/client/web/http/drive/http-driver-factory";
-import { localRepositoryFactoryFn } from "./services/client/web/local/repositories/local-repository-factory";
+import { httpClientDriverFactoryFn } from "./services/client/web/http/drivers/http-driver-factory";
+import { localRepositoryFactoryFn } from "./services/client/web/local/drivers/local-repository-factory";
 import { serviceFactory } from "./services/service-factory";
 import {
   TKeyPrimitiveProviderModuleContext,
@@ -186,43 +181,17 @@ export class PrimitiveLogicProvider<
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
-  protected override adapBagForContext<TKey extends keyof TIDiccAC>(
-    bag: PrimitiveBag<any>,
+  protected override getTupleActionConfigFromCriteriaHandler<
+    TKey extends keyof TIDiccAC
+  >(
+    criteriaHandler: Trf_PrimitiveCriteriaHandler,
     keyAction: TKey
-  ): IPrimitiveBagForActionModuleContext<TIDiccAC, TKey> {
-    const tGlobalAC = bag.findTupleGlobalActionConfig([
-      this.keyModule as any,
-      this.keyModuleContext,
-      keyAction as never,
-    ]);
-    const tupleAC = bag.retrieveTupleActionConfig<TIDiccAC, any>(tGlobalAC);
-    let actionConfig = this.retriveActionConfigFromTuple(tupleAC);
-    if (actionConfig === undefined) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${actionConfig} is not action configuration valid`,
-      });
-    }
-    if (actionConfig === undefined) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${actionConfig} is not action configuration valid`,
-      });
-    }
-    actionConfig = this.buildSingleActionConfig(
-      "toActionConfig" as any,
-      keyAction as any,
-      actionConfig as any,
-      { mergeMode: "soft" }
+  ): [TKey, TIDiccAC[TKey]] {
+    const tKeyGlobalAC = [this.keyModuleContext, keyAction];
+    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
+      tKeyGlobalAC as any
     );
-    const bagFC: IPrimitiveBagForActionModuleContext<TIDiccAC, any> = {
-      data: bag.data,
-      keyAction,
-      actionConfig,
-      responses: bag.responses,
-      criteriaHandler: bag.criteriaHandler,
-    };
-    return bagFC;
+    return [keyAction, actionConfig];
   }
   public override buildReportHandler(
     bag: Trf_PrimitiveBag,
@@ -242,7 +211,7 @@ export class PrimitiveLogicProvider<
       keyRepSrc: this.keySrc,
       status: this.globalStatus,
       tolerance: this.globalTolerance,
-      fisrtCtrlData: firstData,
+      firstCtrlData: firstData,
       data,
     });
     return rH;
@@ -265,10 +234,12 @@ export class PrimitiveLogicProvider<
   public async runProvider(
     bag: PrimitiveBag<any>
   ): Promise<IPrimitiveResponse> {
-    const { data, keyAction, actionConfig, responses } = this.adapBagForContext(
-      bag,
-      "runProvider"
-    );
+    const { data, criteriaHandler, responses } = bag;
+    const [keyAction, actionConfig] =
+      this.getTupleActionConfigFromCriteriaHandler(
+        criteriaHandler,
+        "runProvider"
+      );
     let { customServiceFactoryFn, serviceConfig, serviceToRun } = actionConfig;
     const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });

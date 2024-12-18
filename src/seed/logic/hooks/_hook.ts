@@ -1,13 +1,7 @@
 import { Trf_BagModule } from "../bag-module/_bag";
 import { ActionModule } from "../config/module";
 import { TKeyLogicContext } from "../config/shared-modules";
-import { LogicError, ELogicCodeError } from "../errors/logic-error";
-import { ReportHandler } from "../reports/_reportHandler";
-import {
-  ELogicResStatusCode,
-  IResponse,
-  TResponseForMutate,
-} from "../reports/shared";
+import { ELogicResStatusCode, IResponse } from "../reports/shared";
 import { Util_Hook } from "./_util-hook";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipado refactorizado de la clase */

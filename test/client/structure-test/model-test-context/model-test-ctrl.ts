@@ -53,7 +53,7 @@ export class ModelTestCtrl extends StructureLogicController<ModelTest> {
             diccActionsConfig: {
               isRequired: true,
               isModel: {
-                modelForDiccAC: {},
+                modelOnlyFieldDiccAC: {},
               },
             },
           },

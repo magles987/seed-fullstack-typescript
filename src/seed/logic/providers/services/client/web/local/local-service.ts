@@ -1,5 +1,6 @@
 import { TKeyLogicContext } from "../../../../../config/shared-modules";
 import {
+  IDriverResponse,
   IPrimitiveResponse,
   IStructureResponse,
 } from "../../../../../reports/shared";
@@ -7,9 +8,9 @@ import { WebClientService } from "../_web-service-client";
 import {
   localRepositoryFactoryFn,
   TKeyLocalRepositoryInstance,
-} from "./repositories/local-repository-factory";
+} from "./drivers/local-repository-factory";
 import { IPrimitiveBag, IStructureBag } from "../../../../../bag-module/shared";
-import { ILocalResponse, ILocalWebClientServiceRequestC } from "./shared";
+import { ILocalWebClientServiceRequestC } from "./shared";
 import { IGenericDriver, IServiceRequestConfig } from "../../../shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
@@ -100,7 +101,7 @@ export class LocalWebClientService extends WebClientService {
     }
     return rConfig;
   }
-  protected override buildDriver(): IGenericDriver<ILocalResponse> {
+  protected override buildDriver(): IGenericDriver {
     const diccConfig = this.config.diccRepositoryConfig;
     const driver = localRepositoryFactoryFn(
       this.keyDrive as TKeyLocalRepositoryInstance,
@@ -131,40 +132,6 @@ export class LocalWebClientService extends WebClientService {
       driverResponse,
       iBag
     );
-    return res;
-  }
-  protected override adaptDriverResponseToPrimitiveLogicResponse(
-    driverResponse: ILocalResponse,
-    iBag: IPrimitiveBag<any>
-  ): IPrimitiveResponse {
-    const { body, httpStatus, ok, statusText, error } = driverResponse;
-    const rH = this.buildPrimitiveReportHandler(iBag);
-    let res = rH.mutateResponse(undefined, {
-      data: this.reBuildRxDataFromHttpResponse(
-        body,
-        iBag.literalCriteria.expectedDataType
-      ),
-      status: this.convertHttpStatusCodeToLogicStatusCode(httpStatus),
-      extResponse: error,
-      msn: statusText,
-    });
-    return res;
-  }
-  protected override adaptDriverResponseToStructureLogicResponse(
-    driverResponse: ILocalResponse,
-    iBag: IStructureBag<any>
-  ): IStructureResponse {
-    const { body, httpStatus, ok, statusText, error } = driverResponse;
-    const rH = this.buildStructureReportHandler(iBag);
-    let res = rH.mutateResponse(undefined, {
-      data: this.reBuildRxDataFromHttpResponse(
-        body,
-        iBag.literalCriteria.expectedDataType
-      ),
-      status: this.convertHttpStatusCodeToLogicStatusCode(httpStatus),
-      extResponse: error,
-      msn: statusText,
-    });
     return res;
   }
 }

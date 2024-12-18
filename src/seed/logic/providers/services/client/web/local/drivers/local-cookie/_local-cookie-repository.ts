@@ -7,7 +7,7 @@ import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../../errors/logic-error";
-import { LocalRepository } from "../_local-repository";
+import { LocalRepositoryDriver } from "../_local-repository";
 import { QueryJsAdaptator } from "../_query-js-adaptador";
 import { ILocalCookieRepositoryConfig } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -19,7 +19,7 @@ export type Trf_LocalCookieRepository = LocalCookieRepository<any>; //
  * ...
  */
 export abstract class LocalCookieRepository<TKeyActionRequest>
-  extends LocalRepository
+  extends LocalRepositoryDriver
   implements ReturnType<LocalCookieRepository<TKeyActionRequest>["getDefault"]>
 {
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/

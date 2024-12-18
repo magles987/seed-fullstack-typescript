@@ -18,7 +18,8 @@ export type Trf_ReportHandler = ReportHandler;
  */
 export abstract class ReportHandler
   extends HandlerModule
-  implements ReturnType<ReportHandler["getDefault"]> {
+  implements ReturnType<ReportHandler["getDefault"]>
+{
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
     return {
@@ -60,15 +61,15 @@ export abstract class ReportHandler
   public set keyRepModule(v: TKeyModuleWithReport) {
     this._keyRepModule =
       v === "controller" ||
-        v === "mutater" ||
-        v === "validator" ||
-        v === "hook" ||
-        v === "provider" ||
-        v === "service"
+      v === "mutater" ||
+      v === "validator" ||
+      v === "hook" ||
+      v === "provider" ||
+      v === "service"
         ? v
         : this._keyRepModule !== undefined
-          ? this._keyRepModule
-          : this.getDefault().keyRepModule;
+        ? this._keyRepModule
+        : this.getDefault().keyRepModule;
   }
   private _keyRepLogicContext: TKeyLogicContext;
   public get keyRepLogicContext(): TKeyLogicContext {
@@ -79,8 +80,8 @@ export abstract class ReportHandler
       v === "primitive" || v === "structure"
         ? v
         : this._keyRepLogicContext !== undefined
-          ? this._keyRepLogicContext
-          : this.getDefault().keyRepLogicContext;
+        ? this._keyRepLogicContext
+        : this.getDefault().keyRepLogicContext;
   }
   private _keyRepModuleContext: unknown;
   public get keyRepModuleContext(): unknown {
@@ -90,8 +91,8 @@ export abstract class ReportHandler
     this._keyRepModuleContext = this.util.isString(v)
       ? v
       : this._keyRepModuleContext !== undefined
-        ? this._keyRepModuleContext
-        : this.getDefault().keyRepModuleContext;
+      ? this._keyRepModuleContext
+      : this.getDefault().keyRepModuleContext;
   }
   private _keyLogic?: string;
   public get keyLogic(): string {
@@ -101,8 +102,8 @@ export abstract class ReportHandler
     this._keyLogic = this.util.isString(v)
       ? v
       : this._keyLogic !== undefined
-        ? this._keyLogic
-        : this.getDefault().keyLogic;
+      ? this._keyLogic
+      : this.getDefault().keyLogic;
   }
   private _keyRepSrc: string;
   public get keyRepSrc(): string {
@@ -120,8 +121,8 @@ export abstract class ReportHandler
       v === "read" || v === "modify"
         ? v
         : this._keyTypeRequest !== undefined
-          ? this._keyTypeRequest
-          : this.getDefault().keyTypeRequest;
+        ? this._keyTypeRequest
+        : this.getDefault().keyTypeRequest;
   }
   private _keyModifyTypeRequest?: TKeyRequestModifyType;
   public get keyModifyTypeRequest(): TKeyRequestModifyType {
@@ -132,8 +133,8 @@ export abstract class ReportHandler
       v === "create" || v === "update" || v === "delete"
         ? v
         : this._keyModifyTypeRequest !== undefined
-          ? this._keyModifyTypeRequest
-          : this.getDefault().keyModifyTypeRequest;
+        ? this._keyModifyTypeRequest
+        : this.getDefault().keyModifyTypeRequest;
   }
   private _keyAction: string;
   public get keyAction(): string {
@@ -143,8 +144,8 @@ export abstract class ReportHandler
     this._keyAction = this.util.isString(v)
       ? v
       : this._keyAction !== undefined
-        ? this._keyAction
-        : this.getDefault().keyAction;
+      ? this._keyAction
+      : this.getDefault().keyAction;
   }
   private _keyActionRequest: string;
   public get keyActionRequest(): string {
@@ -154,8 +155,8 @@ export abstract class ReportHandler
     this._keyActionRequest = this.util.isString(v)
       ? v
       : this._keyActionRequest !== undefined
-        ? this._keyActionRequest
-        : this.getDefault().keyActionRequest;
+      ? this._keyActionRequest
+      : this.getDefault().keyActionRequest;
   }
   private _tolerance: ELogicResStatusCode;
   public get tolerance(): ELogicResStatusCode {
@@ -165,8 +166,8 @@ export abstract class ReportHandler
     this._tolerance = this.util.isNumber(v)
       ? v
       : this._tolerance !== undefined
-        ? this._tolerance
-        : this.getDefault().tolerance;
+      ? this._tolerance
+      : this.getDefault().tolerance;
   }
   private _status: ELogicResStatusCode;
   public get status(): ELogicResStatusCode {
@@ -176,8 +177,8 @@ export abstract class ReportHandler
     this._status = this.util.isNumber(v)
       ? v
       : this._status !== undefined
-        ? this._status
-        : this.getDefault().status;
+      ? this._status
+      : this.getDefault().status;
   }
   private _responses: IResponse[];
   public get responses(): IResponse[] {
@@ -187,8 +188,8 @@ export abstract class ReportHandler
     this._responses = this.util.isArray(v)
       ? v
       : this._responses !== undefined
-        ? this._responses
-        : this.getDefault().responses;
+      ? this._responses
+      : this.getDefault().responses;
   }
   private _extResponse?: object;
   public get extResponse(): object {
@@ -199,14 +200,14 @@ export abstract class ReportHandler
       v !== undefined
         ? v
         : this._extResponse !== undefined
-          ? this._extResponse
-          : this.getDefault().extResponse;
+        ? this._extResponse
+        : this.getDefault().extResponse;
   }
   private _fisrtCtrlData?: any;
-  public get fisrtCtrlData(): any {
+  public get firstCtrlData(): any {
     return this._fisrtCtrlData;
   }
-  protected set fisrtCtrlData(v: any) {
+  protected set firstCtrlData(v: any) {
     this._fisrtCtrlData = v; //❗Permite todo❗
   }
   private _msn: string;
@@ -217,8 +218,8 @@ export abstract class ReportHandler
     this._msn = this.util.isString(v)
       ? v
       : this._msn !== undefined
-        ? this._msn
-        : this.getDefault().msn;
+      ? this._msn
+      : this.getDefault().msn;
   }
   protected override readonly util = Util_Report.getInstance();
   /**
@@ -324,18 +325,18 @@ export abstract class ReportHandler
       res = {} as any;
       eachFn = (key: string) => {
         this[key] = param[key]; //actualizacion al manejador
-        res[key] = this[key]; //se completa res (por si no está completo)        
+        res[key] = this[key]; //se completa res (por si no está completo)
       };
     } else if (isResObject && isParamObject) {
       eachFn = (key: string) => {
         this[key] = key in param ? param[key] : res[key]; //actualizacion al manejador
-        res[key] = this[key]; //se completa res (por si no está completo)        
-      }
+        res[key] = this[key]; //se completa res (por si no está completo)
+      };
     } else {
       res = {} as any;
       eachFn = (key: string) => {
         res[key] = this[key];
-      }
+      };
     }
     eachFn = eachFn.bind(this);
     keysDf.forEach(eachFn);
@@ -345,9 +346,8 @@ export abstract class ReportHandler
   /**... */
   protected mutateData(newData: any, res: IResponse): void {
     //modulos prohibidos para mutar dato
-    if (this.keyRepModule === "validator"
-      || this.keyRepModule === "hook"
-    ) return;
+    if (this.keyRepModule === "validator" || this.keyRepModule === "hook")
+      return;
     if (res.data !== newData) res.data = newData;
     if (this.data !== res.data) {
       this.data = res.data;

@@ -10,6 +10,7 @@ import { Util_Service } from "./_util-service";
 import {
   EKeyActionGroupForRes,
   ELogicResStatusCode,
+  IDriverResponse,
   IPrimitiveResponse,
   IResponse,
   IStructureResponse,
@@ -82,7 +83,7 @@ export abstract class LogicService
   protected override getDefault() {
     return LogicService.getDefault();
   }
-  /**ejecutar la peticion en el servicio */
+  /**ejecutar la petición en el servicio */
   public async sendRequestInService(iBag: IBagModule<any>): Promise<IResponse> {
     let res: IResponse;
     if (this.keyLogicContext === "primitive") {
@@ -105,7 +106,7 @@ export abstract class LogicService
     customDeepConfig: unknown
   ): IServiceRequestConfig;
   /**construye una instancia de driver*/
-  protected abstract buildDriver(): IGenericDriver<any>;
+  protected abstract buildDriver(): IGenericDriver;
   /**ejecutar la peticion del servicio en contexto *primitive* para lectura */
   /**convierte el bag literal completo a un bag especifico para el servicio*/
   protected convertBagToBagService(
@@ -156,8 +157,8 @@ export abstract class LogicService
   public buildStructureReportHandler(
     iBag: IStructureBag<any>
   ): StructureReportHandler {
-    const { data, literalCriteria, keyPath } = iBag;
-    const { keyActionRequest, type, modifyType, keySrc } =
+    const { data, literalCriteria } = iBag;
+    const { keyActionRequest, keyPath, type, modifyType, keySrc } =
       literalCriteria as IStructureReadCriteria<any> &
         IStructureModifyCriteria<any>;
     let rH = new StructureReportHandler(this.keySrc, {
@@ -185,15 +186,41 @@ export abstract class LogicService
     iBag: IStructureBag<any>
   ): Promise<IStructureResponse>;
   /**... */
-  protected abstract adaptDriverResponseToPrimitiveLogicResponse(
-    driverResponse: unknown,
-    ibag: IPrimitiveBag<any>
-  ): IPrimitiveResponse;
+  protected adaptDriverResponseToPrimitiveLogicResponse(
+    driverResponse: IDriverResponse,
+    literalBag: IPrimitiveBag<any>
+  ): IPrimitiveResponse {
+    const { data, status, msn, error, extResponse } = driverResponse;
+    const rH = this.buildPrimitiveReportHandler(literalBag);
+    let res = rH.mutateResponse(undefined, {
+      data,
+      status,
+      msn,
+      extResponse: {
+        error,
+        addResponse: extResponse,
+      },
+    });
+    return res;
+  }
   /**... */
-  protected abstract adaptDriverResponseToStructureLogicResponse(
-    driverResponse: unknown,
-    ibag: IStructureBag<any>
-  ): IStructureResponse;
+  protected adaptDriverResponseToStructureLogicResponse(
+    driverResponse: IDriverResponse,
+    literalBag: IStructureBag<any>
+  ): IStructureResponse {
+    const { data, status, msn, error, extResponse } = driverResponse;
+    const rH = this.buildStructureReportHandler(literalBag);
+    let res = rH.mutateResponse(undefined, {
+      data,
+      status,
+      msn,
+      extResponse: {
+        error,
+        extResponse,
+      },
+    });
+    return res;
+  }
   /**
    * @returns el estado de respuesta reducido
    * segun criterio de este modulo

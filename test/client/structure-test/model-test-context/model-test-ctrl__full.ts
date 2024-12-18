@@ -13,15 +13,12 @@ import { StructureLogicProvider } from "../../../../src/seed/logic/providers/str
 import { FieldLogicValidation } from "../../../../src/seed/logic/validators/field-validation";
 import { ModelLogicValidation } from "../../../../src/seed/logic/validators/model-validation";
 import { RequestLogicValidation } from "../../../../src/seed/logic/validators/request-validation";
-import {
-  IStructureBagForFieldCtrlContext,
-  IStructureBagForModelCtrlContext,
-  TFieldFnBagForCtrl,
-  TModelFnBagForCtrl,
-} from "../../../../src/seed/logic/bag-module/shared-for-external-module";
-import { TCapitalizeFirstLetter } from "../../../../src/seed/util/shared";
-import { IStructureResponse } from "../../../../src/seed/logic/reports/shared";
 import { Util_Ctrl } from "../../../../src/seed/logic/controllers/_util-ctrl";
+import {
+  TFieldCtrlActionFn,
+  TModelCtrlActionFn,
+} from "../../../../src/seed/logic/controllers/_shared";
+import { TCapitalizeFirstLetter } from "../../../../src/seed/util/shared";
 //████ REQUEST ACTIONS ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras de las acciones de petición para el modo lectura de datos */
 export type TKeyModelTestReadRequestController =
@@ -32,7 +29,7 @@ export type TKeyModelTestModifyRequestController =
   //...aqui los nombres de las acciones de peticion a usar en este controller
   TKeyStructureModifyRequestController;
 type TModel = ModelTest;
-type TStructureCriteriaInstance = StructureCriteriaHandler<ModelTest>;
+type TStructureCriteriaInstance = StructureCriteriaHandler<TModel>;
 type TFieldMutateInstance = FieldLogicMutater;
 type TModelMutateInstance = ModelLogicMutater;
 type TFieldValInstance = FieldLogicValidation;
@@ -40,31 +37,27 @@ type TModelValInstance = ModelLogicValidation;
 type TRequestValInstance = RequestLogicValidation;
 type TStructureHookInstance = StructureLogicHook;
 type TStructureProviderInstance = StructureLogicProvider;
-type TKeyDiccCtrlCRUD =
+type TKeyDiccActionRequest =
   | TKeyModelTestReadRequestController
   | TKeyModelTestModifyRequestController;
-type TIStructureBagForModelCtrlContext = IStructureBagForModelCtrlContext<
-  TModel,
-  TStructureCriteriaInstance,
-  //TFieldMutateInstance["dfDiccActionConfig"],
-  TModelMutateInstance["dfDiccActionConfig"],
-  //TFieldValInstance["dfDiccActionConfig"],
-  TModelValInstance["dfDiccActionConfig"],
-  TRequestValInstance["dfDiccActionConfig"],
-  TStructureHookInstance["dfDiccActionConfig"],
-  TStructureProviderInstance["dfDiccActionConfig"]
->;
-type TIStructureBagForFieldCtrlContext = IStructureBagForFieldCtrlContext<
-  TFieldMutateInstance["dfDiccActionConfig"],
-  TFieldValInstance["dfDiccActionConfig"]
->;
 type TRecordModelRequestController = Record<
-  TKeyModelTestReadRequestController | TKeyModelTestModifyRequestController,
-  TModelFnBagForCtrl<TIStructureBagForModelCtrlContext, IStructureResponse>
+  TKeyStructureReadRequestController | TKeyStructureModifyRequestController,
+  TModelCtrlActionFn<
+    TModel,
+    TModelMutateInstance["dfDiccActionConfig"],
+    TModelValInstance["dfDiccActionConfig"],
+    TRequestValInstance["dfDiccActionConfig"],
+    TStructureHookInstance["dfDiccActionConfig"],
+    TStructureProviderInstance["dfDiccActionConfig"]
+  >
 >;
 type TRecordFieldRequestController = Record<
   `checkField${TCapitalizeFirstLetter<keyof ModelTest>}`,
-  TFieldFnBagForCtrl<TIStructureBagForFieldCtrlContext, IStructureResponse>
+  TFieldCtrlActionFn<
+    TModel,
+    TFieldMutateInstance["dfDiccActionConfig"],
+    TFieldValInstance["dfDiccActionConfig"]
+  >
 >;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
@@ -79,7 +72,7 @@ export class ModelTestCtrl__full
     TRequestValInstance,
     TStructureHookInstance,
     TStructureProviderInstance,
-    TKeyDiccCtrlCRUD
+    TKeyDiccActionRequest
   >
   implements TRecordModelRequestController, TRecordFieldRequestController
 {
@@ -93,7 +86,7 @@ export class ModelTestCtrl__full
     TRequestValInstance,
     TStructureHookInstance,
     TStructureProviderInstance,
-    TKeyDiccCtrlCRUD
+    TKeyDiccActionRequest
   > {
     const util = Util_Ctrl.getInstance();
     const dfModel = new ModelTest();
@@ -130,7 +123,7 @@ export class ModelTestCtrl__full
           },
           __ctrlConfig: {
             fieldCtrl: {
-              aTKeysForReq: [
+              aTKeysActionRequest: [
                 ["fieldMutate", "anyTrim"],
                 ["fieldVal", "isTypeOf"],
                 ["fieldVal", "isRequired"],
@@ -162,7 +155,7 @@ export class ModelTestCtrl__full
           },
           __ctrlConfig: {
             fieldCtrl: {
-              aTKeysForReq: [
+              aTKeysActionRequest: [
                 ["fieldMutate", "anyTrim"],
                 ["fieldVal", "isTypeOf"],
                 ["fieldVal", "isRequired"],
@@ -175,7 +168,7 @@ export class ModelTestCtrl__full
             diccActionsConfig: {
               isRequired: true,
               isModel: {
-                modelForDiccAC: undefined, //automatico
+                modelOnlyFieldDiccAC: undefined, //automatico
               },
             },
           },
@@ -208,8 +201,9 @@ export class ModelTestCtrl__full
         },
         __ctrlConfig: {
           modelCtrl: {
-            diccATKeyCRUD: {
+            diccATKeysActionRequest: {
               readAll: [["structureProvider", "runProvider"]],
+              count: [["structureProvider", "runProvider"]],
               create: [
                 ["modelMutate", "mutateModel"],
                 ["modelVal", "isTypeOfModel"],
@@ -242,17 +236,6 @@ export class ModelTestCtrl__full
     super(ModelTestCtrl__full.buildBaseMetadata());
   }
   //████ Field Actions ████████████████████████████████████████████████████████████
-  public async checkField_id(
-    bagCtrl: TIStructureBagForFieldCtrlContext
-  ): Promise<IStructureResponse> {
-    const res = await this.runGenericFieldRequest(bagCtrl);
-    return res;
-  }
-  public async checkField_pathDoc(
-    bagCtrl: TIStructureBagForFieldCtrlContext
-  ): Promise<IStructureResponse> {
-    const res = await this.runGenericFieldRequest(bagCtrl);
-    return res;
-  }
+
   //████ Request Actions ████████████████████████████████████████████████████████████
 }

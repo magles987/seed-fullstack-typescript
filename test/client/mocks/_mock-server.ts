@@ -6,10 +6,11 @@ import {
   TKeySrcSelector,
 } from "../../../src/seed/logic/config/shared-modules";
 import { LogicController } from "../../../src/seed/logic/controllers/_controller";
-import { IUrlConfig } from "../../../src/seed/logic/providers/services/client/web/http/drive/shared";
-import { Util_Logic } from "../../../src/seed/logic/util/util-logic";
+import { IUrlConfig } from "../../../src/seed/logic/providers/services/client/web/http/drivers/shared";
 import { getSeedEnvironment } from "../../../src/seed/logic/config/seed-environment";
 import { IRunProvider } from "../../../src/seed/logic/providers/shared-for-external-module";
+import { SimulatedMicroBackend } from "./_simulated-microbackend";
+import { Util_Mock } from "./_util-mock";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export interface IMockServerOption {
@@ -25,7 +26,7 @@ export abstract class MockServerHandler<TData> {
   /**clave identificadora del contexto lógico */
   protected keyLogicContext: TKeyLogicContext;
   /**tabla, documento o array que representa los datos almacenados */
-  protected bd_collection: Array<TData>;
+  protected db_collection: Array<TData>;
   protected urlConfig = {} as IUrlConfig;
   protected keyUrlSrc: string;
   protected get urlBase(): string {
@@ -46,16 +47,16 @@ export abstract class MockServerHandler<TData> {
   };
   /**manejádores de llegada de petición http */
   protected abstract getHttpHandlers: () => Array<HttpHandler>;
+  /**instancia del micro backend simulado para pruebas*/
+  protected abstract microBackend: SimulatedMicroBackend;
   /**utilidades */
-  protected util = Util_Logic.getInstance();
+  protected util = Util_Mock.getInstance();
   /**... */
   constructor(
     protected ctrl: LogicController,
     protected option: IMockServerOption
   ) {
-    this.util = Util_Logic.getInstance();
-    this.initConfig();
-    this.selectRunServer();
+    this.util = Util_Mock.getInstance();
   }
   /**... */
   protected abstract initConfig(): void;
@@ -104,5 +105,9 @@ export abstract class MockServerHandler<TData> {
   /**... */
   protected runMockServerByBrowser(): void {
     return;
+  }
+  /**... */
+  public getDBCollection(): Array<TData> {
+    return this.db_collection;
   }
 }

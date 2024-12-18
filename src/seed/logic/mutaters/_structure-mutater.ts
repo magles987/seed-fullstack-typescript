@@ -7,10 +7,6 @@ import {
 } from "./shared";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import {
-  IStructureBagForActionModuleContext,
-  TStructureFnBagForActionModule,
-} from "../bag-module/shared-for-external-module";
-import {
   StructureReportHandler,
   Trf_StructureReportHandler,
 } from "../reports/structure-report-handler";
@@ -20,6 +16,8 @@ import {
 } from "../meta/metadata-shared";
 import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
 import { IStructureResponse } from "../reports/shared";
+import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
+import { TStructureFnBagForActionModule } from "../bag-module/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipado refactorizado de la clase */
 export type Trf_StructureLogicMutater = StructureLogicMutater<any>;
@@ -131,7 +129,7 @@ export abstract class StructureLogicMutater<
     }
     return diccAC;
   }
-  /**obtiene una funcion de accion de acuerdo a su clave identificadora
+  /**obtiene una función de acción de acuerdo a su clave identificadora
    * preparada para ser inyectada en el middleware
    *
    * @param keyAction la clave identificadora de la funcion de accion solicitada
@@ -154,45 +152,24 @@ export abstract class StructureLogicMutater<
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
-  protected override adapBagForContext(
-    bag: StructureBag<any>,
-    keyAction: any
-  ): IStructureBagForActionModuleContext<any, any> {
-    const tGlobalAC = bag.findTupleGlobalActionConfig([
-      this.keyModule as any,
-      this.keyModuleContext,
-      keyAction as never,
-    ]);
-    const tupleAC = bag.retrieveTupleActionConfig<TIDiccAC, any>(tGlobalAC);
-    let actionConfig = this.retriveActionConfigFromTuple(tupleAC);
-    if (actionConfig === undefined) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${actionConfig} is not action configuration valid`,
-      });
-    }
-    actionConfig = this.buildSingleActionConfig(
-      "toActionConfig" as any,
-      keyAction as any,
-      actionConfig as any,
-      { keyPath: bag.keyPath, mergeMode: "soft" }
+  protected override getTupleActionConfigFromCriteriaHandler<
+    TKey extends keyof TIDiccAC
+  >(
+    criteriaHandler: Trf_StructureCriteriaHandler,
+    keyAction: TKey
+  ): [TKey, TIDiccAC[TKey]] {
+    const tKeyGlobalAC = [this.keyModuleContext, keyAction];
+    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
+      tKeyGlobalAC as any
     );
-    const bagFC: IStructureBagForActionModuleContext<TIDiccAC, any> = {
-      data: bag.data,
-      keyPath: bag.keyPath,
-      keyAction,
-      actionConfig,
-      responses: bag.responses,
-      criteriaHandler: bag.criteriaHandler,
-    };
-    return bagFC;
+    return [keyAction, actionConfig];
   }
   public override buildReportHandler(
     bag: Trf_StructureBag,
     keyAction: keyof TIDiccAC
   ): StructureReportHandler {
-    const { data, criteriaHandler, keyPath, firstData } = bag;
-    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    const { data, criteriaHandler, firstData } = bag;
+    const { type, modifyType, keyPath, keyActionRequest } = criteriaHandler;
     let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
@@ -206,7 +183,7 @@ export abstract class StructureLogicMutater<
       keyRepSrc: this.keySrc,
       status: this.globalStatus,
       tolerance: this.globalTolerance,
-      fisrtCtrlData: firstData,
+      firstCtrlData: firstData,
       data,
     });
     return rH;

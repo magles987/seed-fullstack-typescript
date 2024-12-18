@@ -1,6 +1,5 @@
 import { IDiccHttpDriveConfig, TKeyDiccHttpDrive } from "./shared";
 import { IGenericDriver } from "../../../../shared";
-import { IHttpResponse } from "../shared";
 import {
   ELogicCodeError,
   LogicError,
@@ -15,8 +14,8 @@ export type TKeyHttpClientDriverInstance = TKeyDiccHttpDrive;
 export function httpClientDriverFactoryFn(
   keyInstance: TKeyHttpClientDriverInstance,
   diccConfig: IDiccHttpDriveConfig
-): IGenericDriver<IHttpResponse> {
-  let instance: IGenericDriver<IHttpResponse>;
+): IGenericDriver {
+  let instance: IGenericDriver;
   if (keyInstance === "fetch") instance = new FetchHttpDrive(diccConfig.fetch);
   else if (keyInstance === "axios")
     instance = new AxiosHttpDrive(diccConfig.axios);

@@ -34,7 +34,9 @@ export type TKeyRequestType = "read" | "modify";
 /**sub agrupa los tipos de consulta en contexto de modificacion */
 export type TKeyRequestModifyType = "create" | "update" | "delete";
 /**clave identificadoras de acciones CRUD básicas */
-export type TKeyBasicCRUD = Exclude<TKeyRequestType, "modify"> | TKeyRequestModifyType;
+export type TKeyBasicCRUD =
+  | Exclude<TKeyRequestType, "modify">
+  | TKeyRequestModifyType;
 /**tipos de datos usados en la logica
  * de negocio.
  *
@@ -66,12 +68,3 @@ export type TDataType =
 /**seleccion de nombre del recurso (singular o plural) para
  * la comunicacion con los drivers de gestio de peticion */
 export type TKeySrcSelector = "singular" | "plural";
-/**tipo generico estandar para una tupla de accion de configuracion
- *
- * `TIDiccAC` el diccionario de acciones
- * ``
- */
-export type TGenericTupleActionConfig<
-  TIDiccAC,
-  TKeyAction extends keyof TIDiccAC = keyof TIDiccAC
-> = [TKeyAction, TIDiccAC[TKeyAction]];

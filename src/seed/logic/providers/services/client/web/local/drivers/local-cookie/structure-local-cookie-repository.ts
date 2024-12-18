@@ -2,7 +2,7 @@ import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../../errors/logic-error";
-import { LocalStorageRepository } from "./_local-storage-repository";
+import { LocalCookieRepository } from "./_local-cookie-repository";
 import {
   TKeyStructureModifyRequestController,
   TKeyStructureReadRequestController,
@@ -22,34 +22,33 @@ import { getStrategyGeneratorIdFnByKey } from "../../../../../../../util/default
 /**claves identificadoras de todas las acciones de request */
 type TKeyFullRequest =
   | TKeyStructureReadRequestController
-  | TKeyStructureModifyRequestController; /**refactorizacion de la clase */
-export type Trf_StructureLocalStorageRepository =
-  StructureLocalStorageRepository<any>;
+  | TKeyStructureModifyRequestController;
+/**refactorización de la clase */
+export type Trf_StructureLocalCookieRepository =
+  StructureLocalCookieRepository<never>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
  * ...
  */
-export class StructureLocalStorageRepository<
+export class StructureLocalCookieRepository<
     TKeyActionRequest extends TKeyFullRequest
   >
-  extends LocalStorageRepository<TKeyActionRequest>
+  extends LocalCookieRepository<TKeyActionRequest>
   implements
-    ReturnType<
-      StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]
-    >,
+    ReturnType<StructureLocalCookieRepository<TKeyActionRequest>["getDefault"]>,
     Record<TKeyFullRequest, TActionFn>
 {
   public static override readonly getDefault = () => {
-    const superDf = LocalStorageRepository.getDefault();
+    const superDf = LocalCookieRepository.getDefault();
     return {
       ...superDf,
-      /**clave identificadora del campo de identificación del registro */
+      /**clave identificadora del campo de identificacion del registro */
       keyId: getGlobalConfig().keyId,
     };
   };
   protected static override readonly getCONSTANTS = () => {
-    const superCONST = LocalStorageRepository.getCONSTANTS();
+    const superCONST = LocalCookieRepository.getCONSTANTS();
     return {
       ...superCONST,
     };
@@ -75,7 +74,7 @@ export class StructureLocalStorageRepository<
   constructor(
     base: Partial<
       ReturnType<
-        StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]
+        StructureLocalCookieRepository<TKeyActionRequest>["getDefault"]
       >
     > = {},
     isInit = true
@@ -84,16 +83,16 @@ export class StructureLocalStorageRepository<
     if (isInit) this.initProps(base);
   }
   protected override getDefault() {
-    return StructureLocalStorageRepository.getDefault();
+    return StructureLocalCookieRepository.getDefault();
   }
   protected override getCONST() {
-    return StructureLocalStorageRepository.getCONSTANTS();
+    return StructureLocalCookieRepository.getCONSTANTS();
   }
   public override mutateProps(
     base: Partial<
       Omit<
         ReturnType<
-          StructureLocalStorageRepository<TKeyActionRequest>["getDefault"]
+          StructureLocalCookieRepository<TKeyActionRequest>["getDefault"]
         >,
         "" //se deja la opción de omitir abierta
       >
@@ -102,7 +101,7 @@ export class StructureLocalStorageRepository<
     super.mutateProps(base);
     return;
   }
-  //❗normalmente definidas en el padre, salvo que se quieran sobreescribir❗
+  //❗normalmente definidas en el padre, salvo que se quieran sobrescribir❗
   // /**reinicia una propiedad al valor predefinido
   //  *
   //  * @param key clave identificadora de la propiedad a reiniciar
@@ -116,7 +115,10 @@ export class StructureLocalStorageRepository<
   protected override async readCommon(
     criteria: IBagForService["literalCriteria"]
   ) {
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
+    );
     let data = await this.getData(keySrcContext);
     data = this.util.isNotUndefinedAndNotNull(data)
       ? Array.isArray(data)
@@ -130,15 +132,15 @@ export class StructureLocalStorageRepository<
     criteria: IBagForService["literalCriteria"]
   ) {
     const kId = this.keyId;
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
+    );
     let currentData = (await this.getData(keySrcContext)) as any[];
     currentData = Array.isArray(currentData) ? currentData : [currentData];
-    const idxCData = currentData.findIndex((dt) => {
-      const r = dt[kId] === data[kId];
-      return r;
-    });
+    const idxCData = currentData.findIndex((dt) => dt[kId] === data[kId]);
     if (idxCData > -1) return undefined; //❗ no se creó porque ya existe ❗
-    //creación de id:
+    //creacion de id:
     const { strategyForIdBuild } = this._globalConfig_;
     const buildIDFn = getStrategyGeneratorIdFnByKey(strategyForIdBuild);
     data[kId] = buildIDFn(data[kId]);
@@ -151,13 +153,13 @@ export class StructureLocalStorageRepository<
     criteria: IBagForService["literalCriteria"]
   ) {
     const kId = this.keyId;
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
+    );
     let currentData = (await this.getData(keySrcContext)) as any[];
     currentData = Array.isArray(currentData) ? currentData : [currentData];
-    const idxCData = currentData.findIndex((dt) => {
-      const r = dt[kId] === data[kId];
-      return r;
-    });
+    const idxCData = currentData.findIndex((dt) => dt[kId] === data[kId]);
     if (idxCData === -1) return undefined; //❗no existe❗
     currentData[idxCData] = data;
     await this.setData(currentData, keySrcContext);
@@ -168,13 +170,13 @@ export class StructureLocalStorageRepository<
     criteria: IBagForService["literalCriteria"]
   ) {
     const kId = this.keyId;
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
+    );
     let currentData = (await this.getData(keySrcContext)) as any[];
     currentData = Array.isArray(currentData) ? currentData : [currentData];
-    const idxCData = currentData.findIndex((dt) => {
-      const r = dt[kId] === data[kId];
-      return r;
-    });
+    const idxCData = currentData.findIndex((dt) => dt[kId] === data[kId]);
     if (idxCData !== -1) {
       //elimina solo si existe
       currentData.splice(idxCData, 1);
@@ -236,7 +238,7 @@ export class StructureLocalStorageRepository<
    * @returns ``
    *
    */
-  public async readOne(bagService: IBagForService) {
+  public async readOne(bagService: IBagForService): Promise<any> {
     let { literalCriteria } = bagService;
     const registers = await this.readCommon(literalCriteria);
     const data = await this.getOne(registers, literalCriteria);
@@ -384,5 +386,4 @@ export class StructureLocalStorageRepository<
     let rxData = await this.deleteCommon(data, literalCriteria);
     return rxData;
   }
-  //████ Util Registers █████████████████████████████████████████████████████
 }

@@ -4,6 +4,8 @@ import {
   TKeyRequestModifyType,
   TKeyRequestType,
 } from "../config/shared-modules";
+import { ELogicCodeError, LogicError } from "../errors/logic-error";
+import { LogicMetadataHandler } from "../meta/_metadata-handler";
 import { Util_Criteria } from "./_util-criteria";
 import {
   IModifyCriteria,
@@ -41,6 +43,8 @@ export abstract class CriteriaHandler
       p_Key: undefined,
       s_Key: undefined,
       urlsExtended: [],
+      diccGlobalAC: {},
+      aTKeysGlobalActionConfig: [],
     } as IReadCriteria & IModifyCriteria;
   };
   /**@returns todas las constantes a usar en instancias de esta clase*/
@@ -60,14 +64,12 @@ export abstract class CriteriaHandler
   public get metadataHandler(): unknown {
     return this._metadataHandler;
   }
-  /**clave identificadora del contexto del modulo */
-  public abstract get keyModuleContext(): unknown;
   /**instancia de manejador de metadatos de este recurso
    *
    * ⚠ Solo puede modificarse si previamente no se ha
    * asignado una instancia
    */
-  public set metadataHandler(metadataHandler: unknown) {
+  protected set metadataHandler(metadataHandler: unknown) {
     const util = Util_Criteria.getInstance();
     if (
       !util.isInstance(metadataHandler) ||
@@ -76,6 +78,8 @@ export abstract class CriteriaHandler
       return; //❗garantiza solo 1 vez inicializar❗
     this._metadataHandler = metadataHandler;
   }
+  /**clave identificadora del contexto del modulo */
+  public abstract get keyModuleContext(): unknown;
   private _limit: number;
   public get limit(): number {
     return this._limit;
@@ -202,6 +206,29 @@ export abstract class CriteriaHandler
       ? this._isCreateOrUpdate
       : this.getDefault().isCreateOrUpdate;
   }
+  private _diccGlobalAC: unknown;
+  public get diccGlobalAC() {
+    return this._diccGlobalAC;
+  }
+  public set diccGlobalAC(v) {
+    this._diccGlobalAC = this.util.isObject(v)
+      ? v
+      : this._diccGlobalAC !== undefined
+      ? this._diccGlobalAC
+      : this.getDefault().diccGlobalAC;
+  }
+  private _aTKeysGlobalActionConfig: Array<[string, string]>;
+  public get aTKeysGlobalActionConfig(): Array<[string, string]> {
+    return this._aTKeysGlobalActionConfig;
+  }
+  public set aTKeysGlobalActionConfig(v: Array<[string, string]>) {
+    this._aTKeysGlobalActionConfig = this.util.isArrayTuple(v, 2)
+      ? v
+      : this._aTKeysGlobalActionConfig !== undefined
+      ? this._aTKeysGlobalActionConfig
+      : this.getDefault().aTKeysGlobalActionConfig;
+  }
+
   protected override util: Util_Criteria = Util_Criteria.getInstance();
   /**
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
@@ -210,11 +237,13 @@ export abstract class CriteriaHandler
   constructor(
     keyLogicContext: TKeyLogicContext,
     keySrc: string,
+    metadataHandler: unknown,
     base: Partial<ReturnType<CriteriaHandler["getDefault"]>> = {},
     isInit = true
   ) {
     super("criteria", keyLogicContext, keySrc);
     this.util = Util_Criteria.getInstance();
+    this._metadataHandler = metadataHandler;
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
@@ -274,7 +303,7 @@ export abstract class CriteriaHandler
   }
   /**@returns un objeto literal con las propiedades base */
   public getLiteral(): IReadCriteria | IModifyCriteria {
-    let literal = {};
+    let literal = {} as IReadCriteria | IModifyCriteria;
     for (const key in this.getDefault()) {
       literal[key] = this[key];
     }
@@ -282,7 +311,77 @@ export abstract class CriteriaHandler
     if (isClone) {
       literal = this.util.clone(literal, "lodash");
     }
-    return literal as any;
+    return literal;
+  }
+  /**... */
+  protected abstract initMergeDiccGlobalAC(): void;
+  /**... */
+  protected abstract initAKeysGlobalAC(): void;
+  /**... */
+  public getGlobalActionByTKeyGlobalAC(tKeyGlobalAC: any[]): unknown {
+    if (!this.util.isTuple(tKeyGlobalAC, 2)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${tKeyGlobalAC} is not global key tuple valid`,
+      });
+    }
+    const keyModuleContext = tKeyGlobalAC[0] as any as string;
+    const keyAction = tKeyGlobalAC[1] as any as string;
+    if (!this.util.isObject(this.diccGlobalAC[keyModuleContext], true)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyModuleContext} and/or ${keyAction} is no exist into array tuple of global action keys`,
+      });
+    }
+    const action = this.diccGlobalAC[keyModuleContext][keyAction];
+    return action;
+  }
+  /**... */
+  public buildATupleKeyGlobalActionConfigFromCommonKeyModule(
+    keyModule: unknown,
+    aTKeyAC: unknown[]
+  ): Array<[unknown, unknown]> {
+    aTKeyAC = Array.isArray(aTKeyAC) ? aTKeyAC : [aTKeyAC];
+    let aTKeyGlobalAC = aTKeyAC.map((tKeyAC) => [keyModule, tKeyAC]) as Array<
+      [unknown, unknown]
+    >;
+    return aTKeyGlobalAC;
+  }
+  /**... */
+  public getSubAnonymSchemaForGlobalActionConfig(
+    keyModule: unknown,
+    aTupleGlobalActionConfig: Array<[unknown, unknown]>
+  ) {
+    if (!this.util.isArrayTuple(aTupleGlobalActionConfig, 2, true)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${aTupleGlobalActionConfig} is not array of global action config valid`,
+      });
+    }
+    let bf_subDiccGlobalAC = {};
+    let bf_subDiccAC = {};
+    let bf_aTGAC = [];
+    for (const tGAC of aTupleGlobalActionConfig) {
+      const [keyAction, actionConfig] = tGAC;
+      bf_subDiccAC[keyAction as string] = actionConfig;
+      bf_aTGAC.push([keyModule, keyAction]);
+    }
+    bf_subDiccGlobalAC[keyModule as string] = bf_subDiccAC;
+    let subSchema = {
+      diccGlobalAC: bf_subDiccGlobalAC,
+      aTKeysGlobalActionConfig: bf_aTGAC,
+    };
+    const mH = this.metadataHandler as LogicMetadataHandler;
+    let actionModule = mH.getModuleInstanceForActionContext(keyModule);
+    actionModule.buildContainerActionsConfig(
+      "toActionConfig_DiccWrapped",
+      subSchema.aTKeysGlobalActionConfig,
+      {
+        mergeMode: "soft",
+        sourceDiccBase: "default", //la metadata no existe para anónimos
+      }
+    );
+    return subSchema;
   }
   /**construye un query sencillo a partir de una base
    *

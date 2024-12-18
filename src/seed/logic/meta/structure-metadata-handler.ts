@@ -17,6 +17,7 @@ import {
   Trf_TStructureFieldMeta,
   TStructureFieldMetaAndCtrl,
   TStructureMetaAndCtrl,
+  TKeyStructureInternalACModuleContext,
 } from "./metadata-shared";
 import {
   IDiccStructureModuleInstanceContext,
@@ -56,9 +57,13 @@ import { StructureLogicHook } from "../hooks/structure-hook";
 import { StructureLogicProvider } from "../providers/structure-provider";
 import { Trf_TModelConfigForProvider } from "../providers/shared";
 import {
+  TFieldConfigForCtrl,
+  TModelConfigForCtrl,
   Trf_TFieldConfigForCtrl,
   Trf_TModelConfigForCtrl,
 } from "../controllers/_shared";
+import { ActionModule } from "../config/module";
+import { StructureLogicController } from "../controllers/_structure-ctrl";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipado especial que elimina las propiedades
  * del modelo de metadatos que no hagan parte
@@ -129,7 +134,7 @@ export class StructureLogicMetadataHandler<
           },
           __ctrlConfig: {
             fieldCtrl: {
-              aTKeysForReq: [],
+              aTKeysActionRequest: [],
             },
           },
         },
@@ -166,7 +171,7 @@ export class StructureLogicMetadataHandler<
           },
           __ctrlConfig: {
             modelCtrl: {
-              diccATKeyCRUD: {},
+              diccATKeysActionRequest: {},
             },
           },
         },
@@ -196,7 +201,7 @@ export class StructureLogicMetadataHandler<
   public get keyModelPath(): string {
     return this.metadata.__keyPath;
   }
-  public override get diccModuleIntanceContext(): IDiccStructureModuleInstanceContext<
+  public override get diccModuleInstanceContext(): IDiccStructureModuleInstanceContext<
     TFieldMutateInstance,
     TModelMutateInstance,
     TFieldValInstance,
@@ -205,7 +210,7 @@ export class StructureLogicMetadataHandler<
     TStructureHookInstance,
     TStructureProviderInstance
   > {
-    return super.diccModuleIntanceContext as any;
+    return super.diccModuleInstanceContext as any;
   }
   /**... */
   private _aKeysPath: string[];
@@ -213,10 +218,10 @@ export class StructureLogicMetadataHandler<
   public get aKeysPath(): string[] {
     return [...this._aKeysPath]; //clonacion sencilla
   }
-  protected override set diccModuleIntanceContext(
+  protected override set diccModuleInstanceContext(
     dicc: IDiccStructureModuleInstanceContext
   ) {
-    super.diccModuleIntanceContext = dicc;
+    super.diccModuleInstanceContext = dicc;
   }
   /**
    * @param keySrc clave identificadora del recurso,
@@ -239,7 +244,7 @@ export class StructureLogicMetadataHandler<
     diccModuleContextInstance?: IDiccStructureModuleInstanceContext
   ) {
     super("structure", keySrc);
-    this.diccModuleIntanceContext = this.buildDiccModuleContextIntance(
+    this.diccModuleInstanceContext = this.buildDiccModuleContextIntance(
       diccModuleContextInstance
     );
     this.metadata = this.buildMetadata(baseMetadata, undefined);
@@ -657,7 +662,7 @@ export class StructureLogicMetadataHandler<
     const {
       fieldMutate: fieldMutateInstance,
       modelMutate: modelMutateInstance,
-    } = this.diccModuleIntanceContext;
+    } = this.diccModuleInstanceContext;
     let rMetadataMutateC: unknown = {}; //de diferentes contextos
     if (keyModuleContext === "fieldMeta") {
       const mMC = metadataMutateC as Trf_TFieldConfigForMutate;
@@ -793,7 +798,7 @@ export class StructureLogicMetadataHandler<
       fieldVal: fieldValInstance,
       modelVal: modelValInstance,
       requestVal: requestValInstance,
-    } = this.diccModuleIntanceContext;
+    } = this.diccModuleInstanceContext;
     let rMetadataValC: unknown = {}; //de diferentes contextos
     if (keyModuleContext === "fieldMeta") {
       const mVC = metadataValC as Trf_TFieldConfigForVal;
@@ -897,7 +902,7 @@ export class StructureLogicMetadataHandler<
       ) as Trf_TModelConfigForVal;
       let rModelConfig = {} as Trf_TModelConfigForVal;
       //😉 trampa `rebuildCustomConfigFromModuleContext`
-      //es protected pero se llama asi para saltarse la proteccion
+      //es protected pero se llama asi para saltarse la protección
       let reBuildModelFn =
         modelValInstance["rebuildCustomConfigFromModuleContext"];
       reBuildModelFn = reBuildModelFn.bind(modelValInstance);
@@ -951,7 +956,7 @@ export class StructureLogicMetadataHandler<
     currentMetadataHookC: unknown
   ): unknown {
     const { structureHook: structureHookInstance } =
-      this.diccModuleIntanceContext;
+      this.diccModuleInstanceContext;
     let rMetadataHookC: unknown = {};
     if (keyModuleContext === "modelMeta") {
       const mHC = metadataHookC as Trf_TStructureConfigForHook;
@@ -1035,7 +1040,7 @@ export class StructureLogicMetadataHandler<
     currentMetadataProviderC: unknown
   ): unknown {
     const { structureProvider: structureProviderInstance } =
-      this.diccModuleIntanceContext;
+      this.diccModuleInstanceContext;
     let rMetadataProviderC: unknown = {};
     if (keyModuleContext === "modelMeta") {
       const mPC = metadataProviderC as Trf_TModelConfigForProvider;
@@ -1135,40 +1140,35 @@ export class StructureLogicMetadataHandler<
                 ? {
                     ...(currentMetadataCtrlC as Trf_TFieldConfigForCtrl)
                       .fieldCtrl,
-                    aTKeysForReq: this.util.isArrayTuple(
+                    aTKeysActionRequest: this.util.isArrayTuple(
                       (currentMetadataCtrlC as Trf_TFieldConfigForCtrl)
-                        .fieldCtrl.aTKeysForReq,
+                        .fieldCtrl.aTKeysActionRequest,
                       2
                     )
                       ? (currentMetadataCtrlC as Trf_TFieldConfigForCtrl)
-                          .fieldCtrl.aTKeysForReq
-                      : dfCC.fieldCtrl.aTKeysForReq,
+                          .fieldCtrl.aTKeysActionRequest
+                      : dfCC.fieldCtrl.aTKeysActionRequest,
                   }
                 : {
-                    aTKeysForReq: dfCC.fieldCtrl.aTKeysForReq,
+                    aTKeysActionRequest: dfCC.fieldCtrl.aTKeysActionRequest,
                   },
             }
           : {
               fieldCtrl: dfCC.fieldCtrl,
             }
       ) as Trf_TFieldConfigForCtrl;
+      const reBuildFieldFn =
+        StructureLogicController.rebuildCustomConfigFromModuleContext;
       let rFieldConfig = {} as Trf_TFieldConfigForCtrl;
       if (!this.util.isObject(mCC)) {
-        rFieldConfig = cMCC;
+        rFieldConfig = {
+          ...cMCC,
+          fieldCtrl: reBuildFieldFn("fieldCtrl", cMCC.fieldCtrl, mCC.fieldCtrl),
+        };
       } else {
         rFieldConfig = {
           ...mCC,
-          fieldCtrl: this.util.isObject(mCC.fieldCtrl)
-            ? {
-                ...mCC.fieldCtrl,
-                aTKeysForReq: this.util.isArrayTuple(
-                  mCC.fieldCtrl.aTKeysForReq,
-                  2
-                )
-                  ? mCC.fieldCtrl.aTKeysForReq
-                  : cMCC.fieldCtrl.aTKeysForReq,
-              }
-            : cMCC.fieldCtrl,
+          fieldCtrl: reBuildFieldFn("fieldCtrl", cMCC.fieldCtrl, mCC.fieldCtrl),
         };
       }
       rMetadataCtrlC = rFieldConfig;
@@ -1185,16 +1185,17 @@ export class StructureLogicMetadataHandler<
                 ? {
                     ...(currentMetadataCtrlC as Trf_TModelConfigForCtrl)
                       .modelCtrl,
-                    diccATKeyCRUD: this.util.isObject(
+                    diccATKeysActionRequest: this.util.isObject(
                       (currentMetadataCtrlC as Trf_TModelConfigForCtrl)
-                        .modelCtrl.diccATKeyCRUD
+                        .modelCtrl.diccATKeysActionRequest
                     )
                       ? (currentMetadataCtrlC as Trf_TModelConfigForCtrl)
-                          .modelCtrl.diccATKeyCRUD
-                      : dfCC.modelCtrl.diccATKeyCRUD,
+                          .modelCtrl.diccATKeysActionRequest
+                      : dfCC.modelCtrl.diccATKeysActionRequest,
                   }
                 : {
-                    diccATKeyCRUD: dfCC.modelCtrl.diccATKeyCRUD,
+                    diccATKeysActionRequest:
+                      dfCC.modelCtrl.diccATKeysActionRequest,
                   },
             }
           : {
@@ -1202,19 +1203,17 @@ export class StructureLogicMetadataHandler<
             }
       ) as Trf_TModelConfigForCtrl;
       let rModelConfig = {} as Trf_TModelConfigForCtrl;
+      const reBuildModelFn =
+        StructureLogicController.rebuildCustomConfigFromModuleContext;
       if (!this.util.isObject(mCC)) {
-        rModelConfig = cMCC;
+        rModelConfig = {
+          ...cMCC,
+          modelCtrl: reBuildModelFn("modelCtrl", cMCC.modelCtrl, mCC.modelCtrl),
+        };
       } else {
         rModelConfig = {
           ...mCC,
-          modelCtrl: this.util.isObject(mCC.modelCtrl)
-            ? {
-                ...mCC.modelCtrl,
-                diccATKeyCRUD: this.util.isObject(mCC.modelCtrl.diccATKeyCRUD)
-                  ? mCC.modelCtrl.diccATKeyCRUD
-                  : cMCC.modelCtrl.diccATKeyCRUD,
-              }
-            : cMCC.modelCtrl,
+          modelCtrl: reBuildModelFn("modelCtrl", cMCC.modelCtrl, mCC.modelCtrl),
         };
       }
       rMetadataCtrlC = rModelConfig;
@@ -1244,7 +1243,7 @@ export class StructureLogicMetadataHandler<
     addKeysPathFn(metadata);
     return aKeysPath;
   }
-  //====Metodos de obtencion de metadatos============================================================================================================================
+  //====Metodos de obtención de metadatos============================================================================================================================
   /**
    * obtener un extracto (segmento) de metadatos
    * ____
@@ -1545,19 +1544,19 @@ export class StructureLogicMetadataHandler<
   //   keyModule: "provider", //❗Solo para tipar el retorno❗
   //   keyPath: string
   // ): TStructureMetaAndProvider<TEmbModel, TIDiccEmbProviderAC>;
-  // public getExtractMetadataByModuleContext<
-  //   TEmbModel,
-  //   TIDiccEmbModelMutateAC = TModelMutateInstance["dfDiccActionConfig"],
-  //   TIDiccEmbModelValAC = TModelValInstance["dfDiccActionConfig"],
-  // >(
-  //   keyStructureContext: "structureEmbedded",
-  //   keyModule: "controller", //❗Solo para tipar el retorno❗
-  //   keyPath: string
-  // ): TStructureMetaAndCtrl<
-  //   TEmbModel,
-  //   TIDiccEmbModelMutateAC,
-  //   TIDiccEmbModelValAC
-  // >;
+  public getExtractMetadataByModuleContext<
+    TEmbModel,
+    TIDiccEmbModelMutateAC = TModelMutateInstance["dfDiccActionConfig"],
+    TIDiccEmbModelValAC = TModelValInstance["dfDiccActionConfig"]
+  >(
+    keyStructureContext: "structureEmbedded",
+    keyModule: "controller", //❗Solo para tipar el retorno❗
+    keyPath: string
+  ): TStructureMetaAndCtrl<
+    TEmbModel,
+    TIDiccEmbModelMutateAC,
+    TIDiccEmbModelValAC
+  >;
   public getExtractMetadataByModuleContext(
     keyStructureContext: "structureModel",
     keyModule: "metadata" //❗Solo para tipar el retorno❗
@@ -1631,6 +1630,15 @@ export class StructureLogicMetadataHandler<
     keyModuleContext: "fieldVal",
     keyPath: string
   ): TModelMutateInstance["dfDiccActionConfig"];
+  public getDiccActionConfigByModuleContext(
+    keyStructureContext: "structureField",
+    keyModule: "controller",
+    keyModuleContext: undefined,
+    keyPath: string
+  ): TFieldConfigForCtrl<
+    | TFieldMutateInstance["dfDiccActionConfig"]
+    | TFieldValInstance["dfDiccActionConfig"]
+  >["fieldCtrl"]["aTKeysActionRequest"];
   public getDiccActionConfigByModuleContext<
     TIDiccEmbFieldMutateAC = TFieldMutateInstance["dfDiccActionConfig"]
   >(
@@ -1663,6 +1671,19 @@ export class StructureLogicMetadataHandler<
     keyModuleContext: "modelVal",
     keyPath: string
   ): TIDiccEmbModelValAC;
+  public getDiccActionConfigByModuleContext<
+    TIDiccEmbModelMutateAC = TModelMutateInstance["dfDiccActionConfig"],
+    TIDiccEmbModelValAC = TModelValInstance["dfDiccActionConfig"],
+    TKeyDiccEmbCtrlCRUD extends string = string
+  >(
+    keyStructureContext: "structureEmbedded",
+    keyModule: "controller",
+    keyModuleContext: undefined,
+    keyPath: string
+  ): TModelConfigForCtrl<
+    TIDiccEmbModelMutateAC | TIDiccEmbModelValAC,
+    TKeyDiccEmbCtrlCRUD
+  >["modelCtrl"]["diccATKeysActionRequest"];
   public getDiccActionConfigByModuleContext(
     keyStructureContext: "structureModel",
     keyModule: "mutater",
@@ -1687,8 +1708,19 @@ export class StructureLogicMetadataHandler<
     keyModule: "provider"
   ): TStructureProviderInstance["dfDiccActionConfig"];
   public getDiccActionConfigByModuleContext(
+    keyStructureContext: "structureModel",
+    keyModule: "controller"
+  ): TModelConfigForCtrl<
+    | TModelMutateInstance["dfDiccActionConfig"]
+    | TModelValInstance["dfDiccActionConfig"]
+    | TRequestValInstance["dfDiccActionConfig"]
+    | TStructureHookInstance["dfDiccActionConfig"]
+    | TStructureProviderInstance["dfDiccActionConfig"],
+    TKeyDiccCtrlCRUD
+  >["modelCtrl"]["diccATKeysActionRequest"];
+  public getDiccActionConfigByModuleContext(
     keyStructureContext: TKeyStructureContextFull,
-    keyModule: TKeyActionModule,
+    keyModule: Exclude<TKeyModuleWithReport, "service">,
     keyModuleContext?:
       | TKeyStructureDeepMutateModuleContext
       | TKeyStructureDeepValModuleContext,
@@ -1711,6 +1743,14 @@ export class StructureLogicMetadataHandler<
           keyPath
         );
         diccAC = metadataByModuleContext.__valConfig.fieldVal.diccActionsConfig;
+      } else if (keyModule === "controller") {
+        const metadataByModuleContext = this.getExtractMetadataByModuleContext(
+          keyStructureContext,
+          "controller",
+          keyPath
+        );
+        diccAC =
+          metadataByModuleContext.__ctrlConfig.fieldCtrl.aTKeysActionRequest;
       } else {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
@@ -1736,7 +1776,7 @@ export class StructureLogicMetadataHandler<
           });
         }
       } else if (keyModule === "validator") {
-        if (keyModuleContext === "modelMutate") {
+        if (keyModuleContext === "modelVal") {
           const metadataByModuleContext =
             this.getExtractMetadataByModuleContext(
               keyStructureContext,
@@ -1758,6 +1798,15 @@ export class StructureLogicMetadataHandler<
             msn: `${keyModuleContext} is not module context key valid into ${keyModule} module`,
           });
         }
+      } else if (keyModule === "controller") {
+        const metadataByModuleContext = this.getExtractMetadataByModuleContext(
+          keyStructureContext,
+          keyModule,
+          keyPath
+        );
+        diccAC =
+          metadataByModuleContext.__ctrlConfig.modelCtrl
+            .diccATKeysActionRequest;
       } else {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
@@ -1819,6 +1868,14 @@ export class StructureLogicMetadataHandler<
         diccAC =
           metadataByModuleContext.__providerConfig.structureProvider
             .diccActionsConfig;
+      } else if (keyModule === "controller") {
+        const metadataByModuleContext = this.getExtractMetadataByModuleContext(
+          keyStructureContext,
+          keyModule
+        );
+        diccAC =
+          metadataByModuleContext.__ctrlConfig.modelCtrl
+            .diccATKeysActionRequest;
       } else {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
@@ -2141,6 +2198,35 @@ export class StructureLogicMetadataHandler<
       modelGP[key] = customizeValue;
     }
     return modelGP;
+  }
+  public override getModuleInstanceForActionContext(
+    keyModuleContext: TKeyStructureInternalACModuleContext
+  ): ActionModule<any> {
+    const {
+      fieldMutate: mFM,
+      modelMutate: mMM,
+      fieldVal: mFV,
+      modelVal: mMV,
+      requestVal: mRV,
+      structureHook: mSH,
+      structureProvider: mSP,
+    } = this.diccModuleInstanceContext;
+    let actionModule: ActionModule<any>;
+    if (keyModuleContext === "fieldMutate") actionModule = mFM;
+    else if (keyModuleContext === "fieldVal") actionModule = mFV;
+    else if (keyModuleContext === "modelMutate") actionModule = mMM;
+    else if (keyModuleContext === "modelVal") actionModule = mMV;
+    else if (keyModuleContext === "requestVal") actionModule = mRV;
+    else if (keyModuleContext === "structureHook") actionModule = mSH;
+    else if (keyModuleContext === "structureProvider")
+      actionModule = mSP as any; //provider es un modulo de accion especial
+    else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyModuleContext} is not key action module context valid`,
+      });
+    }
+    return actionModule;
   }
   /**encuentar el primer keypath que concuerde
    * con el extracto de keyPath que servira

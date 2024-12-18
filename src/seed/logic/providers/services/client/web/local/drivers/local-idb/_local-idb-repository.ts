@@ -7,7 +7,7 @@ import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../../errors/logic-error";
-import { LocalRepository } from "../_local-repository";
+import { LocalRepositoryDriver } from "../_local-repository";
 import { QueryJsAdaptator } from "../_query-js-adaptador";
 import { IDBConnection, TSchemaConfig } from "./_connection";
 import { ILocalIDBRepositoryConfig } from "./shared";
@@ -20,7 +20,7 @@ export type Trf_LocalIDBRepository = LocalIDBRepository<any>;
  * ...
  */
 export abstract class LocalIDBRepository<TKeyActionRequest>
-  extends LocalRepository
+  extends LocalRepositoryDriver
   implements ReturnType<LocalIDBRepository<TKeyActionRequest>["getDefault"]>
 {
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/

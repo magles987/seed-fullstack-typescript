@@ -106,7 +106,6 @@ export type Trf_IStructureValModuleConfig = IStructureValModuleConfig<
   any,
   any
 >;
-
 /**... */
 export type TStructureValModuleConfigForField<TIDiccFieldAC> =
   IStructureValModuleConfig<TIDiccFieldAC, any, any>["fieldVal"];

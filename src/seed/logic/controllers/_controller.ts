@@ -31,7 +31,7 @@ export abstract class LogicController extends LogicModuleWithReport {
     const superDf = LogicModuleWithReport.getDefault();
     return {
       ...superDf,
-      status: ELogicResStatusCode.VALID_DATA, //personalizada para validacion
+      status: ELogicResStatusCode.VALID_DATA, //personalizada para validación
       globalTolerance: ELogicResStatusCode.INVALID_DATA, //tolerancia a partir de invalida para validaciones
     };
   };
@@ -61,75 +61,13 @@ export abstract class LogicController extends LogicModuleWithReport {
   protected override getDefault() {
     return LogicController.getDefault();
   }
-  /**obtiene la accion de configuracion desde el bag controller
-   *
-   * @param bagCtrl el objeto bag que contiene la configuracion de accion.
-   * @param keyModuleContext la clave identificadora del contexto del modulo
-   * @param keyAction la clave identificadora de la acion
-   */
-  protected abstract getActionConfigFromBagCtrl(
-    bagCtrl: unknown,
-    keyModuleContext: unknown,
-    keyAction: unknown
-  ): any;
-  /**@returns configuracion predefinida de opciones
-   * de construccion de acciones de configuracion */
-  protected abstract getDefaultBuilderACOption(): unknown;
-  /**... */
-  protected buildTupleACFromBagCtrl(
-    bagCtrl: unknown,
-    actionModule: ActionModule<any>, //??
-    keyModuleContext: unknown,
-    keyAction: unknown,
-    BuilderACOption: unknown
-  ): unknown {
-    const actionConfig = this.getActionConfigFromBagCtrl(
-      bagCtrl,
-      keyModuleContext,
-      keyAction
-    );
-    let tupleGAC = BagModule.buildTupleGlobalActionConfig({
-      actionModule,
-      keyAction,
-      actionConfig,
-      builderACOption: BuilderACOption,
-    });
-    return tupleGAC;
-  }
-  /**verifica que la accion a ejecutar esta
-   * configurada como permitida
-   *
-   * ❕Tener en cuenta:❕
-   * Dentro de la tupla global con estructura:
-   *
-   * `[keyGlobalAC, [keyAction, actionConfig]]`
-   *
-   * la `actionConfig` es `null` esta accion
-   * 🚫No se permite su ejecucion🚫,
-   *  en caso de `undefined` si se permite la
-   * ejecucion porque se asume que se quiere
-   * ejecutar con los parametros predefindos.
-   *
-   */
-  protected isAllowRunAction(tupleGlobalAC: [string, [any, any]]): boolean {
-    let r = false;
-    if (
-      !this.util.isTuple(tupleGlobalAC, 2) ||
-      !this.util.isTuple(tupleGlobalAC[1], 2)
-    ) {
-      return r;
-    }
-    const actionConfig = tupleGlobalAC[1][1];
-    r = !(actionConfig === null);
-    return r;
-  }
   /**construye una instancia de criterai
    *
    * @param base parametros iniciales de inicalizacion
    *
    * @returns instancia de criteria
    */
-  public abstract buildCriteriaHandler(
+  protected abstract buildCriteriaHandler(
     requestType: TKeyRequestType,
     base?: unknown
   ): CriteriaHandler;

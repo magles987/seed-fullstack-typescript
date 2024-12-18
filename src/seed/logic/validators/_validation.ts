@@ -88,7 +88,6 @@ export abstract class LogicValidation<TIDiccAC> extends ActionModule<TIDiccAC> {
         return r;
       },
       /**valida si es `null`
-       * @param v el valor a validar
        * @param keyDriver la clave identificadora de
        * la libreria a usar para validar
        * @returns si es valido

@@ -1,27 +1,23 @@
-import { IHttpResponse } from "../shared";
 import { IBagForService, IGenericDriver } from "../../../../shared";
 import {
   IModifyCriteria,
   IReadCriteria,
 } from "../../../../../../criterias/shared";
 import { IUrlConfig, TKeyDiccHttpDrive } from "./shared";
-import { TKeyBasicCRUD } from "../../../../../../config/shared-modules";
 import { Util_HttpDriver } from "./_util-http-driver";
-import {
-  EHttpStatusCode,
-  TKeyHttpMethod,
-} from "../../../../../../util/http-utilities";
+import { TKeyHttpMethod } from "../../../../../../util/http-utilities";
 import {
   LogicError,
   ELogicCodeError,
 } from "../../../../../../errors/logic-error";
-import { EncriptAndCompressDataHandler } from "../../../../../../util/encripter-handler";
+import { EncryptAndCompressDataHandler } from "../../../../../../util/encripter-handler";
 import { getGlobalConfig } from "../../../../../../config/global-config";
+import { IDriverResponse } from "../../../../../../reports/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
  *
  */
-export abstract class HttpDrive implements IGenericDriver<IHttpResponse> {
+export abstract class HttpDrive implements IGenericDriver {
   /**configuración global */
   protected readonly _globalConfig_ = getGlobalConfig();
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
@@ -120,68 +116,27 @@ export abstract class HttpDrive implements IGenericDriver<IHttpResponse> {
   protected getDefault() {
     return HttpDrive.getDefault();
   }
-  /**... */
-  private checkBag(bagService: IBagForService): void {
-    if (!this.util.isObject(bagService)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagService} is not bag repository valid`,
-      });
-    }
-    if (!this.util.isObject(bagService.literalCriteria)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagService.literalCriteria} is not criteria valid`,
-      });
-    }
-    if (!this.util.isString(bagService.literalCriteria.keyActionRequest)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagService.literalCriteria.keyActionRequest} is not key request action valid`,
-      });
-    }
-    return;
-  }
-  /**... */
-  public async sendRequestFromService(
-    bagService: IBagForService
-  ): Promise<IHttpResponse> {
-    let httpResponse: IHttpResponse;
-    try {
-      this.checkBag(bagService);
-      httpResponse = await this._sendRequestFromService(bagService);
-    } catch (error) {
-      httpResponse = {
-        body: undefined,
-        ok: false,
-        httpStatus: EHttpStatusCode.INTERNAL_SERVER_ERROR,
-        statusText: `module error`,
-        error,
-      };
-    }
-    return httpResponse;
-  }
   /**
-   * @real
+   *
    *
    */
-  protected abstract _sendRequestFromService(
-    iBag: IBagForService
-  ): Promise<IHttpResponse>;
-  protected getHttpMethodByCRUD(keyBasicCRUD: TKeyBasicCRUD): TKeyHttpMethod {
-    let method: TKeyHttpMethod;
-    if (keyBasicCRUD === "read") method = "GET";
-    else if (keyBasicCRUD === "create") method = "POST";
-    else if (keyBasicCRUD === "update") method = "PUT";
-    else if (keyBasicCRUD === "delete") method = "DELETE";
-    else {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${keyBasicCRUD} is not key basic CRUD valid`,
-      });
-    }
-    return method;
-  }
+  public abstract sendRequestFromService(
+    bagService: IBagForService
+  ): Promise<IDriverResponse>;
+  /** envío genérico de petición a traves de del driver seleccionado
+   *
+   * @param url  url completa a cual enviar la petición.
+   * @param httpMethod  método http a usar.
+   * @param txData datos a enviar.
+   * @returns los datos obtenidos.
+   *
+   * ⚠ Las excepciones **no** son manejadas internamente ⚠
+   */
+  public abstract sendRequest(
+    url: string,
+    httpMethod: TKeyHttpMethod,
+    txData?: any
+  ): Promise<unknown>;
   /**obtiene un string con la accion CRUD generica que se añadirá a la url
    * @param criteria el objeto literal con los criterios de la solicutud
    * @returns string de la accion
@@ -239,8 +194,8 @@ export abstract class HttpDrive implements IGenericDriver<IHttpResponse> {
   private getUrlCriteriaFromBag(
     criteria: IBagForService["literalCriteria"]
   ): string {
-    const eH = EncriptAndCompressDataHandler.getInstance();
-    let urlCriteria = eH.encriptAndCompressObjectToUrlBase64(criteria); //comprimir y encriptar
+    const eH = EncryptAndCompressDataHandler.getInstance();
+    let urlCriteria = eH.encryptAndCompressObjectToUrlBase64(criteria); //comprimir y encriptar
     return urlCriteria;
   }
   /**... */
@@ -279,51 +234,8 @@ export abstract class HttpDrive implements IGenericDriver<IHttpResponse> {
       });
     return urlBase;
   }
-  /**obtiene el método http correspondiente a la solicitud
-   * @param criteria el objeto literal con los criterios de la solicitud
-   * @returns el metodo http correspondiente a la solicitud
-   */
-  protected getHttpMethodFromBag(
-    criteria: IBagForService["literalCriteria"]
-  ): TKeyHttpMethod {
-    let keyBasicCRUD: TKeyBasicCRUD;
-    const { type } = criteria;
-    if (type === "read") {
-      keyBasicCRUD = type;
-    } else if (type === "modify") {
-      const { modifyType } = criteria as IModifyCriteria;
-      if (!this.util.isString(modifyType)) {
-        throw new LogicError({
-          code: ELogicCodeError.MODULE_ERROR,
-          msn: `${modifyType} is not modify type request valid`,
-        });
-      }
-      keyBasicCRUD = modifyType;
-    } else {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${type} is not type request valid`,
-      });
-    }
-    const method = this.getHttpMethodByCRUD(keyBasicCRUD);
-    return method;
-  }
   /**... */
-  protected abstract adaptToHttpResponseBasic(
+  protected abstract adaptHttpResponseToIDriveResponse(
     responseToAdapt: unknown
-  ): Promise<IHttpResponse>;
-  /** envío genérico de petición a traves de del driver seleccionado
-   *
-   * @param url  url completa a cual enviar la petición.
-   * @param httpMethod  método http a usar.
-   * @param txData datos a enviar.
-   * @returns los datos obtenidos.
-   *
-   * ⚠ Las excepciones **no** son manejadas internamente ⚠
-   */
-  public abstract sendRequest(
-    url: string,
-    httpMethod: TKeyHttpMethod,
-    txData?: any
-  ): Promise<unknown>;
+  ): Promise<IDriverResponse>;
 }

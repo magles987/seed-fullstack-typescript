@@ -6,25 +6,25 @@ import { getSeedEnvironment } from "../config/seed-environment";
 /** *Singleton*
  * manejador de encriptacion y compresion de data
  */
-export class EncriptAndCompressDataHandler {
+export class EncryptAndCompressDataHandler {
   /**... */
   protected util = Util_Logic.getInstance();
   /**  Almacena la instancia única de esta clase */
-  private static encriptAndCompressDataHandler_instance: EncriptAndCompressDataHandler;
+  private static encriptAndCompressDataHandler_instance: EncryptAndCompressDataHandler;
   /**... */
   constructor() {
     this.util = Util_Logic.getInstance();
   }
   /** @returns la instancia unica de la clase*/
-  public static getInstance(): EncriptAndCompressDataHandler {
-    EncriptAndCompressDataHandler.encriptAndCompressDataHandler_instance =
-      EncriptAndCompressDataHandler.encriptAndCompressDataHandler_instance ===
+  public static getInstance(): EncryptAndCompressDataHandler {
+    EncryptAndCompressDataHandler.encriptAndCompressDataHandler_instance =
+      EncryptAndCompressDataHandler.encriptAndCompressDataHandler_instance ===
         undefined ||
-      EncriptAndCompressDataHandler.encriptAndCompressDataHandler_instance ===
+      EncryptAndCompressDataHandler.encriptAndCompressDataHandler_instance ===
         null
-        ? new EncriptAndCompressDataHandler()
-        : EncriptAndCompressDataHandler.encriptAndCompressDataHandler_instance;
-    return EncriptAndCompressDataHandler.encriptAndCompressDataHandler_instance;
+        ? new EncryptAndCompressDataHandler()
+        : EncryptAndCompressDataHandler.encriptAndCompressDataHandler_instance;
+    return EncryptAndCompressDataHandler.encriptAndCompressDataHandler_instance;
   }
   /**convierte buffer de tipo `Uint8Array` a `string` en base 64 */
   private uint8ArrayToBase64(uint8Array: Uint8Array): string {
@@ -124,7 +124,7 @@ export class EncriptAndCompressDataHandler {
    * string para un fragmento de url limpio
    *
    */
-  public encriptAndCompressObjectToUrlBase64(
+  public encryptAndCompressObjectToUrlBase64(
     object: object | Array<any>
   ): string {
     let strObject: string;
@@ -146,7 +146,7 @@ export class EncriptAndCompressDataHandler {
    * desencripta y descomprime para convertirlo
    * en un objeto
    */
-  public unencriptAndUncompressUrlBase64ToObject(
+  public unencryptAndUncompressUrlBase64ToObject(
     urlBase64EncodedCompress: string
   ): object | Array<any> {
     //rearma la url para el formato comprimido

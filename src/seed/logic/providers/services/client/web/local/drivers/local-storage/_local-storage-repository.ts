@@ -2,7 +2,7 @@ import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../../errors/logic-error";
-import { LocalRepository } from "../_local-repository";
+import { LocalRepositoryDriver } from "../_local-repository";
 import {
   TKeyBasicCRUD,
   TKeyLogicContext,
@@ -21,7 +21,7 @@ export type Trf_LocalStorageRepository = LocalStorageRepository<any>;
  * ...
  */
 export abstract class LocalStorageRepository<TKeyActionRequest>
-  extends LocalRepository
+  extends LocalRepositoryDriver
   implements
     ReturnType<LocalStorageRepository<TKeyActionRequest>["getDefault"]>
 {

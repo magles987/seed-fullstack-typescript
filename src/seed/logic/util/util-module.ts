@@ -35,7 +35,7 @@ export class Util_Module extends Util_Logic {
   public static getInstance(): Util_Module {
     Util_Module.Util_Module_instance =
       Util_Module.Util_Module_instance === undefined ||
-        Util_Module.Util_Module_instance === null
+      Util_Module.Util_Module_instance === null
         ? new Util_Module()
         : Util_Module.Util_Module_instance;
     return Util_Module.Util_Module_instance;
@@ -98,8 +98,9 @@ export class Util_Module extends Util_Logic {
     if (!this.isTuple(tActionConfig, 2)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${tActionConfig as any as string
-          } is not tuple of actionConfig valid`,
+        msn: `${
+          tActionConfig as any as string
+        } is not tuple of actionConfig valid`,
       });
     }
     if (!this.isObject(config)) {
@@ -138,8 +139,9 @@ export class Util_Module extends Util_Logic {
     if (!this.isTuple(tDiccActionConfig, 2)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${tDiccActionConfig as any as string
-          } is not tuple of actionConfig dictionary valid`,
+        msn: `${
+          tDiccActionConfig as any as string
+        } is not tuple of actionConfig dictionary valid`,
       });
     }
     const [baseDiccAC, newADiccAC] = tDiccActionConfig;
@@ -174,8 +176,9 @@ export class Util_Module extends Util_Logic {
     if (!this.isTuple(tArrayTupleActionConfig, 2)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${tArrayTupleActionConfig as any as string
-          } is not tuple of array of tuples of action Config`,
+        msn: `${
+          tArrayTupleActionConfig as any as string
+        } is not tuple of array of tuples of action Config`,
       });
     }
     const [aTupleBaseAC, aTupleNewAC] = tArrayTupleActionConfig;
@@ -185,8 +188,9 @@ export class Util_Module extends Util_Logic {
     ) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${aTupleBaseAC as any as string
-          } is not array of tuples of action Config base valid`,
+        msn: `${
+          aTupleBaseAC as any as string
+        } is not array of tuples of action Config base valid`,
       });
     }
     if (
@@ -195,8 +199,9 @@ export class Util_Module extends Util_Logic {
     ) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${aTupleNewAC as any as string
-          } is not array of tuples of action Config new valid`,
+        msn: `${
+          aTupleNewAC as any as string
+        } is not array of tuples of action Config new valid`,
       });
     }
     let aT_fusion = [
@@ -407,6 +412,33 @@ export class Util_Module extends Util_Logic {
     const aPath = keyPath.split(sp);
     const lenAPath = aPath.length;
     let r = aPath[lenAPath - 1];
+    return r;
+  }
+  /**verifica si la acción es permitida ejecutarla, se gun las condiciones necesarias
+   *
+   *  - Debe existir la tupla de `[keyModuleContext, keyAction]` bien configurada.
+   *  - El diccionario de configuraciones debe estar bien configurado
+   *  - La configuración asignada a esa acción no puede ser `undefined` o `null`
+   *
+   * @param tKeyGlobalAC tupla formada conformada por:
+   *  - `[0]` clave identificadora del modulo en contexto (`keyModuleContext`).
+   *  - `[1]` clave identificadora de la acción (`keyAction`)
+   * @param diccGlobalAC diccionario con las configuraciones de acciones globales (**ya deben esta fusionadas**)
+   *
+   * @returns si es o no permitido la ejecución de la acción
+   */
+  public isAllowRunAction(
+    tKeyGlobalAC: [string, string],
+    diccGlobalAC: object
+  ): boolean {
+    let r = false;
+    if (!this.isTuple(tKeyGlobalAC, 2) || !this.isObject(diccGlobalAC))
+      return r;
+    const [keyModuleContext, keyAction] = tKeyGlobalAC;
+    const diccAC = diccGlobalAC[keyModuleContext as any];
+    if (!this.isObject(diccAC)) return r;
+    const actionConfig = diccAC[keyAction];
+    r = this.isNotUndefinedAndNotNull(actionConfig);
     return r;
   }
 }

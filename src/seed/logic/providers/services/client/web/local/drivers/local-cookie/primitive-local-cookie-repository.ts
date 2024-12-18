@@ -89,7 +89,10 @@ export class PrimitiveLocalCookieRepository<
   protected override async readCommon(
     criteria: IBagForService["literalCriteria"]
   ) {
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
+    );
     let data = await this.getData(keySrcContext);
     data = this.util.isNotUndefinedAndNotNull(data)
       ? Array.isArray(data)
@@ -104,7 +107,10 @@ export class PrimitiveLocalCookieRepository<
     data: any,
     criteria: IBagForService["literalCriteria"]
   ) {
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
+    );
     let currentData = (await this.getData(keySrcContext)) as any[];
     currentData = Array.isArray(currentData) ? currentData : [currentData];
     const idxCData = currentData.findIndex((dt) =>
@@ -119,7 +125,10 @@ export class PrimitiveLocalCookieRepository<
     data: any,
     criteria: IBagForService["literalCriteria"]
   ) {
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
+    );
     let currentData = await this.getData(keySrcContext);
     const idxCData = currentData.findIndex((dt) =>
       this.util.isEquivalentTo([dt, data], {})
@@ -133,7 +142,10 @@ export class PrimitiveLocalCookieRepository<
     data: any,
     criteria: IBagForService["literalCriteria"]
   ) {
-    const keySrcContext = this.getKeySrcContext(this.srcSelector, criteria);
+    const keySrcContext = this.util.getKeySrcContext(
+      this.srcSelector,
+      criteria
+    );
     let currentData = (await this.getData(keySrcContext)) as any[];
     currentData = Array.isArray(currentData) ? currentData : [currentData];
     const fIdx = currentData.findIndex((dt) =>
