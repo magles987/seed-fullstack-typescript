@@ -161,9 +161,7 @@ export abstract class LocalRepositoryDriver implements IGenericDriver {
    * @returns ``
    *
    */
-  protected abstract readCommon(
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any>;
+  protected abstract readCommon(literalBag: IBagForService): Promise<any>;
   /**
    * descrip...
    * ____
@@ -172,10 +170,7 @@ export abstract class LocalRepositoryDriver implements IGenericDriver {
    * @returns ``
    *
    */
-  protected abstract createCommon(
-    data: any,
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any>;
+  protected abstract createCommon(literalBag: IBagForService): Promise<any>;
   /**
    * descrip...
    * ____
@@ -184,10 +179,7 @@ export abstract class LocalRepositoryDriver implements IGenericDriver {
    * @returns ``
    *
    */
-  protected abstract updateCommon(
-    data: any,
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any>;
+  protected abstract updateCommon(literalBag: IBagForService): Promise<any>;
   /**
    * descrip...
    * ____
@@ -196,8 +188,5 @@ export abstract class LocalRepositoryDriver implements IGenericDriver {
    * @returns ``
    *
    */
-  protected abstract deleteCommon(
-    data: any,
-    criteria: IBagForService["literalCriteria"]
-  ): Promise<any>;
+  protected abstract deleteCommon(literalBag: IBagForService): Promise<any>;
 }

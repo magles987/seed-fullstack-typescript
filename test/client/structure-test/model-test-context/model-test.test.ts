@@ -50,6 +50,22 @@ describe("GLobal test (modelTest)", async () => {
         });
         expect(res).toMatchObject(vExp);
       });
+      it("action: create", async () => {
+        const txData = {
+          _id: "10",
+          _pathDoc: "/10/",
+        } as ModelTest;
+        const vExp = {
+          data: db,
+          status: ELogicResStatusCode.VALID_DATA,
+        } as IStructureResponse;
+        const res = await ctrl.create(txData, {
+          diccGlobalAC: {
+            structureProvider: { runProvider: { serviceToRun } },
+          },
+        });
+        expect(res).toMatchObject(vExp);
+      });
     });
   });
 });

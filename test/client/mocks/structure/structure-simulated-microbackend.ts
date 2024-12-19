@@ -121,8 +121,8 @@ export class StructureSimulatedMicroBackend<
     return data;
   }
   protected override async createCommon(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) {
     const kId = this.keyId;
     const idxCData = this.bd_collection.findIndex((dt) => {
@@ -138,8 +138,8 @@ export class StructureSimulatedMicroBackend<
     return data;
   }
   protected override async updateCommon(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) {
     const kId = this.keyId;
     const idxCData = this.bd_collection.findIndex((dt) => {
@@ -151,8 +151,8 @@ export class StructureSimulatedMicroBackend<
     return data;
   }
   protected override async deleteCommon(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) {
     const kId = this.keyId;
     const idxCData = this.bd_collection.findIndex((dt) => {
@@ -167,22 +167,20 @@ export class StructureSimulatedMicroBackend<
   }
   //████ Request Actions ████████████████████████████████████████████████████████████
   public async exist(
-    data: any,
     literalCriteria: IBagForService["literalCriteria"]
   ): Promise<boolean> {
     const registers = await this.readCommon(literalCriteria);
     const aData = await this.getMany(registers, literalCriteria);
-    data = aData.length > 0;
-    return data;
+    let rxData = aData.length > 0;
+    return rxData;
   }
   public async count(
-    data: any,
     literalCriteria: IBagForService["literalCriteria"]
   ): Promise<number> {
     const registers = await this.readCommon(literalCriteria);
     const aData = await this.getMany(registers, literalCriteria);
-    data = aData.length;
-    return data;
+    let rxData = aData.length;
+    return rxData;
   }
   public async inform(
     data: any,
@@ -202,21 +200,19 @@ export class StructureSimulatedMicroBackend<
    *
    */
   public async readAll(
-    data: any,
     literalCriteria: IBagForService["literalCriteria"]
   ): Promise<any[]> {
     const registers = await this.readCommon(literalCriteria);
-    data = await this.getAll(registers, literalCriteria);
-    return data;
+    let rxData = await this.getAll(registers, literalCriteria);
+    return rxData;
   }
   /**... */
   public async readMany(
-    data: any,
     literalCriteria: IBagForService["literalCriteria"]
   ): Promise<any[]> {
     const registers = await this.readCommon(literalCriteria);
-    data = await this.getMany(registers, literalCriteria);
-    return data;
+    let rxData = await this.getMany(registers, literalCriteria);
+    return rxData;
   }
   /**
    * descrip...
@@ -226,13 +222,10 @@ export class StructureSimulatedMicroBackend<
    * @returns ``
    *
    */
-  public async readOne(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
-  ) {
+  public async readOne(literalCriteria: IBagForService["literalCriteria"]) {
     const registers = await this.readCommon(literalCriteria);
-    data = await this.getOne(registers, literalCriteria);
-    return data;
+    let rxData = await this.getOne(registers, literalCriteria);
+    return rxData;
   }
   /**
    * descrip...
@@ -242,10 +235,7 @@ export class StructureSimulatedMicroBackend<
    * @returns ``
    *
    */
-  public async readById(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
-  ) {
+  public async readById(literalCriteria: IBagForService["literalCriteria"]) {
     const kId = this.keyId;
     const { query } = literalCriteria as IStructureReadCriteria<any>;
     const extractQ = query!.find((q) => {
@@ -260,8 +250,8 @@ export class StructureSimulatedMicroBackend<
       throw new Error(`is not valid query, because not 'id' valid`);
     }
     const registers = await this.readCommon(literalCriteria);
-    data = await this.getOne(registers, literalCriteria);
-    return data;
+    let rxData = await this.getOne(registers, literalCriteria);
+    return rxData;
   }
   /**
    * descrip...
@@ -272,8 +262,8 @@ export class StructureSimulatedMicroBackend<
    *
    */
   public async create(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) {
     const { modifyType, isCreateOrUpdate } =
       literalCriteria as IStructureModifyCriteria<any>;
@@ -283,10 +273,10 @@ export class StructureSimulatedMicroBackend<
     if (modifyType !== "create") {
       throw new Error(`${modifyType} is not modify type valid`);
     }
-    let rxData = await this.createCommon(data, literalCriteria);
+    let rxData = await this.createCommon(literalCriteria, data);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
-        rxData = await this.updateCommon(data, literalCriteria);
+        rxData = await this.updateCommon(literalCriteria, data);
       } else {
         throw new Error(
           `document with data : ${data} id has not created because exist`
@@ -304,8 +294,8 @@ export class StructureSimulatedMicroBackend<
    *
    */
   public async update(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) {
     const { modifyType, isCreateOrUpdate } =
       literalCriteria as IStructureModifyCriteria<any>;
@@ -315,10 +305,10 @@ export class StructureSimulatedMicroBackend<
     if (modifyType !== "update") {
       throw new Error(`${modifyType} is not modify type valid`);
     }
-    let rxData = await this.updateCommon(data, literalCriteria);
+    let rxData = await this.updateCommon(literalCriteria, data);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
-        rxData = await this.createCommon(data, literalCriteria);
+        rxData = await this.createCommon(literalCriteria, data);
       } else {
         throw new Error(
           `document with data : ${data} id has not updated because not exist`
@@ -336,8 +326,8 @@ export class StructureSimulatedMicroBackend<
    *
    */
   public async delete(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) {
     const { modifyType } = literalCriteria as IStructureModifyCriteria<any>;
     if (!this.util.isObject(data)) {
@@ -346,7 +336,7 @@ export class StructureSimulatedMicroBackend<
     if (modifyType !== "delete") {
       throw new Error(`${modifyType} is not modify type valid`);
     }
-    let rxData = await this.deleteCommon(data, literalCriteria);
+    let rxData = await this.deleteCommon(literalCriteria, data);
     return rxData;
   }
 }

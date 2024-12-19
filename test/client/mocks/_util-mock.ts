@@ -41,8 +41,8 @@ export class Util_Mock extends Util_Module {
     repoInstance: object,
     literalCriteria: IBagForService["literalCriteria"]
   ): (
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) => Promise<any> {
     if (!this.isObject(literalCriteria)) {
       throw new LogicError({

@@ -11,8 +11,8 @@ import { Util_Mock } from "./_util-mock";
 /**... */
 export interface ISimulatedMicroBackend {
   receiveMockRequest: (
-    data: any,
-    criteria: IBagForService["literalCriteria"]
+    criteria: IBagForService["literalCriteria"],
+    data: any
   ) => Promise<unknown>;
 }
 export type Trf_SimulatedMicroBackend = SimulatedMicroBackend;
@@ -131,8 +131,8 @@ export abstract class SimulatedMicroBackend
   }
   /**... */
   public async receiveMockRequest(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ): Promise<IDriverResponse> {
     let driverRes: IDriverResponse;
     try {
@@ -243,8 +243,8 @@ export abstract class SimulatedMicroBackend
    *
    */
   protected abstract createCommon(
-    data: any,
-    criteria: IBagForService["literalCriteria"]
+    criteria: IBagForService["literalCriteria"],
+    data: any
   ): Promise<any>;
   /**
    * descrip...
@@ -255,8 +255,8 @@ export abstract class SimulatedMicroBackend
    *
    */
   protected abstract updateCommon(
-    data: any,
-    criteria: IBagForService["literalCriteria"]
+    criteria: IBagForService["literalCriteria"],
+    data: any
   ): Promise<any>;
   /**
    * descrip...
@@ -267,7 +267,7 @@ export abstract class SimulatedMicroBackend
    *
    */
   protected abstract deleteCommon(
-    data: any,
-    criteria: IBagForService["literalCriteria"]
+    criteria: IBagForService["literalCriteria"],
+    data: any
   ): Promise<any>;
 }

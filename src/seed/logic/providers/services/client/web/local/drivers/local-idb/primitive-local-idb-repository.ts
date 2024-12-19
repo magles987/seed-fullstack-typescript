@@ -94,12 +94,11 @@ export class PrimitiveLocalIDBRepository<
     super.mutateProps(base);
     return;
   }
-  protected override async readCommon(
-    criteria: IBagForService["literalCriteria"]
-  ) {
+  protected override async readCommon(literalBag: IBagForService) {
+    const { literalCriteria } = literalBag;
     const keySrcContext = this.util.getKeySrcContext(
       this.srcSelector,
-      criteria
+      literalCriteria
     );
     const tx = await this.getTransaction(
       {
@@ -115,14 +114,12 @@ export class PrimitiveLocalIDBRepository<
     data = data.map((dt) => dt[keySrcContext]);
     return data;
   }
-  protected override async createCommon(
-    data: any,
-    criteria: IBagForService["literalCriteria"]
-  ) {
+  protected override async createCommon(literalBag: IBagForService) {
+    const { data, literalCriteria } = literalBag;
     const kId = this.getCONST().keyId;
     const keySrcContext = this.util.getKeySrcContext(
       this.srcSelector,
-      criteria
+      literalCriteria
     );
     const tx = await this.getTransaction(
       {
@@ -147,14 +144,12 @@ export class PrimitiveLocalIDBRepository<
     await tx.done; //cerrar la transacción
     return data;
   }
-  protected override async updateCommon(
-    data: any,
-    criteria: IBagForService["literalCriteria"]
-  ) {
+  protected override async updateCommon(literalBag: IBagForService) {
+    const { data, literalCriteria } = literalBag;
     const kId = this.getCONST().keyId;
     const keySrcContext = this.util.getKeySrcContext(
       this.srcSelector,
-      criteria
+      literalCriteria
     );
     const tx = await this.getTransaction(
       {
@@ -179,14 +174,12 @@ export class PrimitiveLocalIDBRepository<
     await tx.done; //cerrar la transacción
     return data;
   }
-  protected override async deleteCommon(
-    data: any,
-    criteria: IBagForService["literalCriteria"]
-  ) {
+  protected override async deleteCommon(literalBag: IBagForService) {
+    const { data, literalCriteria } = literalBag;
     const kId = this.getCONST().keyId;
     const keySrcContext = this.util.getKeySrcContext(
       this.srcSelector,
-      criteria
+      literalCriteria
     );
     const tx = await this.getTransaction(
       {
@@ -212,21 +205,21 @@ export class PrimitiveLocalIDBRepository<
   //████ Request Actions ████████████████████████████████████████████████████████████
   public async exist(bagService: IBagForService): Promise<boolean> {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const aData = await this.getMany(registers, literalCriteria);
     const data = aData.length > 0;
     return data;
   }
   public async count(bagService: IBagForService): Promise<number> {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const aData = await this.getMany(registers, literalCriteria);
     const data = aData.length;
     return data;
   }
   public async inform(bagService: IBagForService): Promise<string> {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const aData = await this.getMany(registers, literalCriteria);
     const data = aData.length > 0 ? "exist" : "no exist";
     return data;
@@ -241,21 +234,21 @@ export class PrimitiveLocalIDBRepository<
    */
   public async readAll(bagService: IBagForService) {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const rxData = await this.getAll(registers, literalCriteria);
     return rxData;
   }
   /**... */
   public async readMany(bagService: IBagForService): Promise<any[]> {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const rxData = await this.getMany(registers, literalCriteria);
     return rxData;
   }
   /** */
   public async readOne(bagService: IBagForService) {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const rxData = await this.getOne(registers, literalCriteria);
     return rxData;
   }
@@ -285,10 +278,10 @@ export class PrimitiveLocalIDBRepository<
         msn: `${modifyType} is not modify type valid`,
       });
     }
-    let rxData = await this.createCommon(data, literalCriteria);
+    let rxData = await this.createCommon(bagService);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
-        rxData = await this.updateCommon(data, literalCriteria);
+        rxData = await this.updateCommon(bagService);
       } else {
         throw new LogicError({
           code: ELogicCodeError.EXIST,
@@ -326,10 +319,10 @@ export class PrimitiveLocalIDBRepository<
         msn: `${modifyType} is not modify type valid`,
       });
     }
-    let rxData = await this.updateCommon(data, literalCriteria);
+    let rxData = await this.updateCommon(bagService);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
-        rxData = await this.createCommon(data, literalCriteria);
+        rxData = await this.createCommon(bagService);
       } else {
         throw new LogicError({
           code: ELogicCodeError.NOT_EXIST,
@@ -366,8 +359,7 @@ export class PrimitiveLocalIDBRepository<
         msn: `${modifyType} is not modify type valid`,
       });
     }
-    await this.deleteCommon(data, literalCriteria);
+    await this.deleteCommon(bagService);
     return null; //⚠Que retorna el primitivo❓❓
   }
-  //████ Util Registers █████████████████████████████████████████████████████
 }

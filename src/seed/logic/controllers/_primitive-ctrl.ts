@@ -531,14 +531,14 @@ export abstract class PrimitiveLogicController<
     return res;
   }
   public async create(
-    data: TValue,
     baseCriteria: TPrimitiveBaseCriteriaForCtrlModify<
       TPrimitiveMutateInstance["dfDiccActionConfig"],
       TPrimitiveValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TPrimitiveHookInstance["dfDiccActionConfig"],
       TPrimitiveProviderInstance["dfDiccActionConfig"]
-    >
+    >,
+    data: Partial<TValue>
   ): Promise<IPrimitiveResponse> {
     baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
     //criterios obligatorios para esta acción de petición
@@ -549,18 +549,18 @@ export abstract class PrimitiveLogicController<
       keyActionRequest: "create" as TKeyPrimitiveModifyRequestController,
       expectedDataType: "any",
     });
-    const res = await this.runPrimitiveRequest(data, cH);
+    const res = await this.runPrimitiveRequest(data as TValue, cH);
     return res;
   }
   public async update(
-    data: TValue,
     baseCriteria: TPrimitiveBaseCriteriaForCtrlModify<
       TPrimitiveMutateInstance["dfDiccActionConfig"],
       TPrimitiveValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TPrimitiveHookInstance["dfDiccActionConfig"],
       TPrimitiveProviderInstance["dfDiccActionConfig"]
-    >
+    >,
+    data: Partial<TValue>
   ): Promise<IPrimitiveResponse> {
     baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
     //criterios obligatorios para esta acción de petición
@@ -571,18 +571,18 @@ export abstract class PrimitiveLogicController<
       keyActionRequest: "update" as TKeyPrimitiveModifyRequestController,
       expectedDataType: "any",
     });
-    const res = await this.runPrimitiveRequest(data, cH);
+    const res = await this.runPrimitiveRequest(data as TValue, cH);
     return res;
   }
   public async delete(
-    data: TValue,
     baseCriteria: TPrimitiveBaseCriteriaForCtrlModify<
       TPrimitiveMutateInstance["dfDiccActionConfig"],
       TPrimitiveValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TPrimitiveHookInstance["dfDiccActionConfig"],
       TPrimitiveProviderInstance["dfDiccActionConfig"]
-    >
+    >,
+    data: Partial<TValue>
   ): Promise<IPrimitiveResponse> {
     baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
     //criterios obligatorios para esta acción de petición
@@ -593,7 +593,7 @@ export abstract class PrimitiveLogicController<
       keyActionRequest: "delete" as TKeyPrimitiveModifyRequestController,
       expectedDataType: "any",
     });
-    const res = await this.runPrimitiveRequest(data, cH);
+    const res = await this.runPrimitiveRequest(data as TValue, cH);
     return res;
   }
 }

@@ -105,8 +105,8 @@ export class PrimitiveSimulatedMicroBackend<
     return data;
   }
   protected override async createCommon(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) {
     const idxCData = this.bd_collection.findIndex((dt) =>
       this.util.isEquivalentTo([dt, data], {})
@@ -116,8 +116,8 @@ export class PrimitiveSimulatedMicroBackend<
     return data;
   }
   protected override async updateCommon(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) {
     const idxCData = this.bd_collection.findIndex((dt) =>
       this.util.isEquivalentTo([dt, data], {})
@@ -127,8 +127,8 @@ export class PrimitiveSimulatedMicroBackend<
     return data;
   }
   protected override async deleteCommon(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) {
     const fIdx = this.bd_collection.findIndex((dt) =>
       this.util.isEquivalentTo([dt, data], {})
@@ -138,31 +138,28 @@ export class PrimitiveSimulatedMicroBackend<
   }
   //████ Request Actions ████████████████████████████████████████████████████████████
   public async exist(
-    data: any,
     literalCriteria: IBagForService["literalCriteria"]
   ): Promise<boolean> {
     const registers = await this.readCommon(literalCriteria);
     const aData = await this.getMany(registers, literalCriteria);
-    data = aData.length > 0;
-    return data;
+    let rxData = aData.length > 0;
+    return rxData;
   }
   public async count(
-    data: any,
     literalCriteria: IBagForService["literalCriteria"]
   ): Promise<number> {
     const registers = await this.readCommon(literalCriteria);
     const aData = await this.getMany(registers, literalCriteria);
-    data = aData.length;
-    return data;
+    let rxData = aData.length;
+    return rxData;
   }
   public async inform(
-    data: any,
     literalCriteria: IBagForService["literalCriteria"]
   ): Promise<string> {
     const registers = await this.readCommon(literalCriteria);
     const aData = await this.getMany(registers, literalCriteria);
-    data = aData.length > 0 ? "exist" : "no exist";
-    return data;
+    let rxData = aData.length > 0 ? "exist" : "no exist";
+    return rxData;
   }
   /**
    * descrip...
@@ -173,21 +170,19 @@ export class PrimitiveSimulatedMicroBackend<
    *
    */
   public async readAll(
-    data: any,
     literalCriteria: IBagForService["literalCriteria"]
   ): Promise<any[]> {
     const registers = await this.readCommon(literalCriteria);
-    data = await this.getAll(registers, literalCriteria);
-    return data;
+    let rxData = await this.getAll(registers, literalCriteria);
+    return rxData;
   }
   /**... */
   public async readMany(
-    data: any,
     literalCriteria: IBagForService["literalCriteria"]
   ): Promise<any[]> {
     const registers = await this.readCommon(literalCriteria);
-    data = await this.getMany(registers, literalCriteria);
-    return data;
+    let rxData = await this.getMany(registers, literalCriteria);
+    return rxData;
   }
   /**
    * descrip...
@@ -197,13 +192,10 @@ export class PrimitiveSimulatedMicroBackend<
    * @returns ``
    *
    */
-  public async readOne(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
-  ) {
+  public async readOne(literalCriteria: IBagForService["literalCriteria"]) {
     const registers = await this.readCommon(literalCriteria);
-    data = await this.getOne(registers, literalCriteria);
-    return data;
+    let rxData = await this.getOne(registers, literalCriteria);
+    return rxData;
   }
   /**
    * descrip...
@@ -214,8 +206,8 @@ export class PrimitiveSimulatedMicroBackend<
    *
    */
   public async create(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) {
     const { modifyType, isCreateOrUpdate } =
       literalCriteria as IPrimitiveModifyCriteria;
@@ -225,7 +217,7 @@ export class PrimitiveSimulatedMicroBackend<
     if (modifyType !== "create") {
       throw new Error(`${modifyType} is not modify type valid`);
     }
-    let rxData = await this.createCommon(data, literalCriteria);
+    let rxData = await this.createCommon(literalCriteria, data);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
         rxData = await this.updateCommon(data, literalCriteria);
@@ -246,8 +238,8 @@ export class PrimitiveSimulatedMicroBackend<
    *
    */
   public async update(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) {
     const { modifyType, isCreateOrUpdate } =
       literalCriteria as IPrimitiveModifyCriteria;
@@ -257,7 +249,7 @@ export class PrimitiveSimulatedMicroBackend<
     if (modifyType !== "update") {
       throw new Error(`${modifyType} is not modify type valid`);
     }
-    let rxData = await this.updateCommon(data, literalCriteria);
+    let rxData = await this.updateCommon(literalCriteria, data);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
         rxData = await this.createCommon(data, literalCriteria);
@@ -278,8 +270,8 @@ export class PrimitiveSimulatedMicroBackend<
    *
    */
   public async delete(
-    data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"],
+    data: any
   ) {
     const { modifyType } = literalCriteria as IPrimitiveModifyCriteria;
     if (!this.util.isObject(data)) {
@@ -288,7 +280,7 @@ export class PrimitiveSimulatedMicroBackend<
     if (modifyType !== "delete") {
       throw new Error(`${modifyType} is not modify type valid`);
     }
-    let rxData = await this.deleteCommon(data, literalCriteria);
+    let rxData = await this.deleteCommon(literalCriteria, data);
     return rxData;
   }
 }

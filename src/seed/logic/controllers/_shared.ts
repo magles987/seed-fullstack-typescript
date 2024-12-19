@@ -102,7 +102,6 @@ export type TPrimitiveCtrlActionFn<
 > =
   //método para lectura
   | ((
-      data: TValue,
       criteriaHandler:
         | TPrimitiveBaseCriteriaForCtrlRead<
             TIDiccPrimitiveMutateAC,
@@ -117,11 +116,11 @@ export type TPrimitiveCtrlActionFn<
             TIDiccRequestValAC,
             TIDiccPrimitiveHookAC,
             TIDiccPrimitiveProviderAC
-          >
+          >,
+      singleDataQ?: any //valor no definido para primitivos
     ) => Promise<IPrimitiveResponse>)
   //método para modificación
   | ((
-      data: TValue,
       criteriaHandler:
         | TPrimitiveBaseCriteriaForCtrlRead<
             TIDiccPrimitiveMutateAC,
@@ -136,7 +135,8 @@ export type TPrimitiveCtrlActionFn<
             TIDiccRequestValAC,
             TIDiccPrimitiveHookAC,
             TIDiccPrimitiveProviderAC
-          >
+          >,
+      data: Partial<TValue>
     ) => Promise<IPrimitiveResponse>);
 
 //====Strcuture====================================================================================================================
@@ -235,12 +235,12 @@ export type TFieldCtrlActionFn<
   TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
   TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
 > = (
-  data: any,
   criteriaHandler: TStructureBaseCriteriaForCtrlField<
     TModel,
     TIDiccFieldMutateAC,
     TIDiccFieldValAC
-  >
+  >,
+  data: any
 ) => Promise<IStructureResponse>;
 /**funcion asyncrona generica que recibe el bag de una peticion,
  * esta funcion será implementada en las peticiones del controller
@@ -278,11 +278,11 @@ export type TModelCtrlActionFn<
             TIDiccRequestValAC,
             TIDiccStructureHookAC,
             TIDiccStructureProviderAC
-          >
+          >,
+      singleDataQ?: Partial<TModel>
     ) => Promise<IStructureResponse>)
   //método para modificación
   | ((
-      data: TModel,
       criteriaHandler:
         | TStructureBaseCriteriaForCtrlRead<
             TModel,
@@ -299,5 +299,6 @@ export type TModelCtrlActionFn<
             TIDiccRequestValAC,
             TIDiccStructureHookAC,
             TIDiccStructureProviderAC
-          >
+          >,
+      data: Partial<TModel>
     ) => Promise<IStructureResponse>);

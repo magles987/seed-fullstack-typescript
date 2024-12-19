@@ -112,12 +112,11 @@ export class StructureLocalCookieRepository<
   //   return;
   // }
   //████ common snippet for action request  ████████████████████████
-  protected override async readCommon(
-    criteria: IBagForService["literalCriteria"]
-  ) {
+  protected override async readCommon(literalBag: IBagForService) {
+    const { literalCriteria } = literalBag;
     const keySrcContext = this.util.getKeySrcContext(
       this.srcSelector,
-      criteria
+      literalCriteria
     );
     let data = await this.getData(keySrcContext);
     data = this.util.isNotUndefinedAndNotNull(data)
@@ -127,14 +126,12 @@ export class StructureLocalCookieRepository<
       : [];
     return data;
   }
-  protected override async createCommon(
-    data: any,
-    criteria: IBagForService["literalCriteria"]
-  ) {
+  protected override async createCommon(literalBag: IBagForService) {
+    const { data, literalCriteria } = literalBag;
     const kId = this.keyId;
     const keySrcContext = this.util.getKeySrcContext(
       this.srcSelector,
-      criteria
+      literalCriteria
     );
     let currentData = (await this.getData(keySrcContext)) as any[];
     currentData = Array.isArray(currentData) ? currentData : [currentData];
@@ -148,14 +145,12 @@ export class StructureLocalCookieRepository<
     await this.setData(currentData, keySrcContext);
     return data;
   }
-  protected override async updateCommon(
-    data: any,
-    criteria: IBagForService["literalCriteria"]
-  ) {
+  protected override async updateCommon(literalBag: IBagForService) {
+    const { data, literalCriteria } = literalBag;
     const kId = this.keyId;
     const keySrcContext = this.util.getKeySrcContext(
       this.srcSelector,
-      criteria
+      literalCriteria
     );
     let currentData = (await this.getData(keySrcContext)) as any[];
     currentData = Array.isArray(currentData) ? currentData : [currentData];
@@ -165,14 +160,12 @@ export class StructureLocalCookieRepository<
     await this.setData(currentData, keySrcContext);
     return data;
   }
-  protected override async deleteCommon(
-    data: any,
-    criteria: IBagForService["literalCriteria"]
-  ) {
+  protected override async deleteCommon(literalBag: IBagForService) {
+    const { data, literalCriteria } = literalBag;
     const kId = this.keyId;
     const keySrcContext = this.util.getKeySrcContext(
       this.srcSelector,
-      criteria
+      literalCriteria
     );
     let currentData = (await this.getData(keySrcContext)) as any[];
     currentData = Array.isArray(currentData) ? currentData : [currentData];
@@ -190,21 +183,21 @@ export class StructureLocalCookieRepository<
   //████ Request Actions ████████████████████████████████████████████████████████████
   public async exist(bagService: IBagForService): Promise<boolean> {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const aData = await this.getMany(registers, literalCriteria);
     const data = aData.length > 0;
     return data;
   }
   public async count(bagService: IBagForService): Promise<number> {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const aData = await this.getMany(registers, literalCriteria);
     const data = aData.length;
     return data;
   }
   public async inform(bagService: IBagForService): Promise<string> {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const aData = await this.getMany(registers, literalCriteria);
     const data = aData.length > 0 ? "exist" : "no exist";
     return data;
@@ -219,14 +212,14 @@ export class StructureLocalCookieRepository<
    */
   public async readAll(bagService: IBagForService): Promise<any[]> {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const data = await this.getAll(registers, literalCriteria);
     return data;
   }
   /**... */
   public async readMany(bagService: IBagForService): Promise<any[]> {
     const { literalCriteria } = bagService;
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const data = await this.getMany(registers, literalCriteria);
     return data;
   }
@@ -240,7 +233,7 @@ export class StructureLocalCookieRepository<
    */
   public async readOne(bagService: IBagForService): Promise<any> {
     let { literalCriteria } = bagService;
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const data = await this.getOne(registers, literalCriteria);
     return data;
   }
@@ -272,7 +265,7 @@ export class StructureLocalCookieRepository<
         )} is not valid query, because not 'id' valid`,
       });
     }
-    const registers = await this.readCommon(literalCriteria);
+    const registers = await this.readCommon(bagService);
     const data = await this.getOne(registers, literalCriteria);
     return data;
   }
@@ -302,10 +295,10 @@ export class StructureLocalCookieRepository<
         msn: `${modifyType} is not modify type valid`,
       });
     }
-    let rxData = await this.createCommon(data, literalCriteria);
+    let rxData = await this.createCommon(bagService);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
-        rxData = await this.updateCommon(data, literalCriteria);
+        rxData = await this.updateCommon(bagService);
       } else {
         throw new LogicError({
           code: ELogicCodeError.EXIST,
@@ -343,10 +336,10 @@ export class StructureLocalCookieRepository<
         msn: `${modifyType} is not modify type valid`,
       });
     }
-    let rxData = await this.updateCommon(data, literalCriteria);
+    let rxData = await this.updateCommon(bagService);
     if (this.util.isUndefinedOrNull(rxData)) {
       if (isCreateOrUpdate) {
-        rxData = await this.createCommon(data, literalCriteria);
+        rxData = await this.createCommon(bagService);
       } else {
         throw new LogicError({
           code: ELogicCodeError.NOT_EXIST,
@@ -383,7 +376,7 @@ export class StructureLocalCookieRepository<
         msn: `${modifyType} is not modify type valid`,
       });
     }
-    let rxData = await this.deleteCommon(data, literalCriteria);
+    let rxData = await this.deleteCommon(bagService);
     return rxData;
   }
 }

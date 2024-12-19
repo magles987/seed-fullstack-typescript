@@ -665,12 +665,12 @@ export abstract class StructureLogicController<
   }
   //████ Field Actions ████████████████████████████████████████████████████████████
   public async checkField_id(
-    data: any,
     baseCriteria: TStructureBaseCriteriaForCtrlField<
       TModel,
       TFieldMutateInstance["dfDiccActionConfig"],
       TFieldValInstance["dfDiccActionConfig"]
-    >
+    >,
+    data: any
   ): Promise<IStructureResponse> {
     baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
     //criterios obligatorios para esta acción de petición
@@ -686,12 +686,12 @@ export abstract class StructureLogicController<
     return res;
   }
   public async checkField_pathDoc(
-    data: any,
     baseCriteria: TStructureBaseCriteriaForCtrlField<
       TModel,
       TFieldMutateInstance["dfDiccActionConfig"],
       TFieldValInstance["dfDiccActionConfig"]
-    >
+    >,
+    data: any
   ): Promise<IStructureResponse> {
     baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
     //criterios obligatorios para esta acción de petición
@@ -839,7 +839,6 @@ export abstract class StructureLogicController<
     return res;
   }
   public async readById(
-    _id: any,
     baseCriteria: TStructureBaseCriteriaForCtrlRead<
       TModel,
       TModelMutateInstance["dfDiccActionConfig"],
@@ -847,7 +846,8 @@ export abstract class StructureLogicController<
       TRequestValInstance["dfDiccActionConfig"],
       TStructureHookInstance["dfDiccActionConfig"],
       TStructureProviderInstance["dfDiccActionConfig"]
-    >
+    >,
+    singleDataQ: Partial<TModel>
   ): Promise<IStructureResponse> {
     baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
     //criterios obligatorios para esta acción de petición
@@ -865,7 +865,6 @@ export abstract class StructureLogicController<
     return res;
   }
   public async create(
-    data: TModel,
     baseCriteria: TStructureBaseCriteriaForCtrlModify<
       TModel,
       TModelMutateInstance["dfDiccActionConfig"],
@@ -873,7 +872,8 @@ export abstract class StructureLogicController<
       TRequestValInstance["dfDiccActionConfig"],
       TStructureHookInstance["dfDiccActionConfig"],
       TStructureProviderInstance["dfDiccActionConfig"]
-    >
+    >,
+    data: Partial<TModel>
   ): Promise<IStructureResponse> {
     baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
     //criterios obligatorios para esta acción de petición
@@ -884,11 +884,10 @@ export abstract class StructureLogicController<
       keyActionRequest: "create" as TKeyStructureModifyRequestController,
       expectedDataType: "object",
     });
-    const res = await this.runCommonModelRequest(data, cH);
+    const res = await this.runCommonModelRequest(data as TModel, cH);
     return res;
   }
   public async update(
-    data: TModel,
     baseCriteria: TStructureBaseCriteriaForCtrlModify<
       TModel,
       TModelMutateInstance["dfDiccActionConfig"],
@@ -896,7 +895,8 @@ export abstract class StructureLogicController<
       TRequestValInstance["dfDiccActionConfig"],
       TStructureHookInstance["dfDiccActionConfig"],
       TStructureProviderInstance["dfDiccActionConfig"]
-    >
+    >,
+    data: Partial<TModel>
   ): Promise<IStructureResponse> {
     baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
     //criterios obligatorios para esta acción de petición
@@ -907,11 +907,10 @@ export abstract class StructureLogicController<
       keyActionRequest: "update" as TKeyStructureModifyRequestController,
       expectedDataType: "object",
     });
-    const res = await this.runCommonModelRequest(data, cH);
+    const res = await this.runCommonModelRequest(data as TModel, cH);
     return res;
   }
   public async delete(
-    data: TModel,
     baseCriteria: TStructureBaseCriteriaForCtrlModify<
       TModel,
       TModelMutateInstance["dfDiccActionConfig"],
@@ -919,7 +918,8 @@ export abstract class StructureLogicController<
       TRequestValInstance["dfDiccActionConfig"],
       TStructureHookInstance["dfDiccActionConfig"],
       TStructureProviderInstance["dfDiccActionConfig"]
-    >
+    >,
+    data: Partial<TModel>
   ): Promise<IStructureResponse> {
     baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
     //criterios obligatorios para esta acción de petición
@@ -930,7 +930,7 @@ export abstract class StructureLogicController<
       keyActionRequest: "delete" as TKeyStructureModifyRequestController,
       expectedDataType: "object",
     });
-    const res = await this.runCommonModelRequest(data, cH);
+    const res = await this.runCommonModelRequest(data as TModel, cH);
     return res;
   }
   // public async createMany(
