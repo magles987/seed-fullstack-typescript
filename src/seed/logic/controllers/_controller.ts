@@ -11,6 +11,8 @@ import { IBuilderBaseMetadata } from "../meta/metadata-builder-shared";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { ReportHandler } from "../reports/_reportHandler";
 import { CriteriaHandler } from "../criterias/_criteria-handler";
+import { ICriteria } from "../criterias/shared";
+import { TFnBagForActionModule } from "../bag-module/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TKeyReadRequestController =
   | "exist"
@@ -61,7 +63,23 @@ export abstract class LogicController extends LogicModuleWithReport {
   protected override getDefault() {
     return LogicController.getDefault();
   }
-  /**construye una instancia de criterai
+  /**
+   * @param keyActionRequest clave identificadora de la acción de petición a solicitar su correspondiente método
+   * @returns el método correspondiente a la acción
+   */
+  public getActionRequestFn(keyActionRequest: unknown): Function {
+    const that = this;
+    let fn = that[keyActionRequest as any] as Function;
+    if (typeof fn !== "function") {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${fn} is not action request function valid`,
+      });
+    }
+    fn = fn.bind(that);
+    return fn;
+  }
+  /**construye una instancia de criteria
    *
    * @param base parametros iniciales de inicalizacion
    *
@@ -91,13 +109,15 @@ export abstract class LogicController extends LogicModuleWithReport {
     bag["data"] = res["data"];
     return;
   }
+  /**propiedad especial que simula una acción genérica para el controller */
+  public abstract actionCtrl: TFnBagForActionModule;
   /**... */
-  protected async runRequestForAction(
+  protected async runActionRequest(
     actionModuleInstContext: ActionModule<any>,
     bag: BagModule,
     keyAction: any
   ): Promise<IResponse> {
-    const res = (await LogicController.runRequestForAction(
+    const res = (await LogicController.runActionRequest(
       actionModuleInstContext,
       bag,
       keyAction
@@ -105,23 +125,36 @@ export abstract class LogicController extends LogicModuleWithReport {
     return res;
   }
   /**... */
-  public static async runRequestForAction(
+  public static async runActionRequest(
     actionModuleInstContext: ActionModule<any>,
     bag: BagModule,
     keyAction: any
   ): Promise<IResponse> {
-    const actionFn = actionModuleInstContext.getActionFnByKey(keyAction);
     let res: IResponse = undefined;
+    const { keyModule } = actionModuleInstContext;
+    let actionFn: TFnBagForActionModule;
+    if (
+      keyModule === "mutater" ||
+      keyModule === "validator" ||
+      keyModule === "hook" ||
+      keyModule === "provider"
+    )
+      actionFn = actionModuleInstContext.getActionFnByKey(keyAction);
+    else if (keyModule === "controller")
+      actionFn = (
+        actionModuleInstContext as any as LogicController
+      ).actionCtrl.bind(actionModuleInstContext);
+    else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyModule} is not key module valid`,
+      });
+    }
     if (typeof actionFn !== "function") {
-      const rH = actionModuleInstContext.buildReportHandler(
-        bag,
-        keyAction
-      ) as ReportHandler;
-      res = rH.mutateResponse(res, {
-        keyAction,
-        status: ELogicResStatusCode.ERROR,
-        msn: `${keyAction} is not action function valid`,
-      }) as IResponse;
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${actionFn} is not action function valid`,
+      });
     }
     actionModuleInstContext.preRunAction(bag, keyAction) as any;
     res = await actionFn(bag);

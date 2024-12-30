@@ -55,6 +55,7 @@ import {
 import { Model } from "../models/_model";
 import { Util_Ctrl } from "./_util-ctrl";
 import { TCapitalizeFirstLetter } from "../../util/shared";
+import { TFnBagForActionModule } from "../bag-module/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TKeyStructureReadRequestController =
   | TKeyReadRequestController
@@ -403,6 +404,18 @@ export abstract class StructureLogicController<
         : [];
     return aTKeyGlobal;
   }
+  public override getActionRequestFn(
+    keyActionRequest: TKeyDiccActionRequest
+  ): TModelCtrlActionFn<
+    TModel,
+    TModelMutateInstance["dfDiccActionConfig"],
+    TModelValInstance["dfDiccActionConfig"],
+    TRequestValInstance["dfDiccActionConfig"],
+    TStructureHookInstance["dfDiccActionConfig"],
+    TStructureProviderInstance["dfDiccActionConfig"]
+  > {
+    return super.getActionRequestFn(keyActionRequest) as any;
+  }
   protected override buildCriteriaHandler(
     requestType: "read",
     base?: TStructureBaseCriteriaForCtrlRead<
@@ -562,7 +575,11 @@ export abstract class StructureLogicController<
       data,
       criteriaHandler: criteriaHandler as any,
     });
-    const res = await this.runRequest("fieldCtrl", bag as any);
+    const res = (await this.runActionRequest(
+      this as any as ActionModule<any>,
+      bag,
+      undefined //en controller la acción es interna
+    )) as IStructureResponse;
     return res;
   }
   protected async runCommonModelRequest(
@@ -583,53 +600,41 @@ export abstract class StructureLogicController<
       data,
       criteriaHandler: criteriaHandler as any,
     });
-    const res = await this.runRequest("modelCtrl", bag);
+    const res = (await this.runActionRequest(
+      this as any as ActionModule<any>,
+      bag,
+      undefined //en controller la acción es interna
+    )) as IStructureResponse;
     return res;
   }
-  /**
-   * ejecuta las acciones configuradas en el bag completo
-   *
-   * @param keyBagCtrlContext contexto de ejecucion del bag controller
-   * @param bag instancia del bag completo
-   * @returns respuesta de la ejecucion
-   */
-  protected async runRequest(
-    keyBagCtrlContext: TKeyStructureDeepCtrlModuleContext,
-    bag: StructureBag<
-      TModel,
-      TStructureCriteriaInstance,
-      any,
-      TModelMutateInstance["dfDiccActionConfig"],
-      any,
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"]
-    >
-  ): Promise<IStructureResponse> {
-    let keyCtrlAction: EKeyActionGroupForRes;
-    if (keyBagCtrlContext === "fieldCtrl")
-      keyCtrlAction = EKeyActionGroupForRes.ctrlField;
-    else if (keyBagCtrlContext === "modelCtrl")
-      keyCtrlAction = EKeyActionGroupForRes.ctrlModel;
+  //====Accion especial para controller============================================================
+  public override actionCtrl: TFnBagForActionModule = async (
+    bag: StructureBag<any>
+  ) => {
+    const { data, criteriaHandler } = bag;
+    const { keyStructureContext, aTKeysGlobalActionConfig, diccGlobalAC } =
+      criteriaHandler;
+    let keyActionForCtrl: EKeyActionGroupForRes;
+    if (keyStructureContext === "structureField")
+      keyActionForCtrl = EKeyActionGroupForRes.ctrlField;
+    else if (keyStructureContext === "structureEmbedded")
+      keyActionForCtrl = EKeyActionGroupForRes.ctrlModel;
+    else if (keyStructureContext === "structureModel")
+      keyActionForCtrl = EKeyActionGroupForRes.ctrlModel;
     else {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${keyBagCtrlContext} is not key bag controller context valid`,
+        msn: `${keyStructureContext} is not structure key context valid`,
       });
     }
-    const { data, criteriaHandler: cH } = bag;
-    const { aTKeysGlobalActionConfig, diccGlobalAC } = cH;
-    const rH = this.buildReportHandler(bag, keyCtrlAction);
+    const rH = this.buildReportHandler(bag, keyActionForCtrl);
     let res = rH.mutateResponse(undefined, { data });
-    this.preRunAction(bag, keyCtrlAction);
     //verificar si hay acciones para ejecutar
     if (aTKeysGlobalActionConfig.length === 0) {
       res = rH.mutateResponse(res, {
         status: ELogicResStatusCode.WARNING,
         msn: `${aTKeysGlobalActionConfig} is array of global action config empty`,
       });
-      this.postRunAction(bag, res);
       return res;
     }
     for (const tKeyGAC of aTKeysGlobalActionConfig) {
@@ -638,31 +643,18 @@ export abstract class StructureLogicController<
         keyModuleContext as TKeyStructureInternalACModuleContext
       );
       if (this.util.isAllowRunAction(tKeyGAC, diccGlobalAC as object)) {
-        const resForAction = await this.runRequestForAction(
+        const resForAction = (await this.runActionRequest(
           mFX,
           bag,
           keyAction
-        );
+        )) as IStructureResponse;
         res.responses.push(resForAction);
         if (resForAction.status > this.globalTolerance) break;
       }
     }
     res = rH.mutateResponse(res);
-    this.postRunAction(bag, res);
     return res;
-  }
-  protected override async runRequestForAction(
-    actionModuleInstContext: ActionModule<any>,
-    bag: StructureBag<TModel>,
-    keyAction: any
-  ): Promise<IStructureResponse> {
-    const res = (await super.runRequestForAction(
-      actionModuleInstContext,
-      bag,
-      keyAction
-    )) as IStructureResponse;
-    return res;
-  }
+  };
   //████ Field Actions ████████████████████████████████████████████████████████████
   public async checkField_id(
     baseCriteria: TStructureBaseCriteriaForCtrlField<
@@ -847,11 +839,9 @@ export abstract class StructureLogicController<
       TStructureHookInstance["dfDiccActionConfig"],
       TStructureProviderInstance["dfDiccActionConfig"]
     >,
-    singleDataQ: Partial<TModel>
+    _id: any
   ): Promise<IStructureResponse> {
     baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
-    //criterios obligatorios para esta acción de petición
-    const key_id = "_id" as keyof Model;
     const cH = this.buildCriteriaHandler("read", {
       ...(baseCriteria as any),
       type: "read",

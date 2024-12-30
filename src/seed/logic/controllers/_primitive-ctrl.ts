@@ -42,6 +42,7 @@ import {
   TPrimitiveBaseCriteriaForCtrlRead,
 } from "../criterias/shared";
 import { Util_Ctrl } from "./_util-ctrl";
+import { TFnBagForActionModule } from "../bag-module/shared";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TKeyPrimitiveReadRequestController = TKeyReadRequestController;
@@ -220,7 +221,7 @@ export abstract class PrimitiveLogicController<
     return diccATKeyCRUD;
   }
   /**... */
-  protected getATKeyCRUDByKeyActionRequest(
+  protected getATKeysActionRequestByKeyActionRequest(
     keyActionRequest: TKeyDiccActionRequest
   ) {
     const schemaATKeyGlobal = this.getDiccATKeyCRUD();
@@ -230,6 +231,18 @@ export abstract class PrimitiveLogicController<
         ? schemaATKeyGlobal[keyActionRequest]
         : [];
     return aTKeyGlobal;
+  }
+  public override getActionRequestFn(
+    keyActionRequest: TKeyDiccActionRequest
+  ): TPrimitiveCtrlActionFn<
+    TValue,
+    TPrimitiveMutateInstance["dfDiccActionConfig"],
+    TPrimitiveValInstance["dfDiccActionConfig"],
+    TRequestValInstance["dfDiccActionConfig"],
+    TPrimitiveHookInstance["dfDiccActionConfig"],
+    TPrimitiveProviderInstance["dfDiccActionConfig"]
+  > {
+    return super.getActionRequestFn(keyActionRequest) as any;
   }
   protected override buildCriteriaHandler(
     requestType: "read",
@@ -324,7 +337,7 @@ export abstract class PrimitiveLogicController<
   }
   //████ runs commons ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
   /**... */
-  protected async runPrimitiveRequest(
+  protected async runCommonPrimitiveRequest(
     data: TValue,
     criteriaHandler: Trf_PrimitiveCriteriaHandler
   ): Promise<IPrimitiveResponse> {
@@ -340,39 +353,29 @@ export abstract class PrimitiveLogicController<
       data,
       criteriaHandler: criteriaHandler as any,
     });
-    return await this.runRequest(bag);
+    const res = (await this.runActionRequest(
+      this as any as ActionModule<any>,
+      bag,
+      undefined //en controller la acción es interna
+    )) as IPrimitiveResponse;
+    return res;
   }
-  /**
-   * ejecuta las acciones configuradas en el bag completo
-   *
-   * @param bag
-   * @returns
-   */
-  protected async runRequest(
-    bag: PrimitiveBag<
-      TValue,
-      TPrimitiveCriteriaInstance,
-      TPrimitiveMutateInstance["dfDiccActionConfig"],
-      TPrimitiveValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TPrimitiveHookInstance["dfDiccActionConfig"],
-      TPrimitiveProviderInstance["dfDiccActionConfig"]
-    >
-  ): Promise<IPrimitiveResponse> {
-    let keyCtrlAction: EKeyActionGroupForRes =
+  //====Accion especial para controller============================================================
+  public override actionCtrl: TFnBagForActionModule = async (
+    bag: PrimitiveBag<any>
+  ) => {
+    const { data, criteriaHandler } = bag;
+    const { aTKeysGlobalActionConfig, diccGlobalAC } = criteriaHandler;
+    let keyActionForCtrl: EKeyActionGroupForRes =
       EKeyActionGroupForRes.ctrlPrimitive;
-    const { data, criteriaHandler: cH } = bag;
-    const { aTKeysGlobalActionConfig, diccGlobalAC } = cH;
-    const rH = this.buildReportHandler(bag, keyCtrlAction);
+    const rH = this.buildReportHandler(bag, keyActionForCtrl);
     let res = rH.mutateResponse(undefined, { data });
-    this.preRunAction(bag, keyCtrlAction);
     //verificar si hay acciones para ejecutar
     if (aTKeysGlobalActionConfig.length === 0) {
       res = rH.mutateResponse(res, {
         status: ELogicResStatusCode.WARNING,
         msn: `${aTKeysGlobalActionConfig} is array of global action config empty`,
       });
-      this.postRunAction(bag, res);
       return res;
     }
     for (const tKeyGAC of aTKeysGlobalActionConfig) {
@@ -381,31 +384,18 @@ export abstract class PrimitiveLogicController<
         keyModuleContext as TKeyPrimitiveInternalACModuleContext
       );
       if (this.util.isAllowRunAction(tKeyGAC, diccGlobalAC as object)) {
-        const resForAction = await this.runRequestForAction(
+        const resForAction = (await this.runActionRequest(
           mFX,
           bag,
           keyAction
-        );
+        )) as IPrimitiveResponse;
         res.responses.push(resForAction);
         if (resForAction.status > this.globalTolerance) break;
       }
     }
     res = rH.mutateResponse(res);
-    this.postRunAction(bag, res);
     return res;
-  }
-  protected async runRequestForAction(
-    actionModuleInstContext: ActionModule<any>,
-    bag: PrimitiveBag<TValue>,
-    keyAction: any
-  ): Promise<IPrimitiveResponse> {
-    const res = (await super.runRequestForAction(
-      actionModuleInstContext,
-      bag,
-      keyAction
-    )) as IPrimitiveResponse;
-    return res;
-  }
+  };
   //████ Acciones de petición ████████████████████████████████████████████████████████████
   /**... */
   public async exist(
@@ -425,7 +415,7 @@ export abstract class PrimitiveLogicController<
       keyActionRequest: "exist" as TKeyPrimitiveReadRequestController,
       expectedDataType: "boolean",
     });
-    const res = await this.runPrimitiveRequest(this.util.dfValue, cH);
+    const res = await this.runCommonPrimitiveRequest(this.util.dfValue, cH);
     return res;
   }
   public async count(
@@ -445,7 +435,7 @@ export abstract class PrimitiveLogicController<
       keyActionRequest: "count" as TKeyPrimitiveReadRequestController,
       expectedDataType: "number",
     });
-    const res = await this.runPrimitiveRequest(this.util.dfValue, cH);
+    const res = await this.runCommonPrimitiveRequest(this.util.dfValue, cH);
     return res;
   }
   public async inform(
@@ -465,7 +455,7 @@ export abstract class PrimitiveLogicController<
       keyActionRequest: "inform" as TKeyPrimitiveReadRequestController,
       expectedDataType: "string",
     });
-    const res = await this.runPrimitiveRequest(this.util.dfValue, cH);
+    const res = await this.runCommonPrimitiveRequest(this.util.dfValue, cH);
     return res;
   }
   public async readAll(
@@ -486,7 +476,7 @@ export abstract class PrimitiveLogicController<
       expectedDataType: "array",
       query: [], //❗se leen todos (no hay condición de filtrador)❗
     });
-    const res = await this.runPrimitiveRequest(this.util.dfValue, cH);
+    const res = await this.runCommonPrimitiveRequest(this.util.dfValue, cH);
     return res;
   }
   public async readMany(
@@ -506,7 +496,7 @@ export abstract class PrimitiveLogicController<
       keyActionRequest: "readMany" as TKeyPrimitiveReadRequestController,
       expectedDataType: "array",
     });
-    const res = await this.runPrimitiveRequest(this.util.dfValue, cH);
+    const res = await this.runCommonPrimitiveRequest(this.util.dfValue, cH);
     return res;
   }
   public async readOne(
@@ -527,7 +517,7 @@ export abstract class PrimitiveLogicController<
       expectedDataType: "any",
       limit: 1,
     });
-    const res = await this.runPrimitiveRequest(this.util.dfValue, cH);
+    const res = await this.runCommonPrimitiveRequest(this.util.dfValue, cH);
     return res;
   }
   public async create(
@@ -549,7 +539,7 @@ export abstract class PrimitiveLogicController<
       keyActionRequest: "create" as TKeyPrimitiveModifyRequestController,
       expectedDataType: "any",
     });
-    const res = await this.runPrimitiveRequest(data as TValue, cH);
+    const res = await this.runCommonPrimitiveRequest(data as TValue, cH);
     return res;
   }
   public async update(
@@ -571,7 +561,7 @@ export abstract class PrimitiveLogicController<
       keyActionRequest: "update" as TKeyPrimitiveModifyRequestController,
       expectedDataType: "any",
     });
-    const res = await this.runPrimitiveRequest(data as TValue, cH);
+    const res = await this.runCommonPrimitiveRequest(data as TValue, cH);
     return res;
   }
   public async delete(
@@ -593,7 +583,7 @@ export abstract class PrimitiveLogicController<
       keyActionRequest: "delete" as TKeyPrimitiveModifyRequestController,
       expectedDataType: "any",
     });
-    const res = await this.runPrimitiveRequest(data as TValue, cH);
+    const res = await this.runCommonPrimitiveRequest(data as TValue, cH);
     return res;
   }
 }
