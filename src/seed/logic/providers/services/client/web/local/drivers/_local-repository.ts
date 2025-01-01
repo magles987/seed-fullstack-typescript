@@ -9,7 +9,7 @@ import { IBagForService, IGenericDriver } from "../../../../shared";
 import { getGlobalConfig } from "../../../../../../config/global-config";
 import {
   ELogicResStatusCode,
-  IDriverResponse,
+  IExtResponse,
 } from "../../../../../../reports/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
@@ -49,8 +49,8 @@ export abstract class LocalRepositoryDriver implements IGenericDriver {
    */
   public async sendRequestFromService(
     bagService: IBagForService
-  ): Promise<IDriverResponse> {
-    let driverRes: IDriverResponse;
+  ): Promise<IExtResponse> {
+    let driverRes: IExtResponse;
     try {
       let actionFn = this.util.getActionRequestFn(this, bagService);
       const rxData = await actionFn(bagService);
@@ -83,13 +83,13 @@ export abstract class LocalRepositoryDriver implements IGenericDriver {
     literalCriteria: IBagForService["literalCriteria"],
     rxData: any,
     error?: any
-  ): IDriverResponse {
+  ): IExtResponse {
     let driverRes = {
       data: rxData,
       status: ELogicResStatusCode.SUCCESS,
       msn: ``,
       error,
-    } as IDriverResponse;
+    } as IExtResponse;
     const { expectedDataType } = literalCriteria;
     const dfValue = this.util.dfValue;
     if (this.util.isUndefinedOrNull(error)) {

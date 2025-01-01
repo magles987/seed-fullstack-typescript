@@ -11,7 +11,7 @@ import {
 } from "../../../../../../../util/http-utilities";
 import {
   ELogicResStatusCode,
-  IDriverResponse,
+  IExtResponse,
 } from "../../../../../../../reports/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *singleton*
@@ -146,11 +146,11 @@ export class FetchHttpDrive
   /**... */
   public override async sendRequestFromService(
     bagService: IBagForService
-  ): Promise<IDriverResponse> {
+  ): Promise<IExtResponse> {
     let option = this.util.clone(this.option);
     //try-catch especializado para fetch
     let response: Response;
-    let driverResponse: IDriverResponse;
+    let driverResponse: IExtResponse;
     try {
       this.util.checkBag(bagService);
       const { data: txData, literalCriteria: criteria } = bagService;
@@ -177,13 +177,13 @@ export class FetchHttpDrive
   protected override async adaptHttpResponseToIDriveResponse(
     responseToAdapt: Response,
     error?: any
-  ): Promise<IDriverResponse> {
-    let driverResponse: IDriverResponse;
+  ): Promise<IExtResponse> {
+    let driverResponse: IExtResponse;
     const { status, statusText, headers } = responseToAdapt;
     if (this.util.isUndefinedOrNull(error)) {
       const contentType = headers.get("Content-Type");
       if (contentType.includes("application/json")) {
-        const fetchData = (await responseToAdapt.json()) as IDriverResponse;
+        const fetchData = (await responseToAdapt.json()) as IExtResponse;
         if (
           this.util.isObjectWithProperties(
             fetchData,

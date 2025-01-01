@@ -12,7 +12,8 @@ import {
 } from "../../../../../../errors/logic-error";
 import { EncryptAndCompressDataHandler } from "../../../../../../util/encripter-handler";
 import { getGlobalConfig } from "../../../../../../config/global-config";
-import { IDriverResponse } from "../../../../../../reports/shared";
+import { IExtResponse } from "../../../../../../reports/shared";
+import { CriteriaHandler } from "../../../../../../criterias/_criteria-handler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
  *
@@ -122,7 +123,7 @@ export abstract class HttpDrive implements IGenericDriver {
    */
   public abstract sendRequestFromService(
     bagService: IBagForService
-  ): Promise<IDriverResponse>;
+  ): Promise<IExtResponse>;
   /** envío genérico de petición a traves de del driver seleccionado
    *
    * @param url  url completa a cual enviar la petición.
@@ -192,10 +193,13 @@ export abstract class HttpDrive implements IGenericDriver {
   }
   /**... */
   private getUrlCriteriaFromBag(
-    criteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForService["literalCriteria"]
   ): string {
     const eH = EncryptAndCompressDataHandler.getInstance();
-    let urlCriteria = eH.encryptAndCompressObjectToUrlBase64(criteria); //comprimir y encriptar
+    let slimLC = CriteriaHandler.toSlimLiteralCriteriaForSend(
+      literalCriteria as any
+    );
+    let urlCriteria = eH.encryptAndCompressObjectToUrlBase64(slimLC); //comprimir y encriptar
     return urlCriteria;
   }
   /**... */
@@ -237,5 +241,5 @@ export abstract class HttpDrive implements IGenericDriver {
   /**... */
   protected abstract adaptHttpResponseToIDriveResponse(
     responseToAdapt: unknown
-  ): Promise<IDriverResponse>;
+  ): Promise<IExtResponse>;
 }

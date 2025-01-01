@@ -1,6 +1,6 @@
 import { TKeyLogicContext } from "../../../../../config/shared-modules";
 import {
-  IDriverResponse,
+  IExtResponse,
   IPrimitiveResponse,
   IStructureResponse,
 } from "../../../../../reports/shared";

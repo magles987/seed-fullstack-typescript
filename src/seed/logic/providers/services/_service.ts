@@ -10,7 +10,7 @@ import { Util_Service } from "./_util-service";
 import {
   EKeyActionGroupForRes,
   ELogicResStatusCode,
-  IDriverResponse,
+  IExtResponse,
   IPrimitiveResponse,
   IResponse,
   IStructureResponse,
@@ -187,7 +187,7 @@ export abstract class LogicService
   ): Promise<IStructureResponse>;
   /**... */
   protected adaptDriverResponseToPrimitiveLogicResponse(
-    driverResponse: IDriverResponse,
+    driverResponse: IExtResponse,
     literalBag: IPrimitiveBag<any>
   ): IPrimitiveResponse {
     const { data, status, msn, error, extResponse } = driverResponse;
@@ -205,7 +205,7 @@ export abstract class LogicService
   }
   /**... */
   protected adaptDriverResponseToStructureLogicResponse(
-    driverResponse: IDriverResponse,
+    driverResponse: IExtResponse,
     literalBag: IStructureBag<any>
   ): IStructureResponse {
     const { data, status, msn, error, extResponse } = driverResponse;
