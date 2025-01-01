@@ -239,7 +239,7 @@ export type TResponseForMutate = Partial<
   >
 >;
 /**esquema de respuesta proveída por driver (de una api a otra)*/
-export interface IDriverResponse
+export interface IExtResponse
   extends Pick<IResponse, "data" | "status" | "msn" | "extResponse"> {
   error?: any;
 }

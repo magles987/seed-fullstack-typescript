@@ -4,7 +4,7 @@ import { QueryJsAdaptator } from "../../../src/seed/logic/providers/services/cli
 import { IBagForService } from "../../../src/seed/logic/providers/services/shared";
 import {
   ELogicResStatusCode,
-  IDriverResponse,
+  IExtResponse,
 } from "../../../src/seed/logic/reports/shared";
 import { Util_Mock } from "./_util-mock";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -132,12 +132,12 @@ export abstract class SimulatedMicroBackend
   /**... */
   public async receiveMockRequest(
     literalCriteria: IBagForService["literalCriteria"],
-    data: any
-  ): Promise<IDriverResponse> {
-    let driverRes: IDriverResponse;
+    data?: any
+  ): Promise<IExtResponse> {
+    let driverRes: IExtResponse;
     try {
       let actionFn = this.util.getActionRequestFn(this, literalCriteria);
-      const rxData = await actionFn(data, literalCriteria);
+      const rxData = await actionFn(literalCriteria, data);
       driverRes = this.buildDriverResponse(literalCriteria, rxData);
     } catch (error) {
       driverRes = this.buildDriverResponse(
@@ -153,13 +153,13 @@ export abstract class SimulatedMicroBackend
     literalCriteria: IBagForService["literalCriteria"],
     rxData: any,
     error?: any
-  ): IDriverResponse {
+  ): IExtResponse {
     let driverRes = {
       data: rxData,
       status: ELogicResStatusCode.SUCCESS,
       msn: ``,
       error,
-    } as IDriverResponse;
+    } as IExtResponse;
     const { expectedDataType } = literalCriteria;
     const dfValue = this.util.dfValue;
     if (this.util.isUndefinedOrNull(error)) {

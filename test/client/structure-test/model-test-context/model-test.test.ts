@@ -59,11 +59,16 @@ describe("GLobal test (modelTest)", async () => {
           data: db,
           status: ELogicResStatusCode.VALID_DATA,
         } as IStructureResponse;
-        const res = await ctrl.create(txData, {
-          diccGlobalAC: {
-            structureProvider: { runProvider: { serviceToRun } },
+        const res = await ctrl.create(
+          {
+            diccGlobalAC: {
+              structureProvider: { runProvider: { serviceToRun } },
+            },
           },
-        });
+          {
+            ...txData,
+          }
+        );
         expect(res).toMatchObject(vExp);
       });
     });

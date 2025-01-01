@@ -27,12 +27,10 @@ export class StructureMockServerHandler<
       http.get(
         `${this.urlBase}/${this.keyUrlSrc}/${_read_}/*`,
         async ({ request, params, cookies }) => {
-          const d = request;
           const literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
             params[idxCriteriaParam] as string
           ) as IBagForService["literalCriteria"];
           const driverResponse = await mBackend.receiveMockRequest(
-            undefined,
             literalCriteria
           );
           return HttpResponse.json(driverResponse);
@@ -40,20 +38,44 @@ export class StructureMockServerHandler<
       ),
       http.post(
         `${this.urlBase}/${this.keyUrlSrc}/${_create_}/*`,
-        ({ request, params, cookies }) => {
-          return HttpResponse.json([]);
+        async ({ request, params, cookies }) => {
+          const data = await request.json();
+          const literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
+            params[idxCriteriaParam] as string
+          ) as IBagForService["literalCriteria"];
+          const driverResponse = await mBackend.receiveMockRequest(
+            literalCriteria,
+            data
+          );
+          return HttpResponse.json(driverResponse);
         }
       ),
       http.put(
         `${this.urlBase}/${this.keyUrlSrc}/${_update_}/*`,
-        ({ request, params, cookies }) => {
-          return HttpResponse.json([]);
+        async ({ request, params, cookies }) => {
+          const data = await request.json();
+          const literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
+            params[idxCriteriaParam] as string
+          ) as IBagForService["literalCriteria"];
+          const driverResponse = await mBackend.receiveMockRequest(
+            literalCriteria,
+            data
+          );
+          return HttpResponse.json(driverResponse);
         }
       ),
       http.delete(
         `${this.urlBase}/${this.keyUrlSrc}/${_delete_}/*`,
-        ({ request, params, cookies }) => {
-          return HttpResponse.json([]);
+        async ({ request, params, cookies }) => {
+          const data = await request.json();
+          const literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
+            params[idxCriteriaParam] as string
+          ) as IBagForService["literalCriteria"];
+          const driverResponse = await mBackend.receiveMockRequest(
+            literalCriteria,
+            data
+          );
+          return HttpResponse.json(driverResponse);
         }
       ),
     ];

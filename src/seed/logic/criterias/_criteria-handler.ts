@@ -56,6 +56,13 @@ export abstract class CriteriaHandler
       MIN_LIMIT_ALLOW: 0,
       /**si el literal debe ser clonado */
       IS_LITERAL_CLONE: true,
+      /**array con claves identificadoras de propiedades
+       * de un objeto criteria literal que no deben ser
+       * transmitidas fuera del entorno */
+      KEYPROPS_DO_NOT_SEND_AT_EXTERNAL: [
+        "diccGlobalAC",
+        "aTKeysGlobalActionConfig",
+      ] as Array<keyof (IReadCriteria & IModifyCriteria)>,
     };
   };
   /**instancia de manejador de metadatos de este recurso */
@@ -400,4 +407,20 @@ export abstract class CriteriaHandler
    * @param conds las condiciones del query
    */
   protected abstract checkQueryConds(conds: TAConds): void;
+  /**"adelgazar" el objeto literal de
+   * criterios para poder ser
+   * enviado fuera del entorno*/
+  public static toSlimLiteralCriteriaForSend(
+    literalCriteria: IReadCriteria & IModifyCriteria
+  ) {
+    const util = Util_Criteria.getInstance();
+    const keysNotSend =
+      CriteriaHandler.getCONSTANTS().KEYPROPS_DO_NOT_SEND_AT_EXTERNAL;
+    let slimLC = util.clone(literalCriteria, "lodash");
+    for (const key in slimLC) {
+      const isExist = keysNotSend.includes(key as any);
+      if (isExist) delete slimLC[key];
+    }
+    return slimLC;
+  }
 }

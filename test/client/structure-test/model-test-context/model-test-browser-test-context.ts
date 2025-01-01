@@ -30,37 +30,36 @@ async function runToLocalCookie() {
   show(res);
   res = await ctrl.create(
     {
-      ...dataValid,
-      _id: `    ${dataValid._id}     `, //para probar trim de la mutacion
+      diccGlobalAC: { structureProvider: { runProvider: { serviceToRun } } },
     },
     {
-      diccGlobalAC: { structureProvider: { runProvider: { serviceToRun } } },
+      ...dataValid,
+      _id: `    ${dataValid._id}     `, //para probar trim de la mutacion
     }
   );
   show(res);
   res = await ctrl.update(
     {
+      diccGlobalAC: { structureProvider: { runProvider: { serviceToRun } } },
+    },
+    {
       ...dataValid,
       _id: res.data._id,
       _pathDoc: "/20/",
-    },
-    {
-      diccGlobalAC: { structureProvider: { runProvider: { serviceToRun } } },
     }
   );
   show(res);
   res = await ctrl.delete(
-    { ...res.data },
     {
       diccGlobalAC: { structureProvider: { runProvider: { serviceToRun } } },
-    }
+    },
+    { ...res.data }
   );
   show(res);
   return;
 }
 async function runToLocalStorage() {
   await LocalStorageRepository.emptyAllStorage();
-  const keyPath = ctrl.metadataHandler.keyModelPath;
   const serviceToRun: IRunProvider["serviceToRun"] = {
     keyService: "local",
     keyDriver: "storage",
@@ -70,36 +69,44 @@ async function runToLocalStorage() {
     diccGlobalAC: { structureProvider: { runProvider: { serviceToRun } } },
   });
   show(res);
-  res = await ctrl.create(dataValid, {
-    diccGlobalAC: { structureProvider: { runProvider: { serviceToRun } } },
-  });
-  show(res);
-  res = await ctrl.update(
+  res = await ctrl.create(
+    {
+      diccGlobalAC: { structureProvider: { runProvider: { serviceToRun } } },
+    },
     {
       ...dataValid,
-      _id: res.data._id,
-      _pathDoc: "/20/",
-    },
+    }
+  );
+  show(res);
+  res = await ctrl.update(
     {
       diccGlobalAC: {
         structureProvider: { runProvider: { serviceToRun } },
       },
-      keyPath,
+    },
+    {
+      ...dataValid,
+      _id: res.data._id,
+      _pathDoc: "/20/",
     }
   );
   show(res);
-  res = await ctrl.delete(res.data, {
-    diccGlobalAC: {
-      structureProvider: { runProvider: { serviceToRun } },
+  res = await ctrl.delete(
+    {
+      diccGlobalAC: {
+        structureProvider: { runProvider: { serviceToRun } },
+      },
     },
-  });
+    {
+      ...res.data,
+    }
+  );
   console.log(res.status);
   show(res);
   return;
 }
 async function runToLocalIDB() {
   await LocalIDBRepository.deleteCurrentDataBase();
-  const keyPath = ctrl.metadataHandler.keyModelPath;
   const serviceToRun: IRunProvider["serviceToRun"] = {
     keyService: "local",
     keyDriver: "idb",
@@ -111,30 +118,40 @@ async function runToLocalIDB() {
     },
   });
   show(res);
-  res = await ctrl.create(dataValid, {
-    diccGlobalAC: {
-      structureProvider: { runProvider: { serviceToRun } },
-    },
-  });
-  show(res);
-  res = await ctrl.update(
-    {
-      ...dataValid,
-      _id: res.data._id,
-      _pathDoc: "/20/",
-    },
+  res = await ctrl.create(
     {
       diccGlobalAC: {
         structureProvider: { runProvider: { serviceToRun } },
       },
+    },
+    {
+      ...dataValid,
     }
   );
   show(res);
-  res = await ctrl.delete(res.data, {
-    diccGlobalAC: {
-      structureProvider: { runProvider: { serviceToRun } },
+  res = await ctrl.update(
+    {
+      diccGlobalAC: {
+        structureProvider: { runProvider: { serviceToRun } },
+      },
     },
-  });
+    {
+      ...dataValid,
+      _id: res.data._id,
+      _pathDoc: "/20/",
+    }
+  );
+  show(res);
+  res = await ctrl.delete(
+    {
+      diccGlobalAC: {
+        structureProvider: { runProvider: { serviceToRun } },
+      },
+    },
+    {
+      ...res.data,
+    }
+  );
   show(res);
   return;
 }
