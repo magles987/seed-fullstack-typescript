@@ -9,13 +9,14 @@ import {
   IStructureResponse,
 } from "../reports/shared";
 import { TStructureMetaAndMutater } from "../meta/metadata-shared";
-import { StructureBag } from "../bag-module/structure-bag";
+import { StructureBag } from "../bag/structure-bag";
 import {
   FieldLogicMutater,
   IDiccFieldMutateActionConfigG,
 } from "./field-mutater";
 import { LogicController } from "../controllers/_controller";
-import { TStructureFnBagForActionModule } from "../bag-module/shared";
+import { TStructureFnBagForActionModule } from "../bag/shared";
+import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** define las propiedades de cada formateo
  * que puede configurar y ejecutar un campo
@@ -84,11 +85,9 @@ export class ModelLogicMutater<
       ] as Array<TKeysDiccModelMutateActionConfigG>,
     };
   };
-  /**
-   * @param keySrc indentificadora del recurso asociado a modulo
-   */
-  constructor(keySrc: string) {
-    super("modelMutate", keySrc);
+  /** */
+  constructor() {
+    super("modelMutate");
   }
   protected override getDefault() {
     return ModelLogicMutater.getDefault();
@@ -121,7 +120,7 @@ export class ModelLogicMutater<
   }
   protected override getMetadataWithContextModule(
     keyPath?: string
-  ): TStructureMetaAndMutater<any, any, TIDiccAC> {
+  ): TStructureMetaAndMutater<any, any, ModelLogicMutater> {
     return super.getMetadataWithContextModule(keyPath) as any;
   }
   protected override getMetadataOnlyModuleConfig(
@@ -145,44 +144,34 @@ export class ModelLogicMutater<
       mH.getExtractMetadataByStructureContext("structureModel");
     const keysField = modelMetadata.__keysProp;
     const promForField = keysField.map(async (keyField) => {
-      const fieldMetadata = modelMetadata[keyField];
       const fieldData = data[keyField];
+      const fieldMetadata = modelMetadata[keyField];
       const fieldKeyPath = fieldMetadata.__keyPath;
       const fieldMutateInst = mH.diccModuleInstanceContext
         .fieldMutate as FieldLogicMutater;
-      const f_aTKeysForReq =
-        fieldMetadata.__ctrlConfig.fieldCtrl.aTKeysActionRequest
-          //filtra solo los del contexto de este modulo
-          .filter((tkeyForReq) => {
-            const [keyModuleContext, keyAction] = tkeyForReq;
-            return keyModuleContext === "fieldMutate";
-          });
-      const sub_cH = cH.buildSubCriteriaHandler("structureField", {
-        diccGlobalAC: {
-          fieldMutate: modelForDiccAC[keyField as any],
-        },
+      const sub_cH = new StructureCriteriaHandler(mH, "structureField", {
         keyPath: fieldKeyPath,
+        diccGlobalAC: modelForDiccAC[keyField as any] as any,
       });
-      const sub_bag = new StructureBag(this.keySrc, "fieldBag", {
+      sub_cH.extractDiccByKeyModuleContext("fieldMutate");
+      const sub_Bag = new StructureBag(this.keySrc, "fieldBag", {
         //❗el contexto es campo fieldBag❗
         data: fieldData,
         criteriaHandler: sub_cH,
       });
-      const sub_rH = fieldMutateInst.buildReportHandler(
-        sub_bag,
-        EKeyActionGroupForRes.fields as any
-      );
+      const sub_rH = (fieldMutateInst as any as this) //❗hack❗ permite acceder a la propiedad protegida a las malas 🐱‍👤
+        .buildReportHandler(sub_Bag, EKeyActionGroupForRes.fields as any);
       let resForField = sub_rH.mutateResponse(undefined, { data: fieldData });
-      for (const tKeysForReq of f_aTKeysForReq) {
+      for (const tKeysForReq of sub_cH.aTKeysGlobalActionConfig) {
         const [keyModuleContext, sub_keyAction] = tKeysForReq;
         const resForFieldForAction = (await LogicController.runActionRequest(
           fieldMutateInst,
-          sub_bag,
+          sub_Bag,
           sub_keyAction
         )) as IStructureResponse;
         resForField.responses.push(resForFieldForAction);
         if (resForFieldForAction.status > fieldMutateInst["globalTolerance"])
-          break; //😉 trampa `globalTolerance` es protected pero se lllama asi para saltarse la proteccion
+          break; //😉 trampa `globalTolerance` es protected pero se llama asi para saltarse la proteccion
       }
       resForField = sub_rH.mutateResponse(resForField);
       //mutacion de campo a modelo

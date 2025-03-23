@@ -1,5 +1,5 @@
 import { LogicValidation, TZodSchemaForClose } from "./_validation";
-import { TPrimitiveType } from "../meta/metadata-handler-shared";
+import { TPrimitiveType } from "../meta/shared";
 import { TPrimitiveMetaAndValidator } from "../meta/metadata-shared";
 import {
   TKeyPrimitiveValModuleContext,
@@ -11,12 +11,12 @@ import {
   ELogicResStatusCode,
   IPrimitiveResponse,
 } from "../reports/shared";
-import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag/primitive-bag";
 
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
-import { TPrimitiveFnBagForActionModule } from "../bag-module/shared";
+import { TPrimitiveFnBagForActionModule } from "../bag/shared";
 import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
 
 //████tipos e interfaces████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -328,11 +328,9 @@ export class PrimitiveLogicValidation<
       } as TisRequiredConfig,
     };
   };
-  /**
-   * @param keySrc indentificadora del recurso asociado a modulo
-   */
-  constructor(keySrc: string) {
-    super("primitive", keySrc);
+  /** */
+  constructor() {
+    super("primitive");
   }
   protected override getDefault() {
     return PrimitiveLogicValidation.getDefault();
@@ -374,7 +372,7 @@ export class PrimitiveLogicValidation<
   public override get keyModuleContext(): TKeyPrimitiveValModuleContext {
     return "primitiveVal";
   }
-  protected override getMetadataWithContextModule(): TPrimitiveMetaAndValidator<TIDiccAC> {
+  protected override getMetadataWithContextModule(): TPrimitiveMetaAndValidator<PrimitiveLogicValidation> {
     const metadata =
       this.metadataHandler.getExtractMetadataByModuleContext("validator");
     return metadata as any;
@@ -385,7 +383,7 @@ export class PrimitiveLogicValidation<
   > {
     const metadata = this.getMetadataWithContextModule();
     const config = metadata.__valConfig;
-    return config;
+    return config as TPrimitiveConfigForVal<TIDiccAC, any>;
   }
   protected override getDiccMetadataActionConfig(): TIDiccAC {
     const config = this.getMetadataOnlyModuleConfig();
@@ -428,7 +426,7 @@ export class PrimitiveLogicValidation<
     );
     return [keyAction, actionConfig];
   }
-  public override buildReportHandler(
+  protected override buildReportHandler(
     bag: Trf_PrimitiveBag,
     keyAction: keyof TIDiccAC
   ): PrimitiveReportHandler {

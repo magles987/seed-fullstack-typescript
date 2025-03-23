@@ -22,14 +22,14 @@ import {
   IStructureResponse,
 } from "../reports/shared";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
-import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
+import { StructureBag, Trf_StructureBag } from "../bag/structure-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag/primitive-bag";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import {
   TPrimitiveFnBagForActionModule,
   TStructureFnBagForActionModule,
-} from "../bag-module/shared";
+} from "../bag/shared";
 import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
 import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
 
@@ -105,10 +105,9 @@ export class RequestLogicValidation<
   }
   /**
    * @param keyLogicContext diccionario de inicializacion personalizado
-   * @param keySrc indentificadora del recurso asociado a modulo
    */
-  constructor(keyLogicContext: TKeyLogicContext, keySrc: string) {
-    super(keyLogicContext, keySrc);
+  constructor(keyLogicContext: TKeyLogicContext) {
+    super(keyLogicContext);
   }
   protected override getDefault() {
     return RequestLogicValidation.getDefault();
@@ -150,8 +149,8 @@ export class RequestLogicValidation<
   protected override getMetadataWithContextModule(
     keyPath?: string
   ):
-    | TStructureMetaAndValidator<any, any, any, TIDiccAC>
-    | TPrimitiveMetaAndValidator<any, TIDiccAC> {
+    | TStructureMetaAndValidator<any, any, any, RequestLogicValidation>
+    | TPrimitiveMetaAndValidator<any, RequestLogicValidation> {
     let extractMetadataByContext:
       | Trf_TStructureMetaAndValidator
       | Trf_TPrimitiveMetaAndValidator;
@@ -209,7 +208,7 @@ export class RequestLogicValidation<
     );
     return [keyAction, actionConfig];
   }
-  public override buildReportHandler(
+  protected override buildReportHandler(
     bag: Trf_PrimitiveBag | Trf_StructureBag,
     keyAction: keyof TIDiccAC
   ): StructureReportHandler | PrimitiveReportHandler {
@@ -233,9 +232,8 @@ export class RequestLogicValidation<
         data,
       });
     } else if (this.keyLogicContext === "structure") {
-      const { data, criteriaHandler, keyPath, firstData } =
-        bag as Trf_StructureBag;
-      const { type, modifyType, keyActionRequest } = criteriaHandler;
+      const { data, criteriaHandler, firstData } = bag as Trf_StructureBag;
+      const { type, modifyType, keyActionRequest, keyPath } = criteriaHandler;
       rH = new StructureReportHandler(this.keySrc, {
         keyRepModule: this.keyModule as any,
         keyRepModuleContext: this.keyModuleContext,

@@ -1,8 +1,7 @@
-import { Trf_BagModule } from "../bag-module/_bag";
+import { Trf_BagModule } from "../bag/_bag";
 import { ActionModule } from "../config/module";
 import { TKeyLogicContext } from "../config/shared-modules";
 import { ELogicResStatusCode, IResponse } from "../reports/shared";
-import { Util_Hook } from "./_util-hook";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipado refactorizado de la clase */
 export type Trf_HookLib = LogicHook<any>;
@@ -18,14 +17,11 @@ export abstract class LogicHook<TIDiccAC> extends ActionModule<TIDiccAC> {
       ...superDf,
     };
   };
-  protected override readonly util = Util_Hook.getInstance();
   /**
    * @param keyLogicContext el contexto logico de esta libreria
-   * @param keySrc indentificadora del recurso asociado a modulo
    */
-  constructor(keyLogicContext: TKeyLogicContext, keySrc: string) {
-    super("hook", keyLogicContext, keySrc);
-    this.util = Util_Hook.getInstance();
+  constructor(keyLogicContext: TKeyLogicContext) {
+    super("hook", keyLogicContext);
   }
   protected override getDefault() {
     return LogicHook.getDefault();

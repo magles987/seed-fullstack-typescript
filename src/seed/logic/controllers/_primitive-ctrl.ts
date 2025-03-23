@@ -3,10 +3,9 @@ import {
   TKeyModifyRequestController,
   TKeyReadRequestController,
 } from "./_controller";
-import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { ActionModule } from "../config/module";
-import { IPrimitiveBuilderbaseMetadata } from "../meta/metadata-builder-shared";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag/primitive-bag";
+import { ActionModule, Module } from "../config/module";
+import { IPrimitiveBuilderBaseMetadata } from "../meta/builder-shared";
 import { PrimitiveLogicMutater } from "../mutaters/primitive-mutater";
 import { PrimitiveLogicValidation } from "../validators/primitive-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
@@ -25,24 +24,18 @@ import {
   TKeyPrimitiveCtrlModuleContext,
   TPrimitiveConfigForCtrl,
   TPrimitiveCtrlActionFn,
-  TPrimitiveCtrlModuleConfigForPrimitive,
-} from "./_shared";
-import {
-  PrimitiveCriteriaHandler,
-  Trf_PrimitiveCriteriaHandler,
-} from "../criterias/primitive-criteria-handler";
+} from "./shared";
+import { PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
 import { PrimitiveLogicProvider } from "../providers/primitive-provider";
 import {
   TKeyPrimitiveInternalACModuleContext,
   TPrimitiveMetaAndCtrl,
 } from "../meta/metadata-shared";
-import { TKeyRequestType } from "../config/shared-modules";
 import {
-  TPrimitiveBaseCriteriaForCtrlModify,
-  TPrimitiveBaseCriteriaForCtrlRead,
+  TPrimitiveBaseModifyCriteria,
+  TPrimitiveBaseReadCriteria,
 } from "../criterias/shared";
-import { Util_Ctrl } from "./_util-ctrl";
-import { TFnBagForActionModule } from "../bag-module/shared";
+import { TFnBagForActionModule } from "../bag/shared";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TKeyPrimitiveReadRequestController = TKeyReadRequestController;
@@ -71,11 +64,11 @@ export abstract class PrimitiveLogicController<
       TKeyPrimitiveReadRequestController | TKeyPrimitiveModifyRequestController,
       TPrimitiveCtrlActionFn<
         TValue,
-        TPrimitiveMutateInstance["dfDiccActionConfig"],
-        TPrimitiveValInstance["dfDiccActionConfig"],
-        TRequestValInstance["dfDiccActionConfig"],
-        TPrimitiveHookInstance["dfDiccActionConfig"],
-        TPrimitiveProviderInstance["dfDiccActionConfig"]
+        TPrimitiveMutateInstance,
+        TPrimitiveValInstance,
+        TRequestValInstance,
+        TPrimitiveHookInstance,
+        TPrimitiveProviderInstance
       >
     >
 {
@@ -105,36 +98,36 @@ export abstract class PrimitiveLogicController<
     return "primitiveCtrl" as TKeyPrimitiveCtrlModuleContext;
   }
   /**... */
-  public get primitiveMutateModuleInstance() {
+  protected get primitiveMutateModuleInstance() {
     const r = this.metadataHandler.diccModuleInstanceContext.primitiveMutate;
     return r;
   }
   /**... */
-  public get primitiveValModuleInstance() {
+  protected get primitiveValModuleInstance() {
     const r = this.metadataHandler.diccModuleInstanceContext.primitiveVal;
     return r;
   }
   /**... */
-  public get requestValModuleInstance() {
+  protected get requestValModuleInstance() {
     const r = this.metadataHandler.diccModuleInstanceContext.requestVal;
     return r;
   }
   /**... */
-  public get primitiveHookModuleInstance() {
+  protected get primitiveHookModuleInstance() {
     const r = this.metadataHandler.diccModuleInstanceContext.primitiveHook;
     return r;
   }
   /**... */
-  public get primitiveProviderModuleInstance() {
+  protected get primitiveProviderModuleInstance() {
     const r = this.metadataHandler.diccModuleInstanceContext.primitiveProvider;
     return r;
   }
   /**
-   * @param basePrimitiveMetadata configuracion base de metadatos
+   * @param baseConfigMetadata configuracion base de metadatos
    * (es un objeto literal no el manejador)
    */
   constructor(
-    basePrimitiveMetadata: IPrimitiveBuilderbaseMetadata<
+    baseConfigMetadata: IPrimitiveBuilderBaseMetadata<
       TValue,
       TPrimitiveMutateInstance,
       TPrimitiveValInstance,
@@ -144,14 +137,9 @@ export abstract class PrimitiveLogicController<
       TKeyDiccActionRequest
     >
   ) {
-    super("primitive", basePrimitiveMetadata);
-    const df = this.getDefault();
-    const { keySrc, customBase, customDiccModuleInstance } =
-      basePrimitiveMetadata;
+    super("primitive", baseConfigMetadata);
     this.metadataHandler = new PrimitiveLogicMetadataHandler(
-      keySrc,
-      customBase,
-      customDiccModuleInstance as any
+      baseConfigMetadata
     );
   }
   protected override getDefault() {
@@ -162,7 +150,7 @@ export abstract class PrimitiveLogicController<
     currentContextConfig: TPrimitiveConfigForCtrl<any, any>["primitiveCtrl"],
     newContextConfig: TPrimitiveConfigForCtrl<any, any>["primitiveCtrl"]
   ): TPrimitiveConfigForCtrl<any, any>["primitiveCtrl"] {
-    const util = Util_Ctrl.getInstance();
+    const util = Module.util;
     let rConfig: TPrimitiveConfigForCtrl<any, any>["primitiveCtrl"];
     const cCC = currentContextConfig;
     const nCC = newContextConfig;
@@ -171,9 +159,11 @@ export abstract class PrimitiveLogicController<
     } else {
       rConfig = {
         ...nCC,
-        diccATKeyCRUD: util.isObject(nCC.diccATKeyCRUD)
-          ? nCC.diccATKeyCRUD
-          : cCC.diccATKeyCRUD,
+        diccCriteriaRequestConfig:
+          PrimitiveLogicController.rebuildCustomDiccActionRequestConfig(
+            nCC.diccCriteriaRequestConfig as any,
+            cCC.diccCriteriaRequestConfig as any
+          ),
       };
     }
     //reordenar tuplas de diccionario global
@@ -181,12 +171,43 @@ export abstract class PrimitiveLogicController<
     //...aqui configuracion refinada:
     return rConfig;
   }
+  /**... */
+  protected static rebuildCustomDiccActionRequestConfig(
+    currentDiccCRC: TPrimitiveConfigForCtrl["primitiveCtrl"]["diccCriteriaRequestConfig"],
+    newDiccCRC: TPrimitiveConfigForCtrl["primitiveCtrl"]["diccCriteriaRequestConfig"]
+  ): TPrimitiveConfigForCtrl["primitiveCtrl"]["diccCriteriaRequestConfig"] {
+    const util = Module.util;
+
+    const keysCCRC = util.isObject(currentDiccCRC)
+      ? Object.keys(currentDiccCRC)
+      : [];
+    const keysNCRC = util.isObject(newDiccCRC) ? Object.keys(newDiccCRC) : [];
+    if (keysCCRC.length === 0 && keysNCRC.length === 0) return {};
+    const keysMerged = util.removeArrayDuplicate([...keysCCRC, ...keysNCRC], {
+      itemConflictMode: "last",
+    });
+    let diccCRC =
+      {} as TPrimitiveConfigForCtrl["primitiveCtrl"]["diccCriteriaRequestConfig"];
+    for (const keyCRC of keysMerged) {
+      const cCRC = currentDiccCRC[keyCRC];
+      const newCRC = newDiccCRC[keyCRC];
+      diccCRC[keyCRC] =
+        PrimitiveCriteriaHandler.rebuildCustomConfigFromModuleContext(
+          cCRC as any,
+          newCRC as any
+        ) as any;
+    }
+    return diccCRC;
+  }
+  public override getDiccModuleInstance() {
+    return super.getDiccModuleInstance() as typeof this.metadataHandler.diccModuleInstanceContext;
+  }
   protected getMetadataWithContextModule(): TPrimitiveMetaAndCtrl<
-    TPrimitiveMutateInstance["dfDiccActionConfig"],
-    TPrimitiveValInstance["dfDiccActionConfig"],
-    TRequestValInstance["dfDiccActionConfig"],
-    TPrimitiveHookInstance["dfDiccActionConfig"],
-    TPrimitiveProviderInstance["dfDiccActionConfig"],
+    TPrimitiveMutateInstance,
+    TPrimitiveValInstance,
+    TRequestValInstance,
+    TPrimitiveHookInstance,
+    TPrimitiveProviderInstance,
     TKeyDiccActionRequest
   > {
     let extractMetadataByContext =
@@ -196,11 +217,11 @@ export abstract class PrimitiveLogicController<
     return extractMetadataByContext;
   }
   protected getMetadataOnlyModuleConfig(): TPrimitiveConfigForCtrl<
-    TPrimitiveMutateInstance["dfDiccActionConfig"] &
-      TPrimitiveValInstance["dfDiccActionConfig"] &
-      TRequestValInstance["dfDiccActionConfig"] &
-      TPrimitiveHookInstance["dfDiccActionConfig"] &
-      TPrimitiveProviderInstance["dfDiccActionConfig"],
+    TPrimitiveMutateInstance,
+    TPrimitiveValInstance,
+    TRequestValInstance,
+    TPrimitiveHookInstance,
+    TPrimitiveProviderInstance,
     TKeyDiccActionRequest
   > {
     const metadata = this.getMetadataWithContextModule();
@@ -208,97 +229,19 @@ export abstract class PrimitiveLogicController<
     const config = metadataInPrimitive.__ctrlConfig;
     return config;
   }
-  protected getDiccATKeyCRUD(): TPrimitiveCtrlModuleConfigForPrimitive<
-    TPrimitiveMutateInstance["dfDiccActionConfig"] &
-      TPrimitiveValInstance["dfDiccActionConfig"] &
-      TRequestValInstance["dfDiccActionConfig"] &
-      TPrimitiveHookInstance["dfDiccActionConfig"] &
-      TPrimitiveProviderInstance["dfDiccActionConfig"],
-    TKeyDiccActionRequest
-  >["diccATKeyCRUD"] {
-    const config = this.getMetadataOnlyModuleConfig();
-    const diccATKeyCRUD = config.primitiveCtrl.diccATKeyCRUD;
-    return diccATKeyCRUD;
-  }
-  /**... */
-  protected getATKeysActionRequestByKeyActionRequest(
-    keyActionRequest: TKeyDiccActionRequest
-  ) {
-    const schemaATKeyGlobal = this.getDiccATKeyCRUD();
-    const aTKeyGlobal =
-      this.util.isObject(schemaATKeyGlobal) &&
-      this.util.isArray(schemaATKeyGlobal[keyActionRequest])
-        ? schemaATKeyGlobal[keyActionRequest]
-        : [];
-    return aTKeyGlobal;
-  }
-  public override getActionRequestFn(
+  protected override getActionRequestFn(
     keyActionRequest: TKeyDiccActionRequest
   ): TPrimitiveCtrlActionFn<
     TValue,
-    TPrimitiveMutateInstance["dfDiccActionConfig"],
-    TPrimitiveValInstance["dfDiccActionConfig"],
-    TRequestValInstance["dfDiccActionConfig"],
-    TPrimitiveHookInstance["dfDiccActionConfig"],
-    TPrimitiveProviderInstance["dfDiccActionConfig"]
+    TPrimitiveMutateInstance,
+    TPrimitiveValInstance,
+    TRequestValInstance,
+    TPrimitiveHookInstance,
+    TPrimitiveProviderInstance
   > {
     return super.getActionRequestFn(keyActionRequest) as any;
   }
-  protected override buildCriteriaHandler(
-    requestType: "read",
-    base?: TPrimitiveBaseCriteriaForCtrlRead,
-    customCriteriaInstance?: PrimitiveCriteriaHandler<
-      TValue,
-      TPrimitiveMutateInstance["dfDiccActionConfig"],
-      TPrimitiveValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TPrimitiveHookInstance["dfDiccActionConfig"],
-      TPrimitiveProviderInstance["dfDiccActionConfig"]
-    >
-  ): PrimitiveCriteriaHandler<
-    TValue,
-    TPrimitiveMutateInstance["dfDiccActionConfig"],
-    TPrimitiveValInstance["dfDiccActionConfig"],
-    TRequestValInstance["dfDiccActionConfig"],
-    TPrimitiveHookInstance["dfDiccActionConfig"],
-    TPrimitiveProviderInstance["dfDiccActionConfig"]
-  >;
-  protected override buildCriteriaHandler(
-    requestType: "modify",
-    base?: TPrimitiveBaseCriteriaForCtrlModify,
-    customCriteriaInstance?: PrimitiveCriteriaHandler<TValue>
-  ): PrimitiveCriteriaHandler<
-    TValue,
-    TPrimitiveMutateInstance["dfDiccActionConfig"],
-    TPrimitiveValInstance["dfDiccActionConfig"],
-    TRequestValInstance["dfDiccActionConfig"],
-    TPrimitiveHookInstance["dfDiccActionConfig"],
-    TPrimitiveProviderInstance["dfDiccActionConfig"]
-  >;
-  protected override buildCriteriaHandler(
-    requestType: TKeyRequestType,
-    base?:
-      | TPrimitiveBaseCriteriaForCtrlRead
-      | TPrimitiveBaseCriteriaForCtrlModify,
-    customCriteriaInstance?: PrimitiveCriteriaHandler<TValue>
-  ): PrimitiveCriteriaHandler<TValue> {
-    base = this.util.isObject(base) ? base : {};
-    let cH: PrimitiveCriteriaHandler<TValue>;
-    if (!this.util.isObject(customCriteriaInstance)) {
-      cH = new PrimitiveCriteriaHandler(this.keySrc, this.metadataHandler, {
-        ...base,
-        type: requestType,
-      });
-    } else {
-      customCriteriaInstance.mutateProps({
-        ...base,
-        type: requestType,
-      });
-      cH = customCriteriaInstance;
-    }
-    return cH;
-  }
-  public override buildReportHandler(
+  protected override buildReportHandler(
     bag: Trf_PrimitiveBag,
     keyAction: unknown
   ): PrimitiveReportHandler {
@@ -321,14 +264,14 @@ export abstract class PrimitiveLogicController<
     });
     return rH;
   }
-  public override preRunAction(
+  protected override preRunAction(
     bag: Trf_PrimitiveBag,
     keyAction: unknown
   ): void {
     super.preRunAction(bag, keyAction as any) as any;
     return;
   }
-  public override postRunAction(
+  protected override postRunAction(
     bag: Trf_PrimitiveBag,
     res: IPrimitiveResponse
   ): void {
@@ -338,9 +281,31 @@ export abstract class PrimitiveLogicController<
   //████ runs commons ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
   /**... */
   protected async runCommonPrimitiveRequest(
+    keyActionRequest: TKeyDiccActionRequest,
     data: TValue,
-    criteriaHandler: Trf_PrimitiveCriteriaHandler
+    baseCriteria:
+      | TPrimitiveBaseReadCriteria<
+          TPrimitiveMutateInstance["dfDiccActionConfig"],
+          TPrimitiveValInstance["dfDiccActionConfig"],
+          TRequestValInstance["dfDiccActionConfig"],
+          TPrimitiveHookInstance["dfDiccActionConfig"],
+          TPrimitiveProviderInstance["dfDiccActionConfig"],
+          TKeyDiccActionRequest
+        >
+      | TPrimitiveBaseModifyCriteria<
+          TPrimitiveMutateInstance["dfDiccActionConfig"],
+          TPrimitiveValInstance["dfDiccActionConfig"],
+          TRequestValInstance["dfDiccActionConfig"],
+          TPrimitiveHookInstance["dfDiccActionConfig"],
+          TPrimitiveProviderInstance["dfDiccActionConfig"],
+          TKeyDiccActionRequest
+        >
   ): Promise<IPrimitiveResponse> {
+    const mH = this.metadataHandler;
+    const cH = new PrimitiveCriteriaHandler(this.metadataHandler, {
+      ...(baseCriteria as any),
+      keyActionRequest, //❗Obligatorio❗
+    });
     let bag = new PrimitiveBag<
       TValue,
       TPrimitiveCriteriaInstance,
@@ -351,7 +316,7 @@ export abstract class PrimitiveLogicController<
       TPrimitiveProviderInstance["dfDiccActionConfig"]
     >(this.keySrc, {
       data,
-      criteriaHandler: criteriaHandler as any,
+      criteriaHandler: cH as any,
     });
     const res = (await this.runActionRequest(
       this as any as ActionModule<any>,
@@ -360,8 +325,8 @@ export abstract class PrimitiveLogicController<
     )) as IPrimitiveResponse;
     return res;
   }
-  //====Accion especial para controller============================================================
-  public override actionCtrl: TFnBagForActionModule = async (
+  //====Acción especial para controller============================================================
+  protected override actionCtrl: TFnBagForActionModule = async (
     bag: PrimitiveBag<any>
   ) => {
     const { data, criteriaHandler } = bag;
@@ -383,7 +348,7 @@ export abstract class PrimitiveLogicController<
       const mFX = this.metadataHandler.getModuleInstanceForActionContext(
         keyModuleContext as TKeyPrimitiveInternalACModuleContext
       );
-      if (this.util.isAllowRunAction(tKeyGAC, diccGlobalAC as object)) {
+      if (this.isAllowRunAction(tKeyGAC, diccGlobalAC as object)) {
         const resForAction = (await this.runActionRequest(
           mFX,
           bag,
@@ -399,191 +364,168 @@ export abstract class PrimitiveLogicController<
   //████ Acciones de petición ████████████████████████████████████████████████████████████
   /**... */
   public async exist(
-    baseCriteria: TPrimitiveBaseCriteriaForCtrlRead<
+    baseCriteria: TPrimitiveBaseReadCriteria<
       TPrimitiveMutateInstance["dfDiccActionConfig"],
       TPrimitiveValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TPrimitiveHookInstance["dfDiccActionConfig"],
-      TPrimitiveProviderInstance["dfDiccActionConfig"]
+      TPrimitiveProviderInstance["dfDiccActionConfig"],
+      TKeyDiccActionRequest
     >
   ): Promise<IPrimitiveResponse> {
-    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
-    //criterios obligatorios para esta acción de petición
-    const cH = this.buildCriteriaHandler("read", {
-      ...(baseCriteria as any),
-      type: "read",
-      keyActionRequest: "exist" as TKeyPrimitiveReadRequestController,
-      expectedDataType: "boolean",
-    });
-    const res = await this.runCommonPrimitiveRequest(this.util.dfValue, cH);
+    const keyActionRequest = "exist" as TKeyDiccActionRequest;
+    const res = await this.runCommonPrimitiveRequest(
+      keyActionRequest,
+      this.util.dfValue,
+      baseCriteria
+    );
     return res;
   }
   public async count(
-    baseCriteria: TPrimitiveBaseCriteriaForCtrlRead<
+    baseCriteria: TPrimitiveBaseReadCriteria<
       TPrimitiveMutateInstance["dfDiccActionConfig"],
       TPrimitiveValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TPrimitiveHookInstance["dfDiccActionConfig"],
-      TPrimitiveProviderInstance["dfDiccActionConfig"]
+      TPrimitiveProviderInstance["dfDiccActionConfig"],
+      TKeyDiccActionRequest
     >
   ): Promise<IPrimitiveResponse> {
-    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
-    //criterios obligatorios para esta acción de petición
-    const cH = this.buildCriteriaHandler("read", {
-      ...(baseCriteria as any),
-      type: "read",
-      keyActionRequest: "count" as TKeyPrimitiveReadRequestController,
-      expectedDataType: "number",
-    });
-    const res = await this.runCommonPrimitiveRequest(this.util.dfValue, cH);
+    const keyActionRequest = "count" as TKeyDiccActionRequest;
+    const res = await this.runCommonPrimitiveRequest(
+      keyActionRequest,
+      this.util.dfValue,
+      baseCriteria
+    );
     return res;
   }
   public async inform(
-    baseCriteria: TPrimitiveBaseCriteriaForCtrlRead<
+    baseCriteria: TPrimitiveBaseReadCriteria<
       TPrimitiveMutateInstance["dfDiccActionConfig"],
       TPrimitiveValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TPrimitiveHookInstance["dfDiccActionConfig"],
-      TPrimitiveProviderInstance["dfDiccActionConfig"]
+      TPrimitiveProviderInstance["dfDiccActionConfig"],
+      TKeyDiccActionRequest
     >
   ): Promise<IPrimitiveResponse> {
-    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
-    //criterios obligatorios para esta acción de petición
-    const cH = this.buildCriteriaHandler("read", {
-      ...(baseCriteria as any),
-      type: "read",
-      keyActionRequest: "inform" as TKeyPrimitiveReadRequestController,
-      expectedDataType: "string",
-    });
-    const res = await this.runCommonPrimitiveRequest(this.util.dfValue, cH);
+    const keyActionRequest = "inform" as TKeyDiccActionRequest;
+    const res = await this.runCommonPrimitiveRequest(
+      keyActionRequest,
+      this.util.dfValue,
+      baseCriteria
+    );
     return res;
   }
   public async readAll(
-    baseCriteria: TPrimitiveBaseCriteriaForCtrlRead<
+    baseCriteria: TPrimitiveBaseReadCriteria<
       TPrimitiveMutateInstance["dfDiccActionConfig"],
       TPrimitiveValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TPrimitiveHookInstance["dfDiccActionConfig"],
-      TPrimitiveProviderInstance["dfDiccActionConfig"]
+      TPrimitiveProviderInstance["dfDiccActionConfig"],
+      TKeyDiccActionRequest
     >
   ): Promise<IPrimitiveResponse> {
-    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
-    //criterios obligatorios para esta acción de petición
-    const cH = this.buildCriteriaHandler("read", {
-      ...(baseCriteria as any),
-      type: "read",
-      keyActionRequest: "readAll" as TKeyPrimitiveReadRequestController,
-      expectedDataType: "array",
-      query: [], //❗se leen todos (no hay condición de filtrador)❗
-    });
-    const res = await this.runCommonPrimitiveRequest(this.util.dfValue, cH);
+    const keyActionRequest = "readAll" as TKeyDiccActionRequest;
+    const res = await this.runCommonPrimitiveRequest(
+      keyActionRequest,
+      this.util.dfValue,
+      baseCriteria
+    );
     return res;
   }
   public async readMany(
-    baseCriteria: TPrimitiveBaseCriteriaForCtrlRead<
+    baseCriteria: TPrimitiveBaseReadCriteria<
       TPrimitiveMutateInstance["dfDiccActionConfig"],
       TPrimitiveValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TPrimitiveHookInstance["dfDiccActionConfig"],
-      TPrimitiveProviderInstance["dfDiccActionConfig"]
+      TPrimitiveProviderInstance["dfDiccActionConfig"],
+      TKeyDiccActionRequest
     >
   ): Promise<IPrimitiveResponse> {
-    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
-    //criterios obligatorios para esta acción de petición
-    const cH = this.buildCriteriaHandler("read", {
-      ...(baseCriteria as any),
-      type: "read",
-      keyActionRequest: "readMany" as TKeyPrimitiveReadRequestController,
-      expectedDataType: "array",
-    });
-    const res = await this.runCommonPrimitiveRequest(this.util.dfValue, cH);
+    const keyActionRequest = "readMany" as TKeyDiccActionRequest;
+    const res = await this.runCommonPrimitiveRequest(
+      keyActionRequest,
+      this.util.dfValue,
+      baseCriteria
+    );
     return res;
   }
   public async readOne(
-    baseCriteria: TPrimitiveBaseCriteriaForCtrlRead<
+    baseCriteria: TPrimitiveBaseReadCriteria<
       TPrimitiveMutateInstance["dfDiccActionConfig"],
       TPrimitiveValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TPrimitiveHookInstance["dfDiccActionConfig"],
-      TPrimitiveProviderInstance["dfDiccActionConfig"]
+      TPrimitiveProviderInstance["dfDiccActionConfig"],
+      TKeyDiccActionRequest
     >
   ): Promise<IPrimitiveResponse> {
-    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
-    //criterios obligatorios para esta acción de petición
-    const cH = this.buildCriteriaHandler("read", {
-      ...(baseCriteria as any),
-      type: "read",
-      keyActionRequest: "readOne" as TKeyPrimitiveReadRequestController,
-      expectedDataType: "any",
-      limit: 1,
-    });
-    const res = await this.runCommonPrimitiveRequest(this.util.dfValue, cH);
+    const keyActionRequest = "readOne" as TKeyDiccActionRequest;
+    const res = await this.runCommonPrimitiveRequest(
+      keyActionRequest,
+      this.util.dfValue,
+      baseCriteria
+    );
     return res;
   }
   public async create(
-    baseCriteria: TPrimitiveBaseCriteriaForCtrlModify<
+    baseCriteria: TPrimitiveBaseModifyCriteria<
       TPrimitiveMutateInstance["dfDiccActionConfig"],
       TPrimitiveValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TPrimitiveHookInstance["dfDiccActionConfig"],
-      TPrimitiveProviderInstance["dfDiccActionConfig"]
+      TPrimitiveProviderInstance["dfDiccActionConfig"],
+      TKeyDiccActionRequest
     >,
     data: Partial<TValue>
   ): Promise<IPrimitiveResponse> {
-    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
-    //criterios obligatorios para esta acción de petición
-    const cH = this.buildCriteriaHandler("modify", {
-      ...(baseCriteria as any),
-      type: "modify",
-      modifyType: "create",
-      keyActionRequest: "create" as TKeyPrimitiveModifyRequestController,
-      expectedDataType: "any",
-    });
-    const res = await this.runCommonPrimitiveRequest(data as TValue, cH);
+    const keyActionRequest = "readAll" as TKeyDiccActionRequest;
+    const res = await this.runCommonPrimitiveRequest(
+      keyActionRequest,
+      data as TValue,
+      baseCriteria
+    );
     return res;
   }
   public async update(
-    baseCriteria: TPrimitiveBaseCriteriaForCtrlModify<
+    baseCriteria: TPrimitiveBaseModifyCriteria<
       TPrimitiveMutateInstance["dfDiccActionConfig"],
       TPrimitiveValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TPrimitiveHookInstance["dfDiccActionConfig"],
-      TPrimitiveProviderInstance["dfDiccActionConfig"]
+      TPrimitiveProviderInstance["dfDiccActionConfig"],
+      TKeyDiccActionRequest
     >,
     data: Partial<TValue>
   ): Promise<IPrimitiveResponse> {
-    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
-    //criterios obligatorios para esta acción de petición
-    const cH = this.buildCriteriaHandler("modify", {
-      ...(baseCriteria as any),
-      type: "modify",
-      modifyType: "update",
-      keyActionRequest: "update" as TKeyPrimitiveModifyRequestController,
-      expectedDataType: "any",
-    });
-    const res = await this.runCommonPrimitiveRequest(data as TValue, cH);
+    const keyActionRequest = "update" as TKeyDiccActionRequest;
+    const res = await this.runCommonPrimitiveRequest(
+      keyActionRequest,
+      data as TValue,
+      baseCriteria
+    );
     return res;
   }
   public async delete(
-    baseCriteria: TPrimitiveBaseCriteriaForCtrlModify<
+    baseCriteria: TPrimitiveBaseModifyCriteria<
       TPrimitiveMutateInstance["dfDiccActionConfig"],
       TPrimitiveValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TPrimitiveHookInstance["dfDiccActionConfig"],
-      TPrimitiveProviderInstance["dfDiccActionConfig"]
+      TPrimitiveProviderInstance["dfDiccActionConfig"],
+      TKeyDiccActionRequest
     >,
     data: Partial<TValue>
   ): Promise<IPrimitiveResponse> {
-    baseCriteria = this.util.isObject(baseCriteria) ? baseCriteria : {};
-    //criterios obligatorios para esta acción de petición
-    const cH = this.buildCriteriaHandler("modify", {
-      ...(baseCriteria as any),
-      type: "modify",
-      modifyType: "delete",
-      keyActionRequest: "delete" as TKeyPrimitiveModifyRequestController,
-      expectedDataType: "any",
-    });
-    const res = await this.runCommonPrimitiveRequest(data as TValue, cH);
+    const keyActionRequest = "delete" as TKeyDiccActionRequest;
+    const res = await this.runCommonPrimitiveRequest(
+      keyActionRequest,
+      data as TValue,
+      baseCriteria
+    );
     return res;
   }
 }

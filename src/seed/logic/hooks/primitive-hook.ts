@@ -1,4 +1,3 @@
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import { LogicHook } from "./_hook";
 import {
@@ -9,8 +8,8 @@ import {
 import { IPrimitiveResponse } from "../reports/shared";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import { TPrimitiveMetaAndHook } from "../meta/metadata-shared";
-import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
-import { TPrimitiveFnBagForActionModule } from "../bag-module/shared";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag/primitive-bag";
+import { TPrimitiveFnBagForActionModule } from "../bag/shared";
 import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del hook */
@@ -79,6 +78,7 @@ export class PrimitiveLogicHook<
     //...aqui configuracion refinada:
     return rConfig;
   }
+
   public override get metadataHandler(): Trf_PrimitiveLogicMetadataHandler {
     const mH = super.metadataHandler as Trf_PrimitiveLogicMetadataHandler;
     return mH;
@@ -91,24 +91,23 @@ export class PrimitiveLogicHook<
   }
   /**
    * @param _keyPrimitiveModuleContext contexto de acciones para este modulo estructurado
-   * @param keySrc indentificadora del recurso asociado a modulo
    */
-  constructor(keySrc: string) {
-    super("primitive", keySrc);
+  constructor() {
+    super("primitive");
   }
   protected override getDefault() {
     return PrimitiveLogicHook.getDefault();
   }
-  protected override getMetadataWithContextModule(): TPrimitiveMetaAndHook<TIDiccAC> {
+  protected override getMetadataWithContextModule(): TPrimitiveMetaAndHook<PrimitiveLogicHook> {
     const metadata =
       this.metadataHandler.getExtractMetadataByModuleContext("hook");
-    return metadata as any;
+    return metadata;
   }
   protected override getMetadataOnlyModuleConfig(): TPrimitiveConfigForHook<TIDiccAC> {
     const metadata =
-      this.getMetadataWithContextModule() as TPrimitiveMetaAndHook<TIDiccAC>;
+      this.getMetadataWithContextModule() as TPrimitiveMetaAndHook<PrimitiveLogicHook>;
     let config = metadata.__hookConfig as TPrimitiveConfigForHook<TIDiccAC>;
-    return config;
+    return config as TPrimitiveConfigForHook<TIDiccAC>;
   }
   protected override getDiccMetadataActionConfig(): TIDiccAC {
     const config = this.getMetadataOnlyModuleConfig();
@@ -150,7 +149,7 @@ export class PrimitiveLogicHook<
     );
     return [keyAction, actionConfig];
   }
-  public override buildReportHandler(
+  protected override buildReportHandler(
     bag: Trf_PrimitiveBag,
     keyAction: keyof TIDiccAC
   ): PrimitiveReportHandler {

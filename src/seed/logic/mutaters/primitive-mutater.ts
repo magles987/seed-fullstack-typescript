@@ -6,11 +6,11 @@ import {
 } from "./shared";
 import { IPrimitiveResponse } from "../reports/shared";
 import { TPrimitiveMetaAndMutater } from "../meta/metadata-shared";
-import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag/primitive-bag";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { TPrimitiveFnBagForActionModule } from "../bag-module/shared";
+import { TPrimitiveFnBagForActionModule } from "../bag/shared";
 import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** define las propiedades de cada formateo
@@ -193,11 +193,9 @@ export class PrimitiveLogicMutater<
   public override get keyModuleContext(): TKeyPrimitiveMutateModuleContext {
     return "primitiveMutate";
   }
-  /**
-   * @param keySrc indentificadora del recurso asociado a modulo
-   */
-  constructor(keySrc: string) {
-    super("primitive", keySrc);
+  /** */
+  constructor() {
+    super("primitive");
   }
   protected override getDefault() {
     return PrimitiveLogicMutater.getDefault();
@@ -229,7 +227,7 @@ export class PrimitiveLogicMutater<
     //...aqui configuracion refinada:
     return rConfig;
   }
-  protected override getMetadataWithContextModule(): TPrimitiveMetaAndMutater<TIDiccAC> {
+  protected override getMetadataWithContextModule(): TPrimitiveMetaAndMutater<PrimitiveLogicMutater> {
     const metadata =
       this.metadataHandler.getExtractMetadataByModuleContext("mutater");
     return metadata as any;
@@ -237,7 +235,7 @@ export class PrimitiveLogicMutater<
   protected override getMetadataOnlyModuleConfig(): TPrimitiveConfigForMutate<TIDiccAC> {
     const metadata = this.getMetadataWithContextModule();
     const config = metadata.__mutateConfig;
-    return config;
+    return config as TPrimitiveConfigForMutate<TIDiccAC>;
   }
   protected override getDiccMetadataActionConfig(): TIDiccAC {
     const config = this.getMetadataOnlyModuleConfig();
@@ -268,7 +266,7 @@ export class PrimitiveLogicMutater<
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
-  public override buildReportHandler(
+  protected override buildReportHandler(
     bag: Trf_PrimitiveBag,
     keyAction: keyof TIDiccAC
   ): PrimitiveReportHandler {

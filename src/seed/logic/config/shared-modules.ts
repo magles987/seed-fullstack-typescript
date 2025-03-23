@@ -4,7 +4,6 @@ export type TKeyActionModule = "mutater" | "hook" | "validator" | "provider";
 export type TKeyHandlerModule =
   | "criteria"
   | "metadata"
-  | "service"
   | "error"
   | "bag"
   | "report";
@@ -13,8 +12,7 @@ export type TKeyExclusiveModule = "controller" | "middleware";
 /**clave identificadora de modulos con reportes de respuesta asignados */
 export type TKeyModuleWithReport =
   | TKeyActionModule
-  | Extract<TKeyExclusiveModule, "controller">
-  | Extract<TKeyHandlerModule, "service">;
+  | Extract<TKeyExclusiveModule, "controller">;
 /**Tipos de modulos para la logica de negocio*/
 export type TKeyModule =
   | TKeyActionModule

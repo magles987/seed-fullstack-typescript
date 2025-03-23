@@ -5,8 +5,8 @@ import {
 } from "./shared";
 import { ELogicResStatusCode, IStructureResponse } from "../reports/shared";
 import { TStructureFieldMetaAndMutater } from "../meta/metadata-shared";
-import { StructureBag } from "../bag-module/structure-bag";
-import { TStructureFnBagForActionModule } from "../bag-module/shared";
+import { StructureBag } from "../bag/structure-bag";
+import { TStructureFnBagForActionModule } from "../bag/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** define las propiedades de cada formateo
  * que puede configurar y ejecutar un campo
@@ -176,11 +176,9 @@ export class FieldLogicMutater<
       ] as Array<TKeysDiccFieldMutateActionConfigG>,
     };
   };
-  /**
-   * @param keySrc indentificadora del recurso asociado a modulo
-   */
-  constructor(keySrc: string) {
-    super("fieldMutate", keySrc);
+  /** */
+  constructor() {
+    super("fieldMutate");
   }
   protected override getDefault() {
     return FieldLogicMutater.getDefault();
@@ -214,7 +212,7 @@ export class FieldLogicMutater<
   }
   protected override getMetadataWithContextModule(
     keyPath?: string
-  ): TStructureFieldMetaAndMutater<TIDiccAC> {
+  ): TStructureFieldMetaAndMutater<FieldLogicMutater> {
     return super.getMetadataWithContextModule(keyPath) as any;
   }
   protected override getMetadataOnlyModuleConfig(

@@ -1,5 +1,3 @@
-import { PrimitiveLogicMutater } from "./primitive-mutater";
-
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**esquema de configuracion para acciones */
 interface IActionConfig<TIDiccAC> {

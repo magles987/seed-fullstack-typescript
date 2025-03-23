@@ -1,18 +1,11 @@
-import { TKeyLogicContext, TKeyRequestType } from "../config/shared-modules";
-import { Util_Ctrl } from "./_util-ctrl";
-import {
-  ELogicResStatusCode,
-  IResponse,
-  TResponseForMutate,
-} from "../reports/shared";
+import { TKeyLogicContext } from "../config/shared-modules";
+import { ELogicResStatusCode, IResponse } from "../reports/shared";
 import { ActionModule, LogicModuleWithReport } from "../config/module";
-import { BagModule } from "../bag-module/_bag";
-import { IBuilderBaseMetadata } from "../meta/metadata-builder-shared";
+import { BagModule } from "../bag/_bag";
+import { IBuilderBaseMetadata } from "../meta/builder-shared";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { ReportHandler } from "../reports/_reportHandler";
-import { CriteriaHandler } from "../criterias/_criteria-handler";
-import { ICriteria } from "../criterias/shared";
-import { TFnBagForActionModule } from "../bag-module/shared";
+import { TFnBagForActionModule } from "../bag/shared";
+import { LogicMetadataHandler } from "../meta/_metadata-handler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TKeyReadRequestController =
   | "exist"
@@ -39,35 +32,39 @@ export abstract class LogicController extends LogicModuleWithReport {
   };
   /**clave identificadora del contexto */
   public abstract get keyModuleContext(): unknown;
-  /**utilidades del manejador de controller*/
-  protected override readonly util = Util_Ctrl.getInstance();
   /**
    * @param keyLogicContext configuracion de
    * inicialización
-   * @param baseMetadata configuracion base de metadatos
+   * @param baseConfigMetadata configuracion base de metadatos
    * (es un objeto literal no el manejador)
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
-    baseMetadata: IBuilderBaseMetadata<any, any>
+    baseConfigMetadata: IBuilderBaseMetadata<any, any>
   ) {
-    super("controller", keyLogicContext, baseMetadata?.keySrc);
-    this.util = Util_Ctrl.getInstance();
-    if (!this.util.isObject(baseMetadata, false)) {
+    super("controller", keyLogicContext);
+    if (!this.util.isObject(baseConfigMetadata, false)) {
       throw new LogicError({
         code: ELogicCodeError.NOT_VALID,
-        msn: `${baseMetadata} is not metadata base object valid`,
+        msn: `${baseConfigMetadata} is not metadata base object valid`,
       });
     }
+    this.keySrc = baseConfigMetadata.keySrc;
   }
   protected override getDefault() {
     return LogicController.getDefault();
+  }
+  /**... */
+  public getDiccModuleInstance() {
+    const mH = this.metadataHandler;
+    const diccMI = (mH as LogicMetadataHandler).diccModuleInstanceContext;
+    return diccMI;
   }
   /**
    * @param keyActionRequest clave identificadora de la acción de petición a solicitar su correspondiente método
    * @returns el método correspondiente a la acción
    */
-  public getActionRequestFn(keyActionRequest: unknown): Function {
+  protected getActionRequestFn(keyActionRequest: unknown): Function {
     const that = this;
     let fn = that[keyActionRequest as any] as Function;
     if (typeof fn !== "function") {
@@ -79,23 +76,13 @@ export abstract class LogicController extends LogicModuleWithReport {
     fn = fn.bind(that);
     return fn;
   }
-  /**construye una instancia de criteria
-   *
-   * @param base parametros iniciales de inicalizacion
-   *
-   * @returns instancia de criteria
-   */
-  protected abstract buildCriteriaHandler(
-    requestType: TKeyRequestType,
-    base?: unknown
-  ): CriteriaHandler;
   /**micro hook embebido que se ejecuta antes de ejecutar la accion
    *
    * @param bag
    * @param keyAction
    * @returns el objeto bag (posiblemente mutado)
    */
-  public preRunAction(bag: unknown, keyAction: unknown): void {
+  protected preRunAction(bag: unknown, keyAction: unknown): void {
     return;
   }
   /**micro hook embebido que se ejecuta despues de ejecutar la accion
@@ -104,27 +91,19 @@ export abstract class LogicController extends LogicModuleWithReport {
    * @param res
    * @returns el objeto res (posiblemente mutado), el bag puede tambien mutarse
    */
-  public postRunAction(bag: unknown, res: unknown): void {
+  protected postRunAction(bag: unknown, res: unknown): void {
     //mutar data de res a bag
     bag["data"] = res["data"];
     return;
   }
   /**propiedad especial que simula una acción genérica para el controller */
-  public abstract actionCtrl: TFnBagForActionModule;
-  /**... */
-  protected async runActionRequest(
-    actionModuleInstContext: ActionModule<any>,
-    bag: BagModule,
-    keyAction: any
-  ): Promise<IResponse> {
-    const res = (await LogicController.runActionRequest(
-      actionModuleInstContext,
-      bag,
-      keyAction
-    )) as IResponse;
-    return res;
-  }
-  /**... */
+  protected abstract actionCtrl: TFnBagForActionModule;
+  /**
+   * @param actionModuleInstContext
+   * @param bag
+   * @param keyAction
+   * @returns
+   */
   public static async runActionRequest(
     actionModuleInstContext: ActionModule<any>,
     bag: BagModule,
@@ -159,6 +138,49 @@ export abstract class LogicController extends LogicModuleWithReport {
     actionModuleInstContext.preRunAction(bag, keyAction) as any;
     res = await actionFn(bag);
     actionModuleInstContext.postRunAction(bag, res);
+    return res;
+  }
+  /**verifica si la acción es permitida ejecutarla, se gun las condiciones necesarias
+   *
+   *  - Debe existir la tupla de `[keyModuleContext, keyAction]` bien configurada.
+   *  - El diccionario de configuraciones debe estar bien configurado
+   *  - La configuración asignada a esa acción no puede ser `undefined` o `null`
+   *
+   * @param tKeyGlobalAC tupla formada conformada por:
+   *  - `[0]` clave identificadora del modulo en contexto (`keyModuleContext`).
+   *  - `[1]` clave identificadora de la acción (`keyAction`)
+   * @param diccGlobalAC diccionario con las configuraciones de acciones globales (**ya deben esta fusionadas**)
+   *
+   * @returns si es o no permitido la ejecución de la acción
+   */
+  protected isAllowRunAction(
+    tKeyGlobalAC: [string, string],
+    diccGlobalAC: object
+  ): boolean {
+    let r = false;
+    if (
+      !this.util.isTuple(tKeyGlobalAC, 2) ||
+      !this.util.isObject(diccGlobalAC)
+    )
+      return r;
+    const [keyModuleContext, keyAction] = tKeyGlobalAC;
+    const diccAC = diccGlobalAC[keyModuleContext as any];
+    if (!this.util.isObject(diccAC)) return r;
+    const actionConfig = diccAC[keyAction];
+    r = this.util.isNotUndefinedAndNotNull(actionConfig);
+    return r;
+  }
+  /**... */
+  protected async runActionRequest(
+    actionModuleInstContext: ActionModule<any>,
+    bag: BagModule,
+    keyAction: any
+  ): Promise<IResponse> {
+    const res = (await LogicController.runActionRequest(
+      actionModuleInstContext,
+      bag,
+      keyAction
+    )) as IResponse;
     return res;
   }
   /**

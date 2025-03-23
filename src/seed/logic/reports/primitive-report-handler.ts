@@ -1,4 +1,3 @@
-import { TKeyModuleWithReport } from "../config/shared-modules";
 import { LogicController } from "../controllers/_controller";
 import { LogicMutater } from "../mutaters/_mutater";
 import { LogicHook } from "../hooks/_hook";
@@ -7,12 +6,13 @@ import { LogicValidation } from "../validators/_validation";
 import { ReportHandler } from "./_reportHandler";
 import {
   ELogicResStatusCode,
+  IDriverResponse,
   IPrimitiveResponse,
   TPrimitiveModuleContext,
   TPrimitiveResponseForMutate,
   Trf_IPrimitiveResponse,
+  TSelectorDataDriver,
 } from "./shared";
-import { LogicService } from "../providers/services/_service";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
@@ -25,12 +25,13 @@ export type Trf_PrimitiveReportHandler = PrimitiveReportHandler;
  */
 export class PrimitiveReportHandler
   extends ReportHandler
-  implements ReturnType<PrimitiveReportHandler["getDefault"]> {
+  implements ReturnType<PrimitiveReportHandler["getDefault"]>
+{
   public static override readonly getDefault = () => {
     const superDf = ReportHandler.getDefault();
     return {
       ...superDf,
-    } as IPrimitiveResponse;
+    } as typeof superDf & IPrimitiveResponse;
   };
   protected static override readonly getCONSTANTS = () => {
     const superCONST = ReportHandler.getCONSTANTS();
@@ -52,8 +53,8 @@ export class PrimitiveReportHandler
     super.responses = v;
   }
   /**
-   * @param keySrc indentificadora del recurso asociado a modulo
-   * @param base objeto literal con valores personalizados para iniicalizar las propiedades
+   * @param keySrc identificadora del recurso asociado a modulo
+   * @param base objeto literal con valores personalizados para inicializar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
@@ -133,20 +134,26 @@ export class PrimitiveReportHandler
           currentStatus,
           nextStatus
         );
-      else if (keyRepModule === "service")
-        stateStatus = LogicService.getControlReduceStatusResponse(
-          currentStatus,
-          nextStatus
-        );
       else stateStatus = ELogicResStatusCode.ERROR;
       return stateStatus;
     };
     lanchReducerFn.bind(this);
     for (let idx = 0; idx < reses.length; idx++) {
-      const embRes = this.reduceResponses(reses[idx]); //recursivo para res embebidos internos      
+      const embRes = this.reduceResponses(reses[idx]); //recursivo para res embebidos internos
       res.status = lanchReducerFn(res.status, embRes.status);
       this.mutateData(embRes.data, res);
     }
     return response;
+  }
+  public override adaptDriverResponseToResponse(
+    driverResponses: IDriverResponse | IDriverResponse[],
+    response: IPrimitiveResponse,
+    selectorDataDriver: TSelectorDataDriver
+  ): IPrimitiveResponse {
+    return super.adaptDriverResponseToResponse(
+      driverResponses,
+      response,
+      selectorDataDriver
+    ) as IPrimitiveResponse;
   }
 }

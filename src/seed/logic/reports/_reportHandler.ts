@@ -6,8 +6,15 @@ import {
   TKeyRequestType,
 } from "../config/shared-modules";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { Util_Report } from "./_util-report";
-import { ELogicResStatusCode, IResponse, TResponseForMutate } from "./shared";
+import {
+  EKeyActionGroupForRes,
+  ELogicResStatusCode,
+  IDriverResponse,
+  IResponse,
+  TResponseForMutate,
+  TSelectorDataDriver,
+  TSelectorDataDriverFn,
+} from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_ReportHandler = ReportHandler;
@@ -22,7 +29,9 @@ export abstract class ReportHandler
 {
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
+    const superDf = HandlerModule.getDefault();
     return {
+      ...superDf,
       data: undefined,
       keyRepModule: undefined,
       keyRepLogicContext: undefined,
@@ -38,7 +47,7 @@ export abstract class ReportHandler
       status: ELogicResStatusCode.SUCCESS,
       msn: "",
       tolerance: ELogicResStatusCode.ERROR,
-    } as IResponse;
+    } as typeof superDf & IResponse;
   };
   /**@returns todas las constantes a usar en instancias de esta clase*/
   protected static readonly getCONSTANTS = () => {
@@ -221,11 +230,10 @@ export abstract class ReportHandler
       ? this._msn
       : this.getDefault().msn;
   }
-  protected override readonly util = Util_Report.getInstance();
   /**
-   * @param keyLogicContext contexto logico (estructural o primitivo)
-   * @param keySrc indentificadora del recurso asociado a modulo
-   * @param base objeto literal con valores personalizados para iniicalizar las propiedades
+   * @param keyLogicContext contexto lógico (estructural o primitivo)
+   * @param keySrc identificadora del recurso asociado a modulo
+   * @param base objeto literal con valores personalizados para inicializar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
@@ -234,8 +242,8 @@ export abstract class ReportHandler
     base: Partial<ReturnType<ReportHandler["getDefault"]>> = {},
     isInit = true
   ) {
-    super("report", keyLogicContext, keySrc);
-    this.util = Util_Report.getInstance();
+    super("report", keyLogicContext);
+    this.keySrc = keySrc; //❗Obligatorio en el constructor❗
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
@@ -348,7 +356,7 @@ export abstract class ReportHandler
     //modulos prohibidos para mutar dato
     if (this.keyRepModule === "validator" || this.keyRepModule === "hook")
       return;
-    if (res.data !== newData) res.data = newData;
+    if (res.data !== newData) res.data = newData; //debería ser con equivalencia❓❓
     if (this.data !== res.data) {
       this.data = res.data;
     }
@@ -356,4 +364,87 @@ export abstract class ReportHandler
   }
   /**... */
   protected abstract reduceResponses(response: IResponse): IResponse;
+  /**... */
+  public adaptDriverResponseToResponse(
+    driverResponses: IDriverResponse | IDriverResponse[],
+    response: IResponse,
+    selectorDataDriver: TSelectorDataDriver
+  ): IResponse {
+    driverResponses = Array.isArray(driverResponses)
+      ? driverResponses
+      : [driverResponses];
+    response = {
+      ...response,
+      data: this.reduceDataDriver(driverResponses, selectorDataDriver),
+      responses: driverResponses.map((dR) => {
+        const { data, msn, status, details, error } = dR;
+        return {
+          ...response,
+          data,
+          msn,
+          status,
+          extResponse: { details, error },
+          keyAction: EKeyActionGroupForRes.driver,
+        } as IResponse;
+      }),
+    } as IResponse;
+    response = this.reduceResponses(response);
+    return response;
+  }
+  /**... */
+  protected reduceDataDriver(
+    driverResponses: IDriverResponse[],
+    selectorDataDriver: TSelectorDataDriver
+  ): any {
+    let data: any = this.util.dfValue;
+    if (this.util.isNumber(selectorDataDriver, false)) {
+      const idx = selectorDataDriver as number;
+      data = driverResponses[idx].data;
+    } else if (this.util.isString(selectorDataDriver)) {
+      if (selectorDataDriver === "first") {
+        const idx = 0;
+        data = driverResponses[idx].data;
+      } else if (selectorDataDriver === "last") {
+        const idx = driverResponses.length - 1;
+        data = driverResponses[idx].data;
+      } else if (selectorDataDriver === "first-success") {
+        const idxF = driverResponses.findIndex(
+          (dR) => dR.status < ELogicResStatusCode.BAD
+        );
+        data = driverResponses[idxF].data;
+      } else if (selectorDataDriver === "last-success") {
+        const idxF = driverResponses.findLastIndex(
+          (dR) => dR.status < ELogicResStatusCode.BAD
+        );
+        data = driverResponses[idxF].data;
+      } else if (selectorDataDriver === "merge-success") {
+        for (const driverRes of driverResponses) {
+          //omite los errores
+          if (driverRes.status >= ELogicResStatusCode.BAD) continue;
+          //verifica si la data del driver es objeto fusionar (admite arrays)
+          if (typeof driverRes.data === "object" && driverRes.data !== null) {
+            data = this.util.deepMergeObjects([data, driverRes.data], {
+              mode: "soft",
+            });
+          } else {
+            data = driverRes.data;
+          }
+        }
+      } else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${selectorDataDriver} is not selector data driver valid`,
+        });
+      }
+    } else if (this.util.isFunction(selectorDataDriver)) {
+      const fn = selectorDataDriver as TSelectorDataDriverFn;
+      data = fn(driverResponses);
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${selectorDataDriver} is not selector data driver valid`,
+      });
+    }
+    return data;
+  }
 }

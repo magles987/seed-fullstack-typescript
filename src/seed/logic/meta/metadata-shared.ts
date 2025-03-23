@@ -32,27 +32,60 @@ import {
   IStructureMetadataModuleConfig,
   TKeyPrimitiveMetadataModuleContext,
   TKeyStructureMetadataModuleContext,
-} from "./metadata-handler-shared";
-import { IDiccFieldMutateActionConfigG } from "../mutaters/field-mutater";
-import { IDiccModelMutateActionConfigG } from "../mutaters/model-mutater";
-import { IDiccFieldValActionConfigG } from "../validators/field-validation";
-import { IDiccModelValActionConfigG } from "../validators/model-validation";
-import { IDiccRequestValActionConfigG } from "../validators/request-validation";
-import { IDiccPrimitiveValActionConfigG } from "../validators/primitive-validation";
-import { IDiccPrimitiveMutateActionConfigG } from "../mutaters/primitive-mutater";
-import { IDiccStructureHookActionConfigG } from "../hooks/structure-hook";
-import { IDiccPrimitiveHookActionConfigG } from "../hooks/primitive-hook";
-import { IDiccStructureProviderActionConfigG } from "../providers/structure-provider";
-import { IDiccPrimitiveProviderActionConfigG } from "../providers/primitive-provider";
+} from "./shared";
+import {
+  FieldLogicMutater,
+  IDiccFieldMutateActionConfigG,
+} from "../mutaters/field-mutater";
+import {
+  IDiccModelMutateActionConfigG,
+  ModelLogicMutater,
+} from "../mutaters/model-mutater";
+import {
+  FieldLogicValidation,
+  IDiccFieldValActionConfigG,
+} from "../validators/field-validation";
+import {
+  IDiccModelValActionConfigG,
+  ModelLogicValidation,
+} from "../validators/model-validation";
+import {
+  IDiccRequestValActionConfigG,
+  RequestLogicValidation,
+} from "../validators/request-validation";
+import {
+  IDiccPrimitiveValActionConfigG,
+  PrimitiveLogicValidation,
+} from "../validators/primitive-validation";
+import {
+  IDiccPrimitiveMutateActionConfigG,
+  PrimitiveLogicMutater,
+} from "../mutaters/primitive-mutater";
+import {
+  IDiccStructureHookActionConfigG,
+  StructureLogicHook,
+} from "../hooks/structure-hook";
+import {
+  IDiccPrimitiveHookActionConfigG,
+  PrimitiveLogicHook,
+} from "../hooks/primitive-hook";
+import {
+  IDiccStructureProviderActionConfigG,
+  StructureLogicProvider,
+} from "../providers/structure-provider";
+import {
+  IDiccPrimitiveProviderActionConfigG,
+  PrimitiveLogicProvider,
+} from "../providers/primitive-provider";
 import {
   TFieldConfigForCtrl,
   TModelConfigForCtrl,
   TPrimitiveConfigForCtrl,
-} from "../controllers/_shared";
+} from "../controllers/shared";
 import {
   TKeyPrimitiveBagModuleContext,
   TKeyStructureBagModuleContext,
-} from "../bag-module/shared";
+} from "../bag/shared";
 import {
   TKeyPrimitiveCriteriaModuleContext,
   TKeyStructureCriteriaModuleContext,
@@ -70,40 +103,43 @@ export type TPrimitiveMeta = TPrimitiveMetadataModuleConfigForPrimitive;
 export type Trf_TPrimitiveMeta = TPrimitiveMeta;
 /**... */
 export type TPrimitiveMetaAndMutater<
-  TIDiccPrimitiveMutateAC = IDiccPrimitiveMutateActionConfigG
+  TPrimitiveMutateInstance extends PrimitiveLogicMutater = PrimitiveLogicMutater
 > = TPrimitiveMetadataModuleConfigForPrimitive &
   Partial<
-    //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
+    //se reasigna la propiedad del modulo sin cambiar su nombre de identificación
     Record<
       keyof Pick<
         IPrimitiveMetadataModuleConfig["primitiveMeta"],
         "__mutateConfig"
       >,
-      TPrimitiveConfigForMutate<TIDiccPrimitiveMutateAC>
+      TPrimitiveConfigForMutate<TPrimitiveMutateInstance["dfDiccActionConfig"]>
     >
   >;
 /**refactorizacion del tipo */
 export type Trf_TPrimitiveMetaAndMutater = TPrimitiveMetaAndMutater<any>;
 /**... */
 export type TPrimitiveMetaAndValidator<
-  TIDiccPrimitiveValAC = IDiccPrimitiveValActionConfigG,
-  TIDiccRequestValAC = IDiccRequestValActionConfigG
+  TPrimitiveValInstance extends PrimitiveLogicValidation = PrimitiveLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation
 > = TPrimitiveMetadataModuleConfigForPrimitive &
   Partial<
-    //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
+    //se reasigna la propiedad del modulo sin cambiar su nombre de identificación
     Record<
       keyof Pick<
         IPrimitiveMetadataModuleConfig["primitiveMeta"],
         "__valConfig"
       >,
-      TPrimitiveConfigForVal<TIDiccPrimitiveValAC, TIDiccRequestValAC>
+      TPrimitiveConfigForVal<
+        TPrimitiveValInstance["dfDiccActionConfig"],
+        TRequestValInstance["dfDiccActionConfig"]
+      >
     >
   >;
 /**refactorizacion del tipo */
 export type Trf_TPrimitiveMetaAndValidator = TPrimitiveMetaAndValidator<any>;
 /** */
 export type TPrimitiveMetaAndHook<
-  TIDiccPrimitiveHookAC = IDiccPrimitiveHookActionConfigG
+  TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook
 > = TPrimitiveMetadataModuleConfigForPrimitive &
   Partial<
     //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
@@ -112,14 +148,14 @@ export type TPrimitiveMetaAndHook<
         IPrimitiveMetadataModuleConfig["primitiveMeta"],
         "__hookConfig"
       >,
-      TPrimitiveConfigForHook<TIDiccPrimitiveHookAC>
+      TPrimitiveConfigForHook<TPrimitiveHookInstance["dfDiccActionConfig"]>
     >
   >;
 /**Refactorizacion del tipo */
 export type Trf_TPrimitiveMetaAndHook = TPrimitiveMetaAndHook<any>;
 /** */
 export type TPrimitiveMetaAndProvider<
-  TIDiccPrimitiveProviderAC = IDiccPrimitiveProviderActionConfigG
+  TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider
 > = TPrimitiveMetadataModuleConfigForPrimitive &
   Partial<
     //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
@@ -128,18 +164,20 @@ export type TPrimitiveMetaAndProvider<
         IPrimitiveMetadataModuleConfig["primitiveMeta"],
         "__providerConfig"
       >,
-      TPrimitiveConfigForProvider<TIDiccPrimitiveProviderAC>
+      TPrimitiveConfigForProvider<
+        TPrimitiveProviderInstance["dfDiccActionConfig"]
+      >
     >
   >;
 /**Refactorizacion del tipo */
 export type Trf_TPrimitiveMetaAndProvider = TPrimitiveMetaAndProvider;
 /** */
 export type TPrimitiveMetaAndCtrl<
-  TIDiccPrimitiveMutateAC = IDiccPrimitiveMutateActionConfigG,
-  TIDiccPrimitiveValAC = IDiccPrimitiveValActionConfigG,
-  TIDiccRequestValAC = IDiccRequestValActionConfigG,
-  TIDiccPrimitiveHookAC = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC = IDiccPrimitiveProviderActionConfigG,
+  TPrimitiveMutateInstance extends PrimitiveLogicMutater = PrimitiveLogicMutater,
+  TPrimitiveValInstance extends PrimitiveLogicValidation = PrimitiveLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
+  TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook,
+  TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider,
   TKeyDiccActionRequest extends string = string
 > = TPrimitiveMetadataModuleConfigForPrimitive &
   Partial<
@@ -150,11 +188,11 @@ export type TPrimitiveMetaAndCtrl<
         "__ctrlConfig"
       >,
       TPrimitiveConfigForCtrl<
-        TIDiccPrimitiveMutateAC &
-          TIDiccPrimitiveValAC &
-          TIDiccRequestValAC &
-          TIDiccPrimitiveHookAC &
-          TIDiccPrimitiveProviderAC,
+        TPrimitiveMutateInstance,
+        TPrimitiveValInstance,
+        TRequestValInstance,
+        TPrimitiveHookInstance,
+        TPrimitiveProviderInstance,
         TKeyDiccActionRequest
       >
     >
@@ -163,11 +201,11 @@ export type TPrimitiveMetaAndCtrl<
 export type Trf_TPrimitiveMetaAndCtrl = TPrimitiveMetaAndCtrl;
 /** */
 export type TPrimitiveFull<
-  TIDiccPrimitiveMutateAC = IDiccPrimitiveMutateActionConfigG,
-  TIDiccPrimitiveValAC = IDiccPrimitiveValActionConfigG,
-  TIDiccRequestValAC = IDiccRequestValActionConfigG,
-  TIDiccPrimitiveHookAC = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC = IDiccPrimitiveProviderActionConfigG,
+  TPrimitiveMutateInstance extends PrimitiveLogicMutater = PrimitiveLogicMutater,
+  TPrimitiveValInstance extends PrimitiveLogicValidation = PrimitiveLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
+  TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook,
+  TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider,
   TKeyDiccActionRequest extends string = string
 > = TPrimitiveMetadataModuleConfigForPrimitive &
   Partial<
@@ -177,7 +215,7 @@ export type TPrimitiveFull<
         IPrimitiveMetadataModuleConfig["primitiveMeta"],
         "__mutateConfig"
       >,
-      TPrimitiveConfigForMutate<TIDiccPrimitiveMutateAC>
+      TPrimitiveConfigForMutate<TPrimitiveMutateInstance["dfDiccActionConfig"]>
     > &
       //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
       Record<
@@ -185,7 +223,10 @@ export type TPrimitiveFull<
           IPrimitiveMetadataModuleConfig["primitiveMeta"],
           "__valConfig"
         >,
-        TPrimitiveConfigForVal<TIDiccPrimitiveValAC, TIDiccRequestValAC>
+        TPrimitiveConfigForVal<
+          TPrimitiveValInstance["dfDiccActionConfig"],
+          TRequestValInstance["dfDiccActionConfig"]
+        >
       > &
       //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
       Record<
@@ -193,15 +234,17 @@ export type TPrimitiveFull<
           IPrimitiveMetadataModuleConfig["primitiveMeta"],
           "__hookConfig"
         >,
-        TPrimitiveConfigForHook<TIDiccPrimitiveHookAC>
+        TPrimitiveConfigForHook<TPrimitiveHookInstance["dfDiccActionConfig"]>
       > &
-      //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
+      //se reasigna la propiedad del modulo sin cambiar su nombre de identificación
       Record<
         keyof Pick<
           IPrimitiveMetadataModuleConfig["primitiveMeta"],
           "__providerConfig"
         >,
-        TPrimitiveConfigForProvider<TIDiccPrimitiveProviderAC>
+        TPrimitiveConfigForProvider<
+          TPrimitiveProviderInstance["dfDiccActionConfig"]
+        >
       > &
       Record<
         keyof Pick<
@@ -209,18 +252,17 @@ export type TPrimitiveFull<
           "__ctrlConfig"
         >,
         TPrimitiveConfigForCtrl<
-          TIDiccPrimitiveMutateAC &
-            TIDiccPrimitiveValAC &
-            TIDiccRequestValAC &
-            TIDiccPrimitiveHookAC &
-            TIDiccPrimitiveProviderAC,
+          TPrimitiveMutateInstance,
+          TPrimitiveValInstance,
+          TRequestValInstance,
+          TPrimitiveHookInstance,
+          TPrimitiveProviderInstance,
           TKeyDiccActionRequest
         >
       >
   >;
-/**Refactorizacion del tipo */
+/**Refactorización del tipo */
 export type Trf_TPrimitiveFull = TPrimitiveFull<any>;
-
 /**claves identificadoras de todos los contextos
  * de módulos internos */
 export type TKeyPrimitiveInternalModuleContext =
@@ -247,6 +289,7 @@ export type TKeyPrimitiveInternalACModuleContext =
 
 //❗se debe usar tipo y no interfaz para poder hacer interseccion
 //con los subtipos (modelo, campos o embebidos)❗
+
 /**... */
 export type TStructureFieldMeta<TEmbModel> =
   TStructureMetadataModuleConfigForField & {
@@ -257,10 +300,10 @@ export type TStructureFieldMeta<TEmbModel> =
 export type Trf_TStructureFieldMeta = TStructureFieldMeta<any>;
 /**... */
 export type TStructureFieldMetaAndMutater<
-  TIDiccFieldMutateAC = IDiccFieldMutateActionConfigG,
+  TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
   TEmbModel = unknown, //❕una estructura embebida mas profunda (si la hay)❕
-  TIDiccEmbFieldMutateAC = IDiccFieldMutateActionConfigG,
-  TIDiccEmbModelMutateAC = IDiccModelMutateActionConfigG
+  TEmbFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
+  TEmbModelMutateInstance extends ModelLogicMutater = ModelLogicMutater
 > = TStructureMetadataModuleConfigForField &
   Partial<
     Record<
@@ -268,30 +311,26 @@ export type TStructureFieldMetaAndMutater<
         IStructureMetadataModuleConfig<any>["fieldMeta"],
         "__mutateConfig"
       >,
-      TFieldConfigForMutate<TIDiccFieldMutateAC>
+      TFieldConfigForMutate<TFieldMutateInstance["dfDiccActionConfig"]>
     >
   > & {
     /**configuracion adicional para estructura embebida */
     __emb?: TStructureMetaAndMutater<
       TEmbModel,
-      TIDiccEmbFieldMutateAC,
-      TIDiccEmbModelMutateAC
+      TEmbFieldMutateInstance,
+      TEmbModelMutateInstance
     >;
   };
-/**refactorizacion del tipo */
-export type Trf_TStructureFieldMetaAndMutater = TStructureFieldMetaAndMutater<
-  any,
-  any,
-  any,
-  any
->;
+/**refactorización del tipo */
+export type Trf_TStructureFieldMetaAndMutater =
+  TStructureFieldMetaAndMutater<any>;
 /**... */
 export type TStructureFieldMetaAndValidator<
-  TIDiccFieldValAC = IDiccFieldValActionConfigG,
+  TFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
   TEmbModel = unknown, //❕una estructura embebida mas profunda (si la hay)❕
-  TIDiccEmbFieldValAC = IDiccFieldValActionConfigG,
-  TIDiccEmbModelValAC = IDiccModelValActionConfigG
-  // TIDiccEmbRequestValAC = IDiccRequestValActionConfigG
+  TEmbFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
+  TEmbModelValInstance extends ModelLogicValidation = ModelLogicValidation
+  //TEmbRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
 > = TStructureMetadataModuleConfigForField &
   Partial<
     Record<
@@ -299,28 +338,28 @@ export type TStructureFieldMetaAndValidator<
         IStructureMetadataModuleConfig<any>["fieldMeta"],
         "__valConfig"
       >,
-      TFieldConfigForVal<TIDiccFieldValAC>
+      TFieldConfigForVal<TFieldValInstance["dfDiccActionConfig"]>
     >
   > & {
-    /**configuracion adicional para estructura embebida */
+    /**configuración adicional para estructura embebida */
     __emb?: TStructureMetaAndValidator<
       TEmbModel,
-      TIDiccEmbFieldValAC,
-      TIDiccEmbModelValAC,
+      TEmbFieldValInstance,
+      TEmbModelValInstance,
       any //❕Los embebidos no tienen acceso a validacion por request❕
     >;
   };
-/**refactorizacion del tipo */
+/**refactorización del tipo */
 export type Trf_TStructureFieldMetaAndValidator =
-  TStructureFieldMetaAndValidator<any, any, any, any>;
+  TStructureFieldMetaAndValidator<any>;
 /**... */
 export type TStructureFieldMetaAndCtrl<
-  TIDiccFieldMutateAC = IDiccFieldMutateActionConfigG,
-  TIDiccFieldValAC = IDiccFieldValActionConfigG,
+  TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
+  TFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
   TEmbModel = unknown, //❕una estructura embebida mas profunda (si la hay)❕
-  TIDiccEmbModelMutateAC = IDiccModelMutateActionConfigG,
-  TIDiccEmbModelValAC = IDiccModelValActionConfigG
-  // TIDiccEmbRequestValAC = IDiccRequestValActionConfigG
+  TEmbModelMutateInstance extends ModelLogicMutater = ModelLogicMutater,
+  TEmbModelValInstance extends ModelLogicValidation = ModelLogicValidation
+  //TEmbRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
 > = TStructureMetadataModuleConfigForField &
   Partial<
     Record<
@@ -328,34 +367,29 @@ export type TStructureFieldMetaAndCtrl<
         IStructureMetadataModuleConfig<any>["fieldMeta"],
         "__ctrlConfig"
       >,
-      TFieldConfigForCtrl<TIDiccFieldMutateAC & TIDiccFieldValAC>
+      TFieldConfigForCtrl<TFieldMutateInstance, TFieldValInstance>
     >
   > & {
-    /**configuracion adicional para estructura embebida */
+    /**configuración adicional para estructura embebida */
     __emb?: TStructureMetaAndCtrl<
       TEmbModel,
-      TIDiccEmbModelMutateAC,
-      TIDiccEmbModelValAC,
+      TEmbModelMutateInstance,
+      TEmbModelValInstance,
       any //❕Los embebidos no tienen acceso a validacion por request❕
     >;
   };
 /**refactorizacion del tipo */
-export type Trf_TStructureFieldMetaAndCtrl = TStructureFieldMetaAndCtrl<
-  any,
-  any,
-  any,
-  any
->;
+export type Trf_TStructureFieldMetaAndCtrl = TStructureFieldMetaAndCtrl<any>;
 /**... */
 export type TStructureFieldFull<
-  TIDiccFieldMutateAC = IDiccFieldMutateActionConfigG,
-  TIDiccFieldValAC = IDiccFieldValActionConfigG,
+  TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
+  TFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
   TEmbModel = unknown, //❕una estructura embebida mas profunda (si la hay)❕
-  TIDiccEmbFieldMutateAC = IDiccFieldMutateActionConfigG,
-  TIDiccEmbModelMutateAC = IDiccModelMutateActionConfigG,
-  TIDiccEmbFieldValAC = IDiccFieldValActionConfigG,
-  TIDiccEmbModelValAC = IDiccModelValActionConfigG
-  // TIDiccEmbRequestValAC = IDiccRequestValActionConfigG
+  TEmbFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
+  TEmbModelMutateInstance extends ModelLogicMutater = ModelLogicMutater,
+  TEmbFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
+  TEmbModelValInstance extends ModelLogicValidation = ModelLogicValidation
+  //TEmbRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
 > = TStructureMetadataModuleConfigForField &
   Partial<
     Record<
@@ -363,44 +397,37 @@ export type TStructureFieldFull<
         IStructureMetadataModuleConfig<any>["fieldMeta"],
         "__mutateConfig"
       >,
-      TFieldConfigForMutate<TIDiccFieldMutateAC>
+      TFieldConfigForMutate<TFieldMutateInstance["dfDiccActionConfig"]>
     > &
       Record<
         keyof Pick<
           IStructureMetadataModuleConfig<any>["fieldMeta"],
           "__valConfig"
         >,
-        TFieldConfigForVal<TIDiccFieldValAC>
+        TFieldConfigForVal<TFieldValInstance["dfDiccActionConfig"]>
       > &
       Record<
         keyof Pick<
           IStructureMetadataModuleConfig<any>["fieldMeta"],
           "__ctrlConfig"
         >,
-        TFieldConfigForCtrl<TIDiccFieldMutateAC & TIDiccFieldValAC>
+        TFieldConfigForCtrl<TFieldMutateInstance, TFieldValInstance>
       >
   > & {
-    /**configuracion adicional para estructura embebida */
+    /**configuración adicional para estructura embebida */
     __emb?: TStructureFull<
       TEmbModel,
-      TIDiccEmbFieldMutateAC,
-      TIDiccEmbModelMutateAC,
-      TIDiccEmbFieldValAC,
-      TIDiccEmbModelValAC,
-      any, //❕Los embebidos no tienen acceso a validacion por request❕
-      any //❕Los embebidos no tienen acceso a hook❕
+      TEmbFieldMutateInstance,
+      TEmbModelMutateInstance,
+      TEmbFieldValInstance,
+      TEmbModelValInstance
+      //❕Los embebidos no tienen acceso a validación por request❕
+      //❕Los embebidos no tienen acceso a hook❕
+      //❕Los embebidos no tienen acceso a providers❕
     >;
   };
 /**refactorizacion del tipo */
-export type Trf_TStructureFieldFull = TStructureFieldFull<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any
->;
+export type Trf_TStructureFieldFull = TStructureFieldFull<any>;
 /**
  * Estructura o esquema de un modelo con las propiedades
  * generales y campos (puede usarse como embebido)
@@ -433,8 +460,8 @@ export type TStructureMetaOnlyField<TModel> = Omit<
  */
 export type TStructureMetaAndMutater<
   TModel,
-  TIDiccFieldMutateAC = IDiccFieldMutateActionConfigG,
-  TIDiccModelMutateAC = IDiccModelMutateActionConfigG
+  TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
+  TModelMutateInstance extends ModelLogicMutater = ModelLogicMutater
 > = TStructureMetadataModuleConfigForModel<TModel> &
   //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
   Partial<
@@ -443,31 +470,23 @@ export type TStructureMetaAndMutater<
         IStructureMetadataModuleConfig<any>["modelMeta"],
         "__mutateConfig"
       >,
-      TModelConfigForMutate<TIDiccModelMutateAC>
+      TModelConfigForMutate<TModelMutateInstance["dfDiccActionConfig"]>
     >
   > &
-  //adaptacion para los campos del modelo
+  //adaptación para los campos del modelo
   Record<
     keyof TModel,
-    TStructureFieldMetaAndMutater<
-      TIDiccFieldMutateAC,
-      any, //en este nivel es imposible tipar todos los modelos embebidos de cada campo
-      any, //en este nivel es imposible tipar todos los modelos embebidos de cada campo
-      any //en este nivel es imposible tipar todos los modelos embebidos de cada campo
-    >
+    TStructureFieldMetaAndMutater<TFieldMutateInstance>
+    //en este nivel es imposible tipar todos los modelos embebidos de cada campo
   >;
 /**Refactorizacion del tipo */
-export type Trf_TStructureMetaAndMutater = TStructureMetaAndMutater<
-  any,
-  any,
-  any
->;
+export type Trf_TStructureMetaAndMutater = TStructureMetaAndMutater<any>;
 /** */
 export type TStructureMetaAndValidator<
   TModel,
-  TIDiccFieldValAC = IDiccFieldValActionConfigG,
-  TIDiccModelValAC = IDiccModelValActionConfigG,
-  TIDiccRequestValAC = IDiccRequestValActionConfigG
+  TFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
+  TModelValInstance extends ModelLogicValidation = ModelLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation
 > = TStructureMetadataModuleConfigForModel<TModel> &
   //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
   Partial<
@@ -476,30 +495,24 @@ export type TStructureMetaAndValidator<
         IStructureMetadataModuleConfig<any>["modelMeta"],
         "__valConfig"
       >,
-      TModelConfigForVal<TIDiccModelValAC, TIDiccRequestValAC>
+      TModelConfigForVal<
+        TModelValInstance["dfDiccActionConfig"],
+        TRequestValInstance["dfDiccActionConfig"]
+      >
     >
   > &
   //adaptacion para los campos del modelo
   Record<
     keyof TModel,
-    TStructureFieldMetaAndValidator<
-      TIDiccFieldValAC,
-      any, //en este nivel es imposible tipar todos los modelos embebidos de cada campo
-      any, //en este nivel es imposible tipar todos los modelos embebidos de cada campo
-      any //en este nivel es imposible tipar todos los modelos embebidos de cada campo
-    >
+    TStructureFieldMetaAndValidator<TFieldValInstance>
+    //en este nivel es imposible tipar todos los modelos embebidos de cada campo
   >;
-/**Refactorizacion del tipo */
-export type Trf_TStructureMetaAndValidator = TStructureMetaAndValidator<
-  any,
-  any,
-  any,
-  any
->;
+/**Refactorización del tipo */
+export type Trf_TStructureMetaAndValidator = TStructureMetaAndValidator<any>;
 /** */
 export type TStructureMetaAndHook<
   TModel,
-  TIDiccStructureHookAC = IDiccStructureHookActionConfigG
+  TStructureHookInstance extends StructureLogicHook = StructureLogicHook
 > = TStructureMetadataModuleConfigForModel<TModel> &
   //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
   Partial<
@@ -508,15 +521,15 @@ export type TStructureMetaAndHook<
         IStructureMetadataModuleConfig<any>["modelMeta"],
         "__hookConfig"
       >,
-      TStructureConfigForHook<TIDiccStructureHookAC>
+      TStructureConfigForHook<TStructureHookInstance["dfDiccActionConfig"]>
     >
   >;
 /**Refactorizacion del tipo */
-export type Trf_TStructureMetaAndHook = TStructureMetaAndHook<any, any>;
+export type Trf_TStructureMetaAndHook = TStructureMetaAndHook<any>;
 /** */
 export type TStructureMetaAndProvider<
   TModel,
-  TIDiccStructureProviderAC = IDiccStructureProviderActionConfigG
+  TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider
 > = TStructureMetadataModuleConfigForModel<TModel> &
   //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
   Partial<
@@ -525,7 +538,7 @@ export type TStructureMetaAndProvider<
         IStructureMetadataModuleConfig<any>["modelMeta"],
         "__providerConfig"
       >,
-      TModelConfigForProvider<TIDiccStructureProviderAC>
+      TModelConfigForProvider<TStructureProviderInstance["dfDiccActionConfig"]>
     >
   >;
 /**Refactorizacion del tipo */
@@ -533,14 +546,13 @@ export type Trf_TStructureMetaAndProvider = TStructureMetaAndProvider<any>;
 /** */
 export type TStructureMetaAndCtrl<
   TModel,
-  TIDiccModelMutateAC = IDiccModelMutateActionConfigG,
-  TIDiccModelValAC = IDiccModelValActionConfigG,
-  TIDiccRequestValAC = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC = IDiccStructureProviderActionConfigG,
+  TModelMutateInstance extends ModelLogicMutater = ModelLogicMutater,
+  TModelValInstance extends ModelLogicValidation = ModelLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
+  TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
+  TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
   TKeyDiccActionRequest extends string = string
 > = TStructureMetadataModuleConfigForModel<TModel> &
-  //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
   Partial<
     Record<
       keyof Pick<
@@ -548,11 +560,11 @@ export type TStructureMetaAndCtrl<
         "__ctrlConfig"
       >,
       TModelConfigForCtrl<
-        TIDiccModelMutateAC &
-          TIDiccModelValAC &
-          TIDiccRequestValAC &
-          TIDiccStructureHookAC &
-          TIDiccStructureProviderAC,
+        TModelMutateInstance,
+        TModelValInstance,
+        TRequestValInstance,
+        TStructureHookInstance,
+        TStructureProviderInstance,
         TKeyDiccActionRequest
       >
     >
@@ -562,39 +574,41 @@ export type Trf_TStructureMetaAndCtrl = TStructureMetaAndCtrl<any>;
 /** */
 export type TStructureFull<
   TModel,
-  TIDiccFieldMutateAC = IDiccFieldMutateActionConfigG,
-  TIDiccModelMutateAC = IDiccModelMutateActionConfigG,
-  TIDiccFieldValAC = IDiccFieldValActionConfigG,
-  TIDiccModelValAC = IDiccModelValActionConfigG,
-  TIDiccRequestValAC = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC = IDiccStructureProviderActionConfigG,
+  TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
+  TModelMutateInstance extends ModelLogicMutater = ModelLogicMutater,
+  TFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
+  TModelValInstance extends ModelLogicValidation = ModelLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
+  TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
+  TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
   TKeyDiccActionRequest extends string = string
 > = TStructureMetadataModuleConfigForModel<TModel> &
-  //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
+  //se reasigna la propiedad del modulo sin cambiar su nombre de identificación
   Partial<
     Record<
       keyof Pick<
         IStructureMetadataModuleConfig<any>["modelMeta"],
         "__mutateConfig"
       >,
-      TModelConfigForMutate<TIDiccModelMutateAC>
+      TModelConfigForMutate<TModelMutateInstance["dfDiccActionConfig"]>
     > &
-      //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
       Record<
         keyof Pick<
           IStructureMetadataModuleConfig<any>["modelMeta"],
           "__valConfig"
         >,
-        TModelConfigForVal<TIDiccModelValAC, TIDiccRequestValAC>
+        TModelConfigForVal<
+          TModelValInstance["dfDiccActionConfig"],
+          TRequestValInstance["dfDiccActionConfig"]
+        >
       > &
-      //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
+      //se reasigna la propiedad del modulo sin cambiar su nombre de identificación
       Record<
         keyof Pick<
           IStructureMetadataModuleConfig<any>["modelMeta"],
           "__hookConfig"
         >,
-        TStructureConfigForHook<TIDiccStructureHookAC>
+        TStructureConfigForHook<TStructureHookInstance["dfDiccActionConfig"]>
       > &
       //se reasigna la propiedad del modulo sin cambiar su nombre de identificacion
       Record<
@@ -602,7 +616,9 @@ export type TStructureFull<
           IStructureMetadataModuleConfig<any>["modelMeta"],
           "__providerConfig"
         >,
-        TModelConfigForProvider<TIDiccStructureProviderAC>
+        TModelConfigForProvider<
+          TStructureProviderInstance["dfDiccActionConfig"]
+        >
       > &
       Record<
         keyof Pick<
@@ -610,11 +626,11 @@ export type TStructureFull<
           "__ctrlConfig"
         >,
         TModelConfigForCtrl<
-          TIDiccModelMutateAC &
-            TIDiccModelValAC &
-            TIDiccRequestValAC &
-            TIDiccStructureHookAC &
-            TIDiccStructureProviderAC,
+          TModelMutateInstance,
+          TModelValInstance,
+          TRequestValInstance,
+          TStructureHookInstance,
+          TStructureProviderInstance,
           TKeyDiccActionRequest
         >
       >
@@ -623,25 +639,13 @@ export type TStructureFull<
   Record<
     keyof TModel,
     TStructureFieldFull<
-      TIDiccFieldMutateAC,
-      TIDiccFieldValAC,
-      any, //en este nivel es imposible tipar todos los modelos embebidos de cada campo
-      any, //en este nivel es imposible tipar todos los modelos embebidos de cada campo
-      any, //en este nivel es imposible tipar todos los modelos embebidos de cada campo
-      any, //en este nivel es imposible tipar todos los modelos embebidos de cada campo
-      any //en este nivel es imposible tipar todos los modelos embebidos de cada campo
+      TFieldMutateInstance,
+      TFieldValInstance
+      //en este nivel es imposible tipar todos los modelos embebidos de cada campo
     >
   >;
 /**Refactorizacion del tipo */
-export type Trf_TStructureFull = TStructureFull<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any
->;
+export type Trf_TStructureFull = TStructureFull<any>;
 /**claves identificadoras de todos los contextos
  * de módulos internos */
 export type TKeyStructureInternalModuleContext =

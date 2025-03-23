@@ -4,7 +4,7 @@ import {
   TKeyStructureModifyRequestController,
   TKeyStructureReadRequestController,
 } from "../../../../src/seed/logic/controllers/_structure-ctrl";
-import { IStructureBuilderBaseMetadata } from "../../../../src/seed/logic/meta/metadata-builder-shared";
+import { IStructureBuilderBaseMetadata } from "../../../../src/seed/logic/meta/builder-shared";
 import { StructureCriteriaHandler } from "../../../../src/seed/logic/criterias/structure-criteria-handler";
 import { StructureLogicHook } from "../../../../src/seed/logic/hooks/structure-hook";
 import { FieldLogicMutater } from "../../../../src/seed/logic/mutaters/field-mutater";
@@ -13,20 +13,24 @@ import { StructureLogicProvider } from "../../../../src/seed/logic/providers/str
 import { FieldLogicValidation } from "../../../../src/seed/logic/validators/field-validation";
 import { ModelLogicValidation } from "../../../../src/seed/logic/validators/model-validation";
 import { RequestLogicValidation } from "../../../../src/seed/logic/validators/request-validation";
-import { Util_Ctrl } from "../../../../src/seed/logic/controllers/_util-ctrl";
 import {
   TFieldCtrlActionFn,
   TModelCtrlActionFn,
-} from "../../../../src/seed/logic/controllers/_shared";
+} from "../../../../src/seed/logic/controllers/shared";
 import { TCapitalizeFirstLetter } from "../../../../src/seed/util/shared";
+import { CookieDriver } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/cookie/cookie-driver";
+import { TLocalCookieCustomQueryDriverFn } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/cookie/shared";
+import { Util_Module } from "../../../../src/seed/logic/util/util-module";
+import { IStructureModelReadCriteria } from "../../../../src/seed/logic/criterias/shared";
+import { Module } from "../../../../src/seed/logic/config/module";
 //████ REQUEST ACTIONS ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras de las acciones de petición para el modo lectura de datos */
 export type TKeyModelTestReadRequestController =
   //...aqui los nombres de las acciones de petición a usar en este controller
   TKeyStructureReadRequestController;
-/**claves identificadoras de las acciones de peticion para el modo modificacion de datos */
+/**claves identificadoras de las acciones de petición para el modo modificación de datos */
 export type TKeyModelTestModifyRequestController =
-  //...aqui los nombres de las acciones de peticion a usar en este controller
+  //...aqui los nombres de las acciones de petición a usar en este controller
   TKeyStructureModifyRequestController;
 type TModel = ModelTest;
 type TStructureCriteriaInstance = StructureCriteriaHandler<TModel>;
@@ -44,20 +48,16 @@ type TRecordModelRequestController = Record<
   TKeyStructureReadRequestController | TKeyStructureModifyRequestController,
   TModelCtrlActionFn<
     TModel,
-    TModelMutateInstance["dfDiccActionConfig"],
-    TModelValInstance["dfDiccActionConfig"],
-    TRequestValInstance["dfDiccActionConfig"],
-    TStructureHookInstance["dfDiccActionConfig"],
-    TStructureProviderInstance["dfDiccActionConfig"]
+    TModelMutateInstance,
+    TModelValInstance,
+    TRequestValInstance,
+    TStructureHookInstance,
+    TStructureProviderInstance
   >
 >;
 type TRecordFieldRequestController = Record<
   `checkField${TCapitalizeFirstLetter<keyof ModelTest>}`,
-  TFieldCtrlActionFn<
-    TModel,
-    TFieldMutateInstance["dfDiccActionConfig"],
-    TFieldValInstance["dfDiccActionConfig"]
-  >
+  TFieldCtrlActionFn<TModel, TFieldMutateInstance, TFieldValInstance>
 >;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
@@ -88,7 +88,7 @@ export class ModelTestCtrl__full
     TStructureProviderInstance,
     TKeyDiccActionRequest
   > {
-    const util = Util_Ctrl.getInstance();
+    const util = Module.util;
     const dfModel = new ModelTest();
     return {
       keySrc: util.getClassName(dfModel),
@@ -123,11 +123,13 @@ export class ModelTestCtrl__full
           },
           __ctrlConfig: {
             fieldCtrl: {
-              aTKeysActionRequest: [
-                ["fieldMutate", "anyTrim"],
-                ["fieldVal", "isTypeOf"],
-                ["fieldVal", "isRequired"],
-              ],
+              criteriaRequestConfig: {
+                aTKeysGlobalActionConfig: [
+                  ["fieldMutate", "anyTrim"],
+                  ["fieldVal", "isTypeOf"],
+                  ["fieldVal", "isRequired"],
+                ],
+              },
             },
           },
         },
@@ -155,11 +157,13 @@ export class ModelTestCtrl__full
           },
           __ctrlConfig: {
             fieldCtrl: {
-              aTKeysActionRequest: [
-                ["fieldMutate", "anyTrim"],
-                ["fieldVal", "isTypeOf"],
-                ["fieldVal", "isRequired"],
-              ],
+              criteriaRequestConfig: {
+                aTKeysGlobalActionConfig: [
+                  ["fieldMutate", "anyTrim"],
+                  ["fieldVal", "isTypeOf"],
+                  ["fieldVal", "isRequired"],
+                ],
+              },
             },
           },
         },
@@ -168,7 +172,7 @@ export class ModelTestCtrl__full
             diccActionsConfig: {
               isRequired: true,
               isModel: {
-                modelOnlyFieldDiccAC: undefined, //automatico
+                modelForDiccAC: undefined, //automatico
               },
             },
           },
@@ -176,58 +180,194 @@ export class ModelTestCtrl__full
         __providerConfig: {
           structureProvider: {
             diccActionsConfig: {
-              runProvider: {
-                serviceToRun: { keyService: "http", keyDriver: "fetch" },
-                serviceConfig: {
-                  client: {
-                    web: {
-                      http: {
-                        diccDriverConfig: {
-                          axios: {
-                            urlRoot: "http://www.mytest.com",
-                          },
-                          fetch: {
-                            urlRoot: "http://www.mytest.com",
-                          },
-                        },
-                      },
-                    },
-                    app: {},
-                  },
-                },
+              singleRunDriver: {
+                nameLogicDriver: CookieDriver.getNameLogicDriver(),
               },
             },
           },
         },
         __ctrlConfig: {
           modelCtrl: {
-            diccATKeysActionRequest: {
-              readAll: [["structureProvider", "runProvider"]],
-              count: [["structureProvider", "runProvider"]],
-              create: [
-                ["modelMutate", "mutateModel"],
-                ["modelVal", "isTypeOfModel"],
-                ["modelVal", "isRequired"],
-                ["modelVal", "isModel"],
-                ["structureProvider", "runProvider"],
-              ],
-              update: [
-                ["modelMutate", "mutateModel"],
-                ["modelVal", "isTypeOfModel"],
-                ["modelVal", "isRequired"],
-                ["modelVal", "isModel"],
-                ["structureProvider", "runProvider"],
-              ],
-              delete: [["structureProvider", "runProvider"]],
-              //createMany: [[]],
-              //updateMany: [],
-              //deleteMany: [],
+            diccCriteriaRequestConfig: {
+              readAll: {
+                type: "read",
+                keyActionRequest: "readAll",
+                expectedDataType: "array",
+                limit: 5,
+                aTKeysGlobalActionConfig: [
+                  ["structureProvider", "singleRunDriver"],
+                ],
+              },
+              readOne: {
+                type: "read",
+                keyActionRequest: "readOne",
+                expectedDataType: "object", //solo puede ser 1
+                diccGlobalAC: {
+                  structureProvider: {
+                    singleRunDriver: {
+                      nameLogicDriver: CookieDriver.getNameLogicDriver(),
+                    },
+                  },
+                },
+                aTKeysGlobalActionConfig: [
+                  ["structureProvider", "singleRunDriver"],
+                ],
+                aTCustomQueryDriverFunctions: [
+                  [
+                    CookieDriver.getNameLogicDriver(),
+                    (async (driver, literalBag, registers) => {
+                      const regs = registers as TModel[];
+                      const f_reg = regs.find((reg) => reg._id === "5"); //SOLO 1
+                      return f_reg;
+                    }) as TLocalCookieCustomQueryDriverFn,
+                  ],
+                ],
+              },
+              readMany: {
+                type: "read",
+                keyActionRequest: "readMany",
+                expectedDataType: "array",
+                limit: 5,
+                aTKeysGlobalActionConfig: [
+                  ["structureProvider", "singleRunDriver"],
+                ],
+                aTCustomQueryDriverFunctions: [
+                  [
+                    CookieDriver.getNameLogicDriver(),
+                    (async (driver, literalBag, registers) => {
+                      const regs = registers as TModel[];
+                      const f_regs = regs.filter((reg) => reg._id === "5");
+                      return f_regs;
+                    }) as TLocalCookieCustomQueryDriverFn,
+                  ],
+                ],
+              },
+              readById: {
+                type: "read",
+                keyActionRequest: "readById",
+                expectedDataType: "object", //solo puede ser 1
+                aTKeysGlobalActionConfig: [
+                  ["structureProvider", "singleRunDriver"],
+                ],
+                aTCustomQueryDriverFunctions: [
+                  [
+                    CookieDriver.getNameLogicDriver(),
+                    (async (driver, literalBag, registers) => {
+                      const util = Util_Module.getInstance(); //mejor usar una genérica
+                      const regs = registers as TModel[];
+                      const f_reg = regs.find((r) => r._id === "5"); //SOLO 1
+                      return f_reg;
+                    }) as TLocalCookieCustomQueryDriverFn,
+                  ],
+                ],
+              },
+              exist: {
+                type: "read",
+                keyActionRequest: "exist",
+                expectedDataType: "boolean",
+                aTKeysGlobalActionConfig: [
+                  ["structureProvider", "singleRunDriver"],
+                ],
+                aTCustomQueryDriverFunctions: [
+                  [
+                    CookieDriver.getNameLogicDriver(),
+                    (async (driver, literalBag, registers) => {
+                      const util = Util_Module.getInstance(); //mejor usar una genérica
+                      const { literalCriteria } = literalBag;
+                      const { diccQueryParam } =
+                        literalCriteria as IStructureModelReadCriteria<TModel>;
+                      const { _pathDoc } = diccQueryParam; //los parámetros para construir la consulta o filtración
+                      const regs = registers as TModel[];
+                      const f_reg = regs.find(
+                        (reg) => reg._pathDoc === _pathDoc
+                      );
+                      const isExist = util.isNotUndefinedAndNotNull(f_reg);
+                      return isExist;
+                    }) as TLocalCookieCustomQueryDriverFn,
+                  ],
+                ],
+              },
+              count: {
+                type: "read",
+                keyActionRequest: "count",
+                expectedDataType: "number",
+                aTKeysGlobalActionConfig: [
+                  ["structureProvider", "singleRunDriver"],
+                ],
+                aTCustomQueryDriverFunctions: [
+                  [
+                    CookieDriver.getNameLogicDriver(),
+                    (async (driver, literalBag, registers) => {
+                      const util = Util_Module.getInstance(); //mejor usar una genérica
+                      const { literalCriteria } = literalBag;
+                      const { diccQueryParam } =
+                        literalCriteria as IStructureModelReadCriteria<TModel>;
+                      const { _id_range } = diccQueryParam; //los parámetros para construir la consulta o filtración
+                      const regs = registers as TModel[];
+                      const f_regs = regs.filter((reg) => {
+                        const r = (_id_range as any[]).includes(reg._id);
+                        return r;
+                      });
+                      const counter = util.isNotUndefinedAndNotNull(f_regs);
+                      return counter;
+                    }) as TLocalCookieCustomQueryDriverFn,
+                  ],
+                ],
+              },
+              inform: {
+                type: "read",
+                keyActionRequest: "inform",
+                expectedDataType: "string",
+                aTKeysGlobalActionConfig: [
+                  ["structureProvider", "singleRunDriver"],
+                ],
+              },
+              create: {
+                type: "modify",
+                modifyType: "create",
+                keyActionRequest: "create",
+                expectedDataType: "object",
+                isCreateOrUpdate: true,
+                aTKeysGlobalActionConfig: [
+                  ["modelMutate", "mutateModel"],
+                  ["modelVal", "isTypeOfModel"],
+                  ["modelVal", "isModel"],
+                  ["structureProvider", "singleRunDriver"],
+                ],
+              },
+              update: {
+                type: "modify",
+                modifyType: "update",
+                keyActionRequest: "update",
+                expectedDataType: "object",
+                isCreateOrUpdate: true,
+                aTKeysGlobalActionConfig: [
+                  ["modelMutate", "mutateModel"],
+                  ["modelVal", "isTypeOfModel"],
+                  ["modelVal", "isModel"],
+                  ["structureProvider", "singleRunDriver"],
+                ],
+              },
+              delete: {
+                type: "modify",
+                modifyType: "delete",
+                keyActionRequest: "delete",
+                expectedDataType: "object",
+                //isCreateOrUpdate: true,
+                aTKeysGlobalActionConfig: [
+                  //["modelMutate", "mutateModel"],
+                  //["modelVal", "isTypeOfModel"],
+                  //["modelVal", "isModel"],
+                  ["structureProvider", "singleRunDriver"],
+                ],
+              },
             },
           },
         },
       },
       customDiccModuleInstance: {
-        //...aqui instancias de modulos personalizados
+        //...aqui instancias de módulos personalizados
+        driversList: [new CookieDriver()],
       },
     };
   }

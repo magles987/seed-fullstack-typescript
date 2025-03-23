@@ -8,7 +8,7 @@ import {
   TKeyHandlerModule,
 } from "./shared-modules";
 import { getGlobalConfig } from "./global-config";
-import { TFnBagForActionModule } from "../bag-module/shared";
+import { TFnBagForActionModule } from "../bag/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**interfaz especial para las opciones de
  * contruccion de una accion de configuracion */
@@ -43,21 +43,37 @@ export abstract class Module {
   /** configuración de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     //const superDf = Module.getDefault(); //no tiene padre
-    return {};
+    return {
+      keyModule: undefined,
+    };
   };
-  /**utilidades de este modulo */
-  protected abstract readonly util: unknown; //su tipo sera asignado en cada clase materializada de modulo
-  /**
-   * @param _keyModule clave identificadora del modulo
-   */
-  constructor(private readonly _keyModule: TKeyModule) {}
-  /**@returns los valores de configuracion predefinidos */
-  protected getDefault() {
-    return Module.getDefault();
-  }
   /**clave identificadora del modulo*/
   public get keyModule(): TKeyModule {
     return this._keyModule;
+  }
+  public set keyModule(v: TKeyModule) {
+    if (
+      (this._keyModule !== undefined && this._keyModule !== null) ||
+      typeof v !== "string"
+    )
+      return; //🚫 modificaciones posteriores
+    this._keyModule = v;
+  }
+  /**utilidades de este modulo */
+  protected readonly util = Module.util;
+  /**.utilidades del modulo*/
+  public static get util(): Util_Module {
+    return Util_Module.getInstance();
+  }
+  /**
+   * @param _keyModule clave identificadora del modulo
+   */
+  constructor(private _keyModule: TKeyModule) {
+    this.util = Util_Module.getInstance();
+  }
+  /**@returns los valores de configuracion predefinidos */
+  protected getDefault() {
+    return Module.getDefault();
   }
 }
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -70,8 +86,38 @@ export abstract class LogicModule extends Module {
     const superDf = Module.getDefault();
     return {
       ...superDf,
+      keySrc: undefined as string,
+      keyLogicContext: undefined as TKeyLogicContext,
     };
   };
+  /**el contexto lógico de esta librería */
+  public get keyLogicContext() {
+    return this._keyLogicContext;
+  }
+  protected set keyLogicContext(v: TKeyLogicContext) {
+    if (
+      (this._keyLogicContext !== undefined && this._keyLogicContext !== null) ||
+      typeof v !== "string"
+    )
+      return; //🚫 modificaciones posteriores
+    this._keyLogicContext = v;
+    return;
+  }
+  private _keySrc: string;
+  /**clave identificadora del recurso asociado a modulo*/
+  public get keySrc(): string {
+    return this._keySrc;
+  }
+  /**clave identificadora del recurso asociado a modulo*/
+  public set keySrc(v: string) {
+    if (
+      (this._keySrc !== undefined && this._keySrc !== null) ||
+      typeof v !== "string"
+    )
+      return; //🚫 modificaciones posteriores
+    this._keySrc = v;
+    return;
+  }
   /**
    * @param keyModule clave identificadora del modulo
    * @param _keyLogicContext contexto lógico (estructural o primitivo)
@@ -79,21 +125,12 @@ export abstract class LogicModule extends Module {
    */
   constructor(
     keyModule: TKeyModule,
-    private readonly _keyLogicContext: TKeyLogicContext,
-    private readonly _keySrc: string
+    private _keyLogicContext: TKeyLogicContext
   ) {
     super(keyModule);
   }
   protected override getDefault() {
     return LogicModule.getDefault();
-  }
-  /**el contexto logico de esta libreria */
-  public get keyLogicContext() {
-    return this._keyLogicContext;
-  }
-  /**clave indentificadora del recurso asociado a modulo*/
-  public get keySrc(): string {
-    return this._keySrc;
   }
 }
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -115,12 +152,8 @@ export abstract class HandlerModule extends LogicModule {
    * @param keyLogicContext contexto logico (primitivo o estructurado).
    * @param keySrc indentificadora del recurso asociado a modulo
    */
-  constructor(
-    keyModule: TKeyHandlerModule,
-    keyLogicContext: TKeyLogicContext,
-    keySrc: string
-  ) {
-    super(keyModule, keyLogicContext, keySrc);
+  constructor(keyModule: TKeyHandlerModule, keyLogicContext: TKeyLogicContext) {
+    super(keyModule, keyLogicContext);
   }
   protected override getDefault() {
     return HandlerModule.getDefault();
@@ -132,7 +165,9 @@ export abstract class HandlerModule extends LogicModule {
  */
 export abstract class LogicModuleWithReport extends LogicModule {
   public static override readonly getDefault = () => {
+    const superDf = LogicModule.getDefault();
     return {
+      ...superDf,
       /**tolerancia hacia la respuesta del modulo */
       globalTolerance: ELogicResStatusCode.ERROR,
       /**estado inicial de respuesta */
@@ -154,12 +189,8 @@ export abstract class LogicModuleWithReport extends LogicModule {
    * @param keyLogicContext contexto logico (primitivo o estructurado).
    * @param keySrc indentificadora del recurso asociado a modulo
    */
-  constructor(
-    keyModule: TKeyModule,
-    keyLogicContext: TKeyLogicContext,
-    keySrc: string
-  ) {
-    super(keyModule, keyLogicContext, keySrc);
+  constructor(keyModule: TKeyModule, keyLogicContext: TKeyLogicContext) {
+    super(keyModule, keyLogicContext);
   }
   protected override getDefault() {
     return LogicModuleWithReport.getDefault();
@@ -181,6 +212,7 @@ export abstract class LogicModuleWithReport extends LogicModule {
     )
       return; //❗garantiza solo 1 vez inicializar❗
     this._metadataHandler = metadataHandler;
+    this.keySrc = (metadataHandler as HandlerModule).keySrc;
   }
   /**construye un reporte de manejador de respuesta para este modulo
    *
@@ -189,7 +221,10 @@ export abstract class LogicModuleWithReport extends LogicModule {
    *
    * @returns instancia del reporte de manejador de respuesta
    */
-  public abstract buildReportHandler(bag: unknown, keyAction: unknown): unknown;
+  protected abstract buildReportHandler(
+    bag: unknown,
+    keyAction: unknown
+  ): unknown;
 }
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *abstract*
@@ -222,20 +257,15 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
   /**
    * @param keyModule clave identificadora del modulo
    * @param keyLogicContext contexto logico (primitivo o estructurado).
-   * @param keySrc indentificadora del recurso asociado a modulo
    */
-  constructor(
-    keyModule: TKeyActionModule,
-    keyLogicContext: TKeyLogicContext,
-    keySrc: string
-  ) {
-    super(keyModule, keyLogicContext, keySrc);
+  constructor(keyModule: TKeyActionModule, keyLogicContext: TKeyLogicContext) {
+    super(keyModule, keyLogicContext);
     this.initDiccActionFn();
   }
   protected override getDefault() {
     return ActionModule.getDefault();
   }
-  /**inicializa el diccionario de funciones (metodos) de accion
+  /**inicializa el diccionario de funciones (métodos) de accion
    *
    * ⚠ permite ser inicializado una unica vez, los demas llamados
    * a este metodo serán ignorados

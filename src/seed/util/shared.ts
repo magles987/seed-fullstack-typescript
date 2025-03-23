@@ -1,5 +1,11 @@
 /**tipos de conversiones de estandares de nomenclatura en codigo*/
-export type TStrCase = "Snake" | "Kebab" | "Camel" | "Pascal";
+export type TStrCase =
+  | "Snake"
+  | "Kebab"
+  | "Camel"
+  | "Pascal"
+  | "Constant"
+  | "Dot";
 /**tipado extendido para los tipos primitivos, function, objeto o array*/
 export type TExtPrimitiveTypes =
   | "string"
@@ -11,15 +17,53 @@ export type TExtPrimitiveTypes =
   | "null"
   | "object"
   | "array"
+  | "tuple"
   | "function";
-/**estructura de configuracion para metodos
+/**tipado interno para permitir la recursividad en el método isValueType */
+interface IRecursiveObjectForTypes {
+  [key: string]: TAExtValueType;
+}
+/**tipado base para recursividad de tipos en el método isValueType */
+export type TExtValueType =
+  | TExtPrimitiveTypes
+  | IRecursiveObjectForTypes
+  | TAExtValueType;
+/**tipado para agrupación de tipos  */
+export type TAExtValueType = Array<TExtValueType>;
+/**opciones para evaluar tipo en grupo */
+export interface IValueTypeOption {
+  /** `allowNumber_String = false`: Permite que un string numérico sea validado como un número (por ejemplo, `"123"` siendo string, se permite analizar y validar como número). */
+  allowNumber_String?: boolean;
+  /** `allowBigint_String = false`: Permite que un string numérico gigante sea validado como un bigint. */
+  allowBigint_String?: boolean;
+  /** `allowStringEmpty = false`: Permite que un string vacío ( `""` ) sea considerado válido. */
+  allowStringEmpty?: boolean;
+  /** `allowObjectEmpty = false`: Permite que un string vacío ( `{}` ) sea considerado válido. */
+  allowObjectEmpty?: boolean;
+  /** `allowArrayEmpty = false`: Permite que un string vacío ( `[]` ) sea considerado válido.*/
+  allowArrayEmpty?: boolean;
+  /**`tupleSize = undefined`: Define el tamaño esperado de una tupla. Puede ser un número (tamaño fijo)
+   * o un array de dos números `[min, max]` (tamaño variable).
+   *
+   * ❗este argumento es indispensable en caso que en algún nivel del esquema de `types` se verifique
+   * el tipo `"tuple"` (asi explicitamente en texto), por el contrario si la verificacion de la
+   * tupla se hace implicitamente (con varios items array), este argumento es opcional, pero si
+   * se asigna tendrá prioridad de verificación❗.
+   *
+   */
+  tupleSize?: number | [number, number];
+}
+/**estructura de configuración de opciones para métodos
  * `isEquevalentTo()`,
  * `isGreaterTo()`,
  * `isLesserTo()`
- * y sub metodos que dependan de estos
+ * y sub métodos que dependan de estos
  * */
-export interface IConfigEqGtLt {
-  /**determina si la comparacion permite
+export interface IOptionEqGtLt {
+  /**
+   * Predefinido en `false`
+   *
+   * determina si la comparación permite
    * incluir equivalencia*/
   isAllowEquivalent: boolean;
   /**
@@ -31,6 +75,10 @@ export interface IConfigEqGtLt {
    * ⚠ Solo para objetos
    */
   keyOrKeysPath?: string | string[];
+  /**Predefinido en `this.charSeparatorLogicPath`
+   * El carácter separador a utilizar entre los elementos del path.
+   */
+  charSeparator?: string;
   /**
    * Predefinido en `false`
    *
@@ -40,6 +88,52 @@ export interface IConfigEqGtLt {
    *
    */
   isCompareLength?: boolean;
+  /**
+   * Predefinido en `true`
+   *
+   * ❗Aplica solamente para equivalencia de arrays❗
+   *
+   * determina si entre los arrays se
+   * debe comparar en orden estricto los elementos
+   * o los elementos pueden estar en orden aleatorio
+   * (lo importante es que sean comparables)
+   */
+  isStrictArrayOrder?: boolean;
+  /**
+   *
+   * Predefinido en `false`
+   *
+   * ❗Aplica solamente para mayor y menor que de arrays❗
+   *
+   * determina que debe compararen orden matricial
+   * cada uno de los elementos sin tener en cuenta
+   * el orden.
+   *
+   * @example
+   * ````
+   * let a = ["a", 2, true];
+   * let b = ["b", 1, false];
+   * //¿cual es mayor o cual el menor?
+   *
+   * ````
+   * Sin orden matricial se evalua elemento contra
+   * elemento en el orden que se encuentren por lo tanto
+   * el elemento `a[0]` que es `"a"` en comparación con
+   * `b[0]` que es `"b"` entonces el array `a` es mayor
+   * que el array `b` (los demás elementos se ignoran).
+   *
+   * Con orden matricial se evalua cada elemento del array
+   * `a` contra todos los elemento del array `b`, cada
+   * resultado de comparación se le asigna un valor:
+   *
+   * `1` si es mayor, `0` si es igual, `-1` si es menor
+   *
+   * luego se suman los resultados de cada comparación y
+   * si el resultado es *positivo* significa que es mayor,
+   * si es *negativo* significa que es menor y si es *0*
+   * indica que es igual
+   */
+  isMatrixCompared?: boolean;
   /**
    * Predefinido en `false`
    *

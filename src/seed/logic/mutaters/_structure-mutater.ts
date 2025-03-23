@@ -1,23 +1,17 @@
-import { LogicMutater } from "./_mutater";
+import { TStructureFnBagForActionModule } from "../bag/shared";
+import { Trf_StructureBag } from "../bag/structure-bag";
+import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
+import { ELogicCodeError, LogicError } from "../errors/logic-error";
+import { Trf_TStructureFieldMetaAndMutater } from "../meta/metadata-shared";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
+import { IStructureResponse } from "../reports/shared";
+import { StructureReportHandler } from "../reports/structure-report-handler";
+import { LogicMutater } from "./_mutater";
 import {
   TFieldConfigForMutate,
-  TModelConfigForMutate,
   TKeyStructureDeepMutateModuleContext,
+  TModelConfigForMutate,
 } from "./shared";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import {
-  StructureReportHandler,
-  Trf_StructureReportHandler,
-} from "../reports/structure-report-handler";
-import {
-  TStructureFieldMetaAndMutater,
-  TStructureMetaAndMutater,
-} from "../meta/metadata-shared";
-import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
-import { IStructureResponse } from "../reports/shared";
-import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
-import { TStructureFnBagForActionModule } from "../bag-module/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipado refactorizado de la clase */
 export type Trf_StructureLogicMutater = StructureLogicMutater<any>;
@@ -46,13 +40,11 @@ export abstract class StructureLogicMutater<
   }
   /**
    * @param _keyStructureModuleContext contexto de acciones para este modulo estructurado
-   * @param keySrc indentificadora del recurso asociado a modulo
    */
   constructor(
-    private readonly _keyStructureModuleContext: TKeyStructureDeepMutateModuleContext,
-    keySrc: string
+    private readonly _keyStructureModuleContext: TKeyStructureDeepMutateModuleContext
   ) {
-    super("structure", keySrc);
+    super("structure");
   }
   protected override getDefault() {
     return StructureLogicMutater.getDefault();
@@ -93,14 +85,10 @@ export abstract class StructureLogicMutater<
     let config: unknown;
     const metadata = this.getMetadataWithContextModule(keyPath);
     if (this.keyModuleContext === "fieldMutate") {
-      const metadataField = metadata as TStructureFieldMetaAndMutater<TIDiccAC>;
+      const metadataField = metadata as Trf_TStructureFieldMetaAndMutater;
       config = metadataField.__mutateConfig;
     } else if (this.keyModuleContext === "modelMutate") {
-      const metadataInModel = metadata as TStructureMetaAndMutater<
-        any,
-        any,
-        TIDiccAC
-      >;
+      const metadataInModel = metadata as Trf_TStructureFieldMetaAndMutater;
       config = metadataInModel.__mutateConfig;
     } else {
       throw new LogicError({
@@ -164,7 +152,7 @@ export abstract class StructureLogicMutater<
     );
     return [keyAction, actionConfig];
   }
-  public override buildReportHandler(
+  protected override buildReportHandler(
     bag: Trf_StructureBag,
     keyAction: keyof TIDiccAC
   ): StructureReportHandler {

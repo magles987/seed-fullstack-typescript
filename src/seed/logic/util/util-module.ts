@@ -1,5 +1,6 @@
-import { TKeyStructureContextFull } from "../config/shared-modules";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
+import { Model } from "../models/_model";
+import { Driver } from "../providers/_drivers/_driver";
 import { Util_Logic } from "./util-logic";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *Singleton*
@@ -25,6 +26,33 @@ export class Util_Module extends Util_Logic {
    *````
    */
   public readonly rePrefixesPropsConfig: RegExp[] = [/^__/];
+  /**diccionario de expresiones regulares para validadores */
+  public static readonly diccValRE = {
+    /**permite todos los caracteres y acentos de los lenguajes
+     * (ingles, español, portugues, Frances, italiano, alemán)
+     * ademas se signos de puntuación */
+    alphaNumFull: /^[0-9A-zÀ-Ÿ\d- ,.:;()$@%*#\'\"+-/=!¡¿?]+$/, //new RegExp("^[0-9A-zÀ-Ÿ\d- ,.:;()$@%*#\'\"+-/=!¡¿?]+$"),
+    alphaNumWithSpace: /^[0-9A-zÀ-Ÿ\d- ]+$/,
+    alphaNumWithOutSpace: /^[0-9A-zÀ-Ÿ\d-]+$/,
+    alpha: /^[A-zÀ-Ÿ\\d-]+$/,
+    textNumeric: /^[0-9 ]+$/,
+    genericPhone: /^[()0-9 ]+$/,
+    genericEmail:
+      /^[\w-\.áéíóúÁÉÍÓÚüÜ]{3,}@([\w-áéíóúÁÉÍÓÚüÜ]{2,}\.)*([\w-áéíóúÁÉÍÓÚüÜ]{2,}\.)[\w-áéíóúÁÉÍÓÚüÜ]{2,6}$/,
+    /**conmtraseña con Mayuscula miniscula numero y Caracter especial */
+    hardPassword:
+      /^(?=.*[a-zñáéíóúü])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&])([A-Za-z\d$@$!%*?&]|[^ ])+$/,
+    softPassword: /^[0-9A-zÀ-Ÿ]+$/,
+    /** */
+    dd_mm_yyyy:
+      /^([0-2][0-9]|3[0-1])(\/|\-|\\#|\_|\.)(0[1-9]|1[0-2])\2(\d{4})$/,
+    /**formato de hora */
+    HH_mm_ss: /^([0-1][0-9]|2[0-3])(:)([0-5][0-9])(:)([0-5][0-9])$/,
+  };
+  /**diccionario de expresiones regulares para validadores */
+  public readonly diccValRE = Util_Module.diccValRE;
+  /**... */
+  public readonly charSeparatorLogicName = "-";
   /** */
   constructor() {
     super();
@@ -39,6 +67,16 @@ export class Util_Module extends Util_Logic {
         ? new Util_Module()
         : Util_Module.Util_Module_instance;
     return Util_Module.Util_Module_instance;
+  }
+  /**
+   * @returns el nombre del campo con que
+   * normalmente se identificará cualquier
+   * modelo
+   * ____
+   */
+  public getKeyId(): string {
+    const m: keyof Model = "_id";
+    return m;
   }
   /**
    * Obtiene un diccionario a partir de otro, solo
@@ -70,9 +108,7 @@ export class Util_Module extends Util_Logic {
     includeKeyProperties: string[] = []
   ): TRDicc {
     let r = <TRDicc>{};
-    if (!this.isObject(dicc)) {
-      return <any>{}; //diccionario vacio
-    }
+    if (!this.isObject(dicc)) return <any>{}; //diccionario vacio
     for (const key in dicc) {
       const isExcludePatterns = excludePrefixesPatterns.some((item) =>
         item.test(key)
@@ -93,7 +129,7 @@ export class Util_Module extends Util_Logic {
    */
   public mergeActionConfig(
     tActionConfig: [any, any],
-    config: Parameters<typeof this.deepMergeObjects>[1] = { mode: "soft" }
+    option: Parameters<typeof this.deepMergeObjects>[1] = { mode: "soft" }
   ): any {
     if (!this.isTuple(tActionConfig, 2)) {
       throw new LogicError({
@@ -103,19 +139,13 @@ export class Util_Module extends Util_Logic {
         } is not tuple of actionConfig valid`,
       });
     }
-    if (!this.isObject(config)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${config as any as string} is not config object valid`,
-      });
-    }
     const [baseAC, newAC] = tActionConfig;
     let actionConfig: any = undefined;
     if (newAC === undefined) {
-      //undefined indica que se asigne la configuracion predefinida
+      //undefined indica que se asigne la configuración predefinida
       actionConfig = baseAC;
     } else if (newAC === null) {
-      //null EXPLICITO indica que la accion se desactiva
+      //null EXPLICITO indica que la acción se desactiva
       actionConfig = null;
       //---Posible a futuro-----
       // }else if(newAC === true){
@@ -125,16 +155,16 @@ export class Util_Module extends Util_Logic {
       //     ? newAC //se asume explicitamenete la nueva configuracion
       //     : baseAC;
     } else if (this.isObject(newAC)) {
-      actionConfig = this.deepMergeObjects([baseAC, newAC], config);
+      actionConfig = this.deepMergeObjects([baseAC, newAC], option);
     } else {
       actionConfig = newAC;
     }
     return actionConfig;
   }
-  /** fusiona dos diccionarios de acciones de configuracion */
+  /** fusiona dos diccionarios de acciones de configuración */
   public mergeDiccActionConfig<TDiccAC>(
     tDiccActionConfig: [TDiccAC, TDiccAC],
-    config: Parameters<typeof this.deepMergeObjects>[1] = { mode: "soft" }
+    option: Parameters<typeof this.deepMergeObjects>[1] = { mode: "soft" }
   ): TDiccAC {
     if (!this.isTuple(tDiccActionConfig, 2)) {
       throw new LogicError({
@@ -154,7 +184,7 @@ export class Util_Module extends Util_Logic {
         ] as any as [any[], any[]];
         const aTuplaAC = this.mergeTupleArrayOfTupleActionConfig(
           tATuplaAC,
-          config
+          option
         );
         diccAC = this.arrayEntriesToObject(aTuplaAC) as TDiccAC;
       } else {
@@ -270,95 +300,6 @@ export class Util_Module extends Util_Logic {
     ];
     return rATDiccAC;
   }
-  /**ordena un array de tuplas de accion de configuracion según prioridad */
-  public sortArrayOfTupleActionConfigByPriority<TDiccAC>(
-    aTuplaAC: Array<[keyof TDiccAC, TDiccAC[keyof TDiccAC]]>,
-    keysActionPriority: Array<keyof TDiccAC>
-  ): Array<[keyof TDiccAC, TDiccAC[keyof TDiccAC]]> {
-    if (!this.isArrayTuple(aTuplaAC, [1, 2])) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${aTuplaAC} is not array of action tuple valid`,
-      });
-    }
-    if (!this.isArray(keysActionPriority, true)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${keysActionPriority} is not array of priorities key`,
-      });
-    }
-    const keysAction = aTuplaAC.map((t) => t[0]);
-    const keysActionPri = keysActionPriority.filter((kP) =>
-      keysAction.includes(kP)
-    ); //solo usar las prioridades que estan en las tuplas (las demas ignorarlas)
-    let bfATAC_Pri = [];
-    let bfATAC_leftover = [];
-    let rATuplaAC: Array<[keyof TDiccAC, TDiccAC[keyof TDiccAC]]> = [];
-    for (const tAC of aTuplaAC) {
-      const key = tAC[0];
-      const idxPri = keysActionPri.findIndex((kP) => kP === key);
-      if (idxPri > -1) {
-        bfATAC_Pri[idxPri] = tAC; //conserva la posicion estricta
-      } else {
-        bfATAC_leftover.push(tAC); //el sobrante tambien conserva la posicion de forma no estricta
-      }
-    }
-    //fusionar conservando orden de prioridad
-    rATuplaAC = [...bfATAC_Pri, ...bfATAC_leftover];
-    return rATuplaAC;
-  }
-  /**
-   * filtra acciones que estan activas
-   * ____
-   * @param aDiccActionConfig diccionario con la
-   * configuracion de cada accion (sea que
-   * se ejecuten o no)
-   * ____
-   * @returns el diccionario convertido en array
-   * ordenado segun prioridad
-   * ____
-   */
-  public filterActiveADAC(aDiccActionConfig: object[]): object[] {
-    if (!this.isArray(aDiccActionConfig)) return [];
-    const castException: Parameters<typeof this.convertToBoolean>[1] = [
-      "isZeroAsTrue",
-      "isEmptyAsTrue", //las acciones con configuracion vacia {} se consideran activas
-    ];
-    aDiccActionConfig = this.clone(aDiccActionConfig);
-    aDiccActionConfig = aDiccActionConfig.filter((diccAC) => {
-      const actionConfig = Object.values(diccAC)[0];
-      const r = this.convertToBoolean(actionConfig, castException);
-      return r;
-    });
-    return aDiccActionConfig;
-  }
-  /**crea un key path estandar a aprtir de un array
-   * de claves identificadoras para propositos generales
-   *
-   * @param aKeys el array con las clave sidentificadoras
-   *
-   * @returns el string keyPath ya construido
-   */
-  public buildKeyPathForGeneralPropuse(aKeys: string[]): string {
-    const keyPath = this.buildPath(aKeys, {
-      charSeparator: this.charSeparatorLogicPath,
-      isJoinInitWithSeparator: false,
-      isJoinEndtWithSeparator: false,
-      pathInit: "",
-      pathEnd: "",
-    });
-    return keyPath;
-  }
-  /**crea progresivamente un keyPath
-   * @param baseKeyPath la clave identificadora base de la ruta
-   * @param keyLogic la clave logica a añadir al final del `keyPath`
-   * @returns el `keyPath` ya construido
-   */
-  public buildProgresiveKeyPath(baseKeyPath: string, keyLogic: string): string {
-    const sp = this.charSeparatorLogicPath;
-    const keyPath = `${baseKeyPath}${sp}${keyLogic}`;
-    return keyPath;
-  }
   /**
    * @param keyPath la ruta de la clave identificadora del recurso
    * @returns si es o no embebido segun su path
@@ -412,33 +353,6 @@ export class Util_Module extends Util_Logic {
     const aPath = keyPath.split(sp);
     const lenAPath = aPath.length;
     let r = aPath[lenAPath - 1];
-    return r;
-  }
-  /**verifica si la acción es permitida ejecutarla, se gun las condiciones necesarias
-   *
-   *  - Debe existir la tupla de `[keyModuleContext, keyAction]` bien configurada.
-   *  - El diccionario de configuraciones debe estar bien configurado
-   *  - La configuración asignada a esa acción no puede ser `undefined` o `null`
-   *
-   * @param tKeyGlobalAC tupla formada conformada por:
-   *  - `[0]` clave identificadora del modulo en contexto (`keyModuleContext`).
-   *  - `[1]` clave identificadora de la acción (`keyAction`)
-   * @param diccGlobalAC diccionario con las configuraciones de acciones globales (**ya deben esta fusionadas**)
-   *
-   * @returns si es o no permitido la ejecución de la acción
-   */
-  public isAllowRunAction(
-    tKeyGlobalAC: [string, string],
-    diccGlobalAC: object
-  ): boolean {
-    let r = false;
-    if (!this.isTuple(tKeyGlobalAC, 2) || !this.isObject(diccGlobalAC))
-      return r;
-    const [keyModuleContext, keyAction] = tKeyGlobalAC;
-    const diccAC = diccGlobalAC[keyModuleContext as any];
-    if (!this.isObject(diccAC)) return r;
-    const actionConfig = diccAC[keyAction];
-    r = this.isNotUndefinedAndNotNull(actionConfig);
     return r;
   }
 }

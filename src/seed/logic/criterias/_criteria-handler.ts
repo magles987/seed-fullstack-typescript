@@ -1,13 +1,16 @@
-import { HandlerModule } from "../config/module";
+import { HandlerModule, Module } from "../config/module";
 import {
   TKeyLogicContext,
   TKeyRequestModifyType,
   TKeyRequestType,
 } from "../config/shared-modules";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { LogicMetadataHandler } from "../meta/_metadata-handler";
-import { Util_Criteria } from "./_util-criteria";
 import {
+  LogicMetadataHandler,
+  Trf_LogicMetadataHandler,
+} from "../meta/_metadata-handler";
+import {
+  ICriteria,
   IModifyCriteria,
   IReadCriteria,
   TAConds,
@@ -21,17 +24,19 @@ export type Trf_CriteriaCursor = CriteriaHandler;
  *
  * ...
  */
-export abstract class CriteriaHandler
+export abstract class CriteriaHandler<
+    TKeyDiccActionRequest extends string = string
+  >
   extends HandlerModule
   implements ReturnType<CriteriaHandler["getDefault"]>
 {
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
+    const superDf = HandlerModule.getDefault();
     return {
+      ...superDf,
       expectedDataType: "any",
       keyActionRequest: undefined,
-      //keyLogicContext: undefined,
-      //keySrc: undefined,
       limit: 5,
       sort: undefined,
       type: "read",
@@ -39,13 +44,14 @@ export abstract class CriteriaHandler
       targetPageLogic: 0,
       modifyType: undefined,
       isCreateOrUpdate: false,
-      query: [],
       p_Key: undefined,
       s_Key: undefined,
       urlsExtended: [],
       diccGlobalAC: {},
       aTKeysGlobalActionConfig: [],
-    } as IReadCriteria & IModifyCriteria;
+      diccQueryParam: {},
+      aTCustomQueryDriverFunctions: [],
+    } as typeof superDf & IModifyCriteria & IReadCriteria;
   };
   /**@returns todas las constantes a usar en instancias de esta clase*/
   protected static readonly getCONSTANTS = () => {
@@ -62,6 +68,7 @@ export abstract class CriteriaHandler
       KEYPROPS_DO_NOT_SEND_AT_EXTERNAL: [
         "diccGlobalAC",
         "aTKeysGlobalActionConfig",
+        "aTCustomQueryDriverFunctions",
       ] as Array<keyof (IReadCriteria & IModifyCriteria)>,
     };
   };
@@ -77,7 +84,7 @@ export abstract class CriteriaHandler
    * asignado una instancia
    */
   protected set metadataHandler(metadataHandler: unknown) {
-    const util = Util_Criteria.getInstance();
+    const util = Module.util;
     if (
       !util.isInstance(metadataHandler) ||
       util.isInstance(this._metadataHandler)
@@ -124,7 +131,7 @@ export abstract class CriteriaHandler
       ? this._targetPage
       : this.getDefault().targetPage;
   }
-  private _targetPageLogic?: 0 | 1;
+  private _targetPageLogic: 0 | 1;
   public get targetPageLogic(): 0 | 1 {
     return this._targetPageLogic;
   }
@@ -135,18 +142,6 @@ export abstract class CriteriaHandler
         : this._targetPageLogic !== undefined
         ? this._targetPageLogic
         : this.getDefault().targetPageLogic;
-  }
-  private _query?: TAConds;
-  public get query(): TAConds {
-    return this._query;
-  }
-  public set query(v: TAConds) {
-    this._query = this.util.isArray(v)
-      ? v
-      : this._query !== undefined
-      ? this._query
-      : this.getDefault().query;
-    this.checkQueryConds(this._query);
   }
   private _type?: TKeyRequestType;
   public get type(): TKeyRequestType {
@@ -160,13 +155,13 @@ export abstract class CriteriaHandler
         ? this._type
         : this.getDefault().type;
   }
-  private _keyActionRequest: string;
-  public get keyActionRequest(): string {
+  private _keyActionRequest: TKeyDiccActionRequest;
+  public get keyActionRequest(): TKeyDiccActionRequest {
     return this._keyActionRequest;
   }
-  public set keyActionRequest(v: string) {
+  public set keyActionRequest(v: TKeyDiccActionRequest) {
     this._keyActionRequest = this.util.isString(v)
-      ? v
+      ? (v as any)
       : this._keyActionRequest !== undefined
       ? this._keyActionRequest
       : this.getDefault().keyActionRequest;
@@ -235,26 +230,53 @@ export abstract class CriteriaHandler
       ? this._aTKeysGlobalActionConfig
       : this.getDefault().aTKeysGlobalActionConfig;
   }
-
-  protected override util: Util_Criteria = Util_Criteria.getInstance();
+  /**... */
+  private _diccQueryParam: ICriteria["diccQueryParam"];
+  public get diccQueryParam(): ICriteria["diccQueryParam"] {
+    return this._diccQueryParam;
+  }
+  public set diccQueryParam(v: ICriteria["diccQueryParam"]) {
+    this._diccQueryParam = this.util.isObject(v)
+      ? v
+      : this._diccQueryParam !== undefined
+      ? this._diccQueryParam
+      : this.getDefault().diccQueryParam;
+  }
+  /**... */
+  private _aTCustomQueryDriverFunctions: ICriteria["aTCustomQueryDriverFunctions"];
+  public get aTCustomQueryDriverFunctions(): ICriteria["aTCustomQueryDriverFunctions"] {
+    return this._aTCustomQueryDriverFunctions;
+  }
+  public set aTCustomQueryDriverFunctions(
+    v: ICriteria["aTCustomQueryDriverFunctions"]
+  ) {
+    this._aTCustomQueryDriverFunctions = this.util.isArrayTuple(v, 2)
+      ? v
+      : this._aTCustomQueryDriverFunctions !== undefined
+      ? this._aTCustomQueryDriverFunctions
+      : this.getDefault().aTCustomQueryDriverFunctions;
+  }
   /**
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param [isInit=true] ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
-    keySrc: string,
     metadataHandler: unknown,
     base: Partial<ReturnType<CriteriaHandler["getDefault"]>> = {},
     isInit = true
   ) {
-    super("criteria", keyLogicContext, keySrc);
-    this.util = Util_Criteria.getInstance();
+    super("criteria", keyLogicContext);
+    //asignación a propiedades especiales
     this._metadataHandler = metadataHandler;
+    this.keySrc = (this.metadataHandler as Trf_LogicMetadataHandler).keySrc;
+    this.keyLogicContext = (
+      this.metadataHandler as Trf_LogicMetadataHandler
+    ).keyLogicContext;
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
-  protected getDefault() {
+  protected override getDefault() {
     return CriteriaHandler.getDefault();
   }
   /**@returns todos las constantes para las instancias*/
@@ -268,7 +290,7 @@ export abstract class CriteriaHandler
   protected initProps(
     base: Partial<ReturnType<CriteriaHandler["getDefault"]>>
   ): void {
-    base = typeof base === "object" && base !== null ? base : {};
+    base = this.mergeBaseCriteriaWithPriority(base);
     for (const key in this.getDefault()) {
       this[key] = base[key];
     }
@@ -311,7 +333,8 @@ export abstract class CriteriaHandler
   /**@returns un objeto literal con las propiedades base */
   public getLiteral(): IReadCriteria | IModifyCriteria {
     let literal = {} as IReadCriteria | IModifyCriteria;
-    for (const key in this.getDefault()) {
+    const df = this.getDefault();
+    for (const key in df) {
       literal[key] = this[key];
     }
     const isClone = this.getCONST().IS_LITERAL_CLONE;
@@ -320,10 +343,8 @@ export abstract class CriteriaHandler
     }
     return literal;
   }
-  /**... */
-  protected abstract initMergeDiccGlobalAC(): void;
-  /**... */
-  protected abstract initAKeysGlobalAC(): void;
+  /**.. */
+  protected abstract mergeBaseCriteriaWithPriority(baseCRC: unknown): unknown;
   /**... */
   public getGlobalActionByTKeyGlobalAC(tKeyGlobalAC: any[]): unknown {
     if (!this.util.isTuple(tKeyGlobalAC, 2)) {
@@ -396,24 +417,55 @@ export abstract class CriteriaHandler
    *
    * @returns el query ya construido
    */
-  public buildQuery(baseQuery: TAConds): TAConds {
-    const dfQ = this.getDefault().query;
-    let query = this.util.isArray(baseQuery) ? baseQuery : dfQ;
-    this.checkQueryConds(query);
-    return query;
-  }
+  // public buildQuery(baseQuery: TAConds): TAConds {
+  //   const dfQ = this.getDefault().query;
+  //   let query = this.util.isArray(baseQuery) ? baseQuery : dfQ;
+  //   this.checkQueryConds(query);
+  //   return query;
+  // }
   /**verifica si las condiciones son coherentes
    *
    * @param conds las condiciones del query
    */
   protected abstract checkQueryConds(conds: TAConds): void;
+  /**
+   * extrae y **modifica** el diccionario global de acciones de
+   * configuración a partir de una o varias claves identificadoras de
+   * módulos de contexto
+   *
+   * ⚠Este método modifica el diccionario y no se puede recuperar el original⚠
+   *
+   * usar en caso de que el contexto necesite que solo
+   * @param keysModuleContext array con claves identificadoras de los módulos
+   */
+  public extractDiccByKeyModuleContext(
+    keysModuleContext: string | string[]
+  ): void {
+    let newDiccGAC = {} as typeof this.diccGlobalAC;
+    let newATKGAC = [] as typeof this.aTKeysGlobalActionConfig;
+    keysModuleContext = Array.isArray(keysModuleContext)
+      ? keysModuleContext
+      : [keysModuleContext];
+    for (const tKGAC of this.aTKeysGlobalActionConfig) {
+      const [keyMC, keyAC] = tKGAC;
+      const isKeyMC = keysModuleContext.includes(keyMC);
+      if (isKeyMC) {
+        newDiccGAC[keyMC] = this.diccGlobalAC[keyMC];
+        newATKGAC.push(tKGAC);
+      }
+    }
+    //⚠ Sobreescribe las propiedades⚠
+    this.diccGlobalAC = newDiccGAC;
+    this.aTKeysGlobalActionConfig = newATKGAC;
+    return;
+  }
   /**"adelgazar" el objeto literal de
    * criterios para poder ser
    * enviado fuera del entorno*/
   public static toSlimLiteralCriteriaForSend(
     literalCriteria: IReadCriteria & IModifyCriteria
   ) {
-    const util = Util_Criteria.getInstance();
+    const util = Module.util;
     const keysNotSend =
       CriteriaHandler.getCONSTANTS().KEYPROPS_DO_NOT_SEND_AT_EXTERNAL;
     let slimLC = util.clone(literalCriteria, "lodash");

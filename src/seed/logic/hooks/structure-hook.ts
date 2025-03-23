@@ -1,4 +1,3 @@
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
 import { LogicHook } from "./_hook";
 import {
@@ -8,10 +7,13 @@ import {
 } from "./shared";
 import { IStructureResponse } from "../reports/shared";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { TStructureMetaAndHook } from "../meta/metadata-shared";
-import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
+import {
+  Trf_TStructureMetaAndHook,
+  TStructureMetaAndHook,
+} from "../meta/metadata-shared";
+import { StructureBag, Trf_StructureBag } from "../bag/structure-bag";
 import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
-import { TStructureFnBagForActionModule } from "../bag-module/shared";
+import { TStructureFnBagForActionModule } from "../bag/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del hook */
 export interface IDiccStructureHookActionConfigG {
@@ -63,11 +65,9 @@ export class StructureLogicHook<
   public override get keyModuleContext(): TKeyStructureHookModuleContext {
     return "structureHook";
   }
-  /**
-   * @param keySrc indentificadora del recurso asociado a modulo
-   */
-  constructor(keySrc: string) {
-    super("structure", keySrc);
+  /** */
+  constructor() {
+    super("structure");
   }
   protected override getDefault() {
     return StructureLogicHook.getDefault();
@@ -100,9 +100,9 @@ export class StructureLogicHook<
   }
   protected override getMetadataWithContextModule(): TStructureMetaAndHook<
     any,
-    TIDiccAC
+    StructureLogicHook
   > {
-    let extractMetadataByContext: TStructureMetaAndHook<any, TIDiccAC>;
+    let extractMetadataByContext: Trf_TStructureMetaAndHook;
     extractMetadataByContext =
       this.metadataHandler.getExtractMetadataByModuleContext(
         "structureModel",
@@ -114,10 +114,10 @@ export class StructureLogicHook<
     const metadata =
       this.getMetadataWithContextModule() as TStructureMetaAndHook<
         any,
-        TIDiccAC
+        StructureLogicHook
       >;
     const config = metadata.__hookConfig as TStructureConfigForHook<TIDiccAC>;
-    return config;
+    return config as TStructureConfigForHook<TIDiccAC>;
   }
   protected override getDiccMetadataActionConfig(): TIDiccAC {
     const config = this.getMetadataOnlyModuleConfig();
@@ -159,7 +159,7 @@ export class StructureLogicHook<
     );
     return [keyAction, actionConfig];
   }
-  public override buildReportHandler(
+  protected override buildReportHandler(
     bag: Trf_StructureBag,
     keyAction: keyof TIDiccAC
   ): StructureReportHandler {

@@ -1,14 +1,8 @@
+import { Trf_BagModule } from "../bag/_bag";
+import { ActionModule, Module } from "../config/module";
 import { TKeyLogicContext } from "../config/shared-modules";
-import { Util_Mutater } from "./_util-mutater";
-import { ActionModule } from "../config/module";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import {
-  ELogicResStatusCode,
-  IResponse,
-  TResponseForMutate,
-} from "../reports/shared";
-import { BagModule, Trf_BagModule } from "../bag-module/_bag";
-import { ReportHandler } from "../reports/_reportHandler";
+import { ELogicResStatusCode, IResponse } from "../reports/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**calves identificadoras del los
  * drivers (librerias) a usar
@@ -29,14 +23,11 @@ export abstract class LogicMutater<TIDiccAC> extends ActionModule<TIDiccAC> {
       ...superDf,
     };
   };
-  protected override readonly util = Util_Mutater.getInstance();
   /**
    * @param keyLogicContext el contexto logico de esta libreria
-   * @param keySrc indentificadora del recurso asociado a modulo
    */
-  constructor(keyLogicContext: TKeyLogicContext, keySrc: string) {
-    super("mutater", keyLogicContext, keySrc);
-    this.util = Util_Mutater.getInstance();
+  constructor(keyLogicContext: TKeyLogicContext) {
+    super("mutater", keyLogicContext);
   }
   protected getDefault() {
     return LogicMutater.getDefault();
@@ -54,7 +45,7 @@ export abstract class LogicMutater<TIDiccAC> extends ActionModule<TIDiccAC> {
   public static getDiccGenericMutate(
     dfKeyDriver: TKeyGenericMutateDrivers = "Util"
   ) {
-    const util = Util_Mutater.getInstance();
+    const util = Module.util;
     const lodash = util.lodash;
     return {
       /**formate con trim

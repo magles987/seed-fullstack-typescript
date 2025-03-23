@@ -1,27 +1,31 @@
 import { LogicProvider } from "./_provider";
-import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
-import { TStructureMetaAndProvider } from "../meta/metadata-shared";
+import { StructureBag, Trf_StructureBag } from "../bag/structure-bag";
+import {
+  Trf_TStructureMetaAndProvider,
+  TStructureMetaAndProvider,
+} from "../meta/metadata-shared";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
-import { ELogicResStatusCode, IStructureResponse } from "../reports/shared";
+import { IStructureResponse, TSelectorDataDriver } from "../reports/shared";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { localRepositoryFactoryFn } from "./services/client/web/local/drivers/local-repository-factory";
-import { httpClientDriverFactoryFn } from "./services/client/web/http/drivers/http-driver-factory";
-import { serviceFactory } from "./services/service-factory";
 import {
   TKeyStructureProviderModuleContext,
   TModelConfigForProvider,
   TStructureProviderModuleConfigForStructure,
 } from "./shared";
-import { IRunProvider } from "./shared-for-external-module";
 import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
-import { TStructureFnBagForActionModule } from "../bag-module/shared";
+import { TStructureFnBagForActionModule } from "../bag/shared";
+import { Driver } from "./_drivers/_driver";
+import { ELogicCodeError, LogicError } from "../errors/logic-error";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del provider */
 export interface IDiccStructureProviderActionConfigG {
-  runProvider: IRunProvider;
+  singleRunDriver: {
+    nameLogicDriver: string;
+    opDriver?: Partial<Driver["getDefault"]>;
+  };
 }
 /**claves identificadoras del diccionario
- * de acciones de configuracion */
+ * de acciones de configuración */
 export type TKeysDiccStructureProviderActionConfigG =
   keyof IDiccStructureProviderActionConfigG;
 /**refactorizacion de la clase */
@@ -45,47 +49,9 @@ export class StructureLogicProvider<
       ...superDf,
       dfDiccActionConfig: {
         ...(superDf.dfDiccActionConfig as any),
-        runProvider: {
-          customServiceFactoryFn: serviceFactory,
-          serviceConfig: {
-            client: {
-              app: {},
-              web: {
-                local: {
-                  customLocalRepositoryFn: localRepositoryFactoryFn,
-                  diccRepositoryConfig: {
-                    static: {},
-                    cookie: {},
-                    storage: {},
-                    idb: {},
-                  },
-                },
-                http: {
-                  customHttpClientFactoryFn: httpClientDriverFactoryFn,
-                  diccDriverConfig: {
-                    fetch: {
-                      urlRoot: "",
-                      urlPostfix: "",
-                      urlPrefix: "",
-                      option: {},
-                    },
-                    axios: {
-                      urlRoot: "",
-                      urlPostfix: "",
-                      urlPrefix: "",
-                      option: {},
-                    },
-                  },
-                },
-              },
-            },
-          },
-          serviceToRun: {
-            //❗❗Obligatorio definirlo en los metadatos❗❗
-            keyService: undefined,
-            keyDriver: undefined,
-            customDeepServiceConfig: {},
-          },
+        singleRunDriver: {
+          nameLogicDriver: "",
+          opDriver: {},
         },
       } as IDiccStructureProviderActionConfigG,
       topPriorityKeysAction: [
@@ -105,11 +71,9 @@ export class StructureLogicProvider<
   public override get keyModuleContext(): TKeyStructureProviderModuleContext {
     return "structureProvider";
   }
-  /**
-   * @param keySrc indentificadora del recurso asociado a modulo
-   */
-  constructor(keySrc: string) {
-    super("structure", keySrc);
+  /** */
+  constructor() {
+    super("structure");
   }
   protected override getDefault() {
     return StructureLogicProvider.getDefault();
@@ -142,9 +106,9 @@ export class StructureLogicProvider<
   }
   protected override getMetadataWithContextModule(): TStructureMetaAndProvider<
     any,
-    TIDiccAC
+    StructureLogicProvider
   > {
-    let extractMetadataByContext: TStructureMetaAndProvider<any, TIDiccAC>;
+    let extractMetadataByContext: Trf_TStructureMetaAndProvider;
     extractMetadataByContext =
       this.metadataHandler.getExtractMetadataByModuleContext(
         "structureModel",
@@ -156,7 +120,7 @@ export class StructureLogicProvider<
     const metadata =
       this.getMetadataWithContextModule() as TStructureMetaAndProvider<
         any,
-        TIDiccAC
+        StructureLogicProvider
       >;
     const config =
       metadata.__providerConfig as TModelConfigForProvider<TIDiccAC>;
@@ -203,7 +167,7 @@ export class StructureLogicProvider<
     );
     return [keyAction, actionConfig];
   }
-  public override buildReportHandler(
+  protected override buildReportHandler(
     bag: Trf_StructureBag,
     keyAction: keyof TIDiccAC
   ): StructureReportHandler {
@@ -242,46 +206,37 @@ export class StructureLogicProvider<
     return;
   }
   //================================================================
-  public async runProvider(
+  public async singleRunDriver(
     bag: StructureBag<any>
   ): Promise<IStructureResponse> {
     const { data, criteriaHandler } = bag;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
-        "runProvider"
+        "singleRunDriver"
       );
-    let { customServiceFactoryFn, serviceConfig, serviceToRun } = actionConfig;
+    let { nameLogicDriver, opDriver } = actionConfig;
+    const driver = this.getDriverByNameLogicDriver(nameLogicDriver);
+    if (this.util.isUndefinedOrNull(driver)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${driver} is not driver valid`,
+      });
+    }
+    if (this.util.isObject(opDriver)) driver.mutateProps(opDriver);
     const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    let { keyService, keyDriver, customDeepServiceConfig } = serviceToRun;
-    if (!this.util.isString(keyService)) {
-      res = rH.mutateResponse(res, {
-        status: ELogicResStatusCode.ERROR,
-        msn: `${keyService} is not key service instance valid`,
-      });
-      return res;
-    }
-    if (!this.util.isString(keyDriver)) {
-      res = rH.mutateResponse(res, {
-        status: ELogicResStatusCode.ERROR,
-        msn: `${keyDriver} is not key driver for service instance valid`,
-      });
-      return res;
-    }
-    const serviceInstance = customServiceFactoryFn(
-      keyService,
-      keyDriver,
-      this.keyLogicContext,
-      this.keySrc,
-      serviceConfig,
-      customDeepServiceConfig
+    let driverResponse = await driver.sendRequestFromService(
+      bag.getLiteralBagDriver()
     );
-    const serviceRes = await serviceInstance.sendRequestInService(
-      bag.getLiteralBag()
-    );
-    res.responses.push(serviceRes as any);
-    res = rH.mutateResponse(res);
+    const selectorDataDriver: TSelectorDataDriver = "first";
+    res = rH.mutateResponse(res, {
+      ...rH.adaptDriverResponseToResponse(
+        driverResponse,
+        res,
+        selectorDataDriver
+      ),
+    });
     return res;
   }
 }

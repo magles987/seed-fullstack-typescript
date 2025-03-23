@@ -6,19 +6,15 @@ import {
   TKeyStructureDeepValModuleContext,
 } from "./shared";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-
 import { IStructureResponse } from "../reports/shared";
+import { StructureReportHandler } from "../reports/structure-report-handler";
 import {
-  StructureReportHandler,
-  Trf_StructureReportHandler,
-} from "../reports/structure-report-handler";
-import {
-  TStructureFieldMetaAndValidator,
-  TStructureMetaAndValidator,
+  Trf_TStructureFieldMetaAndValidator,
+  Trf_TStructureMetaAndValidator,
 } from "../meta/metadata-shared";
-import { StructureBag, Trf_StructureBag } from "../bag-module/structure-bag";
+import { StructureBag, Trf_StructureBag } from "../bag/structure-bag";
 import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
-import { TStructureFnBagForActionModule } from "../bag-module/shared";
+import { TStructureFnBagForActionModule } from "../bag/shared";
 //████Interfaz y tipo████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_StructureLogicValidation = StructureLogicValidation<any>;
@@ -45,16 +41,14 @@ export abstract class StructureLogicValidation<
   }
   /**
    * @param _keyStructureModuleContext contexto de acciones para este modulo estructurado
-   * @param keySrc indentificadora del recurso asociado a modulo
    */
   constructor(
     private readonly _keyStructureModuleContext: Extract<
       TKeyStructureDeepValModuleContext,
       "fieldVal" | "modelVal"
-    >,
-    keySrc: string
+    >
   ) {
-    super("structure", keySrc);
+    super("structure");
   }
   protected override getDefault() {
     return StructureLogicValidation.getDefault();
@@ -95,16 +89,10 @@ export abstract class StructureLogicValidation<
     let config: unknown;
     const metadata = this.getMetadataWithContextModule(keyPath);
     if (this.keyModuleContext === "fieldVal") {
-      const metadataField =
-        metadata as TStructureFieldMetaAndValidator<TIDiccAC>;
+      const metadataField = metadata as Trf_TStructureFieldMetaAndValidator;
       config = metadataField.__valConfig;
     } else if (this.keyModuleContext === "modelVal") {
-      const metadataModel = metadata as TStructureMetaAndValidator<
-        any,
-        any,
-        TIDiccAC,
-        any
-      >;
+      const metadataModel = metadata as Trf_TStructureMetaAndValidator;
       config = metadataModel.__valConfig;
     } else {
       throw new LogicError({
@@ -167,7 +155,7 @@ export abstract class StructureLogicValidation<
     );
     return [keyAction, actionConfig];
   }
-  public override buildReportHandler(
+  protected override buildReportHandler(
     bag: Trf_StructureBag,
     keyAction: keyof TIDiccAC
   ): StructureReportHandler {

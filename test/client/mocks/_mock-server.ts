@@ -6,11 +6,10 @@ import {
   TKeySrcSelector,
 } from "../../../src/seed/logic/config/shared-modules";
 import { LogicController } from "../../../src/seed/logic/controllers/_controller";
-import { IUrlConfig } from "../../../src/seed/logic/providers/services/client/web/http/drivers/shared";
 import { getSeedEnvironment } from "../../../src/seed/logic/config/seed-environment";
-import { IRunProvider } from "../../../src/seed/logic/providers/shared-for-external-module";
 import { SimulatedMicroBackend } from "./_simulated-microbackend";
-import { Util_Mock } from "./_util-mock";
+import { Util_Test } from "../../util-test";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export interface IMockServerOption {
@@ -50,13 +49,13 @@ export abstract class MockServerHandler<TData> {
   /**instancia del micro backend simulado para pruebas*/
   protected abstract microBackend: SimulatedMicroBackend;
   /**utilidades */
-  protected util = Util_Mock.getInstance();
+  protected util = Util_Test.getInstance();
   /**... */
   constructor(
     protected ctrl: LogicController,
     protected option: IMockServerOption
   ) {
-    this.util = Util_Mock.getInstance();
+    this.util = Util_Test.getInstance();
   }
   /**... */
   protected abstract initConfig(): void;

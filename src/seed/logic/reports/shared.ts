@@ -1,7 +1,7 @@
 import {
   TKeyPrimitiveCtrlModuleContext,
   TKeyStructureDeepCtrlModuleContext,
-} from "../controllers/_shared";
+} from "../controllers/shared";
 import {
   TKeyPrimitiveCriteriaModuleContext,
   TKeyStructureCriteriaModuleContext,
@@ -22,10 +22,6 @@ import {
   TKeyPrimitiveValModuleContext,
   TKeyStructureDeepValModuleContext,
 } from "../validators/shared";
-import {
-  TKeyPrimitiveServiceModuleContext,
-  TKeyStructureServiceModuleContext,
-} from "../providers/services/shared";
 import {
   TKeyLogicContext,
   TKeyModuleWithReport,
@@ -176,12 +172,8 @@ export enum EKeyActionGroupForRes {
   /**indica grupo de sub acciones ejecutadas en el modulo
    * *provider*, del contexto *structure* */
   providerStructure = "#PROVIDER_STRUCTURE#",
-  /**indica grupo de sub acciones ejecutadas en el modulo
-   * *service*, del contexto *primitive* */
-  servicePrimitive = "#SERVICE_PRIMITIVE#",
-  /**indica grupo de sub acciones ejecutadas en el modulo
-   * *service*, del contexto *structure* */
-  serviceStructure = "#SERVICE_STRUCTURE#",
+  /**indica grupo de sub acciones realizadas desde drivers */
+  driver = "#DRIVER#",
 }
 /** */
 export interface IResponse {
@@ -238,13 +230,32 @@ export type TResponseForMutate = Partial<
     | "firstCtrlData"
   >
 >;
-/**esquema de respuesta proveída por driver (de una api a otra)*/
-export interface IExtResponse
-  extends Pick<IResponse, "data" | "status" | "msn" | "extResponse"> {
+/**esquema de respuesta proveída por driver*/
+export interface IDriverResponse
+  extends Pick<IResponse, "data" | "status" | "msn"> {
+  /**detalles adicionales de la respuesta (normalmente entregados por la api externa) */
+  details?: any;
+  /**detalles específicos del error */
   error?: any;
 }
+/**Tipo de función para el selector de datos del driver
+ * @param driverResponses array con las respuestas de los drivers ejecutados
+ * @returns el dato que se desea mantener
+ */
+export type TSelectorDataDriverFn = (driverResponses: IDriverResponse[]) => any;
+/**Tipos de selectores para los datos de los drivers
+ * (comúnmente cuando hay varios drivers ejecutados
+ * en una misma petición)*/
+export type TSelectorDataDriver =
+  | "first"
+  | "last"
+  | "first-success"
+  | "last-success"
+  | "merge-success"
+  | number
+  | TSelectorDataDriverFn;
 //====Primitive============================================================================================================================
-/**clave identificadora de este modulo segun su contexto */
+/**clave identificadora de este modulo según su contexto */
 export type TKeyPrimitiveResponseModuleContext = "primitiveResponse";
 /** */
 export type TPrimitiveModuleContext =
@@ -253,8 +264,7 @@ export type TPrimitiveModuleContext =
   | TKeyPrimitiveMutateModuleContext
   | TKeyPrimitiveValModuleContext
   | TKeyPrimitiveHookModuleContext
-  | TKeyPrimitiveProviderModuleContext
-  | TKeyPrimitiveServiceModuleContext;
+  | TKeyPrimitiveProviderModuleContext;
 /**... */
 export interface IPrimitiveResponse extends IResponse {
   keyRepModuleContext: TPrimitiveModuleContext;
@@ -287,8 +297,7 @@ export type TStructureModuleContext =
   | TKeyStructureDeepMutateModuleContext
   | TKeyStructureDeepValModuleContext
   | TKeyStructureHookModuleContext
-  | TKeyStructureProviderModuleContext
-  | TKeyStructureServiceModuleContext;
+  | TKeyStructureProviderModuleContext;
 /**... */
 export interface IStructureResponse extends IResponse {
   keyRepModuleContext: TStructureModuleContext;
@@ -309,31 +318,3 @@ export type TStructureResponseForMutate = Partial<
     | "firstCtrlData"
   >
 >;
-//████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**retorna la clave identificadora
- * en texto que corresponde al status */
-export function statusToKeyStatus(status: ELogicResStatusCode): TKeyStatus {
-  let r: TKeyStatus;
-  r =
-    status === ELogicResStatusCode.INFO
-      ? "info"
-      : status === ELogicResStatusCode.INFO_USER
-      ? "infoUser"
-      : status === ELogicResStatusCode.SUCCESS
-      ? "success"
-      : status === ELogicResStatusCode.VALID_DATA
-      ? "validUser"
-      : status === ELogicResStatusCode.WARNING
-      ? "warning"
-      : status === ELogicResStatusCode.WARNING_DATA
-      ? "warningUser"
-      : status === ELogicResStatusCode.BAD
-      ? "invalid"
-      : status === ELogicResStatusCode.INVALID_DATA
-      ? "invalidUser"
-      : status === ELogicResStatusCode.ERROR
-      ? "error"
-      : "success";
-
-  return r;
-}

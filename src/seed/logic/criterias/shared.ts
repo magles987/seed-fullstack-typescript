@@ -7,6 +7,11 @@ import {
 import { IDiccPrimitiveHookActionConfigG } from "../hooks/primitive-hook";
 import { IPrimitiveHookContext, IStructureHookContext } from "../hooks/shared";
 import { IDiccStructureHookActionConfigG } from "../hooks/structure-hook";
+import {
+  TKeyFieldInternalACModuleContext,
+  TKeyModelInternalACModuleContext,
+  TKeyPrimitiveInternalACModuleContext,
+} from "../meta/metadata-shared";
 import { IDiccFieldMutateActionConfigG } from "../mutaters/field-mutater";
 import { IDiccModelMutateActionConfigG } from "../mutaters/model-mutater";
 import { IDiccPrimitiveMutateActionConfigG } from "../mutaters/primitive-mutater";
@@ -71,8 +76,6 @@ export enum ELogicOperatorForGroup {
 }
 /**clave identificadora de tipo de criteria */
 export type TKeyCriteriaType = TKeyRequestType;
-/**direccion de orden */
-export type TSortDirection = "asc" | "desc";
 /**esquema básico para un condicion sencilla de consulta */
 export interface ISingleCondition {
   /**operador  */
@@ -103,6 +106,8 @@ export type TAConds = Array<
   | ISingleCondition
   | TAConds //sub condiciones agrupadas
 >;
+/**direccion de orden */
+export type TSortDirection = "asc" | "desc";
 /**tipo de agrupación de dato esperado */
 export type TExpectedDataType =
   | "any"
@@ -112,7 +117,11 @@ export type TExpectedDataType =
   | "object"
   | "array";
 /** */
-export interface ICriteria {
+export interface ICriteria<
+  TKeyDiccActionRequest extends string = string,
+  TKeyACModuleContext extends string = string,
+  TKeyIDiccGlobalModelAC extends string = string
+> {
   /**clave identificadora del contexto lógico */
   keyLogicContext: TKeyLogicContext;
   /**clave identificadora del recurso */
@@ -127,7 +136,7 @@ export interface ICriteria {
   type: TKeyRequestType;
   /**clave identificadora del requerimiento
    * asociado a este criterio */
-  keyActionRequest: string;
+  keyActionRequest: TKeyDiccActionRequest;
   /**tipo de agrupación de dato esperado
    * en la respuesta a la petición */
   expectedDataType: TExpectedDataType;
@@ -147,7 +156,14 @@ export interface ICriteria {
    *
    * `[1]` : key de la acción correspondiente
    */
-  aTKeysGlobalActionConfig: Array<[string, string]>;
+  aTKeysGlobalActionConfig: Array<
+    [TKeyACModuleContext, TKeyIDiccGlobalModelAC]
+  >;
+  /**diccionario con parámetros para construir la query */
+  diccQueryParam: any;
+  /**array de tuplas con las funciones personalizadas diseñadas
+   * específicamente para la consulta de un driver especifico */
+  aTCustomQueryDriverFunctions: Array<[string, Function]>;
   /**adiciones de url **ordenadas**.
    *
    * ejemplo basico:
@@ -161,28 +177,44 @@ export interface ICriteria {
  * define las propiedades de un criterio
  * de peticion de lectura de datos
  */
-export interface IReadCriteria extends ICriteria {
+export interface IReadCriteria<
+  TKeyDiccActionRequest extends string = string,
+  TKeyACModuleContext extends string = string,
+  TKeyIDiccGlobalModelAC extends string = string
+> extends ICriteria<
+    TKeyDiccActionRequest,
+    TKeyACModuleContext,
+    TKeyIDiccGlobalModelAC
+  > {
   /**limite de docs o registros a obtener */
   limit: number;
   /**criterio de ordenamiento */
-  sort: unknown; //⚠ DEBE redefinirse en interfaces que extiendad de esta
+  sort: unknown; //⚠ DEBE redefinirse en interfaces que extienda de esta
   /**pagina objetivo a obtener
    * (cuando se esta paginando) */
   targetPage?: number;
-  /**determina logica de paginado a utilizar
+  /**determina lógica de paginado a utilizar
    * (`0` indica que la pagina inicial será
    * `0` o `1` para inidcar que sera con
    * logica de `1`)
    */
   targetPageLogic?: 0 | 1;
   /**esquema de consulta */
-  query?: TAConds;
+  //query?: TAConds; // //❗❗❗ TODAVÍA NO VIABLE ❗❗❗
 }
 /**
  * define las propiedades de un criterio
  * de peticion de lectura de datos
  */
-export interface IModifyCriteria extends ICriteria {
+export interface IModifyCriteria<
+  TKeyDiccActionRequest extends string = string,
+  TKeyACModuleContext extends string = string,
+  TKeyIDiccGlobalModelAC extends string = string
+> extends ICriteria<
+    TKeyDiccActionRequest,
+    TKeyACModuleContext,
+    TKeyIDiccGlobalModelAC
+  > {
   /**el tipo de criterio de modificación a realizar */
   modifyType?: TKeyRequestModifyType;
   /**determina en caso de crear un doc o
@@ -199,51 +231,74 @@ export interface IPrimitiveCriteriaContext<
 > {
   primitiveCriteria: TPrimitiveCriteria;
 }
-/**claves identificadoras para el contexto de ejecucion para el modulo primitive*/
+/**claves identificadoras para el contexto de ejecución para el modulo primitive*/
 export type TKeyPrimitiveCriteriaModuleContext =
   keyof IPrimitiveCriteriaContext;
+/**... */
+export type TPrimitiveDiccGlobalAC<
+  TIDiccPrimitiveMutateAC,
+  TIDiccPrimitiveValAC,
+  TIDiccRequestValAC,
+  TIDiccPrimitiveHookAC,
+  TIDiccPrimitiveProviderAC
+> = Partial<
+  IPrimitiveMutateContext<
+    Partial<
+      | TIDiccPrimitiveMutateAC
+      //❗Tipado que permite desactivar la acción, controller no la ejecuta❗
+      | Record<keyof TIDiccPrimitiveMutateAC, null>
+    >
+  > &
+    IPrimitiveValContext<
+      Partial<
+        | TIDiccPrimitiveValAC
+        //❗Tipado que permite desactivar la acción, controller no la ejecuta❗
+        | Record<keyof TIDiccPrimitiveValAC, null>
+      >,
+      Partial<
+        | TIDiccRequestValAC
+        //❗Tipado que permite desactivar la acción, controller no la ejecuta❗
+        | Record<keyof TIDiccRequestValAC, null>
+      >
+    > &
+    IPrimitiveHookContext<
+      Partial<
+        | TIDiccPrimitiveHookAC
+        //❗Tipado que permite desactivar la acción, controller no la ejecuta❗
+        | Record<keyof TIDiccPrimitiveHookAC, null>
+      >
+    > &
+    IPrimitiveProviderContext<
+      Partial<
+        | TIDiccPrimitiveProviderAC
+        //❗Tipado que permite desactivar la acción, controller no la ejecuta❗
+        | Record<keyof TIDiccPrimitiveProviderAC, null>
+      >
+    >
+>;
 /** */
 export interface IPrimitiveCriteria<
   TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
   TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
   TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
   TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
-> extends ICriteria {
-  diccGlobalAC?: Partial<
-    IPrimitiveMutateContext<
-      Partial<
-        | TIDiccPrimitiveMutateAC
-        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-        | Record<keyof TIDiccPrimitiveMutateAC, null>
-      >
-    > &
-      IPrimitiveValContext<
-        Partial<
-          | TIDiccPrimitiveValAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccPrimitiveValAC, null>
-        >,
-        Partial<
-          | TIDiccRequestValAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccRequestValAC, null>
-        >
-      > &
-      IPrimitiveHookContext<
-        Partial<
-          | TIDiccPrimitiveHookAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccPrimitiveHookAC, null>
-        >
-      > &
-      IPrimitiveProviderContext<
-        Partial<
-          | TIDiccPrimitiveProviderAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccPrimitiveProviderAC, null>
-        >
-      >
+  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
+> extends ICriteria<
+    TKeyDiccActionRequest,
+    TKeyPrimitiveInternalACModuleContext,
+    | Extract<keyof TIDiccPrimitiveMutateAC, string>
+    | Extract<keyof TIDiccPrimitiveValAC, string>
+    | Extract<keyof TIDiccRequestValAC, string>
+    | Extract<keyof TIDiccPrimitiveHookAC, string>
+    | Extract<keyof TIDiccPrimitiveProviderAC, string> //sugerido por copilot, para asegurar solo el string que representa la key
+  > {
+  diccGlobalAC?: TPrimitiveDiccGlobalAC<
+    TIDiccPrimitiveMutateAC,
+    TIDiccPrimitiveValAC,
+    TIDiccRequestValAC,
+    TIDiccPrimitiveHookAC,
+    TIDiccPrimitiveProviderAC
   >;
 }
 /**... */
@@ -252,46 +307,33 @@ export interface IPrimitiveReadCriteria<
   TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
   TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
   TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
-> extends IReadCriteria,
-    IPrimitiveCriteria {
-  sort: TSortDirection;
-  // ❗Obligado repetir el tipado, para poder fusionar las 2 interfaces padre❗
-  diccGlobalAC?: Partial<
-    IPrimitiveMutateContext<
-      Partial<
-        | TIDiccPrimitiveMutateAC
-        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-        | Record<keyof TIDiccPrimitiveMutateAC, null>
-      >
-    > &
-      IPrimitiveValContext<
-        Partial<
-          | TIDiccPrimitiveValAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccPrimitiveValAC, null>
-        >,
-        Partial<
-          | TIDiccRequestValAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccRequestValAC, null>
-        >
-      > &
-      IPrimitiveHookContext<
-        Partial<
-          | TIDiccPrimitiveHookAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccPrimitiveHookAC, null>
-        >
-      > &
-      IPrimitiveProviderContext<
-        Partial<
-          | TIDiccPrimitiveProviderAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccPrimitiveProviderAC, null>
-        >
-      >
-  >;
+  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
+> extends IReadCriteria<
+      TKeyDiccActionRequest,
+      TKeyPrimitiveInternalACModuleContext,
+      | Extract<keyof TIDiccPrimitiveMutateAC, string>
+      | Extract<keyof TIDiccPrimitiveValAC, string>
+      | Extract<keyof TIDiccRequestValAC, string>
+      | Extract<keyof TIDiccPrimitiveHookAC, string>
+      | Extract<keyof TIDiccPrimitiveProviderAC, string> //sugerido por copilot, para asegurar solo el string que representa la key
+    >,
+    IPrimitiveCriteria<
+      TIDiccPrimitiveMutateAC,
+      TIDiccPrimitiveValAC,
+      TIDiccRequestValAC,
+      TIDiccPrimitiveHookAC,
+      TIDiccPrimitiveProviderAC,
+      TKeyDiccActionRequest
+    > {
+  sort: TSortDirection; //❗OBLIGATORIO redefinir❗
+  diccGlobalAC?: TPrimitiveDiccGlobalAC<
+    TIDiccPrimitiveMutateAC,
+    TIDiccPrimitiveValAC,
+    TIDiccRequestValAC,
+    TIDiccPrimitiveHookAC,
+    TIDiccPrimitiveProviderAC
+  >; //❗OBLIGATORIO redefinir❗
 }
 /** */
 export interface IPrimitiveModifyCriteria<
@@ -299,45 +341,32 @@ export interface IPrimitiveModifyCriteria<
   TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
   TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
   TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
-> extends IModifyCriteria,
-    IPrimitiveCriteria {
-  // ❗Obligado repetir el tipado, para poder fusionar las 2 interfaces padre❗
-  diccGlobalAC?: Partial<
-    IPrimitiveMutateContext<
-      Partial<
-        | TIDiccPrimitiveMutateAC
-        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-        | Record<keyof TIDiccPrimitiveMutateAC, null>
-      >
-    > &
-      IPrimitiveValContext<
-        Partial<
-          | TIDiccPrimitiveValAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccPrimitiveValAC, null>
-        >,
-        Partial<
-          | TIDiccRequestValAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccRequestValAC, null>
-        >
-      > &
-      IPrimitiveHookContext<
-        Partial<
-          | TIDiccPrimitiveHookAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccPrimitiveHookAC, null>
-        >
-      > &
-      IPrimitiveProviderContext<
-        Partial<
-          | TIDiccPrimitiveProviderAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccPrimitiveProviderAC, null>
-        >
-      >
-  >;
+  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
+> extends IModifyCriteria<
+      TKeyDiccActionRequest,
+      TKeyPrimitiveInternalACModuleContext,
+      | Extract<keyof TIDiccPrimitiveMutateAC, string>
+      | Extract<keyof TIDiccPrimitiveValAC, string>
+      | Extract<keyof TIDiccRequestValAC, string>
+      | Extract<keyof TIDiccPrimitiveHookAC, string>
+      | Extract<keyof TIDiccPrimitiveProviderAC, string> //sugerido por copilot, para asegurar solo el string que representa la key
+    >,
+    IPrimitiveCriteria<
+      TIDiccPrimitiveMutateAC,
+      TIDiccPrimitiveValAC,
+      TIDiccRequestValAC,
+      TIDiccPrimitiveHookAC,
+      TIDiccPrimitiveProviderAC,
+      TKeyDiccActionRequest
+    > {
+  diccGlobalAC?: TPrimitiveDiccGlobalAC<
+    TIDiccPrimitiveMutateAC,
+    TIDiccPrimitiveValAC,
+    TIDiccRequestValAC,
+    TIDiccPrimitiveHookAC,
+    TIDiccPrimitiveProviderAC
+  >; //❗OBLIGATORIO redefinir❗
 }
 /**... */
 export type TPrimitiveBaseCriteria<
@@ -345,23 +374,37 @@ export type TPrimitiveBaseCriteria<
   TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
   TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
   TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
+  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
 > = Partial<
   IPrimitiveCriteria<
     TIDiccPrimitiveMutateAC,
     TIDiccPrimitiveValAC,
     TIDiccRequestValAC,
     TIDiccPrimitiveHookAC,
-    TIDiccPrimitiveProviderAC
+    TIDiccPrimitiveProviderAC,
+    TKeyDiccActionRequest
   >
->;
+> &
+  Pick<
+    IPrimitiveCriteria<
+      TIDiccPrimitiveMutateAC,
+      TIDiccPrimitiveValAC,
+      TIDiccRequestValAC,
+      TIDiccPrimitiveHookAC,
+      TIDiccPrimitiveProviderAC,
+      TKeyDiccActionRequest
+    >,
+    "type" | "keyActionRequest"
+  >;
 /**... */
-export type TPrimitiveBaseCriteriaForCtrlRead<
+export type TPrimitiveBaseReadCriteria<
   TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
   TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
   TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
   TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
+  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
 > = Partial<
   Omit<
     IPrimitiveReadCriteria<
@@ -369,23 +412,20 @@ export type TPrimitiveBaseCriteriaForCtrlRead<
       TIDiccPrimitiveValAC,
       TIDiccRequestValAC,
       TIDiccPrimitiveHookAC,
-      TIDiccPrimitiveProviderAC
+      TIDiccPrimitiveProviderAC,
+      TKeyDiccActionRequest
     >,
-    | "type"
-    | "keyLogicContext"
-    | "keySrc"
-    | "aTKeysGlobalActionConfig"
-    | "p_Key"
-    | "s_Key"
+    "keyLogicContext" | "keySrc" | "p_Key" | "s_Key"
   >
 >;
 /**... */
-export type TPrimitiveBaseCriteriaForCtrlModify<
+export type TPrimitiveBaseModifyCriteria<
   TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
   TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
   TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
   TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
+  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
 > = Partial<
   Omit<
     IPrimitiveModifyCriteria<
@@ -393,14 +433,10 @@ export type TPrimitiveBaseCriteriaForCtrlModify<
       TIDiccPrimitiveValAC,
       TIDiccRequestValAC,
       TIDiccPrimitiveHookAC,
-      TIDiccPrimitiveProviderAC
+      TIDiccPrimitiveProviderAC,
+      TKeyDiccActionRequest
     >,
-    | "type"
-    | "keyLogicContext"
-    | "keySrc"
-    | "aTKeysGlobalActionConfig"
-    | "p_Key"
-    | "s_Key"
+    "keyLogicContext" | "keySrc" | "p_Key" | "s_Key"
   >
 >;
 
@@ -418,42 +454,28 @@ export type TKeyStructureCriteriaModuleContext =
 export type TKeyStructureDeepCriteriaModuleContext =
   | "fieldCriteria"
   | "modelCriteria";
-/** */
-export interface IStructureCriteria<
-  TModel,
-  TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
-  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-  TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG,
-  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
-> extends ICriteria {
-  /**array con todas las rutas keyPath de este modulo */
-  keysPath: string[];
-  /** */
-  keyPath: string;
-  /** */
-  keyStructureContext: TKeyStructureContextFull;
-  diccGlobalAC?: Partial<
+/**... */
+export type TStructureModelDiccGlobalAC<
+  TIDiccModelMutateAC,
+  TIDiccModelValAC,
+  TIDiccRequestValAC,
+  TIDiccStructureHookAC,
+  TIDiccStructureProviderAC
+> = Partial<
+  Pick<
     IStructureDeepMutateContext<
-      Partial<
-        | TIDiccFieldMutateAC
-        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-        | Record<keyof TIDiccFieldMutateAC, null>
-      >,
+      any,
       Partial<
         | TIDiccModelMutateAC
         //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
         | Record<keyof TIDiccModelMutateAC, null>
       >
-    > &
+    >,
+    "modelMutate"
+  > &
+    Pick<
       IStructureDeepValContext<
-        Partial<
-          | TIDiccFieldValAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccFieldValAC, null>
-        >,
+        any,
         Partial<
           | TIDiccModelValAC
           //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
@@ -464,271 +486,266 @@ export interface IStructureCriteria<
           //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
           | Record<keyof TIDiccRequestValAC, null>
         >
-      > &
-      IStructureHookContext<
-        Partial<
-          | TIDiccStructureHookAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccStructureHookAC, null>
-        >
-      > &
-      IStructureProviderContext<
-        Partial<
-          | TIDiccStructureProviderAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccStructureProviderAC, null>
-        >
-      >
-  >;
-}
-/**... */
-export interface IStructureReadCriteria<
-  TModel,
-  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
-> extends IReadCriteria,
-    IStructureCriteria<
-      TModel,
-      any,
-      TIDiccModelMutateAC,
-      any,
-      TIDiccModelValAC,
-      TIDiccRequestValAC,
-      TIDiccStructureHookAC,
-      TIDiccStructureProviderAC
-    > {
-  sort: Array<Record<keyof TModel, TSortDirection>>;
-  // ❗Obligado repetir el tipado, para poder fusionar las 2 interfaces padre❗
-  diccGlobalAC?: Partial<
-    Pick<
-      IStructureDeepMutateContext<
-        any,
-        Partial<
-          | TIDiccModelMutateAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccModelMutateAC, null>
-        >
       >,
-      "modelMutate"
-    > &
-      Pick<
-        IStructureDeepValContext<
-          any,
-          Partial<
-            | TIDiccModelValAC
-            //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-            | Record<keyof TIDiccModelValAC, null>
-          >,
-          Partial<
-            | TIDiccRequestValAC
-            //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-            | Record<keyof TIDiccRequestValAC, null>
-          >
-        >,
-        "modelVal" | "requestVal"
-      > & //no necesita Pick
-      IStructureHookContext<
-        Partial<
-          | TIDiccStructureHookAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccStructureHookAC, null>
-        >
-      > & //no necesita Pick
-      IStructureProviderContext<
-        Partial<
-          | TIDiccStructureProviderAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccStructureProviderAC, null>
-        >
+      "modelVal" | "requestVal"
+    > & //no necesita Pick
+    IStructureHookContext<
+      Partial<
+        | TIDiccStructureHookAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccStructureHookAC, null>
       >
-  >;
-}
+    > & //no necesita Pick
+    IStructureProviderContext<
+      Partial<
+        | TIDiccStructureProviderAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccStructureProviderAC, null>
+      >
+    >
+>;
 /** */
-export interface IStructureModifyCriteria<
+export interface IStructureModelCriteria<
   TModel,
   TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
   TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
   TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
   TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
-> extends IModifyCriteria,
-    IStructureCriteria<
-      TModel,
-      any,
-      TIDiccModelMutateAC,
-      any,
-      TIDiccModelValAC,
-      TIDiccRequestValAC,
-      TIDiccStructureHookAC,
-      TIDiccStructureProviderAC
-    > {
-  // ❗Obligado repetir el tipado, para poder fusionar las 2 interfaces padre❗
-  diccGlobalAC?: Partial<
-    Pick<
-      IStructureDeepMutateContext<
-        any,
-        Partial<
-          | TIDiccModelMutateAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccModelMutateAC, null>
-        >
-      >,
-      "modelMutate"
-    > &
-      Pick<
-        IStructureDeepValContext<
-          any,
-          Partial<
-            | TIDiccModelValAC
-            //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-            | Record<keyof TIDiccModelValAC, null>
-          >,
-          Partial<
-            | TIDiccRequestValAC
-            //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-            | Record<keyof TIDiccRequestValAC, null>
-          >
-        >,
-        "modelVal" | "requestVal"
-      > & //no necesita Pick
-      IStructureHookContext<
-        Partial<
-          | TIDiccStructureHookAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccStructureHookAC, null>
-        >
-      > & //no necesita Pick
-      IStructureProviderContext<
-        Partial<
-          | TIDiccStructureProviderAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccStructureProviderAC, null>
-        >
-      >
-  >;
-}
-/**... */
-export interface IFieldCriteria<
-  TModel,
-  TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
-  TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
-> extends Pick<
-    IStructureCriteria<TModel>,
-    "diccGlobalAC" | "keyPath" | "aTKeysGlobalActionConfig"
+  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
+> extends ICriteria<
+    TKeyDiccActionRequest,
+    TKeyModelInternalACModuleContext,
+    | Extract<keyof TIDiccModelMutateAC, string>
+    | Extract<keyof TIDiccModelValAC, string>
+    | Extract<keyof TIDiccRequestValAC, string>
+    | Extract<keyof TIDiccStructureHookAC, string>
+    | Extract<keyof TIDiccStructureProviderAC, string> //sugerido por copilot, para asegurar solo el string que representa la key
   > {
-  diccGlobalAC?: Partial<
-    Pick<
-      IStructureDeepMutateContext<
-        Partial<
-          | TIDiccFieldMutateAC
-          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-          | Record<keyof TIDiccFieldMutateAC, null>
-        >,
-        any
-      >,
-      "fieldMutate"
-    > &
-      Pick<
-        IStructureDeepValContext<
-          Partial<
-            | TIDiccFieldValAC
-            //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
-            | Record<keyof TIDiccFieldValAC, null>
-          >,
-          any,
-          any
-        >,
-        "fieldVal"
-      >
-  >;
-}
-/**... */
-export type TStructureBaseCriteria<
-  TModel,
-  TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
-  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-  TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG,
-  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
-> = Partial<
-  IStructureCriteria<
-    TModel,
-    TIDiccFieldMutateAC,
+  /**array con todas las rutas keyPath de este modulo */
+  keysPath: string[];
+  /** */
+  keyPath: string;
+  /** */
+  keyStructureContext: TKeyStructureContextFull;
+  diccGlobalAC?: TStructureModelDiccGlobalAC<
     TIDiccModelMutateAC,
-    TIDiccFieldValAC,
     TIDiccModelValAC,
     TIDiccRequestValAC,
     TIDiccStructureHookAC,
     TIDiccStructureProviderAC
-  >
->;
+  >;
+  sort: Array<Record<keyof TModel, TSortDirection>>;
+}
 /**... */
-export type TStructureBaseCriteriaForCtrlRead<
+export interface IStructureModelReadCriteria<
   TModel,
   TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
   TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
   TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
   TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
-> = Partial<
-  Omit<
-    IStructureReadCriteria<
+  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
+> extends IReadCriteria<
+      TKeyDiccActionRequest,
+      TKeyModelInternalACModuleContext,
+      | Extract<keyof TIDiccModelMutateAC, string>
+      | Extract<keyof TIDiccModelValAC, string>
+      | Extract<keyof TIDiccRequestValAC, string>
+      | Extract<keyof TIDiccStructureHookAC, string>
+      | Extract<keyof TIDiccStructureProviderAC, string> //sugerido por copilot, para asegurar solo el string que representa la key
+    >,
+    IStructureModelCriteria<
       TModel,
       TIDiccModelMutateAC,
       TIDiccModelValAC,
       TIDiccRequestValAC,
       TIDiccStructureHookAC,
-      TIDiccStructureProviderAC
-    >,
-    | "type"
-    | "keyLogicContext"
-    | "keySrc"
-    | "p_Key"
-    | "s_Key"
-    | "keyStructureContext"
-    | "aTKeysGlobalActionConfig"
-  >
->;
-/**... */
-export type TStructureBaseCriteriaForCtrlModify<
+      TIDiccStructureProviderAC,
+      TKeyDiccActionRequest
+    > {
+  sort: Array<Record<keyof TModel, TSortDirection>>; //❗OBLIGATORIO redefinir❗
+  diccGlobalAC?: TStructureModelDiccGlobalAC<
+    TIDiccModelMutateAC,
+    TIDiccModelValAC,
+    TIDiccRequestValAC,
+    TIDiccStructureHookAC,
+    TIDiccStructureProviderAC
+  >; //❗OBLIGATORIO redefinir❗
+}
+/** */
+export interface IStructureModelModifyCriteria<
   TModel,
   TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
   TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
   TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
   TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
-> = Partial<
-  Omit<
-    IStructureModifyCriteria<
+  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
+> extends IModifyCriteria<
+      TKeyDiccActionRequest,
+      TKeyModelInternalACModuleContext,
+      | Extract<keyof TIDiccModelMutateAC, string>
+      | Extract<keyof TIDiccModelValAC, string>
+      | Extract<keyof TIDiccRequestValAC, string>
+      | Extract<keyof TIDiccStructureHookAC, string>
+      | Extract<keyof TIDiccStructureProviderAC, string> //sugerido por copilot, para asegurar solo el string que representa la key
+    >,
+    IStructureModelCriteria<
       TModel,
       TIDiccModelMutateAC,
       TIDiccModelValAC,
       TIDiccRequestValAC,
       TIDiccStructureHookAC,
-      TIDiccStructureProviderAC
+      TIDiccStructureProviderAC,
+      TKeyDiccActionRequest
+    > {
+  diccGlobalAC?: TStructureModelDiccGlobalAC<
+    TIDiccModelMutateAC,
+    TIDiccModelValAC,
+    TIDiccRequestValAC,
+    TIDiccStructureHookAC,
+    TIDiccStructureProviderAC
+  >; //❗OBLIGATORIO redefinir❗
+}
+/**... */
+export type TStructureDiccGlobalACForField<
+  TIDiccFieldMutateAC,
+  TIDiccFieldValAC
+> = Partial<
+  Pick<
+    IStructureDeepMutateContext<
+      Partial<
+        | TIDiccFieldMutateAC
+        //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+        | Record<keyof TIDiccFieldMutateAC, null>
+      >,
+      any
     >,
-    | "type"
+    "fieldMutate"
+  > &
+    Pick<
+      IStructureDeepValContext<
+        Partial<
+          | TIDiccFieldValAC
+          //❗Tipado que permite desactivar la accion, controller no la ejecuta❗
+          | Record<keyof TIDiccFieldValAC, null>
+        >,
+        any,
+        any
+      >,
+      "fieldVal"
+    >
+>;
+/**... */
+export interface IStructureFieldCriteria<
+  TModel,
+  TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
+  TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
+> extends Pick<
+    ICriteria<
+      any,
+      TKeyFieldInternalACModuleContext,
+      | Extract<keyof TIDiccFieldMutateAC, string>
+      | Extract<keyof TIDiccFieldValAC, string>
+    >,
+    "aTKeysGlobalActionConfig"
+  > {
+  /**array con todas las rutas keyPath de este modulo */
+  keysPath: string[];
+  /** */
+  keyPath: string;
+  diccGlobalAC?: TStructureDiccGlobalACForField<
+    TIDiccFieldMutateAC,
+    TIDiccFieldValAC
+  >;
+}
+/**... */
+export type TStructureModelBaseCriteria<
+  TModel,
+  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
+  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
+  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
+  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
+  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
+> = Partial<
+  IStructureModelCriteria<
+    TModel,
+    TIDiccModelMutateAC,
+    TIDiccModelValAC,
+    TIDiccRequestValAC,
+    TIDiccStructureHookAC,
+    TIDiccStructureProviderAC,
+    TKeyDiccActionRequest
+  >
+>;
+/**... */
+export type TStructureModelBaseReadCriteria<
+  TModel,
+  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
+  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
+  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
+  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
+  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
+> = Partial<
+  Omit<
+    IStructureModelReadCriteria<
+      TModel,
+      TIDiccModelMutateAC,
+      TIDiccModelValAC,
+      TIDiccRequestValAC,
+      TIDiccStructureHookAC,
+      TIDiccStructureProviderAC,
+      TKeyDiccActionRequest
+    >,
     | "keyLogicContext"
     | "keySrc"
     | "p_Key"
     | "s_Key"
+    | "keysPath"
+    | "keyPath"
     | "keyStructureContext"
-    | "aTKeysGlobalActionConfig"
   >
 >;
 /**... */
-export type TStructureBaseCriteriaForCtrlField<
+export type TStructureModelBaseModifyCriteria<
+  TModel,
+  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
+  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
+  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
+  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
+  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
+> = Partial<
+  Omit<
+    IStructureModelModifyCriteria<
+      TModel,
+      TIDiccModelMutateAC,
+      TIDiccModelValAC,
+      TIDiccRequestValAC,
+      TIDiccStructureHookAC,
+      TIDiccStructureProviderAC,
+      TKeyDiccActionRequest
+    >,
+    | "keyLogicContext"
+    | "keySrc"
+    | "p_Key"
+    | "s_Key"
+    | "keysPath"
+    | "keyPath"
+    | "keyStructureContext"
+  >
+>;
+/**... */
+export type TStructureFieldBaseCriteria<
   TModel,
   TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
   TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
 > = Partial<
-  Omit<
-    IFieldCriteria<TModel, TIDiccFieldMutateAC, TIDiccFieldValAC>,
-    "keyStructureContext"
+  Pick<
+    IStructureFieldCriteria<TModel, TIDiccFieldMutateAC, TIDiccFieldValAC>,
+    "aTKeysGlobalActionConfig" | "diccGlobalAC"
   >
 >;

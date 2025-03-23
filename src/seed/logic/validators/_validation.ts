@@ -1,15 +1,9 @@
 import { z as zodLib } from "zod";
 import { TKeyLogicContext } from "../config/shared-modules";
-import { Util_Validator } from "./_util-validator";
-import { ActionModule } from "../config/module";
+import { ActionModule, Module } from "../config/module";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import {
-  ELogicResStatusCode,
-  IResponse,
-  TResponseForMutate,
-} from "../reports/shared";
-import { ReportHandler } from "../reports/_reportHandler";
-import { Trf_BagModule } from "../bag-module/_bag";
+import { ELogicResStatusCode, IResponse } from "../reports/shared";
+import { Trf_BagModule } from "../bag/_bag";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**calves identificadoras del los
  * drivers (librerias) a usar
@@ -27,7 +21,7 @@ export type Trf_LogicValidation = LogicValidation<any>;
  * clase para el modulo de validacion
  */
 export abstract class LogicValidation<TIDiccAC> extends ActionModule<TIDiccAC> {
-  /** configuracion de valores predefinidos para el modulo*/
+  /** configuración de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = ActionModule.getDefault();
     return {
@@ -36,16 +30,13 @@ export abstract class LogicValidation<TIDiccAC> extends ActionModule<TIDiccAC> {
       globalTolerance: ELogicResStatusCode.INVALID_DATA, //personalizada para validacion
     };
   };
-  /**libreria externa para manejo exclusivo de validaciones */
+  /**librería externa para manejo exclusivo de validaciones */
   protected zod = zodLib;
-  protected override readonly util = Util_Validator.getInstance();
   /**
    * @param keyLogicContext el contexto logico de esta libreria
-   * @param keySrc indentificadora del recurso asociado a modulo
    */
-  constructor(keyLogicContext: TKeyLogicContext, keySrc: string) {
-    super("validator", keyLogicContext, keySrc);
-    this.util = Util_Validator.getInstance();
+  constructor(keyLogicContext: TKeyLogicContext) {
+    super("validator", keyLogicContext);
   }
   protected override getDefault() {
     return LogicValidation.getDefault();
@@ -61,7 +52,7 @@ export abstract class LogicValidation<TIDiccAC> extends ActionModule<TIDiccAC> {
    * @returns el diccionario con las funciones
    */
   public static getDiccGenericVal(dfKeyDriver: TKeyGenericValDrivers = "Zod") {
-    const util = Util_Validator.getInstance();
+    const util = Module.util;
     const lodash = util.lodash;
     const zod = zodLib;
     return {

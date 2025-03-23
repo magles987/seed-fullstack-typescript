@@ -7,7 +7,6 @@ import {
   StructureSimulatedMicroBackend,
   TStructureKeyFullRequest,
 } from "./structure-simulated-microbackend";
-import { IBagForService } from "../../../../src/seed/logic/providers/services/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**  */
 export class StructureMockServerHandler<

@@ -1,25 +1,27 @@
-import { PrimitiveBag, Trf_PrimitiveBag } from "../bag-module/primitive-bag";
-import { TPrimitiveFnBagForActionModule } from "../bag-module/shared";
+import { PrimitiveBag, Trf_PrimitiveBag } from "../bag/primitive-bag";
+import { TPrimitiveFnBagForActionModule } from "../bag/shared";
 import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { TPrimitiveMetaAndProvider } from "../meta/metadata-shared";
+import {
+  TPrimitiveMetaAndProvider,
+  Trf_TPrimitiveMetaAndProvider,
+} from "../meta/metadata-shared";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
-import { ELogicResStatusCode, IPrimitiveResponse } from "../reports/shared";
+import { IPrimitiveResponse, TSelectorDataDriver } from "../reports/shared";
+import { Driver } from "./_drivers/_driver";
 import { LogicProvider } from "./_provider";
-import { httpClientDriverFactoryFn } from "./services/client/web/http/drivers/http-driver-factory";
-import { localRepositoryFactoryFn } from "./services/client/web/local/drivers/local-repository-factory";
-import { serviceFactory } from "./services/service-factory";
 import {
   TKeyPrimitiveProviderModuleContext,
   TPrimitiveConfigForProvider,
   TPrimitiveProviderModuleConfigForPrimitive,
 } from "./shared";
-import { IRunProvider } from "./shared-for-external-module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del provider */
 export interface IDiccPrimitiveProviderActionConfigG {
-  runProvider: IRunProvider;
+  singleRunDriver: {
+    nameLogicDriver: string;
+    opDriver?: Partial<Driver["getDefault"]>;
+  };
 }
 /**claves identificadoras del diccionario
  * de acciones de configuracion */
@@ -46,45 +48,9 @@ export class PrimitiveLogicProvider<
       ...superDf,
       dfDiccActionConfig: {
         ...(superDf.dfDiccActionConfig as any),
-        runProvider: {
-          customServiceFactoryFn: serviceFactory,
-          serviceConfig: {
-            client: {
-              app: {},
-              web: {
-                local: {
-                  keyLocalRepository: "cookie",
-                  customLocalRepositoryFn: localRepositoryFactoryFn,
-                  diccRepositoryConfig: {
-                    static: {},
-                    cookie: {},
-                    storage: {},
-                    idb: {},
-                  },
-                },
-                http: {
-                  keyHttpDriver: "fetch",
-                  customHttpClientFactoryFn: httpClientDriverFactoryFn,
-                  urlConfig: {
-                    urlRoot: "",
-                    urlPostfix: "",
-                    urlPrefix: "",
-                  },
-                  diccDriverConfig: {
-                    fetch: {},
-                    axios: {},
-                  },
-                },
-              },
-            },
-            //server:{},
-          },
-          serviceToRun: {
-            //❗❗Obligatorio definirlo en los metadatos❗❗
-            keyService: undefined,
-            keyDriver: undefined,
-            customDeepServiceConfig: {},
-          },
+        singleRunDriver: {
+          nameLogicDriver: "",
+          opDriver: {},
         },
       } as IDiccPrimitiveProviderActionConfigG,
       topPriorityKeysAction: [
@@ -104,11 +70,9 @@ export class PrimitiveLogicProvider<
   public override get keyModuleContext(): TKeyPrimitiveProviderModuleContext {
     return "primitiveProvider";
   }
-  /**
-   * @param keySrc indentificadora del recurso asociado a modulo
-   */
-  constructor(keySrc: string) {
-    super("structure", keySrc);
+  /** */
+  constructor() {
+    super("structure");
   }
   protected override getDefault() {
     return PrimitiveLogicProvider.getDefault();
@@ -139,18 +103,18 @@ export class PrimitiveLogicProvider<
     //...aqui configuracion refinada:
     return rConfig;
   }
-  protected override getMetadataWithContextModule(): TPrimitiveMetaAndProvider<TIDiccAC> {
-    let extractMetadataByContext: TPrimitiveMetaAndProvider<TIDiccAC>;
+  protected override getMetadataWithContextModule(): TPrimitiveMetaAndProvider<PrimitiveLogicProvider> {
+    let extractMetadataByContext: Trf_TPrimitiveMetaAndProvider;
     extractMetadataByContext =
       this.metadataHandler.getExtractMetadataByModuleContext("provider") as any;
     return extractMetadataByContext;
   }
   protected override getMetadataOnlyModuleConfig(): TPrimitiveConfigForProvider<TIDiccAC> {
     const metadata =
-      this.getMetadataWithContextModule() as TPrimitiveMetaAndProvider<TIDiccAC>;
+      this.getMetadataWithContextModule() as Trf_TPrimitiveMetaAndProvider;
     const config =
       metadata.__providerConfig as TPrimitiveConfigForProvider<TIDiccAC>;
-    return config;
+    return config as TPrimitiveConfigForProvider<TIDiccAC>;
   }
   protected override getDiccMetadataActionConfig(): TIDiccAC {
     const config = this.getMetadataOnlyModuleConfig();
@@ -193,7 +157,7 @@ export class PrimitiveLogicProvider<
     );
     return [keyAction, actionConfig];
   }
-  public override buildReportHandler(
+  protected override buildReportHandler(
     bag: Trf_PrimitiveBag,
     keyAction: keyof TIDiccAC
   ): PrimitiveReportHandler {
@@ -231,45 +195,29 @@ export class PrimitiveLogicProvider<
     return;
   }
   //================================================================
-  public async runProvider(
+  public async singleRunDriver(
     bag: PrimitiveBag<any>
   ): Promise<IPrimitiveResponse> {
-    const { data, criteriaHandler, responses } = bag;
+    const { data, criteriaHandler } = bag;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
-        "runProvider"
+        "singleRunDriver"
       );
-    let { customServiceFactoryFn, serviceConfig, serviceToRun } = actionConfig;
+    let driverInstance = actionConfig;
     const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    let { keyService, keyDriver, customDeepServiceConfig } = serviceToRun;
-    if (!this.util.isString(keyService)) {
-      res = rH.mutateResponse(res, {
-        status: ELogicResStatusCode.ERROR,
-        msn: `${keyService} is not key service instance valid`,
-      });
-      return res;
-    }
-    if (!this.util.isString(keyDriver)) {
-      res = rH.mutateResponse(res, {
-        status: ELogicResStatusCode.ERROR,
-        msn: `${keyDriver} is not key driver for service instance valid`,
-      });
-      return res;
-    }
-    const serviceInstance = customServiceFactoryFn(
-      keyService,
-      keyDriver,
-      this.keyLogicContext,
-      this.keySrc,
-      serviceConfig,
-      customDeepServiceConfig
-    );
-    const serviceRes = await serviceInstance.sendRequestInService(
+    const selectorDataDriver: TSelectorDataDriver = "first";
+    let driverResponse = await driverInstance.sendRequestFromService(
       bag.getLiteralBag()
     );
-    res = rH.mutateResponse(res, serviceRes as any);
+    res = rH.mutateResponse(res, {
+      ...rH.adaptDriverResponseToResponse(
+        driverResponse,
+        res,
+        selectorDataDriver
+      ),
+    });
     return res;
   }
 }

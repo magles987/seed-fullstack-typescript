@@ -1,7 +1,8 @@
-import { ActionModule, IBuildACOption } from "../config/module";
+import { Module } from "../config/module";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { IDiccPrimitiveHookActionConfigG } from "../hooks/primitive-hook";
 import { TKeyPrimitiveHookModuleContext } from "../hooks/shared";
+import { TKeyPrimitiveInternalACModuleContext } from "../meta/metadata-shared";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import { IDiccPrimitiveMutateActionConfigG } from "../mutaters/primitive-mutater";
 import { TKeyPrimitiveMutateModuleContext } from "../mutaters/shared";
@@ -18,6 +19,7 @@ import {
   TAConds,
   TKeyPrimitiveCriteriaModuleContext,
   TPrimitiveBaseCriteria,
+  TPrimitiveDiccGlobalAC,
 } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorización de la clase*/
@@ -32,13 +34,21 @@ export class PrimitiveCriteriaHandler<
   TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
   TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
   TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
-> extends CriteriaHandler {
+  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
+> extends CriteriaHandler<TKeyDiccActionRequest> {
   public static override getDefault = () => {
     const superDf = CriteriaHandler.getDefault();
     return {
       ...superDf,
-    } as IPrimitiveReadCriteria & IPrimitiveModifyCriteria;
+      diccGlobalAC: {
+        primitiveMutate: {},
+        primitiveVal: {},
+        requestVal: {},
+        primitiveHook: {},
+        primitiveProvider: {},
+      },
+    } as typeof superDf & IPrimitiveReadCriteria & IPrimitiveModifyCriteria;
   };
   public static override getCONSTANTS = () => {
     const superCONST = CriteriaHandler.getCONSTANTS();
@@ -76,25 +86,46 @@ export class PrimitiveCriteriaHandler<
     return metadata.__P_Key;
   }
   protected set p_Key(v: string) {} //❗NO ASIGNABLE❗, pero es necesario para el selfconstructor
+  public override get diccGlobalAC(): TPrimitiveDiccGlobalAC<
+    TIDiccPrimitiveMutateAC,
+    TIDiccPrimitiveValAC,
+    TIDiccRequestValAC,
+    TIDiccPrimitiveHookAC,
+    TIDiccPrimitiveProviderAC
+  > {
+    return super.diccGlobalAC;
+  }
+  public override set diccGlobalAC(
+    v: TPrimitiveDiccGlobalAC<
+      TIDiccPrimitiveMutateAC,
+      TIDiccPrimitiveValAC,
+      TIDiccRequestValAC,
+      TIDiccPrimitiveHookAC,
+      TIDiccPrimitiveProviderAC
+    >
+  ) {
+    super.diccGlobalAC = v;
+  }
   /**... */
   constructor(
-    keySrc: string,
     metadataHandler: Trf_PrimitiveLogicMetadataHandler,
     base: TPrimitiveBaseCriteria<
       TIDiccPrimitiveMutateAC,
       TIDiccPrimitiveValAC,
       TIDiccRequestValAC,
       TIDiccPrimitiveHookAC,
-      TIDiccPrimitiveProviderAC
+      TIDiccPrimitiveProviderAC,
+      TKeyDiccActionRequest
     > = {
       type: "read",
+      keyActionRequest: undefined,
     },
     isInit = true
   ) {
-    super("primitive", keySrc, metadataHandler, base, false);
+    super("primitive", metadataHandler, base, false);
+    //asignación a propiedades especiales
+    //...
     if (isInit) this.initProps(base);
-    this.initMergeDiccGlobalAC();
-    this.initAKeysGlobalAC();
   }
   protected override getDefault() {
     return PrimitiveCriteriaHandler.getDefault();
@@ -123,74 +154,125 @@ export class PrimitiveCriteriaHandler<
     | IPrimitiveModifyCriteria {
     return super.getLiteral() as any;
   }
-  protected override initMergeDiccGlobalAC(): void {
-    let bf_diccGlobalAC = {};
-    const keysModuleContext = this.getCONST().KEYS_GLOBAL_AC;
-    const mH = this.metadataHandler;
-    if (this.util.isObject(this.diccGlobalAC)) {
-      const bACOption: IBuildACOption = {
-        mergeMode: "soft",
-      };
-      for (const keyModuleContext of keysModuleContext) {
-        if (
-          keyModuleContext !== "primitiveMutate" &&
-          keyModuleContext !== "primitiveVal" &&
-          keyModuleContext !== "requestVal" &&
-          keyModuleContext !== "primitiveHook" &&
-          keyModuleContext === "primitiveProvider"
-        )
-          continue;
-        let actionModule =
-          mH.getModuleInstanceForActionContext(keyModuleContext);
-        const newDicc = this.util.isObject(this.diccGlobalAC[keyModuleContext])
-          ? this.diccGlobalAC[keyModuleContext]
-          : {};
-        bf_diccGlobalAC[keyModuleContext] =
-          actionModule.buildContainerActionsConfig(
-            "toActionConfig_DiccWrapped",
-            newDicc,
-            bACOption
-          );
-      }
+  public static rebuildCustomConfigFromModuleContext(
+    currentContextConfig: IPrimitiveReadCriteria<any> &
+      IPrimitiveModifyCriteria<any>,
+    newContextConfig: IPrimitiveReadCriteria<any> &
+      IPrimitiveModifyCriteria<any>
+  ): IPrimitiveReadCriteria<any> & IPrimitiveModifyCriteria<any> {
+    const util = Module.util;
+    let rConfig: IPrimitiveReadCriteria<any> & IPrimitiveModifyCriteria<any>;
+    const dfCC = PrimitiveCriteriaHandler.getDefault();
+    const cCC = (
+      util.isObject(currentContextConfig) ? currentContextConfig : dfCC
+    ) as IPrimitiveReadCriteria<any> & IPrimitiveModifyCriteria<any>;
+    const nCC = newContextConfig as IPrimitiveReadCriteria<any> &
+      IPrimitiveModifyCriteria<any>;
+    if (!util.isObject(nCC)) {
+      rConfig = cCC;
     } else {
-      const diccModelMutate = mH.getDiccActionConfigByModuleContext("mutater");
-      const diccModelVal = mH.getDiccActionConfigByModuleContext(
-        "validator",
-        "primitiveVal"
-      );
-      const diccReqVal = mH.getDiccActionConfigByModuleContext(
-        "validator",
-        "requestVal"
-      );
-      const diccStructureHook = mH.getDiccActionConfigByModuleContext("hook");
-      const diccStructureProvider =
-        mH.getDiccActionConfigByModuleContext("provider");
-      for (const keyModuleContext of keysModuleContext) {
-        if (keyModuleContext === "primitiveMutate") {
-          bf_diccGlobalAC[keyModuleContext] = diccModelMutate;
-        } else if (keyModuleContext === "primitiveVal") {
-          bf_diccGlobalAC[keyModuleContext] = diccModelVal;
-        } else if (keyModuleContext === "requestVal") {
-          bf_diccGlobalAC[keyModuleContext] = diccReqVal;
-        } else if (keyModuleContext === "primitiveHook") {
-          bf_diccGlobalAC[keyModuleContext] = diccStructureHook;
-        } else if (keyModuleContext === "primitiveProvider") {
-          bf_diccGlobalAC[keyModuleContext] = diccStructureProvider;
-        } else {
-          continue;
-        }
-      }
-      this.diccGlobalAC = bf_diccGlobalAC;
+      rConfig = {
+        ...nCC,
+        keySrc: util.isString(nCC.keySrc) ? nCC.keySrc : cCC.keySrc,
+        p_Key: util.isString(nCC.p_Key) ? nCC.p_Key : cCC.p_Key,
+        s_Key: util.isString(nCC.s_Key) ? nCC.s_Key : cCC.s_Key,
+        keyLogicContext: util.isString(nCC.keyLogicContext)
+          ? nCC.keyLogicContext
+          : cCC.keyLogicContext,
+        keyActionRequest: util.isString(nCC.keyActionRequest)
+          ? nCC.keyActionRequest
+          : cCC.keyActionRequest,
+        type: util.isString(nCC.type) ? nCC.type : cCC.type,
+        modifyType: util.isString(nCC.modifyType)
+          ? nCC.modifyType
+          : cCC.modifyType,
+        diccGlobalAC: util.isObject(nCC.diccGlobalAC)
+          ? {
+              primitiveMutate: util.mergeDiccActionConfig(
+                [
+                  nCC.diccGlobalAC.primitiveMutate,
+                  cCC.diccGlobalAC.primitiveMutate,
+                ],
+                { mode: "hard" }
+              ),
+              primitiveVal: util.mergeDiccActionConfig(
+                [nCC.diccGlobalAC.primitiveVal, cCC.diccGlobalAC.primitiveVal],
+                { mode: "hard" }
+              ),
+              requestVal: util.mergeDiccActionConfig(
+                [nCC.diccGlobalAC.requestVal, cCC.diccGlobalAC.requestVal],
+                { mode: "hard" }
+              ),
+              primitiveHook: util.mergeDiccActionConfig(
+                [
+                  nCC.diccGlobalAC.primitiveHook,
+                  cCC.diccGlobalAC.primitiveHook,
+                ],
+                { mode: "hard" }
+              ),
+              primitiveProvider: util.mergeDiccActionConfig(
+                [
+                  nCC.diccGlobalAC.primitiveProvider,
+                  cCC.diccGlobalAC.primitiveProvider,
+                ],
+                { mode: "hard" }
+              ),
+            }
+          : cCC.diccGlobalAC,
+        diccQueryParam: util.deepMergeObjects(
+          [nCC.diccQueryParam, cCC.diccQueryParam],
+          { mode: "soft", isNullAsUndefined: true }
+        ),
+        aTCustomQueryDriverFunctions: util.isArray(
+          nCC.aTCustomQueryDriverFunctions,
+          true
+        )
+          ? nCC.aTCustomQueryDriverFunctions
+          : cCC.aTCustomQueryDriverFunctions,
+        aTKeysGlobalActionConfig: util.isArray(
+          nCC.aTKeysGlobalActionConfig,
+          true
+        )
+          ? nCC.aTKeysGlobalActionConfig
+          : cCC.aTKeysGlobalActionConfig,
+        isCreateOrUpdate: util.isBoolean(nCC.isCreateOrUpdate)
+          ? nCC.isCreateOrUpdate
+          : cCC.isCreateOrUpdate,
+        sort: util.isArray(nCC.sort) ? nCC.sort : cCC.sort,
+        limit: util.isNumber(nCC.limit) ? nCC.limit : cCC.limit,
+        targetPage: util.isNumber(nCC.targetPage)
+          ? nCC.targetPage
+          : cCC.targetPage,
+        targetPageLogic: util.isNumber(nCC.targetPageLogic)
+          ? nCC.targetPageLogic
+          : cCC.targetPageLogic,
+        expectedDataType: util.isString(nCC.expectedDataType)
+          ? nCC.expectedDataType
+          : cCC.expectedDataType,
+        urlsExtended: util.isArray(nCC.urlsExtended)
+          ? nCC.urlsExtended
+          : cCC.urlsExtended,
+      };
     }
-    return;
+    return rConfig;
   }
-  protected override initAKeysGlobalAC(): void {
+  protected override mergeBaseCriteriaWithPriority(): IPrimitiveReadCriteria<any> &
+    IPrimitiveModifyCriteria<any> {
     const mH = this.metadataHandler;
-    const diccACtrl = mH.getDiccActionConfigByModuleContext("controller");
-    this.aTKeysGlobalActionConfig = diccACtrl[this.keyActionRequest] as Array<
-      [string, string]
-    >;
-    return;
+    let rCriteria: IPrimitiveReadCriteria<any> & IPrimitiveModifyCriteria<any>;
+    const keyAR = this.keyActionRequest;
+    const modelCtrlC = mH.getExtractMetadataByModuleContext("controller");
+    const { diccCriteriaRequestConfig } = modelCtrlC.__ctrlConfig.primitiveCtrl;
+    const baseCRC = diccCriteriaRequestConfig[
+      keyAR
+    ] as IPrimitiveReadCriteria<any> & IPrimitiveModifyCriteria<any>;
+    const newCRC = this.getLiteral() as IPrimitiveReadCriteria<any> &
+      IPrimitiveModifyCriteria<any>;
+    rCriteria = PrimitiveCriteriaHandler.rebuildCustomConfigFromModuleContext(
+      baseCRC as any,
+      newCRC as any
+    );
+    return rCriteria;
   }
   public override getGlobalActionByTKeyGlobalAC<TKeyActionConfig>(
     tKeyGlobalAC: Array<
@@ -206,6 +288,14 @@ export class PrimitiveCriteriaHandler<
     >
   ): any {
     return super.getGlobalActionByTKeyGlobalAC(tKeyGlobalAC);
+  }
+  public extractDiccByKeyModuleContext(
+    keysModuleContext:
+      | TKeyPrimitiveInternalACModuleContext
+      | TKeyPrimitiveInternalACModuleContext[]
+  ): void {
+    super.extractDiccByKeyModuleContext(keysModuleContext);
+    return;
   }
   protected override checkQueryConds(conds: TAConds): void {
     const len = conds.length;
@@ -225,9 +315,8 @@ export class PrimitiveCriteriaHandler<
         } else if (
           !this.util.isObjectWithProperties(
             cond as ISingleCondition,
-            false,
             ["op", "vCond"],
-            "is-not-undefined-and-not-null"
+            { propCondition: "is-not-undefined-and-not-null" }
           )
         ) {
           throw new LogicError({

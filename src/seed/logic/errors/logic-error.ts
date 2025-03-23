@@ -1,3 +1,5 @@
+import { Module } from "../config/module";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TLogicBuildParam = {
   /**codigo generico del error */
@@ -30,6 +32,8 @@ export class LogicError extends Error {
   public readonly preError: Partial<LogicError>;
   /**clave identificadora de la accion */
   public readonly keyAction: string;
+  /**utilidades de este modulo */
+  protected readonly util = Module.util;
   /** */
   constructor({ keyAction, msn, code, preError }: TLogicBuildParam) {
     super();

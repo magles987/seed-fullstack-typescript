@@ -1,5 +1,4 @@
 import { SimulatedMicroBackend } from "../_simulated-microbackend";
-import { IBagForService } from "../../../../src/seed/logic/providers/services/shared";
 import {
   TKeyStructureModifyRequestController,
   TKeyStructureReadRequestController,
@@ -10,9 +9,10 @@ import {
   IStructureModifyCriteria,
   IStructureReadCriteria,
 } from "../../../../src/seed/logic/criterias/shared";
-import { StructureQueryJsAdaptator } from "../../../../src/seed/logic/providers/services/client/web/local/drivers/_query-js-adaptador";
 import { getGlobalConfig } from "../../../../src/seed/logic/config/global-config";
 import { getStrategyGeneratorIdFnByKey } from "../../../../src/seed/logic/util/default-generators-id-fn";
+import { StructureQueryTool } from "../../../../src/seed/logic/util/query-tool";
+import { IBagForDriver } from "../../../../src/seed/logic/providers/_drivers/shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras de todas las acciones de request */
 export type TStructureKeyFullRequest =
@@ -47,6 +47,7 @@ export class StructureSimulatedMicroBackend<
       //..aquí las constantes
     };
   };
+  protected override readonly queryTool = StructureQueryTool.getInstance();
   private _keyId: string;
   public get keyId(): string {
     return this._keyId;
@@ -57,9 +58,6 @@ export class StructureSimulatedMicroBackend<
       : this._keyId !== undefined
       ? this._keyId
       : this.getDefault().keyId;
-  }
-  protected override get queryJsAdaptator(): StructureQueryJsAdaptator {
-    return super.queryJsAdaptator;
   }
   /**
    * @param base objeto literal con valores personalizados para inicializa las propiedades
@@ -73,7 +71,7 @@ export class StructureSimulatedMicroBackend<
     > = {},
     isInit = true
   ) {
-    super("structure", StructureQueryJsAdaptator.getInstance(), base, false);
+    super("structure", base, false);
     if (isInit) this.initProps(base);
   }
   protected override getDefault() {
@@ -115,13 +113,13 @@ export class StructureSimulatedMicroBackend<
 
   //████ common snippet for action request  ████████████████████████
   protected override async readCommon(
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForDriver["literalCriteria"]
   ) {
     let data = this.bd_collection;
     return data;
   }
   protected override async createCommon(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data: any
   ) {
     const kId = this.keyId;
@@ -138,7 +136,7 @@ export class StructureSimulatedMicroBackend<
     return data;
   }
   protected override async updateCommon(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data: any
   ) {
     const kId = this.keyId;
@@ -151,7 +149,7 @@ export class StructureSimulatedMicroBackend<
     return data;
   }
   protected override async deleteCommon(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data: any
   ) {
     const kId = this.keyId;
@@ -167,7 +165,7 @@ export class StructureSimulatedMicroBackend<
   }
   //████ Request Actions ████████████████████████████████████████████████████████████
   public async exist(
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForDriver["literalCriteria"]
   ): Promise<boolean> {
     const registers = await this.readCommon(literalCriteria);
     const aData = await this.getMany(registers, literalCriteria);
@@ -175,7 +173,7 @@ export class StructureSimulatedMicroBackend<
     return rxData;
   }
   public async count(
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForDriver["literalCriteria"]
   ): Promise<number> {
     const registers = await this.readCommon(literalCriteria);
     const aData = await this.getMany(registers, literalCriteria);
@@ -184,7 +182,7 @@ export class StructureSimulatedMicroBackend<
   }
   public async inform(
     data: any,
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForDriver["literalCriteria"]
   ): Promise<string> {
     const registers = await this.readCommon(literalCriteria);
     const aData = await this.getMany(registers, literalCriteria);
@@ -200,7 +198,7 @@ export class StructureSimulatedMicroBackend<
    *
    */
   public async readAll(
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForDriver["literalCriteria"]
   ): Promise<any[]> {
     const registers = await this.readCommon(literalCriteria);
     let rxData = await this.getAll(registers, literalCriteria);
@@ -208,7 +206,7 @@ export class StructureSimulatedMicroBackend<
   }
   /**... */
   public async readMany(
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForDriver["literalCriteria"]
   ): Promise<any[]> {
     const registers = await this.readCommon(literalCriteria);
     let rxData = await this.getMany(registers, literalCriteria);
@@ -222,7 +220,7 @@ export class StructureSimulatedMicroBackend<
    * @returns ``
    *
    */
-  public async readOne(literalCriteria: IBagForService["literalCriteria"]) {
+  public async readOne(literalCriteria: IBagForDriver["literalCriteria"]) {
     const registers = await this.readCommon(literalCriteria);
     let rxData = await this.getOne(registers, literalCriteria);
     return rxData;
@@ -235,7 +233,7 @@ export class StructureSimulatedMicroBackend<
    * @returns ``
    *
    */
-  public async readById(literalCriteria: IBagForService["literalCriteria"]) {
+  public async readById(literalCriteria: IBagForDriver["literalCriteria"]) {
     const kId = this.keyId;
     const { query } = literalCriteria as IStructureReadCriteria<any>;
     const extractQ = query!.find((q) => {
@@ -262,7 +260,7 @@ export class StructureSimulatedMicroBackend<
    *
    */
   public async create(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data: any
   ) {
     const { modifyType, isCreateOrUpdate } =
@@ -294,7 +292,7 @@ export class StructureSimulatedMicroBackend<
    *
    */
   public async update(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data: any
   ) {
     const { modifyType, isCreateOrUpdate } =
@@ -326,7 +324,7 @@ export class StructureSimulatedMicroBackend<
    *
    */
   public async delete(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data: any
   ) {
     const { modifyType } = literalCriteria as IStructureModifyCriteria<any>;

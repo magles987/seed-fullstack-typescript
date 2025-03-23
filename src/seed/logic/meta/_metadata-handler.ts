@@ -1,6 +1,12 @@
 import { ActionModule, LogicModule } from "../config/module";
 import { TKeyLogicContext } from "../config/shared-modules";
-import { Util_Meta } from "./_util-meta";
+import { ELogicCodeError, LogicError } from "../errors/logic-error";
+import { Driver } from "../providers/_drivers/_driver";
+import { FetchDriver } from "../providers/_drivers/client/web/https/fetch/fetch-driver";
+import { CookieDriver } from "../providers/_drivers/client/web/local-repositories/cookie/cookie-driver";
+import { IdbDriver } from "../providers/_drivers/client/web/local-repositories/idb/_idb-driver";
+import { StorageDriver } from "../providers/_drivers/client/web/local-repositories/storage/storage-driver";
+import { Trf_IBuilderBaseMetadata } from "./builder-shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_LogicMetadataHandler = LogicMetadataHandler;
@@ -11,8 +17,17 @@ export type Trf_LogicMetadataHandler = LogicMetadataHandler;
 export abstract class LogicMetadataHandler extends LogicModule {
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
+    const superDf = LogicModule.getDefault();
     return {
-      handlerConfig: undefined,
+      ...superDf,
+      handlerConfig: {},
+      driverList: [
+        new CookieDriver(),
+        new StorageDriver(),
+        new IdbDriver(),
+        new FetchDriver(),
+        //
+      ] as [Driver, ...Driver[]],
     };
   };
   /**metadatos de este recurso */
@@ -56,14 +71,23 @@ export abstract class LogicMetadataHandler extends LogicModule {
    * que su llamado fue desde un modulo
    * permitido*/
   protected pseudoTokent = "#0nly-C0ntr0ll3r#";
-  protected override readonly util = Util_Meta.getInstance();
   /**
-   * @param keyLogicContext contexto logico (primitivo o estructurado).
-   * @param keySrc clave indentificadora del recurso asociado a modulo
+   * @param keyLogicContext contexto lógico (primitivo o estructurado).
+   * @param baseConfigMeta
+   *
    */
-  constructor(keyLogicContext: TKeyLogicContext, keySrc: string) {
-    super("metadata", keyLogicContext, keySrc);
-    this.util = Util_Meta.getInstance();
+  constructor(
+    keyLogicContext: TKeyLogicContext,
+    baseConfigMeta: Trf_IBuilderBaseMetadata
+  ) {
+    super("metadata", keyLogicContext);
+    if (!this.util.isObject(baseConfigMeta)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${baseConfigMeta} is no base metadata valid`,
+      });
+    }
+    this.keySrc = baseConfigMeta.keySrc;
   }
   /**construye un diccionario de instancias de modulos de
    * accion y cursor.
@@ -72,20 +96,8 @@ export abstract class LogicMetadataHandler extends LogicModule {
    *
    * @returns el diccionario ya contruido
    */
-  protected abstract buildDiccModuleContextIntance(
+  protected abstract buildDiccModuleContextInstance(
     diccMIContext?: unknown
-  ): unknown;
-  /**en el diccionario de instancias de modulo, se inyecta
-   * este manejador de metadatos en cada modulo requerido
-   *
-   * @param diccModuleInstContext el diccionario de instancias de modulos a los
-   * cuales se desea inyectar este manejador de metadatos
-   *
-   * @returns el diccionario con las instancias
-   * ya inyectadas de este manejador de metadatos
-   */
-  protected abstract injectThisHandlerIntoModuleInstance(
-    diccModuleInstContext: unknown
   ): unknown;
   /**construye un nuevo metadato */
   public abstract buildMetadata(
@@ -107,4 +119,39 @@ export abstract class LogicMetadataHandler extends LogicModule {
   public abstract getModuleInstanceForActionContext(
     keyModuleContext: unknown
   ): ActionModule<any>;
+  /**fusionador de instancias de drivers para inicializar los metadatos */
+  protected mergeDriversList(tDriversList: [Driver[], Driver[]]): Driver[] {
+    if (!this.util.isTuple(tDriversList, 2)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${tDriversList} is not driver list tuple valid`,
+      });
+    }
+    const [baseDriverList, newDriverList] = tDriversList;
+    const isBase = this.util.isArray(baseDriverList, true);
+    const isNew = this.util.isArray(newDriverList, true);
+    if (!isBase || !isNew) {
+      if (isBase && !isNew)
+        return baseDriverList.filter((driver) => this.util.isInstance(driver));
+      if (!isBase && isNew)
+        return newDriverList.filter((driver) => this.util.isInstance(driver));
+      return [];
+    }
+    //fusión fuerte implícita
+    let driverList_merged = [...baseDriverList, ...newDriverList].filter(
+      (driver) => this.util.isInstance(driver) //solo los items que sean instancias
+    );
+    const keyPropName: keyof Driver = "nameLogicDriver";
+    driverList_merged = this.util.removeArrayDuplicate(driverList_merged, {
+      keyOrKeysPath: keyPropName,
+      itemConflictMode: "last",
+    });
+    return driverList_merged;
+  }
+  /**obtiene el driver asociado a partir de su nombre de grupo
+   *
+   * @param name  el nombre del driver a buscar
+   * @returns el driver asociado
+   */
+  public abstract getDriverByName(name: string): Driver;
 }

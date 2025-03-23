@@ -1,4 +1,3 @@
-import { TKeyModuleWithReport } from "../config/shared-modules";
 import { LogicController } from "../controllers/_controller";
 import { LogicMutater } from "../mutaters/_mutater";
 import { LogicHook } from "../hooks/_hook";
@@ -7,13 +6,13 @@ import { LogicValidation } from "../validators/_validation";
 import { ReportHandler } from "./_reportHandler";
 import {
   ELogicResStatusCode,
+  IDriverResponse,
   IStructureResponse,
   Trf_IStructureResponse,
+  TSelectorDataDriver,
   TStructureModuleContext,
   TStructureResponseForMutate,
 } from "./shared";
-import { LogicService } from "../providers/services/_service";
-
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_StructureReportHandler = StructureReportHandler;
@@ -24,13 +23,14 @@ export type Trf_StructureReportHandler = StructureReportHandler;
  */
 export class StructureReportHandler
   extends ReportHandler
-  implements ReturnType<StructureReportHandler["getDefault"]> {
+  implements ReturnType<StructureReportHandler["getDefault"]>
+{
   public static override readonly getDefault = () => {
     const superDf = ReportHandler.getDefault();
     return {
       ...superDf,
       keyPath: undefined,
-    } as IStructureResponse;
+    } as typeof superDf & IStructureResponse;
   };
   protected static override readonly getCONSTANTS = () => {
     const superCONST = ReportHandler.getCONSTANTS();
@@ -47,8 +47,8 @@ export class StructureReportHandler
     this._keyPath = this.util.isString(v)
       ? v
       : this._keyPath !== undefined
-        ? this._keyPath
-        : this.getDefault().keyPath;
+      ? this._keyPath
+      : this.getDefault().keyPath;
   }
   public override get keyRepModuleContext(): TStructureModuleContext {
     return super.keyRepModuleContext as any;
@@ -63,7 +63,7 @@ export class StructureReportHandler
     super.responses = v;
   }
   /**
-   * @param keySrc indentificadora del recurso asociado a modulo
+   * @param keySrc identificadora del recurso asociado a modulo
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
    */
@@ -110,63 +110,61 @@ export class StructureReportHandler
   protected override reduceResponses(
     response: IStructureResponse
   ): IStructureResponse {
-    const { keyRepModule, keyRepModuleContext } = response;
-    const res = response as Trf_IStructureResponse;
-    const reses = res.responses;
-    /**funcion lanzadora de reductoras personalizadas */
-    let lanchReducerFn = (
-      currentStatus: ELogicResStatusCode,
-      nextStatus: ELogicResStatusCode
-    ) => {
-      let stateStatus: ELogicResStatusCode;
-      if (keyRepModule === "controller")
-        stateStatus = LogicController.getControlReduceStatusResponse(
-          currentStatus,
-          nextStatus
-        );
-      else if (keyRepModule === "mutater")
-        stateStatus = LogicMutater.getControlReduceStatusResponse(
-          currentStatus,
-          nextStatus
-        );
-      else if (keyRepModule === "validator")
-        stateStatus = LogicValidation.getControlReduceStatusResponse(
-          currentStatus,
-          nextStatus
-        );
-      else if (keyRepModule === "hook")
-        stateStatus = LogicHook.getControlReduceStatusResponse(
-          currentStatus,
-          nextStatus
-        );
-      else if (keyRepModule === "provider")
-        stateStatus = LogicProvider.getControlReduceStatusResponse(
-          currentStatus,
-          nextStatus
-        );
-      else if (keyRepModule === "service")
-        stateStatus = LogicService.getControlReduceStatusResponse(
-          currentStatus,
-          nextStatus
-        );
-      else stateStatus = ELogicResStatusCode.ERROR;
-      return stateStatus;
-    };
-    lanchReducerFn.bind(this);
+    const { keyRepModule } = response;
+    let res = response as Trf_IStructureResponse;
+    let reses = res.responses;
     for (let idx = 0; idx < reses.length; idx++) {
-      const embRes = this.reduceResponses(reses[idx]); //recursivo para res embebidos internos      
-      res.status = lanchReducerFn(res.status, embRes.status);
-      const isFieldContext = embRes.keyRepModuleContext === "fieldCtrl"
-        || embRes.keyRepModuleContext === "fieldMutate"
-        || embRes.keyRepModuleContext === "fieldVal";
-      const isModelContext = res.keyRepModuleContext === "modelCtrl"
-        || res.keyRepModuleContext === "modelMutate"
-        || res.keyRepModuleContext === "modelVal";
+      const embRes = this.reduceResponses(reses[idx]); //recursivo para res embebidos internos
+      if (keyRepModule === "controller") {
+        res.status = LogicController.getControlReduceStatusResponse(
+          res.status,
+          embRes.status
+        );
+      } else if (keyRepModule === "mutater") {
+        res.status = LogicMutater.getControlReduceStatusResponse(
+          res.status,
+          embRes.status
+        );
+      } else if (keyRepModule === "validator") {
+        res.status = LogicValidation.getControlReduceStatusResponse(
+          res.status,
+          embRes.status
+        );
+      } else if (keyRepModule === "hook") {
+        res.status = LogicHook.getControlReduceStatusResponse(
+          res.status,
+          embRes.status
+        );
+      } else if (keyRepModule === "provider") {
+        res.status = LogicProvider.getControlReduceStatusResponse(
+          res.status,
+          embRes.status
+        );
+      } else res.status = ELogicResStatusCode.ERROR;
+      const isFieldContext =
+        embRes.keyRepModuleContext === "fieldCtrl" ||
+        embRes.keyRepModuleContext === "fieldMutate" ||
+        embRes.keyRepModuleContext === "fieldVal";
+      const isModelContext =
+        res.keyRepModuleContext === "modelCtrl" ||
+        res.keyRepModuleContext === "modelMutate" ||
+        res.keyRepModuleContext === "modelVal";
       if (!(isFieldContext && isModelContext)) {
         //solo muta si la reduccion no compromete de campo a modelo
         this.mutateData(embRes.data, res);
       }
     }
-    return response;
+    return res;
+  }
+  public override adaptDriverResponseToResponse(
+    driverResponses: IDriverResponse | IDriverResponse[],
+    response: IStructureResponse,
+    selectorDataDriver: TSelectorDataDriver
+  ): IStructureResponse {
+    return super.adaptDriverResponseToResponse(
+      driverResponses,
+      response,
+      selectorDataDriver
+    ) as IStructureResponse;
   }
 }

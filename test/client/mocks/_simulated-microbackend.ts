@@ -1,17 +1,17 @@
 import { getGlobalConfig } from "../../../src/seed/logic/config/global-config";
 import { TKeyLogicContext } from "../../../src/seed/logic/config/shared-modules";
-import { QueryJsAdaptator } from "../../../src/seed/logic/providers/services/client/web/local/drivers/_query-js-adaptador";
-import { IBagForService } from "../../../src/seed/logic/providers/services/shared";
+import { IBagForDriver } from "../../../src/seed/logic/providers/_drivers/shared";
 import {
   ELogicResStatusCode,
-  IExtResponse,
+  IDriverResponse,
 } from "../../../src/seed/logic/reports/shared";
-import { Util_Mock } from "./_util-mock";
+import { Util_Test } from "../../util-test";
+import { QueryTool } from "../../../src/seed/logic/util/query-tool";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export interface ISimulatedMicroBackend {
   receiveMockRequest: (
-    criteria: IBagForService["literalCriteria"],
+    criteria: IBagForDriver["literalCriteria"],
     data: any
   ) => Promise<unknown>;
 }
@@ -40,6 +40,8 @@ export abstract class SimulatedMicroBackend
       //..aqui las constantes
     };
   };
+  /**herramientas para las queries */
+  protected abstract queryTool: QueryTool;
   private _bd_collection: any[];
   public get bd_collection(): any[] {
     return this._bd_collection ?? this.getDefault().bd_collection;
@@ -55,25 +57,19 @@ export abstract class SimulatedMicroBackend
   protected get keyLogicContext(): TKeyLogicContext {
     return this._keyLogicContext;
   }
-  /**... */
-  protected get queryJsAdaptator(): QueryJsAdaptator {
-    return this._queryJsAdaptator;
-  }
   /**utilidades */
-  protected util = Util_Mock.getInstance();
+  protected util = Util_Test.getInstance();
   /**
    * @param _keyLogicContext clave identificadora del contexto lógico de esta clase
-   * @param _queryJsAdaptator adaptador para consultas
    * @param base objeto literal con valores personalizados para inicializar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedades
    */
   constructor(
     private _keyLogicContext: TKeyLogicContext,
-    private _queryJsAdaptator: QueryJsAdaptator,
     base: Partial<ReturnType<SimulatedMicroBackend["getDefault"]>> = {},
     isInit = true
   ) {
-    this.util = Util_Mock.getInstance();
+    this.util = Util_Test.getInstance();
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
@@ -131,10 +127,10 @@ export abstract class SimulatedMicroBackend
   }
   /**... */
   public async receiveMockRequest(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data?: any
-  ): Promise<IExtResponse> {
-    let driverRes: IExtResponse;
+  ): Promise<IDriverResponse> {
+    let driverRes: IDriverResponse;
     try {
       let actionFn = this.util.getActionRequestFn(this, literalCriteria);
       const rxData = await actionFn(literalCriteria, data);
@@ -150,16 +146,16 @@ export abstract class SimulatedMicroBackend
   }
   /**... */
   protected buildDriverResponse(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     rxData: any,
     error?: any
-  ): IExtResponse {
+  ): IDriverResponse {
     let driverRes = {
       data: rxData,
       status: ELogicResStatusCode.SUCCESS,
       msn: ``,
       error,
-    } as IExtResponse;
+    } as IDriverResponse;
     const { expectedDataType } = literalCriteria;
     const dfValue = this.util.dfValue;
     if (this.util.isUndefinedOrNull(error)) {
@@ -189,37 +185,31 @@ export abstract class SimulatedMicroBackend
   /**... */
   protected async getOne(
     registers: any[],
-    criteria: IBagForService["literalCriteria"]
+    criteria: IBagForDriver["literalCriteria"]
   ): Promise<any> {
     registers = Array.isArray(registers) ? registers : [registers];
-    const data = await this.queryJsAdaptator.findByCondition(
-      registers,
-      criteria
-    );
+    const data = await this.queryTool.findByCondition(registers, criteria);
     return data;
   }
   /**... */
   protected async getMany(
     registers: any[],
-    criteria: IBagForService["literalCriteria"]
+    criteria: IBagForDriver["literalCriteria"]
   ): Promise<any[]> {
     registers = Array.isArray(registers) ? registers : [registers];
-    let data = await this.queryJsAdaptator.filterByCondition(
-      registers,
-      criteria
-    );
-    data = await this.queryJsAdaptator.orderBy(data, criteria);
-    data = await this.queryJsAdaptator.pageBy(data, criteria);
+    let data = await this.queryTool.filterByCondition(registers, criteria);
+    data = await this.queryTool.orderByCriteria(data, criteria);
+    data = await this.queryTool.pageByCriteria(data, criteria);
     return data;
   }
   /**... */
   protected async getAll(
     registers: any[],
-    criteria: IBagForService["literalCriteria"]
+    criteria: IBagForDriver["literalCriteria"]
   ): Promise<any[]> {
     registers = Array.isArray(registers) ? registers : [registers];
-    let data = await this.queryJsAdaptator.orderBy(registers, criteria);
-    data = await this.queryJsAdaptator.pageBy(data, criteria);
+    let data = await this.queryTool.orderByCriteria(registers, criteria);
+    data = await this.queryTool.pageByCriteria(data, criteria);
     return data;
   }
   //████ common CRUD ████████████████████████████████████████████████████████████
@@ -232,7 +222,7 @@ export abstract class SimulatedMicroBackend
    *
    */
   protected abstract readCommon(
-    criteria: IBagForService["literalCriteria"]
+    criteria: IBagForDriver["literalCriteria"]
   ): Promise<any>;
   /**
    * descrip...
@@ -243,7 +233,7 @@ export abstract class SimulatedMicroBackend
    *
    */
   protected abstract createCommon(
-    criteria: IBagForService["literalCriteria"],
+    criteria: IBagForDriver["literalCriteria"],
     data: any
   ): Promise<any>;
   /**
@@ -255,7 +245,7 @@ export abstract class SimulatedMicroBackend
    *
    */
   protected abstract updateCommon(
-    criteria: IBagForService["literalCriteria"],
+    criteria: IBagForDriver["literalCriteria"],
     data: any
   ): Promise<any>;
   /**
@@ -267,7 +257,7 @@ export abstract class SimulatedMicroBackend
    *
    */
   protected abstract deleteCommon(
-    criteria: IBagForService["literalCriteria"],
+    criteria: IBagForDriver["literalCriteria"],
     data: any
   ): Promise<any>;
 }

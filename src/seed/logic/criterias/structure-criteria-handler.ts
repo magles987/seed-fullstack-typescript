@@ -1,5 +1,8 @@
-import { ActionModule, IBuildACOption } from "../config/module";
-import { TKeyStructureContextFull } from "../config/shared-modules";
+import { ActionModule, IBuildACOption, Module } from "../config/module";
+import {
+  TKeyStructureContextBasic,
+  TKeyStructureContextFull,
+} from "../config/shared-modules";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { TKeyStructureHookModuleContext } from "../hooks/shared";
 import { IDiccStructureHookActionConfigG } from "../hooks/structure-hook";
@@ -16,15 +19,15 @@ import { IDiccRequestValActionConfigG } from "../validators/request-validation";
 import { TKeyStructureDeepValModuleContext } from "../validators/shared";
 import { CriteriaHandler } from "./_criteria-handler";
 import {
-  IFieldCriteria,
   ISingleCondition,
-  IStructureModifyCriteria,
-  IStructureReadCriteria,
+  IStructureFieldCriteria,
+  IStructureModelModifyCriteria,
+  IStructureModelReadCriteria,
   TAConds,
   TKeyStructureCriteriaModuleContext,
-  TKeyStructureDeepCriteriaModuleContext,
-  TStructureBaseCriteria,
-  TStructureBaseCriteriaForCtrlField,
+  TStructureFieldBaseCriteria,
+  TStructureModelBaseCriteria,
+  TStructureModelDiccGlobalAC,
 } from "./shared";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -42,17 +45,27 @@ export class StructureCriteriaHandler<
   TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
   TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
   TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
-> extends CriteriaHandler {
+  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TKeyDiccActionRequest extends string = string
+> extends CriteriaHandler<TKeyDiccActionRequest> {
   public static override readonly getDefault = () => {
     const superDf = CriteriaHandler.getDefault();
     return {
       ...superDf,
       sort: {},
       keysPath: [],
+      diccGlobalAC: {
+        modelMutate: {},
+        modelVal: {},
+        requestVal: {},
+        structureHook: {},
+        structureProvider: {},
+      },
       keyPath: "",
       keyStructureContext: "structureModel",
-    } as IStructureReadCriteria<any> & IStructureModifyCriteria<any>;
+    } as typeof superDf &
+      IStructureModelReadCriteria<any> &
+      IStructureModelModifyCriteria<any>;
   };
   public static override getCONSTANTS = () => {
     const superCONST = CriteriaHandler.getCONSTANTS();
@@ -80,10 +93,26 @@ export class StructureCriteriaHandler<
   public override get keyModuleContext(): TKeyStructureCriteriaModuleContext {
     return "structureCriteria";
   }
-  public override get sort(): IStructureReadCriteria<TModel>["sort"] {
+  private _keyStructureContext: TKeyStructureContextFull;
+  public get keyStructureContext(): TKeyStructureContextFull {
+    return this._keyStructureContext;
+  }
+  protected set keyStructureContext(v: TKeyStructureContextFull) {
+    //solo se permite 1 vez la asignacion
+    if (this._keyStructureContext !== undefined) return;
+    this._keyStructureContext =
+      v === "structureField" ||
+      v === "structureEmbedded" ||
+      v === "structureModel"
+        ? v
+        : this._keyStructureContext !== undefined
+        ? this._keyStructureContext
+        : this.getDefault().keyStructureContext;
+  }
+  public override get sort(): IStructureModelReadCriteria<TModel>["sort"] {
     return super.sort as any;
   }
-  public override set sort(v: IStructureReadCriteria<TModel>["sort"]) {
+  public override set sort(v: IStructureModelReadCriteria<TModel>["sort"]) {
     super.sort = this.util.isObject(v) ? v : super.sort;
     return;
   }
@@ -114,47 +143,55 @@ export class StructureCriteriaHandler<
   public get keysPath(): string[] {
     return this._keysPath;
   }
-  public set keysPath(value: string[]) {
-    this._keysPath = value;
+  public set keysPath(v: string[]) {
+    this._keysPath = this.util.isArray(v)
+      ? v
+      : this._keysPath !== undefined
+      ? this._keysPath
+      : this.getDefault().keysPath;
   }
-
-  private _keyStructureContext: TKeyStructureContextFull;
-  public get keyStructureContext(): TKeyStructureContextFull {
-    return this._keyStructureContext;
+  public override get diccGlobalAC(): TStructureModelDiccGlobalAC<
+    TIDiccModelMutateAC,
+    TIDiccModelValAC,
+    TIDiccRequestValAC,
+    TIDiccStructureHookAC,
+    TIDiccStructureProviderAC
+  > {
+    return super.diccGlobalAC;
   }
-  protected set keyStructureContext(v: TKeyStructureContextFull) {
-    this._keyStructureContext =
-      v === "structureField" ||
-      v === "structureEmbedded" ||
-      v === "structureModel"
-        ? v
-        : this._keyStructureContext !== undefined
-        ? this._keyStructureContext
-        : this.getDefault().keyStructureContext;
+  public override set diccGlobalAC(
+    v: TStructureModelDiccGlobalAC<
+      TIDiccModelMutateAC,
+      TIDiccModelValAC,
+      TIDiccRequestValAC,
+      TIDiccStructureHookAC,
+      TIDiccStructureProviderAC
+    >
+  ) {
+    super.diccGlobalAC = v;
   }
   /**
    * @param pCursor propiedades opcionales para
    * personalizar la inicializacion del cursor
    */
   constructor(
-    keySrc: string,
     metadataHandler: Trf_StructureLogicMetadataHandler,
-    base: TStructureBaseCriteria<
+    keyStructureContext: TKeyStructureContextFull,
+    base: TStructureModelBaseCriteria<
       TModel,
-      TIDiccFieldMutateAC,
       TIDiccModelMutateAC,
-      TIDiccFieldValAC,
       TIDiccModelValAC,
       TIDiccRequestValAC,
       TIDiccStructureHookAC,
-      TIDiccStructureProviderAC
-    > = { type: "read" },
+      TIDiccStructureProviderAC,
+      TKeyDiccActionRequest
+    >,
     isInit = true
   ) {
-    super("structure", keySrc, metadataHandler, base, false);
+    super("structure", metadataHandler, base, false);
+    //asignación a propiedades especiales
+    this.keyStructureContext = keyStructureContext;
     if (isInit) this.initProps(base);
-    this.initMergeDiccGlobalAC();
-    this.initAKeysGlobalAC();
   }
   protected override getDefault() {
     return StructureCriteriaHandler.getDefault();
@@ -179,7 +216,8 @@ export class StructureCriteriaHandler<
             TIDiccModelValAC,
             TIDiccRequestValAC,
             TIDiccStructureHookAC,
-            TIDiccStructureProviderAC
+            TIDiccStructureProviderAC,
+            TKeyDiccActionRequest
           >["getDefault"]
         >,
         "keyLogicContext" | "keySrc" | "keysPath" | "p_Key" | "s_Key"
@@ -189,243 +227,268 @@ export class StructureCriteriaHandler<
     super.mutateProps(base);
     return;
   }
-  public override getLiteral(): IStructureReadCriteria<
+  public override getLiteral(): IStructureModelReadCriteria<
     TModel,
     TIDiccModelMutateAC,
     TIDiccModelValAC,
     TIDiccRequestValAC,
     TIDiccStructureHookAC,
-    TIDiccStructureProviderAC
+    TIDiccStructureProviderAC,
+    TKeyDiccActionRequest
   > &
-    IStructureModifyCriteria<
+    IStructureModelModifyCriteria<
       TModel,
       TIDiccModelMutateAC,
       TIDiccModelValAC,
       TIDiccRequestValAC,
       TIDiccStructureHookAC,
-      TIDiccStructureProviderAC
+      TIDiccStructureProviderAC,
+      TKeyDiccActionRequest
     > {
     return super.getLiteral() as any;
   }
-  protected override initMergeDiccGlobalAC(): void {
-    let bf_diccGlobalAC = {};
-    const keysModuleContext = this.getCONST().KEYS_GLOBAL_AC;
-    const mH = this.metadataHandler;
-    if (this.util.isObject(this.diccGlobalAC)) {
-      const bACOption: IBuildACOption = {
-        keyPath: this.keyPath,
-        mergeMode: "soft",
-      };
-      if (this.keyStructureContext === "structureField") {
-        for (const keyModuleContext of keysModuleContext) {
-          if (
-            keyModuleContext !== "fieldMutate" &&
-            keyModuleContext !== "fieldVal"
-          )
-            continue;
-          let actionModule =
-            mH.getModuleInstanceForActionContext(keyModuleContext);
-          const newDicc = this.diccGlobalAC[keyModuleContext];
-          bf_diccGlobalAC[keyModuleContext] =
-            actionModule.buildContainerActionsConfig(
-              "toActionConfig_DiccWrapped",
-              newDicc,
-              bACOption
-            );
-        }
-      } else if (this.keyStructureContext === "structureEmbedded") {
-        for (const keyModuleContext of keysModuleContext) {
-          if (
-            keyModuleContext !== "modelMutate" &&
-            keyModuleContext !== "modelVal"
-          )
-            continue;
-          let actionModule =
-            mH.getModuleInstanceForActionContext(keyModuleContext);
-          const newDicc = this.diccGlobalAC[keyModuleContext];
-          bf_diccGlobalAC[keyModuleContext] =
-            actionModule.buildContainerActionsConfig(
-              "toActionConfig_DiccWrapped",
-              newDicc,
-              bACOption
-            );
-        }
-      } else if (this.keyStructureContext === "structureModel") {
-        for (const keyModuleContext of keysModuleContext) {
-          if (
-            keyModuleContext !== "modelMutate" &&
-            keyModuleContext !== "modelVal" &&
-            keyModuleContext !== "requestVal" &&
-            keyModuleContext !== "structureHook" &&
-            keyModuleContext !== "structureProvider"
-          )
-            continue;
-          let actionModule =
-            mH.getModuleInstanceForActionContext(keyModuleContext);
-          const newDicc = this.diccGlobalAC[keyModuleContext];
-          bf_diccGlobalAC[keyModuleContext] =
-            actionModule.buildContainerActionsConfig(
-              "toActionConfig_DiccWrapped",
-              newDicc,
-              bACOption
-            );
-        }
+  /**... */
+  public static rebuildCustomConfigFromModuleContext(
+    keyStructureContext: "structureField",
+    currentContextConfig: IStructureFieldCriteria<any>,
+    newContextConfig: IStructureFieldCriteria<any>
+  ): IStructureFieldCriteria<any>;
+  public static rebuildCustomConfigFromModuleContext(
+    keyStructureContext: "structureModel",
+    currentContextConfig: IStructureModelReadCriteria<any> &
+      IStructureModelModifyCriteria<any>,
+    newContextConfig: IStructureModelReadCriteria<any> &
+      IStructureModelModifyCriteria<any>
+  ): IStructureModelReadCriteria<any> & IStructureModelModifyCriteria<any>;
+  public static rebuildCustomConfigFromModuleContext(
+    keyStructureContext: TKeyStructureContextBasic,
+    currentContextConfig: unknown,
+    newContextConfig: unknown
+  ): unknown {
+    const util = Module.util;
+    let rConfig: unknown;
+    if (keyStructureContext === "structureField") {
+      const df = StructureCriteriaHandler.getDefault();
+      const dfCC = {
+        keyPath: df.keyPath,
+        keysPath: df.keysPath,
+        aTKeysGlobalActionConfig: df.aTKeysGlobalActionConfig as any[],
+        diccGlobalAC: {
+          fieldMutate: {},
+          fieldVal: {},
+        },
+      } as IStructureFieldCriteria<any>;
+      const cCC = (
+        util.isObject(currentContextConfig) ? currentContextConfig : dfCC
+      ) as IStructureFieldCriteria<any>;
+      const nCC = newContextConfig as IStructureFieldCriteria<any>;
+      let rFieldConfig: IStructureFieldCriteria<any>;
+      if (!util.isObject(nCC)) {
+        rFieldConfig = cCC;
       } else {
-        throw new LogicError({
-          code: ELogicCodeError.MODULE_ERROR,
-          msn: `${this.keyStructureContext} is not structure context key valid`,
-        });
+        rFieldConfig = {
+          ...nCC,
+          aTKeysGlobalActionConfig: util.isArray(nCC.aTKeysGlobalActionConfig)
+            ? nCC.aTKeysGlobalActionConfig
+            : cCC.aTKeysGlobalActionConfig,
+          diccGlobalAC: util.isObject(nCC.diccGlobalAC)
+            ? {
+                fieldMutate: util.mergeDiccActionConfig(
+                  [nCC.diccGlobalAC.fieldMutate, cCC.diccGlobalAC.fieldMutate],
+                  { mode: "hard" }
+                ),
+                fieldVal: util.mergeDiccActionConfig(
+                  [nCC.diccGlobalAC.fieldVal, cCC.diccGlobalAC.fieldVal],
+                  { mode: "hard" }
+                ),
+              }
+            : cCC.diccGlobalAC,
+          keyPath: util.isString(nCC.keyPath) ? nCC.keyPath : cCC.keyPath,
+          keysPath: util.isArray(nCC.keysPath) ? nCC.keysPath : cCC.keysPath,
+        };
       }
+      rConfig = rFieldConfig;
+    } else if (keyStructureContext === "structureModel") {
+      const dfCC = StructureCriteriaHandler.getDefault();
+      const cCC = (
+        util.isObject(currentContextConfig) ? currentContextConfig : dfCC
+      ) as IStructureModelReadCriteria<any> &
+        IStructureModelModifyCriteria<any>;
+      const nCC = newContextConfig as IStructureModelReadCriteria<any> &
+        IStructureModelModifyCriteria<any>;
+      let rModelConfig: IStructureModelReadCriteria<any> &
+        IStructureModelModifyCriteria<any>;
+      if (!util.isObject(nCC)) {
+        rModelConfig = cCC;
+      } else {
+        rModelConfig = {
+          ...nCC,
+          keySrc: util.isString(nCC.keySrc) ? nCC.keySrc : cCC.keySrc,
+          keyPath: util.isString(nCC.keyPath) ? nCC.keyPath : cCC.keyPath,
+          keysPath: util.isString(nCC.keysPath) ? nCC.keysPath : cCC.keysPath,
+          keyStructureContext: util.isString(nCC.keyStructureContext)
+            ? nCC.keyStructureContext
+            : cCC.keyStructureContext,
+          p_Key: util.isString(nCC.p_Key) ? nCC.p_Key : cCC.p_Key,
+          s_Key: util.isString(nCC.s_Key) ? nCC.s_Key : cCC.s_Key,
+          keyLogicContext: util.isString(nCC.keyLogicContext)
+            ? nCC.keyLogicContext
+            : cCC.keyLogicContext,
+          keyActionRequest: util.isString(nCC.keyActionRequest)
+            ? nCC.keyActionRequest
+            : cCC.keyActionRequest,
+          type: util.isString(nCC.type) ? nCC.type : cCC.type,
+          modifyType: util.isString(nCC.modifyType)
+            ? nCC.modifyType
+            : cCC.modifyType,
+          diccGlobalAC: util.isObject(nCC.diccGlobalAC)
+            ? {
+                modelMutate: util.mergeDiccActionConfig(
+                  [nCC.diccGlobalAC.modelMutate, cCC.diccGlobalAC.modelMutate],
+                  { mode: "hard" }
+                ),
+                modelVal: util.mergeDiccActionConfig(
+                  [nCC.diccGlobalAC.modelVal, cCC.diccGlobalAC.modelVal],
+                  { mode: "hard" }
+                ),
+                requestVal: util.mergeDiccActionConfig(
+                  [nCC.diccGlobalAC.requestVal, cCC.diccGlobalAC.requestVal],
+                  { mode: "hard" }
+                ),
+                structureHook: util.mergeDiccActionConfig(
+                  [
+                    nCC.diccGlobalAC.structureHook,
+                    cCC.diccGlobalAC.structureHook,
+                  ],
+                  { mode: "hard" }
+                ),
+                structureProvider: util.mergeDiccActionConfig(
+                  [
+                    nCC.diccGlobalAC.structureProvider,
+                    cCC.diccGlobalAC.structureProvider,
+                  ],
+                  { mode: "hard" }
+                ),
+              }
+            : cCC.diccGlobalAC,
+          diccQueryParam: util.deepMergeObjects(
+            [nCC.diccQueryParam, cCC.diccQueryParam],
+            { mode: "soft", isNullAsUndefined: true }
+          ),
+          aTCustomQueryDriverFunctions: util.isArray(
+            nCC.aTCustomQueryDriverFunctions,
+            true
+          )
+            ? nCC.aTCustomQueryDriverFunctions
+            : cCC.aTCustomQueryDriverFunctions,
+          aTKeysGlobalActionConfig: util.isArray(
+            nCC.aTKeysGlobalActionConfig,
+            true
+          )
+            ? nCC.aTKeysGlobalActionConfig
+            : cCC.aTKeysGlobalActionConfig,
+          isCreateOrUpdate: util.isBoolean(nCC.isCreateOrUpdate)
+            ? nCC.isCreateOrUpdate
+            : cCC.isCreateOrUpdate,
+          sort: util.isArray(nCC.sort) ? nCC.sort : cCC.sort,
+          limit: util.isNumber(nCC.limit) ? nCC.limit : cCC.limit,
+          targetPage: util.isNumber(nCC.targetPage)
+            ? nCC.targetPage
+            : cCC.targetPage,
+          targetPageLogic: util.isNumber(nCC.targetPageLogic)
+            ? nCC.targetPageLogic
+            : cCC.targetPageLogic,
+          expectedDataType: util.isString(nCC.expectedDataType)
+            ? nCC.expectedDataType
+            : cCC.expectedDataType,
+          urlsExtended: util.isArray(nCC.urlsExtended)
+            ? nCC.urlsExtended
+            : cCC.urlsExtended,
+        };
+      }
+      rConfig = rModelConfig;
     } else {
-      if (this.keyStructureContext === "structureField") {
-        const diccFieldMutate = mH.getDiccActionConfigByModuleContext(
-          this.keyStructureContext,
-          "mutater",
-          "fieldMutate",
-          this.keyPath
-        );
-        const diccFieldVal = mH.getDiccActionConfigByModuleContext(
-          this.keyStructureContext,
-          "validator",
-          "fieldVal",
-          this.keyPath
-        );
-        for (const keyModuleContext of keysModuleContext) {
-          if (keyModuleContext === "fieldMutate") {
-            bf_diccGlobalAC[keyModuleContext] = diccFieldMutate;
-          } else if (keyModuleContext === "fieldVal") {
-            bf_diccGlobalAC[keyModuleContext] = diccFieldVal;
-          } else {
-            continue;
-          }
-        }
-      } else if (this.keyStructureContext === "structureEmbedded") {
-        const diccModelMutate = mH.getDiccActionConfigByModuleContext(
-          this.keyStructureContext,
-          "mutater",
-          "modelMutate",
-          this.keyPath
-        );
-        const diccModelVal = mH.getDiccActionConfigByModuleContext(
-          this.keyStructureContext,
-          "validator",
-          "modelVal",
-          this.keyPath
-        );
-        // const diccReqVal = mH.getDiccActionConfigByModuleContext(
-        //   this.keyStructureContext,
-        //   "validator",
-        //   "requestVal",
-        //   this.keyPath
-        // );
-        // const diccStructureHook = mH.getDiccActionConfigByModuleContext(
-        //   this.keyStructureContext,
-        //   "hook"
-        // );
-        // const diccStructureProvider = mH.getDiccActionConfigByModuleContext(
-        //   this.keyStructureContext,
-        //   "provider"
-        // );
-        for (const keyModuleContext of keysModuleContext) {
-          if (keyModuleContext === "modelMutate") {
-            bf_diccGlobalAC[keyModuleContext] = diccModelMutate;
-          } else if (keyModuleContext === "modelVal") {
-            bf_diccGlobalAC[keyModuleContext] = diccModelVal;
-            // } else if (keyModuleContext === "requestVal") {
-            //   bf_diccGlobalAC[keyModuleContext] = diccReqVal;
-            // } else if (keyModuleContext === "structureHook") {
-            //   bf_diccGlobalAC[keyModuleContext] = diccStructureHook;
-            // } else if (keyModuleContext === "structureProvider") {
-            //   bf_diccGlobalAC[keyModuleContext] = diccStructureProvider;
-          } else {
-            continue;
-          }
-        }
-      } else if (this.keyStructureContext === "structureModel") {
-        const diccModelMutate = mH.getDiccActionConfigByModuleContext(
-          this.keyStructureContext,
-          "mutater",
-          "modelMutate"
-        );
-        const diccModelVal = mH.getDiccActionConfigByModuleContext(
-          this.keyStructureContext,
-          "validator",
-          "modelVal"
-        );
-        const diccReqVal = mH.getDiccActionConfigByModuleContext(
-          this.keyStructureContext,
-          "validator",
-          "requestVal"
-        );
-        const diccStructureHook = mH.getDiccActionConfigByModuleContext(
-          this.keyStructureContext,
-          "hook"
-        );
-        const diccStructureProvider = mH.getDiccActionConfigByModuleContext(
-          this.keyStructureContext,
-          "provider"
-        );
-        for (const keyModuleContext of keysModuleContext) {
-          if (keyModuleContext === "modelMutate") {
-            bf_diccGlobalAC[keyModuleContext] = diccModelMutate;
-          } else if (keyModuleContext === "modelVal") {
-            bf_diccGlobalAC[keyModuleContext] = diccModelVal;
-          } else if (keyModuleContext === "requestVal") {
-            bf_diccGlobalAC[keyModuleContext] = diccReqVal;
-          } else if (keyModuleContext === "structureHook") {
-            bf_diccGlobalAC[keyModuleContext] = diccStructureHook;
-          } else if (keyModuleContext === "structureProvider") {
-            bf_diccGlobalAC[keyModuleContext] = diccStructureProvider;
-          } else {
-            continue;
-          }
-        }
-      } else {
-        throw new LogicError({
-          code: ELogicCodeError.MODULE_ERROR,
-          msn: `${this.keyStructureContext} is not structure context key valid`,
-        });
-      }
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyStructureContext} is not structure context key valid`,
+      });
     }
-    this.diccGlobalAC = bf_diccGlobalAC;
-    return;
+    return rConfig;
   }
-  protected override initAKeysGlobalAC(): void {
+  protected override mergeBaseCriteriaWithPriority(
+    newCRC:
+      | (IStructureModelReadCriteria<any> & IStructureModelModifyCriteria<any>)
+      | IStructureFieldCriteria<any>
+  ):
+    | (IStructureModelReadCriteria<any> & IStructureModelModifyCriteria<any>)
+    | IStructureFieldCriteria<any> {
     const mH = this.metadataHandler;
-    let bf_aTKeysGlobalActionConfig = [];
     if (this.keyStructureContext === "structureField") {
-      bf_aTKeysGlobalActionConfig = mH.getDiccActionConfigByModuleContext(
+      const { keyPath } = newCRC;
+      const fieldCtrlC = mH.getExtractMetadataByModuleContext(
         this.keyStructureContext,
         "controller",
-        undefined,
-        this.keyPath
+        keyPath
+      );
+      const { criteriaRequestConfig: baseCRC } =
+        fieldCtrlC.__ctrlConfig.fieldCtrl;
+      newCRC = StructureCriteriaHandler.rebuildCustomConfigFromModuleContext(
+        this.keyStructureContext,
+        baseCRC as any,
+        newCRC as any
       );
     } else if (this.keyStructureContext === "structureEmbedded") {
-      const diccACtrl = mH.getDiccActionConfigByModuleContext(
+      const { keyPath } = newCRC;
+      const {
+        __mutateConfig: embMutateConfig,
+        __valConfig: embValConfig,
+        __hookConfig: embHookConfig,
+        __providerConfig: embProviderConfig,
+      } = mH.getExtractMetadataByStructureContext(
         this.keyStructureContext,
-        "controller",
-        undefined,
-        this.keyPath
+        keyPath
       );
-      bf_aTKeysGlobalActionConfig = diccACtrl[this.keyActionRequest] as Array<
-        [string, string]
-      >;
+      const baseCRC = {
+        ...this.getDefault(),
+        diccGlobalAC: {
+          modelMutate: embMutateConfig.modelMutate.diccActionsConfig,
+          modelVal: embValConfig.modelVal.diccActionsConfig,
+          requestVal: embValConfig.requestVal.diccActionsConfig,
+          structureHook: embHookConfig.structureHook.diccActionsConfig,
+          structureProvider:
+            embProviderConfig.structureProvider.diccActionsConfig,
+        },
+      } as IStructureModelReadCriteria<any> &
+        IStructureModelModifyCriteria<any>;
+      newCRC = StructureCriteriaHandler.rebuildCustomConfigFromModuleContext(
+        "structureModel", //❗se debe usar model asi sea embebido❗
+        baseCRC as any,
+        newCRC as any
+      );
     } else if (this.keyStructureContext === "structureModel") {
-      const diccACtrl = mH.getDiccActionConfigByModuleContext(
+      const { keyActionRequest } = newCRC as IStructureModelReadCriteria<any> &
+        IStructureModelModifyCriteria<any>;
+      const modelCtrlC = mH.getExtractMetadataByModuleContext(
         this.keyStructureContext,
         "controller"
       );
-      bf_aTKeysGlobalActionConfig = diccACtrl[this.keyActionRequest] as Array<
-        [string, string]
-      >;
+      const { diccCriteriaRequestConfig } = modelCtrlC.__ctrlConfig.modelCtrl;
+      const baseCRC = diccCriteriaRequestConfig[
+        keyActionRequest
+      ] as IStructureModelReadCriteria<any> &
+        IStructureModelModifyCriteria<any>;
+      newCRC = StructureCriteriaHandler.rebuildCustomConfigFromModuleContext(
+        this.keyStructureContext,
+        baseCRC as any,
+        newCRC as any
+      );
     } else {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
         msn: `${this.keyStructureContext} is not structure context key valid`,
       });
     }
-    this.aTKeysGlobalActionConfig = bf_aTKeysGlobalActionConfig;
-    return;
+    return newCRC;
   }
   public override getGlobalActionByTKeyGlobalAC<TKeyActionConfig>(
     tKeyGlobalAC: Array<
@@ -513,71 +576,13 @@ export class StructureCriteriaHandler<
     );
     return subSchema;
   }
-  /**construye un sub manejador de criteria enfocado a un campo en base a este mismo manejador*/
-  public buildSubCriteriaHandler(
-    keyStructureContextExt: TKeyStructureContextFull | "structureAnonym",
-    base: Partial<
-      TStructureBaseCriteria<
-        TModel,
-        TIDiccFieldMutateAC,
-        TIDiccModelMutateAC,
-        TIDiccFieldValAC,
-        TIDiccModelValAC,
-        TIDiccRequestValAC,
-        TIDiccStructureHookAC,
-        TIDiccStructureProviderAC
-      >
-    >
-  ): this {
-    base = this.util.isObject(base) ? base : {};
-    //se debe clonar NO instanciar porque un sub criteria
-    //demás de compartir la mayoría de propiedades, el array de tupla
-    //del claves identificadoras puede ser anonimo lo cual no esta en los metadatos
-    let subCriteriaHandler: Trf_StructureCriteriaHandler;
-    if (
-      keyStructureContextExt === "structureField" ||
-      keyStructureContextExt === "structureEmbedded" ||
-      keyStructureContextExt === "structureModel"
-    ) {
-      subCriteriaHandler = new StructureCriteriaHandler(
-        this.keySrc,
-        this.metadataHandler,
-        {
-          ...(base as any),
-          type: this.type,
-          keySrc: this.keySrc,
-          keyLogicContext: "structure",
-          keyStructureContext: keyStructureContextExt,
-          keyActionRequest: this.keyActionRequest,
-        }
-      );
-      this.initMergeDiccGlobalAC();
-      this.initAKeysGlobalAC();
-    } else if (keyStructureContextExt === "structureAnonym") {
-      subCriteriaHandler = new StructureCriteriaHandler(
-        this.keySrc,
-        this.metadataHandler,
-        {
-          ...(base as any),
-          keySrc: this.keySrc,
-          keyLogicContext: "structure",
-          keyStructureContext: keyStructureContextExt,
-          keyActionRequest: this.keyActionRequest,
-        }
-      );
-    } else {
-      if (!this.util.isArrayTuple(base.aTKeysGlobalActionConfig, 2, true)) {
-        throw new LogicError({
-          code: ELogicCodeError.MODULE_ERROR,
-          msn: `${base.aTKeysGlobalActionConfig} is not array of key global AC tuples valid`,
-        });
-      }
-      subCriteriaHandler.mutateProps({
-        ...(base as any),
-        keyStructureContext: keyStructureContextExt,
-      });
-    }
-    return subCriteriaHandler as this;
+  public override extractDiccByKeyModuleContext(
+    keysModuleContext:
+      | TKeyStructureInternalACModuleContext
+      | TKeyStructureInternalACModuleContext[]
+  ): void {
+    super.extractDiccByKeyModuleContext(keysModuleContext);
+    return;
   }
   protected override checkQueryConds(conds: TAConds): void {
     const len = conds.length;
@@ -597,9 +602,8 @@ export class StructureCriteriaHandler<
         } else if (
           !this.util.isObjectWithProperties(
             cond as ISingleCondition,
-            false,
             ["op", "vCond", "keyPathForCond"],
-            "is-not-undefined-and-not-null"
+            { propCondition: "is-not-undefined-and-not-null" }
           )
         ) {
           throw new LogicError({

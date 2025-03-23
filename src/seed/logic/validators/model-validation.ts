@@ -10,14 +10,15 @@ import {
   ELogicResStatusCode,
   IStructureResponse,
 } from "../reports/shared";
-import { StructureBag } from "../bag-module/structure-bag";
+import { StructureBag } from "../bag/structure-bag";
 import {
   FieldLogicValidation,
   IDiccFieldValActionConfigG,
 } from "./field-validation";
 import { LogicController } from "../controllers/_controller";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { TStructureFnBagForActionModule } from "../bag-module/shared";
+import { TStructureFnBagForActionModule } from "../bag/shared";
+import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipo exclusivo para adicionar una configuracion
  * a la accion isRequired */
@@ -64,7 +65,7 @@ export interface IDiccModelValActionConfigG<
          *
          * donde `TIADiccFieldValActionsConfig` es el diccionario personalizado
          */
-        modelOnlyFieldDiccAC: Partial<Record<any, Partial<TIDiccFieldValAC>>>;
+        modelForDiccAC: Partial<Record<any, Partial<TIDiccFieldValAC>>>;
       }
     | undefined;
 }
@@ -94,7 +95,7 @@ export class ModelLogicValidation<
         ...(superDf.dfDiccActionConfig as any),
         isRequired: false,
         isTypeOfModel: true, //siempre activa
-        isModel: { modelOnlyFieldDiccAC: {} },
+        isModel: { modelForDiccAC: {} },
       } as IDiccModelValActionConfigG,
       topPriorityKeysAction: [
         ...superDf.topPriorityKeysAction,
@@ -109,11 +110,9 @@ export class ModelLogicValidation<
       } as TisRequiredConfig,
     };
   };
-  /**
-   * @param keySrc indentificadora del recurso asociado a modulo
-   */
-  constructor(keySrc: string) {
-    super("modelVal", keySrc);
+  /** */
+  constructor() {
+    super("modelVal");
   }
   protected override getDefault() {
     return ModelLogicValidation.getDefault();
@@ -146,7 +145,7 @@ export class ModelLogicValidation<
   }
   protected override getMetadataWithContextModule(
     keyPath?: string
-  ): TStructureMetaAndValidator<any, any, TIDiccAC> {
+  ): TStructureMetaAndValidator<any, any, ModelLogicValidation> {
     return super.getMetadataWithContextModule(keyPath) as any;
   }
   protected override getMetadataOnlyModuleConfig(
@@ -269,15 +268,13 @@ export class ModelLogicValidation<
       this.getTupleActionConfigFromCriteriaHandler(cH, "isModel");
     const rH = this.buildReportHandler(bag, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    let { modelOnlyFieldDiccAC } = actionConfig;
+    let { modelForDiccAC } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
     res = this.checkEmptyDataWithRes(rH, bag);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
-    modelOnlyFieldDiccAC = this.util.isObject(modelOnlyFieldDiccAC)
-      ? modelOnlyFieldDiccAC
-      : {};
+    modelForDiccAC = this.util.isObject(modelForDiccAC) ? modelForDiccAC : {};
     const mH = this.metadataHandler;
     const modelMetadata =
       mH.getExtractMetadataByStructureContext("structureModel");
@@ -288,34 +285,24 @@ export class ModelLogicValidation<
       const fieldKeyPath = fieldMetadata.__keyPath;
       const fieldValInst = mH.diccModuleInstanceContext
         .fieldVal as FieldLogicValidation;
-      const f_aTKeysForReq =
-        fieldMetadata.__ctrlConfig.fieldCtrl.aTKeysActionRequest
-          //filtra solo los del contexto de este modulo
-          .filter((tKeyForReq) => {
-            const [keyModuleContext, keyAction] = tKeyForReq;
-            return keyModuleContext === "fieldVal";
-          });
-      const sub_cH = cH.buildSubCriteriaHandler("structureField", {
-        diccGlobalAC: {
-          fieldVal: modelOnlyFieldDiccAC[keyField as any],
-        },
+      const sub_cH = new StructureCriteriaHandler(mH, "structureField", {
         keyPath: fieldKeyPath,
+        diccGlobalAC: modelForDiccAC[keyField as any] as any,
       });
-      const sub_bag = new StructureBag(this.keySrc, "fieldBag", {
+      sub_cH.extractDiccByKeyModuleContext("fieldVal");
+      const sub_Bag = new StructureBag(this.keySrc, "fieldBag", {
         //❗el contexto es campo fieldBag❗
         data: fieldData,
         criteriaHandler: sub_cH,
       });
-      const sub_rH = fieldValInst.buildReportHandler(
-        sub_bag,
-        EKeyActionGroupForRes.fields as any
-      );
+      const sub_rH = (fieldValInst as any as this) //❗hack❗ permite acceder a la propiedad protegida a las malas 🐱‍👤
+        .buildReportHandler(sub_Bag, EKeyActionGroupForRes.fields as any);
       let resForField = sub_rH.mutateResponse(undefined, { data: fieldData });
-      for (const tKeysForReq of f_aTKeysForReq) {
+      for (const tKeysForReq of sub_cH.aTKeysGlobalActionConfig) {
         const [keyModuleContext, sub_keyAction] = tKeysForReq;
         const resForFieldForAction = (await LogicController.runActionRequest(
           fieldValInst,
-          sub_bag,
+          sub_Bag,
           sub_keyAction
         )) as IStructureResponse;
         resForField.responses.push(resForFieldForAction);

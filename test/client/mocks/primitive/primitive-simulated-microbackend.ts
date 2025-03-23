@@ -6,9 +6,9 @@ import {
   IPrimitiveModifyCriteria,
   IPrimitiveReadCriteria,
 } from "../../../../src/seed/logic/criterias/shared";
-import { PrimitiveQueryJsAdaptator } from "../../../../src/seed/logic/providers/services/client/web/local/drivers/_query-js-adaptador";
-import { IBagForService } from "../../../../src/seed/logic/providers/services/shared";
+import { IBagForDriver } from "../../../../src/seed/logic/providers/_drivers/shared";
 import { IDriverResponse } from "../../../../src/seed/logic/reports/shared";
+import { PrimitiveQueryTool } from "../../../../src/seed/logic/util/query-tool";
 import { SimulatedMicroBackend } from "../_simulated-microbackend";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras de todas las acciones de request */
@@ -43,9 +43,7 @@ export class PrimitiveSimulatedMicroBackend<
       //..aqui las constantes
     };
   };
-  protected override get queryJsAdaptator(): PrimitiveQueryJsAdaptator {
-    return super.queryJsAdaptator;
-  }
+  protected override readonly queryTool = PrimitiveQueryTool.getInstance();
   /**
    * @param base objeto literal con valores personalizados para inicializar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedades
@@ -58,7 +56,7 @@ export class PrimitiveSimulatedMicroBackend<
     > = {},
     isInit = true
   ) {
-    super("primitive", PrimitiveQueryJsAdaptator.getInstance(), base, false);
+    super("primitive", base, false);
     if (isInit) this.initProps(base);
   }
   protected override getDefault() {
@@ -99,13 +97,13 @@ export class PrimitiveSimulatedMicroBackend<
   }
   //████ common snippet for action request  ████████████████████████
   protected override async readCommon(
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForDriver["literalCriteria"]
   ) {
     let data = this.bd_collection;
     return data;
   }
   protected override async createCommon(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data: any
   ) {
     const idxCData = this.bd_collection.findIndex((dt) =>
@@ -116,7 +114,7 @@ export class PrimitiveSimulatedMicroBackend<
     return data;
   }
   protected override async updateCommon(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data: any
   ) {
     const idxCData = this.bd_collection.findIndex((dt) =>
@@ -127,7 +125,7 @@ export class PrimitiveSimulatedMicroBackend<
     return data;
   }
   protected override async deleteCommon(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data: any
   ) {
     const fIdx = this.bd_collection.findIndex((dt) =>
@@ -138,7 +136,7 @@ export class PrimitiveSimulatedMicroBackend<
   }
   //████ Request Actions ████████████████████████████████████████████████████████████
   public async exist(
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForDriver["literalCriteria"]
   ): Promise<boolean> {
     const registers = await this.readCommon(literalCriteria);
     const aData = await this.getMany(registers, literalCriteria);
@@ -146,7 +144,7 @@ export class PrimitiveSimulatedMicroBackend<
     return rxData;
   }
   public async count(
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForDriver["literalCriteria"]
   ): Promise<number> {
     const registers = await this.readCommon(literalCriteria);
     const aData = await this.getMany(registers, literalCriteria);
@@ -154,7 +152,7 @@ export class PrimitiveSimulatedMicroBackend<
     return rxData;
   }
   public async inform(
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForDriver["literalCriteria"]
   ): Promise<string> {
     const registers = await this.readCommon(literalCriteria);
     const aData = await this.getMany(registers, literalCriteria);
@@ -170,7 +168,7 @@ export class PrimitiveSimulatedMicroBackend<
    *
    */
   public async readAll(
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForDriver["literalCriteria"]
   ): Promise<any[]> {
     const registers = await this.readCommon(literalCriteria);
     let rxData = await this.getAll(registers, literalCriteria);
@@ -178,7 +176,7 @@ export class PrimitiveSimulatedMicroBackend<
   }
   /**... */
   public async readMany(
-    literalCriteria: IBagForService["literalCriteria"]
+    literalCriteria: IBagForDriver["literalCriteria"]
   ): Promise<any[]> {
     const registers = await this.readCommon(literalCriteria);
     let rxData = await this.getMany(registers, literalCriteria);
@@ -192,7 +190,7 @@ export class PrimitiveSimulatedMicroBackend<
    * @returns ``
    *
    */
-  public async readOne(literalCriteria: IBagForService["literalCriteria"]) {
+  public async readOne(literalCriteria: IBagForDriver["literalCriteria"]) {
     const registers = await this.readCommon(literalCriteria);
     let rxData = await this.getOne(registers, literalCriteria);
     return rxData;
@@ -206,7 +204,7 @@ export class PrimitiveSimulatedMicroBackend<
    *
    */
   public async create(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data: any
   ) {
     const { modifyType, isCreateOrUpdate } =
@@ -238,7 +236,7 @@ export class PrimitiveSimulatedMicroBackend<
    *
    */
   public async update(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data: any
   ) {
     const { modifyType, isCreateOrUpdate } =
@@ -270,7 +268,7 @@ export class PrimitiveSimulatedMicroBackend<
    *
    */
   public async delete(
-    literalCriteria: IBagForService["literalCriteria"],
+    literalCriteria: IBagForDriver["literalCriteria"],
     data: any
   ) {
     const { modifyType } = literalCriteria as IPrimitiveModifyCriteria;

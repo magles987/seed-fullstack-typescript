@@ -1,8 +1,5 @@
 import { StructureLogicValidation } from "./_structure-validation";
-import {
-  IStructureMetadataModuleConfig,
-  TFieldType,
-} from "../meta/metadata-handler-shared";
+import { TFieldType } from "../meta/shared";
 import { TZodSchemaForClose } from "./_validation";
 import { TStructureFieldMetaAndValidator } from "../meta/metadata-shared";
 import {
@@ -15,9 +12,9 @@ import {
   ELogicResStatusCode,
   IStructureResponse,
 } from "../reports/shared";
-import { StructureBag } from "../bag-module/structure-bag";
+import { StructureBag } from "../bag/structure-bag";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { TStructureFnBagForActionModule } from "../bag-module/shared";
+import { TStructureFnBagForActionModule } from "../bag/shared";
 import {
   IDiccModelValActionConfigG,
   ModelLogicValidation,
@@ -44,7 +41,6 @@ type TisRequiredConfig = {
    */
   isEmptyObjectOrArrayAsValue?: boolean;
 };
-
 /** define todas las propiedades de configuracion
  * de cada accion de validacion para  un campo
  * del modelo
@@ -308,7 +304,7 @@ export class FieldLogicValidation<
   implements
     Record<TKeysDiccFieldValActionConfigG, TStructureFnBagForActionModule>
 {
-  /** configuracion de valores predefinidos para el modulo*/
+  /** configuración de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = StructureLogicValidation.getDefault();
     return {
@@ -345,11 +341,9 @@ export class FieldLogicValidation<
       } as TisRequiredConfig,
     };
   };
-  /**
-   * @param keySrc indentificadora del recurso asociado a modulo
-   */
-  constructor(keySrc: string) {
-    super("fieldVal", keySrc);
+  /** */
+  constructor() {
+    super("fieldVal");
   }
   protected override getDefault() {
     return FieldLogicValidation.getDefault();
@@ -380,12 +374,11 @@ export class FieldLogicValidation<
     }
     //...aqui configuracion refinada:
     const { diccActionsConfig } = rConfig;
-
     return rConfig;
   }
   protected override getMetadataWithContextModule(
     keyPath?: string
-  ): TStructureFieldMetaAndValidator<TIDiccAC> {
+  ): TStructureFieldMetaAndValidator<FieldLogicValidation> {
     return super.getMetadataWithContextModule(keyPath) as any;
   }
   protected override getMetadataOnlyModuleConfig(
@@ -807,7 +800,7 @@ export class FieldLogicValidation<
     for (const keyProp of keysPropSchema) {
       const aTupleAC = anonimuSchemaForATupleAC[keyProp];
       const subData = data[keyProp];
-      const keyPseudoPath = this.util.buildProgresiveKeyPath(keyPath, keyProp);
+      const keyPseudoPath = this.util.buildPath([keyPath, keyProp]);
       let embResForProp = rH.mutateResponse(undefined, {
         data: subData,
         keyLogic: keyProp,
@@ -864,7 +857,7 @@ export class FieldLogicValidation<
     for (let idx = 0; idx < (data as any[]).length; idx++) {
       const subData = data[idx];
       const keyIdx = `${idx}`;
-      const keyPseudoPath = this.util.buildProgresiveKeyPath(keyPath, keyIdx);
+      const keyPseudoPath = this.util.buildPath([keyPath, keyIdx]);
       let embResForItem = rH.mutateResponse(undefined, {
         data: subData,
         keyLogic: keyIdx,
@@ -917,7 +910,7 @@ export class FieldLogicValidation<
       },
       keyPath,
     });
-    const sub_bag = new StructureBag(this.keySrc, "modelBag", {
+    const subBag = new StructureBag(this.keySrc, "modelBag", {
       data,
       criteriaHandler: sub_cH,
     });
@@ -956,7 +949,7 @@ export class FieldLogicValidation<
       keyPath,
     });
 
-    const sub_bag = new StructureBag(this.keySrc, "modelBag", {
+    const subBag = new StructureBag(this.keySrc, "modelBag", {
       data,
       criteriaHandler: sub_cH,
     });
