@@ -26,10 +26,7 @@ import { StructureBag, Trf_StructureBag } from "../bag/structure-bag";
 import { PrimitiveBag, Trf_PrimitiveBag } from "../bag/primitive-bag";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
-import {
-  TPrimitiveFnBagForActionModule,
-  TStructureFnBagForActionModule,
-} from "../bag/shared";
+import { TPrimitiveFnBagForActionModule } from "../bag/shared";
 import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
 import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
 

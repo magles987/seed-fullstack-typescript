@@ -20,7 +20,7 @@ export interface IDiccPrimitiveHookActionConfigG {
   modify: boolean | undefined;
 }
 /**claves identificadoras del diccionario
- * de acciones de configuracion */
+ * de acciones de configuración */
 export type TKeysDiccPrimitiveHookActionConfigG =
   keyof IDiccPrimitiveHookActionConfigG;
 /**refactorizacion de la clase */

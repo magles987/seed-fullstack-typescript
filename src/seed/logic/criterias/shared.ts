@@ -4,31 +4,31 @@ import {
   TKeyRequestType,
   TKeyStructureContextFull,
 } from "../config/shared-modules";
-import { IDiccPrimitiveHookActionConfigG } from "../hooks/primitive-hook";
+import { PrimitiveLogicHook } from "../hooks/primitive-hook";
 import { IPrimitiveHookContext, IStructureHookContext } from "../hooks/shared";
-import { IDiccStructureHookActionConfigG } from "../hooks/structure-hook";
+import { StructureLogicHook } from "../hooks/structure-hook";
 import {
   TKeyFieldInternalACModuleContext,
   TKeyModelInternalACModuleContext,
   TKeyPrimitiveInternalACModuleContext,
 } from "../meta/metadata-shared";
-import { IDiccFieldMutateActionConfigG } from "../mutaters/field-mutater";
-import { IDiccModelMutateActionConfigG } from "../mutaters/model-mutater";
-import { IDiccPrimitiveMutateActionConfigG } from "../mutaters/primitive-mutater";
+import { FieldLogicMutater } from "../mutaters/field-mutater";
+import { ModelLogicMutater } from "../mutaters/model-mutater";
+import { PrimitiveLogicMutater } from "../mutaters/primitive-mutater";
 import {
   IPrimitiveMutateContext,
   IStructureDeepMutateContext,
 } from "../mutaters/shared";
-import { IDiccPrimitiveProviderActionConfigG } from "../providers/primitive-provider";
+import { PrimitiveLogicProvider } from "../providers/primitive-provider";
 import {
   IPrimitiveProviderContext,
   IStructureProviderContext,
 } from "../providers/shared";
-import { IDiccStructureProviderActionConfigG } from "../providers/structure-provider";
-import { IDiccFieldValActionConfigG } from "../validators/field-validation";
-import { IDiccModelValActionConfigG } from "../validators/model-validation";
-import { IDiccPrimitiveValActionConfigG } from "../validators/primitive-validation";
-import { IDiccRequestValActionConfigG } from "../validators/request-validation";
+import { StructureLogicProvider } from "../providers/structure-provider";
+import { FieldLogicValidation } from "../validators/field-validation";
+import { ModelLogicValidation } from "../validators/model-validation";
+import { PrimitiveLogicValidation } from "../validators/primitive-validation";
+import { RequestLogicValidation } from "../validators/request-validation";
 import {
   IPrimitiveValContext,
   IStructureDeepValContext,
@@ -278,11 +278,11 @@ export type TPrimitiveDiccGlobalAC<
 >;
 /** */
 export interface IPrimitiveCriteria<
-  TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
-  TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TIDiccPrimitiveMutateAC extends PrimitiveLogicMutater["dfDiccActionConfig"] = PrimitiveLogicMutater["dfDiccActionConfig"],
+  TIDiccPrimitiveValAC extends PrimitiveLogicValidation["dfDiccActionConfig"] = PrimitiveLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccPrimitiveHookAC extends PrimitiveLogicHook["dfDiccActionConfig"] = PrimitiveLogicHook["dfDiccActionConfig"],
+  TIDiccPrimitiveProviderAC extends PrimitiveLogicProvider["dfDiccActionConfig"] = PrimitiveLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > extends ICriteria<
     TKeyDiccActionRequest,
@@ -303,11 +303,11 @@ export interface IPrimitiveCriteria<
 }
 /**... */
 export interface IPrimitiveReadCriteria<
-  TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
-  TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TIDiccPrimitiveMutateAC extends PrimitiveLogicMutater["dfDiccActionConfig"] = PrimitiveLogicMutater["dfDiccActionConfig"],
+  TIDiccPrimitiveValAC extends PrimitiveLogicValidation["dfDiccActionConfig"] = PrimitiveLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccPrimitiveHookAC extends PrimitiveLogicHook["dfDiccActionConfig"] = PrimitiveLogicHook["dfDiccActionConfig"],
+  TIDiccPrimitiveProviderAC extends PrimitiveLogicProvider["dfDiccActionConfig"] = PrimitiveLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > extends IReadCriteria<
       TKeyDiccActionRequest,
@@ -337,11 +337,11 @@ export interface IPrimitiveReadCriteria<
 }
 /** */
 export interface IPrimitiveModifyCriteria<
-  TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
-  TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TIDiccPrimitiveMutateAC extends PrimitiveLogicMutater["dfDiccActionConfig"] = PrimitiveLogicMutater["dfDiccActionConfig"],
+  TIDiccPrimitiveValAC extends PrimitiveLogicValidation["dfDiccActionConfig"] = PrimitiveLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccPrimitiveHookAC extends PrimitiveLogicHook["dfDiccActionConfig"] = PrimitiveLogicHook["dfDiccActionConfig"],
+  TIDiccPrimitiveProviderAC extends PrimitiveLogicProvider["dfDiccActionConfig"] = PrimitiveLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > extends IModifyCriteria<
       TKeyDiccActionRequest,
@@ -370,11 +370,11 @@ export interface IPrimitiveModifyCriteria<
 }
 /**... */
 export type TPrimitiveBaseCriteria<
-  TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
-  TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TIDiccPrimitiveMutateAC extends PrimitiveLogicMutater["dfDiccActionConfig"] = PrimitiveLogicMutater["dfDiccActionConfig"],
+  TIDiccPrimitiveValAC extends PrimitiveLogicValidation["dfDiccActionConfig"] = PrimitiveLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccPrimitiveHookAC extends PrimitiveLogicHook["dfDiccActionConfig"] = PrimitiveLogicHook["dfDiccActionConfig"],
+  TIDiccPrimitiveProviderAC extends PrimitiveLogicProvider["dfDiccActionConfig"] = PrimitiveLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > = Partial<
   IPrimitiveCriteria<
@@ -399,11 +399,11 @@ export type TPrimitiveBaseCriteria<
   >;
 /**... */
 export type TPrimitiveBaseReadCriteria<
-  TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
-  TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TIDiccPrimitiveMutateAC extends PrimitiveLogicMutater["dfDiccActionConfig"] = PrimitiveLogicMutater["dfDiccActionConfig"],
+  TIDiccPrimitiveValAC extends PrimitiveLogicValidation["dfDiccActionConfig"] = PrimitiveLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccPrimitiveHookAC extends PrimitiveLogicHook["dfDiccActionConfig"] = PrimitiveLogicHook["dfDiccActionConfig"],
+  TIDiccPrimitiveProviderAC extends PrimitiveLogicProvider["dfDiccActionConfig"] = PrimitiveLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > = Partial<
   Omit<
@@ -420,11 +420,11 @@ export type TPrimitiveBaseReadCriteria<
 >;
 /**... */
 export type TPrimitiveBaseModifyCriteria<
-  TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
-  TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TIDiccPrimitiveMutateAC extends PrimitiveLogicMutater["dfDiccActionConfig"] = PrimitiveLogicMutater["dfDiccActionConfig"],
+  TIDiccPrimitiveValAC extends PrimitiveLogicValidation["dfDiccActionConfig"] = PrimitiveLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccPrimitiveHookAC extends PrimitiveLogicHook["dfDiccActionConfig"] = PrimitiveLogicHook["dfDiccActionConfig"],
+  TIDiccPrimitiveProviderAC extends PrimitiveLogicProvider["dfDiccActionConfig"] = PrimitiveLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > = Partial<
   Omit<
@@ -507,11 +507,11 @@ export type TStructureModelDiccGlobalAC<
 /** */
 export interface IStructureModelCriteria<
   TModel,
-  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TIDiccModelMutateAC extends ModelLogicMutater["dfDiccActionConfig"] = ModelLogicMutater["dfDiccActionConfig"],
+  TIDiccModelValAC extends ModelLogicValidation["dfDiccActionConfig"] = ModelLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccStructureHookAC extends StructureLogicHook["dfDiccActionConfig"] = StructureLogicHook["dfDiccActionConfig"],
+  TIDiccStructureProviderAC extends StructureLogicProvider["dfDiccActionConfig"] = StructureLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > extends ICriteria<
     TKeyDiccActionRequest,
@@ -540,11 +540,11 @@ export interface IStructureModelCriteria<
 /**... */
 export interface IStructureModelReadCriteria<
   TModel,
-  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TIDiccModelMutateAC extends ModelLogicMutater["dfDiccActionConfig"] = ModelLogicMutater["dfDiccActionConfig"],
+  TIDiccModelValAC extends ModelLogicValidation["dfDiccActionConfig"] = ModelLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccStructureHookAC extends StructureLogicHook["dfDiccActionConfig"] = StructureLogicHook["dfDiccActionConfig"],
+  TIDiccStructureProviderAC extends StructureLogicProvider["dfDiccActionConfig"] = StructureLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > extends IReadCriteria<
       TKeyDiccActionRequest,
@@ -576,11 +576,11 @@ export interface IStructureModelReadCriteria<
 /** */
 export interface IStructureModelModifyCriteria<
   TModel,
-  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TIDiccModelMutateAC extends ModelLogicMutater["dfDiccActionConfig"] = ModelLogicMutater["dfDiccActionConfig"],
+  TIDiccModelValAC extends ModelLogicValidation["dfDiccActionConfig"] = ModelLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccStructureHookAC extends StructureLogicHook["dfDiccActionConfig"] = StructureLogicHook["dfDiccActionConfig"],
+  TIDiccStructureProviderAC extends StructureLogicProvider["dfDiccActionConfig"] = StructureLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > extends IModifyCriteria<
       TKeyDiccActionRequest,
@@ -640,8 +640,8 @@ export type TStructureDiccGlobalACForField<
 /**... */
 export interface IStructureFieldCriteria<
   TModel,
-  TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
-  TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
+  TIDiccFieldMutateAC extends FieldLogicMutater["dfDiccActionConfig"] = FieldLogicMutater["dfDiccActionConfig"],
+  TIDiccFieldValAC extends FieldLogicValidation["dfDiccActionConfig"] = FieldLogicValidation["dfDiccActionConfig"]
 > extends Pick<
     ICriteria<
       any,
@@ -663,11 +663,11 @@ export interface IStructureFieldCriteria<
 /**... */
 export type TStructureModelBaseCriteria<
   TModel,
-  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TIDiccModelMutateAC extends ModelLogicMutater["dfDiccActionConfig"] = ModelLogicMutater["dfDiccActionConfig"],
+  TIDiccModelValAC extends ModelLogicValidation["dfDiccActionConfig"] = ModelLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccStructureHookAC extends StructureLogicHook["dfDiccActionConfig"] = StructureLogicHook["dfDiccActionConfig"],
+  TIDiccStructureProviderAC extends StructureLogicProvider["dfDiccActionConfig"] = StructureLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > = Partial<
   IStructureModelCriteria<
@@ -683,11 +683,11 @@ export type TStructureModelBaseCriteria<
 /**... */
 export type TStructureModelBaseReadCriteria<
   TModel,
-  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TIDiccModelMutateAC extends ModelLogicMutater["dfDiccActionConfig"] = ModelLogicMutater["dfDiccActionConfig"],
+  TIDiccModelValAC extends ModelLogicValidation["dfDiccActionConfig"] = ModelLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccStructureHookAC extends StructureLogicHook["dfDiccActionConfig"] = StructureLogicHook["dfDiccActionConfig"],
+  TIDiccStructureProviderAC extends StructureLogicProvider["dfDiccActionConfig"] = StructureLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > = Partial<
   Omit<
@@ -712,11 +712,11 @@ export type TStructureModelBaseReadCriteria<
 /**... */
 export type TStructureModelBaseModifyCriteria<
   TModel,
-  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TIDiccModelMutateAC extends ModelLogicMutater["dfDiccActionConfig"] = ModelLogicMutater["dfDiccActionConfig"],
+  TIDiccModelValAC extends ModelLogicValidation["dfDiccActionConfig"] = ModelLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccStructureHookAC extends StructureLogicHook["dfDiccActionConfig"] = StructureLogicHook["dfDiccActionConfig"],
+  TIDiccStructureProviderAC extends StructureLogicProvider["dfDiccActionConfig"] = StructureLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > = Partial<
   Omit<
@@ -741,8 +741,8 @@ export type TStructureModelBaseModifyCriteria<
 /**... */
 export type TStructureFieldBaseCriteria<
   TModel,
-  TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
-  TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
+  TIDiccFieldMutateAC extends FieldLogicMutater["dfDiccActionConfig"] = FieldLogicMutater["dfDiccActionConfig"],
+  TIDiccFieldValAC extends FieldLogicValidation["dfDiccActionConfig"] = FieldLogicValidation["dfDiccActionConfig"]
 > = Partial<
   Pick<
     IStructureFieldCriteria<TModel, TIDiccFieldMutateAC, TIDiccFieldValAC>,

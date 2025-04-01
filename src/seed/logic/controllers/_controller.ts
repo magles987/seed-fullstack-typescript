@@ -2,20 +2,12 @@ import { TKeyLogicContext } from "../config/shared-modules";
 import { ELogicResStatusCode, IResponse } from "../reports/shared";
 import { ActionModule, LogicModuleWithReport } from "../config/module";
 import { BagModule } from "../bag/_bag";
-import { IBuilderBaseMetadata } from "../meta/builder-shared";
+import { IBuilderBaseCtrl } from "./builder-ctrl-shared";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { TFnBagForActionModule } from "../bag/shared";
 import { LogicMetadataHandler } from "../meta/_metadata-handler";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-export type TKeyReadRequestController =
-  | "exist"
-  | "count"
-  | "inform"
-  | "readAll"
-  | "readOne"
-  | "readMany";
-export type TKeyModifyRequestController = "create" | "update" | "delete";
-/**refactorizacion de la clase*/
+/**refactorización de la clase*/
 export type Trf_LogicController = LogicController;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
@@ -40,7 +32,7 @@ export abstract class LogicController extends LogicModuleWithReport {
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
-    baseConfigMetadata: IBuilderBaseMetadata<any, any>
+    baseConfigMetadata: IBuilderBaseCtrl<any, any>
   ) {
     super("controller", keyLogicContext);
     if (!this.util.isObject(baseConfigMetadata, false)) {
@@ -59,22 +51,6 @@ export abstract class LogicController extends LogicModuleWithReport {
     const mH = this.metadataHandler;
     const diccMI = (mH as LogicMetadataHandler).diccModuleInstanceContext;
     return diccMI;
-  }
-  /**
-   * @param keyActionRequest clave identificadora de la acción de petición a solicitar su correspondiente método
-   * @returns el método correspondiente a la acción
-   */
-  protected getActionRequestFn(keyActionRequest: unknown): Function {
-    const that = this;
-    let fn = that[keyActionRequest as any] as Function;
-    if (typeof fn !== "function") {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${fn} is not action request function valid`,
-      });
-    }
-    fn = fn.bind(that);
-    return fn;
   }
   /**micro hook embebido que se ejecuta antes de ejecutar la accion
    *

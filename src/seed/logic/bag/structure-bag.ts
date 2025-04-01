@@ -1,12 +1,12 @@
 import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
-import { IDiccFieldMutateActionConfigG } from "../mutaters/field-mutater";
-import { IDiccModelMutateActionConfigG } from "../mutaters/model-mutater";
-import { IDiccStructureHookActionConfigG } from "../hooks/structure-hook";
-import { IDiccStructureProviderActionConfigG } from "../providers/structure-provider";
+import { FieldLogicMutater } from "../mutaters/field-mutater";
+import { ModelLogicMutater } from "../mutaters/model-mutater";
+import { StructureLogicHook } from "../hooks/structure-hook";
+import { StructureLogicProvider } from "../providers/structure-provider";
 import { IStructureResponse } from "../reports/shared";
-import { IDiccFieldValActionConfigG } from "../validators/field-validation";
-import { IDiccModelValActionConfigG } from "../validators/model-validation";
-import { IDiccRequestValActionConfigG } from "../validators/request-validation";
+import { FieldLogicValidation } from "../validators/field-validation";
+import { ModelLogicValidation } from "../validators/model-validation";
+import { RequestLogicValidation } from "../validators/request-validation";
 import { BagModule } from "./_bag";
 import {
   IStructureBag,
@@ -22,14 +22,32 @@ export type Trf_StructureBag = StructureBag<any>;
  */
 export class StructureBag<
   TModel,
-  TStructureCriteriaHandler extends StructureCriteriaHandler<TModel> = StructureCriteriaHandler<TModel>,
-  TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
-  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-  TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG,
-  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
+  TIDiccFieldMutateAC extends FieldLogicMutater["dfDiccActionConfig"] = FieldLogicMutater["dfDiccActionConfig"],
+  TIDiccModelMutateAC extends ModelLogicMutater["dfDiccActionConfig"] = ModelLogicMutater["dfDiccActionConfig"],
+  TIDiccFieldValAC extends FieldLogicValidation["dfDiccActionConfig"] = FieldLogicValidation["dfDiccActionConfig"],
+  TIDiccModelValAC extends ModelLogicValidation["dfDiccActionConfig"] = ModelLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccStructureHookAC extends StructureLogicHook["dfDiccActionConfig"] = StructureLogicHook["dfDiccActionConfig"],
+  TIDiccStructureProviderAC extends StructureLogicProvider["dfDiccActionConfig"] = StructureLogicProvider["dfDiccActionConfig"],
+  TStructureCriteriaHandler extends StructureCriteriaHandler<
+    TModel,
+    TIDiccFieldMutateAC,
+    TIDiccModelMutateAC,
+    TIDiccFieldValAC,
+    TIDiccModelValAC,
+    TIDiccRequestValAC,
+    TIDiccStructureHookAC,
+    TIDiccStructureProviderAC
+  > = StructureCriteriaHandler<
+    TModel,
+    TIDiccFieldMutateAC,
+    TIDiccModelMutateAC,
+    TIDiccFieldValAC,
+    TIDiccModelValAC,
+    TIDiccRequestValAC,
+    TIDiccStructureHookAC,
+    TIDiccStructureProviderAC
+  >
 > extends BagModule {
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
@@ -63,14 +81,14 @@ export class StructureBag<
       Pick<
         StructureBag<
           TModel,
-          TStructureCriteriaHandler,
           TIDiccFieldMutateAC,
           TIDiccModelMutateAC,
           TIDiccFieldValAC,
           TIDiccModelValAC,
           TIDiccRequestValAC,
           TIDiccStructureHookAC,
-          TIDiccStructureProviderAC
+          TIDiccStructureProviderAC,
+          TStructureCriteriaHandler
         >,
         "data" | "criteriaHandler" | "responses"
       >

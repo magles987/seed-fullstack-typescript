@@ -9,9 +9,19 @@ import {
 } from "../../../../../../errors/logic-error";
 import { getStrategyGeneratorIdFnByKey } from "../../../../../../util/default-generators-id-fn";
 
-import { IBagForDriver } from "../../../../shared";
+import {
+  IPrimitiveBagForDriver,
+  IStructureBagForDriver,
+} from "../../../../shared";
 import { LocalRepositoryDriver } from "../_local-repository-driver";
-import { TLocalRepositoryCustomQueryDriverFn } from "../shared"; //❗Desde el padre❗
+import {
+  TPrimitiveLocalRepositoryCustomQueryDriverFn,
+  TStructureLocalRepositoryCustomQueryDriverFn,
+} from "../shared"; //❗Desde el padre❗
+import {
+  PrimitiveLibraryCookieQueryFn,
+  StructureLibraryCookieQueryFn,
+} from "./library-cookie-query-fn";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
@@ -29,6 +39,12 @@ export class CookieDriver
     name = `${prefixGroupName}${name}`;
     return name;
   };
+  /**librería de funciones para consulta*/
+  protected static primitiveLibraryQueryFn =
+    PrimitiveLibraryCookieQueryFn.getInstance(); //❗Solo set para acceder❗, el get es personalizado
+  /**librería de funciones para consulta*/
+  protected static structureLibraryQueryFn =
+    StructureLibraryCookieQueryFn.getInstance(); //❗Solo set para acceder❗, el get es personalizado
   public static override readonly getDefault = () => {
     const superDf = LocalRepositoryDriver.getDefault();
     return {
@@ -145,6 +161,52 @@ export class CookieDriver
   public override getLiteral(): ReturnType<CookieDriver["getDefault"]> {
     return super.getLiteral() as any;
   }
+  /**obtienen la librería de funciones de consultas
+   *
+   * @type `TValue` el tipo de dato a procesar
+   * @type `TCustomLibrary` si la librería es totalmente
+   * personalizada se debe definir en nombre de la clase de
+   * la librería personalizada (esta librería debió ser asignada
+   * a por medio del método `setPrimitiveLibraryQueryFn()` antes de poderse usar)
+   */
+  public static getPrimitiveLibraryQueryFn<
+    TValue,
+    TCustomLibrary extends PrimitiveLibraryCookieQueryFn<TValue> = PrimitiveLibraryCookieQueryFn<TValue>
+  >(): TCustomLibrary {
+    return CookieDriver.primitiveLibraryQueryFn as TCustomLibrary;
+  }
+  /**asignar librería totalmente personalizada a la propiedad
+   * que almacena dicha librería */
+  public static setPrimitiveLibraryQueryFn<
+    TCustomLibrary extends PrimitiveLibraryCookieQueryFn<any>
+  >(v: TCustomLibrary): void {
+    const util = Module.util;
+    if (!util.isInstance(v)) return;
+    CookieDriver.primitiveLibraryQueryFn = v;
+  }
+  /**obtienen la librería de funciones de consultas
+   *
+   * @type `TModel` el tipo de dato a procesar
+   * @type `TCustomLibrary` si la librería es totalmente
+   * personalizada se debe definir en nombre de la clase de
+   * la librería personalizada (esta librería debió ser asignada
+   * a por medio del método `setStructureLibraryQueryFn()` antes de poderse usar)
+   */
+  public static getStructureLibraryQueryFn<
+    TModel,
+    TCustomLibrary extends StructureLibraryCookieQueryFn<TModel> = StructureLibraryCookieQueryFn<TModel>
+  >(): TCustomLibrary {
+    return CookieDriver.structureLibraryQueryFn as TCustomLibrary;
+  }
+  /**asignar librería totalmente personalizada a la propiedad
+   * que almacena dicha librería */
+  public static setStructureLibraryQueryFn<
+    TCustomLibrary extends StructureLibraryCookieQueryFn<any>
+  >(v: TCustomLibrary): void {
+    const util = Module.util;
+    if (!util.isInstance(v)) return;
+    CookieDriver.structureLibraryQueryFn = v;
+  }
   /**
    * descrip...
    * ____
@@ -238,7 +300,9 @@ export class CookieDriver
     return;
   }
   //████ CRUD by Bag ████████████████████████████████████████████████████████████
-  protected override async primitiveReadByBag(literalBag: IBagForDriver) {
+  protected override async primitiveReadByBag(
+    literalBag: IPrimitiveBagForDriver
+  ) {
     let { data, literalCriteria } = literalBag;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
@@ -257,7 +321,10 @@ export class CookieDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TPrimitiveLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       registers = await fn(this, literalBag, registers);
     } else {
       //estándar
@@ -279,7 +346,9 @@ export class CookieDriver
     data = registers;
     return data;
   }
-  protected override async primitiveCreateByBag(literalBag: IBagForDriver) {
+  protected override async primitiveCreateByBag(
+    literalBag: IPrimitiveBagForDriver
+  ) {
     let { data, literalCriteria } = literalBag;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
@@ -310,7 +379,10 @@ export class CookieDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TPrimitiveLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       registers = await fn(this, literalBag, registers);
     } else {
       //estándar
@@ -319,7 +391,9 @@ export class CookieDriver
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async primitiveUpdateByBag(literalBag: IBagForDriver) {
+  protected override async primitiveUpdateByBag(
+    literalBag: IPrimitiveBagForDriver
+  ) {
     let { data, literalCriteria } = literalBag;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
@@ -350,7 +424,10 @@ export class CookieDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TPrimitiveLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       registers = await fn(this, literalBag, registers);
     } else {
       //estándar
@@ -359,7 +436,9 @@ export class CookieDriver
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async primitiveDeleteByBag(literalBag: IBagForDriver) {
+  protected override async primitiveDeleteByBag(
+    literalBag: IPrimitiveBagForDriver
+  ) {
     let { data, literalCriteria } = literalBag;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
@@ -377,7 +456,10 @@ export class CookieDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TPrimitiveLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       registers = await fn(this, literalBag, registers);
     } else {
       //estándar
@@ -386,7 +468,9 @@ export class CookieDriver
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async structureReadByBag(literalBagDriver: IBagForDriver) {
+  protected override async structureReadByBag(
+    literalBagDriver: IStructureBagForDriver<any>
+  ) {
     let { data, literalCriteria } = literalBagDriver;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
@@ -403,7 +487,10 @@ export class CookieDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TStructureLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       registers = await fn(this, literalBagDriver, registers);
     } else {
       //estándar
@@ -426,7 +513,7 @@ export class CookieDriver
     return data;
   }
   protected override async structureCreateByBag(
-    literalBagDriver: IBagForDriver
+    literalBagDriver: IStructureBagForDriver<any>
   ) {
     let { data, literalCriteria } = literalBagDriver;
     const kId = this.keyId;
@@ -466,7 +553,10 @@ export class CookieDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TStructureLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       registers = await fn(this, literalBagDriver, registers);
     } else {
       //estándar
@@ -480,7 +570,7 @@ export class CookieDriver
     return data;
   }
   protected override async structureUpdateByBag(
-    literalBagDriver: IBagForDriver
+    literalBagDriver: IStructureBagForDriver<any>
   ) {
     let { data, literalCriteria } = literalBagDriver;
     const kId = this.keyId;
@@ -520,7 +610,10 @@ export class CookieDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TStructureLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       registers = await fn(this, literalBagDriver, registers);
     } else {
       //estándar
@@ -530,7 +623,7 @@ export class CookieDriver
     return data;
   }
   protected override async structureDeleteByBag(
-    literalBagDriver: IBagForDriver
+    literalBagDriver: IStructureBagForDriver<any>
   ) {
     let { data, literalCriteria } = literalBagDriver;
     const kId = this.keyId;
@@ -559,7 +652,10 @@ export class CookieDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TStructureLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       registers = await fn(this, literalBagDriver, registers);
     } else {
       //estándar

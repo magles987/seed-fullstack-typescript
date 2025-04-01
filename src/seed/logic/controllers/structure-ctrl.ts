@@ -1,15 +1,11 @@
-import {
-  LogicController,
-  TKeyModifyRequestController,
-  TKeyReadRequestController,
-} from "./_controller";
+import { LogicController } from "./_controller";
 import {
   TFieldConfigForCtrl,
-  TFieldCtrlActionFn,
   TKeyStructureCtrlModuleContext,
   TKeyStructureDeepCtrlModuleContext,
+  TKeyStructureModifyRequestCtrl,
+  TKeyStructureReadRequestCtrl,
   TModelConfigForCtrl,
-  TModelCtrlActionFn,
 } from "./shared";
 import {
   StructureLogicMetadataHandler,
@@ -28,7 +24,7 @@ import {
 } from "../reports/shared";
 import { StructureBag, Trf_StructureBag } from "../bag/structure-bag";
 import { ActionModule } from "../config/module";
-import { IStructureBuilderBaseMetadata } from "../meta/builder-shared";
+import { IStructureBuilderBaseCtrl } from "./builder-ctrl-shared";
 import { StructureLogicHook } from "../hooks/structure-hook";
 import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
 import { StructureLogicProvider } from "../providers/structure-provider";
@@ -42,6 +38,7 @@ import {
 } from "../meta/metadata-shared";
 import {
   TStructureFieldBaseCriteria,
+  TStructureModelBaseCriteria,
   TStructureModelBaseModifyCriteria,
   TStructureModelBaseReadCriteria,
 } from "../criterias/shared";
@@ -50,54 +47,47 @@ import { TCapitalizeFirstLetter } from "../../util/shared";
 import { TFnBagForActionModule } from "../bag/shared";
 import { Module } from "../config/module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-export type TKeyStructureReadRequestController =
-  | TKeyReadRequestController
-  | "readById";
-export type TKeyStructureModifyRequestController = TKeyModifyRequestController;
-//| "createMany"
-//| "updateMany"
-//| "deleteMany";
-/**tipado refactorizado de la clase*/
+/**tipado para refactorización de la clase*/
 export type Trf_StructureController = StructureLogicController<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
  * controller basico para un contexto estructural
  * ____
  */
-export abstract class StructureLogicController<
+export class StructureLogicController<
+  TModel,
+  TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
+  TModelMutateInstance extends ModelLogicMutater = ModelLogicMutater,
+  TFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
+  TModelValInstance extends ModelLogicValidation = ModelLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
+  TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
+  TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
+  TKeyDiccActionRequest extends string =
+    | TKeyStructureReadRequestCtrl
+    | TKeyStructureModifyRequestCtrl,
+  TStructureCriteriaInstance extends StructureCriteriaHandler<
     TModel,
-    TStructureCriteriaInstance extends StructureCriteriaHandler<TModel> = StructureCriteriaHandler<TModel>,
-    TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
-    TModelMutateInstance extends ModelLogicMutater = ModelLogicMutater,
-    TFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
-    TModelValInstance extends ModelLogicValidation = ModelLogicValidation,
-    TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
-    TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
-    TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
-    TKeyDiccActionRequest extends
-      | TKeyStructureReadRequestController
-      | TKeyStructureModifyRequestController =
-      | TKeyStructureReadRequestController
-      | TKeyStructureModifyRequestController
+    TFieldMutateInstance["dfDiccActionConfig"],
+    TModelMutateInstance["dfDiccActionConfig"],
+    TFieldValInstance["dfDiccActionConfig"],
+    TModelValInstance["dfDiccActionConfig"],
+    TRequestValInstance["dfDiccActionConfig"],
+    TStructureHookInstance["dfDiccActionConfig"],
+    TStructureProviderInstance["dfDiccActionConfig"],
+    TKeyDiccActionRequest
+  > = StructureCriteriaHandler<
+    TModel,
+    TFieldMutateInstance["dfDiccActionConfig"],
+    TModelMutateInstance["dfDiccActionConfig"],
+    TFieldValInstance["dfDiccActionConfig"],
+    TModelValInstance["dfDiccActionConfig"],
+    TRequestValInstance["dfDiccActionConfig"],
+    TStructureHookInstance["dfDiccActionConfig"],
+    TStructureProviderInstance["dfDiccActionConfig"],
+    TKeyDiccActionRequest
   >
-  extends LogicController
-  implements
-    Record<
-      TKeyStructureReadRequestController | TKeyStructureModifyRequestController,
-      TModelCtrlActionFn<
-        TModel,
-        TModelMutateInstance,
-        TModelValInstance,
-        TRequestValInstance,
-        TStructureHookInstance,
-        TStructureProviderInstance
-      >
-    >,
-    Record<
-      `checkField${TCapitalizeFirstLetter<keyof Model>}`,
-      TFieldCtrlActionFn<TModel, TFieldMutateInstance, TFieldValInstance>
-    >
-{
+> extends LogicController {
   public static override getDefault = () => {
     const superDf = LogicController.getDefault();
     return {
@@ -165,7 +155,7 @@ export abstract class StructureLogicController<
    * (es un objeto literal no el manejador)
    */
   constructor(
-    baseConfigMetadata: IStructureBuilderBaseMetadata<
+    baseConfigMetadata: IStructureBuilderBaseCtrl<
       TModel,
       TFieldMutateInstance,
       TModelMutateInstance,
@@ -395,18 +385,6 @@ export abstract class StructureLogicController<
     const keyPathForField = `${mH.keyModelPath}${sp}${keyField as string}`;
     return keyPathForField;
   }
-  protected override getActionRequestFn(
-    keyActionRequest: TKeyDiccActionRequest
-  ): TModelCtrlActionFn<
-    TModel,
-    TModelMutateInstance,
-    TModelValInstance,
-    TRequestValInstance,
-    TStructureHookInstance,
-    TStructureProviderInstance
-  > {
-    return super.getActionRequestFn(keyActionRequest) as any;
-  }
   protected override buildReportHandler(
     bag: Trf_StructureBag,
     keyAction: unknown
@@ -445,8 +423,30 @@ export abstract class StructureLogicController<
     super.postRunAction(bag, res) as any;
     return;
   }
+  /**... */
+  public getEmptyBaseModelCritera():
+    | TStructureModelBaseReadCriteria<
+        TModel,
+        TModelMutateInstance["dfDiccActionConfig"],
+        TModelValInstance["dfDiccActionConfig"],
+        TRequestValInstance["dfDiccActionConfig"],
+        TStructureHookInstance["dfDiccActionConfig"],
+        TStructureProviderInstance["dfDiccActionConfig"],
+        TKeyDiccActionRequest
+      >
+    | TStructureModelBaseModifyCriteria<
+        TModel,
+        TModelMutateInstance["dfDiccActionConfig"],
+        TModelValInstance["dfDiccActionConfig"],
+        TRequestValInstance["dfDiccActionConfig"],
+        TStructureHookInstance["dfDiccActionConfig"],
+        TStructureProviderInstance["dfDiccActionConfig"],
+        TKeyDiccActionRequest
+      > {
+    return {}; //vació, solo se necesita el tipado, posiblemente se convierta a cursor
+  }
   //████ runs commons ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-  protected async runCommonFieldRequest(
+  protected async runCommonFieldCheck(
     keyPath: string,
     data: any,
     baseCriteria: TStructureFieldBaseCriteria<
@@ -471,7 +471,8 @@ export abstract class StructureLogicController<
     )) as IStructureResponse;
     return res;
   }
-  protected async runCommonModelRequest(
+  /** */
+  protected async runCommonRequest(
     keyActionRequest: TKeyDiccActionRequest,
     data: TModel,
     baseCriteria:
@@ -502,14 +503,14 @@ export abstract class StructureLogicController<
     });
     let bag = new StructureBag<
       TModel,
-      TStructureCriteriaInstance,
       any,
       TModelMutateInstance["dfDiccActionConfig"],
       any,
       TModelValInstance["dfDiccActionConfig"],
       TRequestValInstance["dfDiccActionConfig"],
       TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"]
+      TStructureProviderInstance["dfDiccActionConfig"],
+      TStructureCriteriaInstance
     >(this.keySrc, "modelBag", {
       data,
       criteriaHandler: cH as any,
@@ -569,48 +570,29 @@ export abstract class StructureLogicController<
     res = rH.mutateResponse(res);
     return res;
   };
-
-  //████ Field Actions ████████████████████████████████████████████████████████████
-  public async checkField_id(
-    baseCriteria: TStructureFieldBaseCriteria<
-      TModel,
-      TFieldMutateInstance["dfDiccActionConfig"],
-      TFieldValInstance["dfDiccActionConfig"]
-    >,
-    data: any
-  ): Promise<IStructureResponse> {
-    const keyPathForField = this.getKeyPathForField(
-      "_id" as keyof Model as keyof TModel
-    );
-    const res = await this.runCommonFieldRequest(
-      keyPathForField,
-      data,
-      baseCriteria
-    );
-    return res;
-  }
-  public async checkField_pathDoc(
-    baseCriteria: TStructureFieldBaseCriteria<
-      TModel,
-      TFieldMutateInstance["dfDiccActionConfig"],
-      TFieldValInstance["dfDiccActionConfig"]
-    >,
-    data: any
-  ): Promise<IStructureResponse> {
-    const keyPathForField = this.getKeyPathForField(
-      "_id" as keyof Model as keyof TModel
-    );
-    const res = await this.runCommonFieldRequest(
-      keyPathForField,
-      data,
-      baseCriteria
-    );
-    return res;
-  }
-  //████ Acciones de petición ████████████████████████████████████████████████████████████
+  //████ REQUEST disponibles ████████████████████████████████████████████████████████████
   /**... */
-  public async exist(
-    baseCriteria: TStructureModelBaseReadCriteria<
+  public async checkField(
+    keyField: keyof TModel,
+    value: TModel[typeof keyField],
+    baseCriteria: TStructureFieldBaseCriteria<
+      TModel,
+      TFieldMutateInstance["dfDiccActionConfig"],
+      TFieldValInstance["dfDiccActionConfig"]
+    >
+  ): Promise<IStructureResponse> {
+    let keyPathForField = this.getKeyPathForField(keyField);
+    const res = await this.runCommonFieldCheck(
+      keyPathForField,
+      value,
+      baseCriteria
+    );
+    return res;
+  }
+  /**... */
+  public async readRequest(
+    keyActionRequest: TKeyDiccActionRequest,
+    baseCriteria?: TStructureModelBaseReadCriteria<
       TModel,
       TModelMutateInstance["dfDiccActionConfig"],
       TModelValInstance["dfDiccActionConfig"],
@@ -620,16 +602,18 @@ export abstract class StructureLogicController<
       TKeyDiccActionRequest
     >
   ): Promise<IStructureResponse> {
-    const keyActionRequest = "exist" as TKeyDiccActionRequest;
-    const res = await this.runCommonModelRequest(
+    const res = await this.runCommonRequest(
       keyActionRequest,
       this.util.dfValue,
       baseCriteria
     );
     return res;
   }
-  public async count(
-    baseCriteria: TStructureModelBaseReadCriteria<
+  /**... */
+  public async modifyRequest(
+    keyActionRequest: TKeyDiccActionRequest,
+    data: TModel,
+    baseCriteria?: TStructureModelBaseModifyCriteria<
       TModel,
       TModelMutateInstance["dfDiccActionConfig"],
       TModelValInstance["dfDiccActionConfig"],
@@ -639,207 +623,11 @@ export abstract class StructureLogicController<
       TKeyDiccActionRequest
     >
   ): Promise<IStructureResponse> {
-    const keyActionRequest = "count" as TKeyDiccActionRequest;
-    const res = await this.runCommonModelRequest(
+    const res = await this.runCommonRequest(
       keyActionRequest,
-      this.util.dfValue,
+      data,
       baseCriteria
     );
     return res;
   }
-  public async inform(
-    baseCriteria: TStructureModelBaseReadCriteria<
-      TModel,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"],
-      TKeyDiccActionRequest
-    >
-  ): Promise<IStructureResponse> {
-    const keyActionRequest = "inform" as TKeyDiccActionRequest;
-    const res = await this.runCommonModelRequest(
-      keyActionRequest,
-      this.util.dfValue,
-      baseCriteria
-    );
-    return res;
-  }
-  public async readAll(
-    baseCriteria: TStructureModelBaseReadCriteria<
-      TModel,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"],
-      TKeyDiccActionRequest
-    >
-  ): Promise<IStructureResponse> {
-    const keyActionRequest = "readAll" as TKeyDiccActionRequest;
-    const res = await this.runCommonModelRequest(
-      keyActionRequest,
-      this.util.dfValue,
-      baseCriteria
-    );
-    return res;
-  }
-  public async readMany(
-    baseCriteria: TStructureModelBaseReadCriteria<
-      TModel,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"],
-      TKeyDiccActionRequest
-    >
-  ): Promise<IStructureResponse> {
-    const keyActionRequest = "readMany" as TKeyDiccActionRequest;
-    const res = await this.runCommonModelRequest(
-      keyActionRequest,
-      this.util.dfValue,
-      baseCriteria
-    );
-    return res;
-  }
-  public async readOne(
-    baseCriteria: TStructureModelBaseReadCriteria<
-      TModel,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"],
-      TKeyDiccActionRequest
-    >
-  ): Promise<IStructureResponse> {
-    const keyActionRequest = "readOne" as TKeyDiccActionRequest;
-    const res = await this.runCommonModelRequest(
-      keyActionRequest,
-      this.util.dfValue,
-      baseCriteria
-    );
-    return res;
-  }
-  public async readById(
-    baseCriteria: TStructureModelBaseReadCriteria<
-      TModel,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"],
-      TKeyDiccActionRequest
-    >,
-    _id: any
-  ): Promise<IStructureResponse> {
-    const keyActionRequest = "readById" as TKeyDiccActionRequest;
-    const res = await this.runCommonModelRequest(
-      keyActionRequest,
-      this.util.dfValue,
-      baseCriteria
-    );
-    return res;
-  }
-  public async create(
-    baseCriteria: TStructureModelBaseModifyCriteria<
-      TModel,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"],
-      TKeyDiccActionRequest
-    >,
-    data: Partial<TModel>
-  ): Promise<IStructureResponse> {
-    const keyActionRequest = "create" as TKeyDiccActionRequest;
-    const res = await this.runCommonModelRequest(
-      keyActionRequest,
-      data as TModel,
-      baseCriteria
-    );
-    return res;
-  }
-  public async update(
-    baseCriteria: TStructureModelBaseModifyCriteria<
-      TModel,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"],
-      TKeyDiccActionRequest
-    >,
-    data: Partial<TModel>
-  ): Promise<IStructureResponse> {
-    const keyActionRequest = "update" as TKeyDiccActionRequest;
-    const res = await this.runCommonModelRequest(
-      keyActionRequest,
-      data as TModel,
-      baseCriteria
-    );
-    return res;
-  }
-  public async delete(
-    baseCriteria: TStructureModelBaseModifyCriteria<
-      TModel,
-      TModelMutateInstance["dfDiccActionConfig"],
-      TModelValInstance["dfDiccActionConfig"],
-      TRequestValInstance["dfDiccActionConfig"],
-      TStructureHookInstance["dfDiccActionConfig"],
-      TStructureProviderInstance["dfDiccActionConfig"],
-      TKeyDiccActionRequest
-    >,
-    data: Partial<TModel>
-  ): Promise<IStructureResponse> {
-    const keyActionRequest = "delete" as TKeyDiccActionRequest;
-    const res = await this.runCommonModelRequest(
-      keyActionRequest,
-      data as TModel,
-      baseCriteria
-    );
-    return res;
-  }
-  // public async createMany(
-  //   bagCtrl: IStructureBagForModelCtrlContext<
-  //     TModel,
-  //     TStructureCriteriaInstance,
-  //     TModelMutateInstance["dfDiccActionConfig"],
-  //     TModelValInstance["dfDiccActionConfig"],
-  //     TRequestValInstance["dfDiccActionConfig"],
-  //     TStructureHookInstance["dfDiccActionConfig"],
-  //     TStructureProviderInstance["dfDiccActionConfig"]
-  //   >
-  // ): Promise<IStructureResponse> {
-  //   return;
-  // }
-  // public async updateMany(
-  //   bagCtrl: IStructureBagForModelCtrlContext<
-  //     TModel,
-  //     TStructureCriteriaInstance,
-  //     TModelMutateInstance["dfDiccActionConfig"],
-  //     TModelValInstance["dfDiccActionConfig"],
-  //     TRequestValInstance["dfDiccActionConfig"],
-  //     TStructureHookInstance["dfDiccActionConfig"],
-  //     TStructureProviderInstance["dfDiccActionConfig"]
-  //   >
-  // ): Promise<IStructureResponse> {
-  //   return;
-  // }
-  // public async deleteMany(
-  //   bagCtrl: IStructureBagForModelCtrlContext<
-  //     TModel,
-  //     TStructureCriteriaInstance,
-  //     TModelMutateInstance["dfDiccActionConfig"],
-  //     TModelValInstance["dfDiccActionConfig"],
-  //     TRequestValInstance["dfDiccActionConfig"],
-  //     TStructureHookInstance["dfDiccActionConfig"],
-  //     TStructureProviderInstance["dfDiccActionConfig"]
-  //   >
-  // ): Promise<IStructureResponse> {
-  //   return;
-  // }
 }

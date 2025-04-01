@@ -7,9 +7,15 @@ import {
   TKeyHttpMethod,
 } from "../../../../../../util/http-tool";
 import { IFetchOption, TFetchCustomQueryFnReturn } from "./shared";
-import { IBagForDriver } from "../../../../shared";
+import {
+  IPrimitiveBagForDriver,
+  IStructureBagForDriver,
+} from "../../../../shared";
 import { HttpDriver } from "../_https-driver";
-import { THttpCustomQueryDriverFn } from "../shared";
+import {
+  TPrimitiveHttpCustomQueryDriverFn,
+  TStructureHttpCustomQueryDriverFn,
+} from "../shared";
 import { Module } from "../../../../../../config/module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
@@ -120,7 +126,7 @@ export class FetchDriver
     return super.getLiteral() as any;
   }
   public override async sendRequestFromService(
-    literalBag: IBagForDriver
+    literalBag: IPrimitiveBagForDriver | IStructureBagForDriver<any>
   ): Promise<IDriverResponse> {
     let option = this.util.clone(this.option);
     //try-catch especializado para fetch
@@ -138,11 +144,17 @@ export class FetchDriver
       const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
       if (this.util.isFunction(customQueryDriverFn)) {
         //personalizada
-        const fn = customQueryDriverFn as THttpCustomQueryDriverFn<
+        const fn = customQueryDriverFn as
+          | TPrimitiveHttpCustomQueryDriverFn<this, TFetchCustomQueryFnReturn>
+          | TStructureHttpCustomQueryDriverFn<
+              this,
+              any,
+              TFetchCustomQueryFnReturn
+            >;
+        const { url: mod_url, option: mod_option } = await fn(
           this,
-          TFetchCustomQueryFnReturn
-        >;
-        const { url: mod_url, option: mod_option } = await fn(this, literalBag);
+          literalBag as any
+        );
         url = this.util.isString(mod_url) ? mod_url : url;
         option = this.util.deepMergeObjects([option, mod_option], {
           mode: "soft",

@@ -1,10 +1,10 @@
 import { PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
-import { IDiccPrimitiveMutateActionConfigG } from "../mutaters/primitive-mutater";
-import { IDiccPrimitiveHookActionConfigG } from "../hooks/primitive-hook";
-import { IDiccPrimitiveProviderActionConfigG } from "../providers/primitive-provider";
+import { PrimitiveLogicMutater } from "../mutaters/primitive-mutater";
+import { PrimitiveLogicHook } from "../hooks/primitive-hook";
+import { PrimitiveLogicProvider } from "../providers/primitive-provider";
 import { IPrimitiveResponse } from "../reports/shared";
-import { IDiccPrimitiveValActionConfigG } from "../validators/primitive-validation";
-import { IDiccRequestValActionConfigG } from "../validators/request-validation";
+import { PrimitiveLogicValidation } from "../validators/primitive-validation";
+import { RequestLogicValidation } from "../validators/request-validation";
 import { BagModule } from "./_bag";
 import { IPrimitiveBag, TKeyPrimitiveBagModuleContext } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -14,14 +14,28 @@ export type Trf_PrimitiveBag = PrimitiveBag<any>;
 /**... */
 export class PrimitiveBag<
   TValue,
-  TPrimitiveCriteriaHandler extends PrimitiveCriteriaHandler<TValue> = PrimitiveCriteriaHandler<TValue>,
-  TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
-  TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
+  TIDiccPrimitiveMutateAC extends PrimitiveLogicMutater["dfDiccActionConfig"] = PrimitiveLogicMutater["dfDiccActionConfig"],
+  TIDiccPrimitiveValAC extends PrimitiveLogicValidation["dfDiccActionConfig"] = PrimitiveLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccPrimitiveHookAC extends PrimitiveLogicHook["dfDiccActionConfig"] = PrimitiveLogicHook["dfDiccActionConfig"],
+  TIDiccPrimitiveProviderAC extends PrimitiveLogicProvider["dfDiccActionConfig"] = PrimitiveLogicProvider["dfDiccActionConfig"],
+  TPrimitiveCriteriaHandler extends PrimitiveCriteriaHandler<
+    TValue,
+    TIDiccPrimitiveMutateAC,
+    TIDiccPrimitiveValAC,
+    TIDiccRequestValAC,
+    TIDiccPrimitiveHookAC,
+    TIDiccPrimitiveProviderAC
+  > = PrimitiveCriteriaHandler<
+    TValue,
+    TIDiccPrimitiveMutateAC,
+    TIDiccPrimitiveValAC,
+    TIDiccRequestValAC,
+    TIDiccPrimitiveHookAC,
+    TIDiccPrimitiveProviderAC
+  >
 > extends BagModule {
-  /** configuracion de valores predefinidos para el modulo*/
+  /** configuración de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = BagModule.getDefault();
     return {
@@ -53,12 +67,12 @@ export class PrimitiveBag<
       Pick<
         PrimitiveBag<
           TValue,
-          TPrimitiveCriteriaHandler,
           TIDiccPrimitiveMutateAC,
           TIDiccPrimitiveValAC,
           TIDiccRequestValAC,
           TIDiccPrimitiveHookAC,
-          TIDiccPrimitiveProviderAC
+          TIDiccPrimitiveProviderAC,
+          TPrimitiveCriteriaHandler
         >,
         "data" | "criteriaHandler" | "responses"
       >

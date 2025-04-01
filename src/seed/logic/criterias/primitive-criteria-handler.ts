@@ -1,15 +1,15 @@
 import { Module } from "../config/module";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { IDiccPrimitiveHookActionConfigG } from "../hooks/primitive-hook";
+import { PrimitiveLogicHook } from "../hooks/primitive-hook";
 import { TKeyPrimitiveHookModuleContext } from "../hooks/shared";
 import { TKeyPrimitiveInternalACModuleContext } from "../meta/metadata-shared";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
-import { IDiccPrimitiveMutateActionConfigG } from "../mutaters/primitive-mutater";
+import { PrimitiveLogicMutater } from "../mutaters/primitive-mutater";
 import { TKeyPrimitiveMutateModuleContext } from "../mutaters/shared";
-import { IDiccPrimitiveProviderActionConfigG } from "../providers/primitive-provider";
+import { PrimitiveLogicProvider } from "../providers/primitive-provider";
 import { TKeyPrimitiveProviderModuleContext } from "../providers/shared";
-import { IDiccPrimitiveValActionConfigG } from "../validators/primitive-validation";
-import { IDiccRequestValActionConfigG } from "../validators/request-validation";
+import { PrimitiveLogicValidation } from "../validators/primitive-validation";
+import { RequestLogicValidation } from "../validators/request-validation";
 import { TKeyPrimitiveValModuleContext } from "../validators/shared";
 import { CriteriaHandler } from "./_criteria-handler";
 import {
@@ -30,11 +30,11 @@ export type Trf_PrimitiveCriteriaHandler = PrimitiveCriteriaHandler<any>;
  */
 export class PrimitiveCriteriaHandler<
   TValue,
-  TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
-  TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG,
+  TIDiccPrimitiveMutateAC extends PrimitiveLogicMutater["dfDiccActionConfig"] = PrimitiveLogicMutater["dfDiccActionConfig"],
+  TIDiccPrimitiveValAC extends PrimitiveLogicValidation["dfDiccActionConfig"] = PrimitiveLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccPrimitiveHookAC extends PrimitiveLogicHook["dfDiccActionConfig"] = PrimitiveLogicHook["dfDiccActionConfig"],
+  TIDiccPrimitiveProviderAC extends PrimitiveLogicProvider["dfDiccActionConfig"] = PrimitiveLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > extends CriteriaHandler<TKeyDiccActionRequest> {
   public static override getDefault = () => {

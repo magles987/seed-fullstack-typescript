@@ -33,50 +33,17 @@ import {
   TKeyPrimitiveMetadataModuleContext,
   TKeyStructureMetadataModuleContext,
 } from "./shared";
-import {
-  FieldLogicMutater,
-  IDiccFieldMutateActionConfigG,
-} from "../mutaters/field-mutater";
-import {
-  IDiccModelMutateActionConfigG,
-  ModelLogicMutater,
-} from "../mutaters/model-mutater";
-import {
-  FieldLogicValidation,
-  IDiccFieldValActionConfigG,
-} from "../validators/field-validation";
-import {
-  IDiccModelValActionConfigG,
-  ModelLogicValidation,
-} from "../validators/model-validation";
-import {
-  IDiccRequestValActionConfigG,
-  RequestLogicValidation,
-} from "../validators/request-validation";
-import {
-  IDiccPrimitiveValActionConfigG,
-  PrimitiveLogicValidation,
-} from "../validators/primitive-validation";
-import {
-  IDiccPrimitiveMutateActionConfigG,
-  PrimitiveLogicMutater,
-} from "../mutaters/primitive-mutater";
-import {
-  IDiccStructureHookActionConfigG,
-  StructureLogicHook,
-} from "../hooks/structure-hook";
-import {
-  IDiccPrimitiveHookActionConfigG,
-  PrimitiveLogicHook,
-} from "../hooks/primitive-hook";
-import {
-  IDiccStructureProviderActionConfigG,
-  StructureLogicProvider,
-} from "../providers/structure-provider";
-import {
-  IDiccPrimitiveProviderActionConfigG,
-  PrimitiveLogicProvider,
-} from "../providers/primitive-provider";
+import { FieldLogicMutater } from "../mutaters/field-mutater";
+import { ModelLogicMutater } from "../mutaters/model-mutater";
+import { FieldLogicValidation } from "../validators/field-validation";
+import { ModelLogicValidation } from "../validators/model-validation";
+import { RequestLogicValidation } from "../validators/request-validation";
+import { PrimitiveLogicValidation } from "../validators/primitive-validation";
+import { PrimitiveLogicMutater } from "../mutaters/primitive-mutater";
+import { StructureLogicHook } from "../hooks/structure-hook";
+import { PrimitiveLogicHook } from "../hooks/primitive-hook";
+import { StructureLogicProvider } from "../providers/structure-provider";
+import { PrimitiveLogicProvider } from "../providers/primitive-provider";
 import {
   TFieldConfigForCtrl,
   TModelConfigForCtrl,

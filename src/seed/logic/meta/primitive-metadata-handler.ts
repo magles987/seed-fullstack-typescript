@@ -39,9 +39,9 @@ import {
 } from "../controllers/shared";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { ActionModule, Module } from "../config/module";
-import { PrimitiveLogicController } from "../controllers/_primitive-ctrl";
+import { PrimitiveLogicController } from "../controllers/primitive-ctrl";
 import { Driver } from "../providers/_drivers/_driver";
-import { IPrimitiveBuilderBaseMetadata } from "./builder-shared";
+import { IPrimitiveBuilderBaseCtrl } from "../controllers/builder-ctrl-shared";
 import {
   IPrimitiveModifyCriteria,
   IPrimitiveReadCriteria,
@@ -162,7 +162,7 @@ export class PrimitiveLogicMetadataHandler<
    * @param baseMetadata esquema base para construir los metadatos
    */
   constructor(
-    baseConfigMeta: IPrimitiveBuilderBaseMetadata<
+    baseConfigMeta: IPrimitiveBuilderBaseCtrl<
       TValue,
       TPrimitiveMutateInstance,
       TPrimitiveValInstance,
@@ -172,7 +172,8 @@ export class PrimitiveLogicMetadataHandler<
     >
   ) {
     super("structure", baseConfigMeta);
-    const { customBase, customDiccModuleInstance } = baseConfigMeta;
+    const { customBaseMetadata: customBase, customDiccModuleInstance } =
+      baseConfigMeta;
     this.diccModuleInstanceContext = this.buildDiccModuleContextInstance(
       customDiccModuleInstance as any
     );
@@ -208,7 +209,7 @@ export class PrimitiveLogicMetadataHandler<
         driversList: this.mergeDriversList([
           diccMIContext.driversList,
           diccDf.driversList,
-        ]) as IPrimitiveBuilderBaseMetadata<any>["customDiccModuleInstance"]["driversList"],
+        ]) as IPrimitiveBuilderBaseCtrl<any>["customDiccModuleInstance"]["driversList"],
       };
     }
     //inyectar Instancia de metadatos:

@@ -75,9 +75,7 @@ export class UtilExtension extends UtilNative {
   /**
    * Realiza la clonación de objetos JSON o Arrays de JSONs a diferentes niveles de profundidad.
    *
-   * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    * ⚠ **SOLO** se puede clonar instancias de clase con "lodash" ⚠
-   * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    *
    * @param {T} objOrArray El objeto a clonar. El tipo `T` se asume implícitamente al enviar el parámetro.
    * @param {"stringify" | "structuredClone" | "lodash"} driver `= "lodash"` el driver o libreria para hacer clonación.

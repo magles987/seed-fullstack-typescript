@@ -3,17 +3,10 @@ import {
   TModelConfigForMutate,
   TStructureMutateModuleConfigForModel,
 } from "./shared";
-import {
-  EKeyActionGroupForRes,
-  ELogicResStatusCode,
-  IStructureResponse,
-} from "../reports/shared";
+import { EKeyActionGroupForRes, IStructureResponse } from "../reports/shared";
 import { TStructureMetaAndMutater } from "../meta/metadata-shared";
 import { StructureBag } from "../bag/structure-bag";
-import {
-  FieldLogicMutater,
-  IDiccFieldMutateActionConfigG,
-} from "./field-mutater";
+import { FieldLogicMutater } from "./field-mutater";
 import { LogicController } from "../controllers/_controller";
 import { TStructureFnBagForActionModule } from "../bag/shared";
 import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
@@ -27,7 +20,7 @@ import { StructureCriteriaHandler } from "../criterias/structure-criteria-handle
  * propiedades deben ser **opcionales**
  */
 export interface IDiccModelMutateActionConfigG<
-  TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG
+  TIDiccFieldMutateAC extends FieldLogicMutater["dfDiccActionConfig"] = FieldLogicMutater["dfDiccActionConfig"]
 > {
   /**formatear todos los campos del registro */
   mutateModel:
@@ -157,7 +150,7 @@ export class ModelLogicMutater<
       const sub_Bag = new StructureBag(this.keySrc, "fieldBag", {
         //❗el contexto es campo fieldBag❗
         data: fieldData,
-        criteriaHandler: sub_cH,
+        criteriaHandler: sub_cH as any,
       });
       const sub_rH = (fieldMutateInst as any as this) //❗hack❗ permite acceder a la propiedad protegida a las malas 🐱‍👤
         .buildReportHandler(sub_Bag, EKeyActionGroupForRes.fields as any);

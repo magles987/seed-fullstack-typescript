@@ -11,10 +11,7 @@ import {
   IStructureResponse,
 } from "../reports/shared";
 import { StructureBag } from "../bag/structure-bag";
-import {
-  FieldLogicValidation,
-  IDiccFieldValActionConfigG,
-} from "./field-validation";
+import { FieldLogicValidation } from "./field-validation";
 import { LogicController } from "../controllers/_controller";
 import { StructureReportHandler } from "../reports/structure-report-handler";
 import { TStructureFnBagForActionModule } from "../bag/shared";
@@ -45,7 +42,7 @@ type TisRequiredConfig = {
  * completo del modelo
  */
 export interface IDiccModelValActionConfigG<
-  TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
+  TIDiccFieldValAC extends FieldLogicValidation["dfDiccActionConfig"] = FieldLogicValidation["dfDiccActionConfig"]
 > {
   /**configuracion para validar si es un modelo valido*/
   isTypeOfModel: true; //❗Siempre activa❗
@@ -293,7 +290,7 @@ export class ModelLogicValidation<
       const sub_Bag = new StructureBag(this.keySrc, "fieldBag", {
         //❗el contexto es campo fieldBag❗
         data: fieldData,
-        criteriaHandler: sub_cH,
+        criteriaHandler: sub_cH as any,
       });
       const sub_rH = (fieldValInst as any as this) //❗hack❗ permite acceder a la propiedad protegida a las malas 🐱‍👤
         .buildReportHandler(sub_Bag, EKeyActionGroupForRes.fields as any);

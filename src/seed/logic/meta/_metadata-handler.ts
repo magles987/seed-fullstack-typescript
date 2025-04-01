@@ -6,7 +6,7 @@ import { FetchDriver } from "../providers/_drivers/client/web/https/fetch/fetch-
 import { CookieDriver } from "../providers/_drivers/client/web/local-repositories/cookie/cookie-driver";
 import { IdbDriver } from "../providers/_drivers/client/web/local-repositories/idb/_idb-driver";
 import { StorageDriver } from "../providers/_drivers/client/web/local-repositories/storage/storage-driver";
-import { Trf_IBuilderBaseMetadata } from "./builder-shared";
+import { Trf_IBuilderBaseCtrl } from "../controllers/builder-ctrl-shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_LogicMetadataHandler = LogicMetadataHandler;
@@ -78,7 +78,7 @@ export abstract class LogicMetadataHandler extends LogicModule {
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
-    baseConfigMeta: Trf_IBuilderBaseMetadata
+    baseConfigMeta: Trf_IBuilderBaseCtrl
   ) {
     super("metadata", keyLogicContext);
     if (!this.util.isObject(baseConfigMeta)) {

@@ -561,6 +561,45 @@ export class UtilNative {
     return r;
   }
   /**
+   * Invierte el signo de un número dado.
+   *
+   * Este método toma un número o una cadena numérica como entrada y devuelve el mismo valor con el signo invertido.
+   * Si el número es positivo, se devuelve negativo, y si es negativo, se devuelve positivo.
+   * Si el número es `0`, se devuelve `0`.
+   * Si el valor recibido no es numérico (o cadena numérica y `allowString` es `false`), retorna ese valor sin alterar.
+   * Si `allowString` es `true` y el valor es una cadena numérica, se convierte a número antes de invertir el signo y se devuelve como cadena.
+   *
+   * @param {number | string} num El número o la cadena numérica cuyo signo se va a invertir.
+   * @param {boolean} allowString `= false` Indica si se permiten cadenas numéricas como entrada.
+   * @returns {number | string} El número o la cadena con el signo invertido.
+   *
+   * @example
+   * ```typescript
+   * const numP = 5;
+   * const numN = -10;
+   * const stringNum = "-1";
+   * const stringNotNum = "abc";
+   *
+   * console.log(toggleNumberSign(numP, false)); // Salida: -5
+   * console.log(toggleNumberSign(numN, false)); // Salida: 10
+   * console.log(toggleNumberSign(0, false)); // Salida: 0
+   * console.log(toggleNumberSign(stringNum, true)); // Salida: "1"
+   * console.log(toggleNumberSign(stringNotNum, false)); // Salida: "abc"
+   * console.log(toggleNumberSign(stringNotNum, true)); // Salida: "abc"
+   * ```
+   */
+  public toggleNumberSign(
+    num: number | string,
+    allowString = false
+  ): number | string {
+    allowString = this.convertToBoolean(allowString);
+    if (!this.isNumber(num, allowString)) num;
+    let r: number | string;
+    if (!allowString) r = -num;
+    else r = `${-this.stringToNumber(num)}`;
+    return r;
+  }
+  /**
    * Redondea un número y ajusta los decimales. Esta implementación se basa en la documentación oficial de Mozilla:
    * MDN Web Docs - Math.round
    *

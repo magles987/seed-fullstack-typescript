@@ -1,9 +1,11 @@
 import {
-  TPrimitiveBaseCriteria,
+  TCapitalizeFirstLetter,
+  TExtractOnlyKeyString,
+} from "../../util/shared";
+import {
   TPrimitiveBaseModifyCriteria,
   TPrimitiveBaseReadCriteria,
   TStructureFieldBaseCriteria,
-  TStructureModelBaseCriteria,
   TStructureModelBaseModifyCriteria,
   TStructureModelBaseReadCriteria,
 } from "../criterias/shared";
@@ -21,6 +23,18 @@ import { PrimitiveLogicValidation } from "../validators/primitive-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/**claves identificadoras de acciones de petición para lectura de datos */
+export type TKeyReadRequestCtrl =
+  | "readAll"
+  | "readOne"
+  | "readMany"
+  | "exist"
+  | "count";
+/**claves identificadoras de acciones de petición para modificación de datos */
+export type TKeyModifyRequestCtrl = "create" | "update" | "delete";
+//| "createMany"
+//| "updateMany"
+//| "deleteMany"
 
 //====Primitive===================================================================================================================
 
@@ -111,63 +125,15 @@ export type TPrimitiveConfigForCtrl<
 >;
 /**refactorizacion del tipo */
 export type Trf_TPrimitiveConfigForCtrl = TPrimitiveConfigForCtrl<any, any>;
-/**funcion asyncrona generica que recibe el bag de una peticion,
- * esta funcion será implementada en las peticiones del controller
- * ____
- * @param bag el objeto contenedor de
- * toda la configuracion necesaria para
- * construir un bag interno en la peticion
- * ____
- * @return Promesa con el reporte de respuesta de
- * la ejecucion de la accion
- */
-export type TPrimitiveCtrlActionFn<
-  TValue,
-  TPrimitiveMutateInstance extends PrimitiveLogicMutater = PrimitiveLogicMutater,
-  TPrimitiveValInstance extends PrimitiveLogicValidation = PrimitiveLogicValidation,
-  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
-  TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook,
-  TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider,
-  TKeyDiccActionRequest extends string = string
-> =
-  //método para lectura
-  | ((
-      criteriaHandler:
-        | TPrimitiveBaseReadCriteria<
-            TPrimitiveMutateInstance["dfDiccActionConfig"],
-            TPrimitiveValInstance["dfDiccActionConfig"],
-            TRequestValInstance["dfDiccActionConfig"],
-            TPrimitiveHookInstance["dfDiccActionConfig"],
-            TPrimitiveProviderInstance["dfDiccActionConfig"]
-          >
-        | TPrimitiveBaseModifyCriteria<
-            TPrimitiveMutateInstance["dfDiccActionConfig"],
-            TPrimitiveValInstance["dfDiccActionConfig"],
-            TRequestValInstance["dfDiccActionConfig"],
-            TPrimitiveHookInstance["dfDiccActionConfig"],
-            TPrimitiveProviderInstance["dfDiccActionConfig"]
-          >,
-      singleDataQ?: any //valor no definido para primitivos
-    ) => Promise<IPrimitiveResponse>)
-  //método para modificación
-  | ((
-      criteriaHandler:
-        | TPrimitiveBaseReadCriteria<
-            TPrimitiveMutateInstance["dfDiccActionConfig"],
-            TPrimitiveValInstance["dfDiccActionConfig"],
-            TRequestValInstance["dfDiccActionConfig"],
-            TPrimitiveHookInstance["dfDiccActionConfig"],
-            TPrimitiveProviderInstance["dfDiccActionConfig"]
-          >
-        | TPrimitiveBaseModifyCriteria<
-            TPrimitiveMutateInstance["dfDiccActionConfig"],
-            TPrimitiveValInstance["dfDiccActionConfig"],
-            TRequestValInstance["dfDiccActionConfig"],
-            TPrimitiveHookInstance["dfDiccActionConfig"],
-            TPrimitiveProviderInstance["dfDiccActionConfig"]
-          >,
-      data: Partial<TValue>
-    ) => Promise<IPrimitiveResponse>);
+/**claves identificadoras de acciones de petición para lectura de datos en contexto primitivo */
+export type TKeyPrimitiveReadRequestCtrl = TKeyReadRequestCtrl; //opción ampliable
+/**claves identificadoras de acciones de petición para lectura de datos en contexto primitivo */
+export type TKeyPrimitiveModifyRequestCtrl = TKeyModifyRequestCtrl; //opción ampliable
+/**tipo para unir ambos diccionarios (read y modify) de claves de peticiones */
+export type TKeyPrimitiveDiccRequestCtrl<
+  TKeyCustomReadRequestCtrl,
+  TKeyCustomModifyRequestCtrl
+> = TKeyCustomReadRequestCtrl | TKeyCustomModifyRequestCtrl;
 
 //====Strcuture====================================================================================================================
 
@@ -259,7 +225,15 @@ export type TFieldConfigForCtrl<
 >;
 /**refactorizacion del tipo */
 export type Trf_TFieldConfigForCtrl = TFieldConfigForCtrl<any>;
-/**... */
+/**claves identificadoras de acciones de petición para lectura de datos en contexto estructurado */
+export type TKeyStructureReadRequestCtrl = "readById" | TKeyReadRequestCtrl; //opción ampliable y personalizable a este contexto
+/**claves identificadoras de acciones de petición para lectura de datos en contexto estructurado */
+export type TKeyStructureModifyRequestCtrl = TKeyModifyRequestCtrl; //opción ampliable y personalizable a este contexto
+/**tipo para unir ambos diccionarios (read y modify) de claves de peticiones */
+export type TKeyStructureDiccRequestCtrl<
+  TKeyCustomReadRequestCtrl,
+  TKeyCustomModifyRequestCtrl
+> = TKeyCustomReadRequestCtrl | TKeyCustomModifyRequestCtrl;
 /**esquema de configuracion para metadatos
  * en contexto campo*/
 export type TModelConfigForCtrl<
@@ -286,90 +260,3 @@ export type TModelConfigForCtrl<
 >;
 /**refactorizacion del tipo */
 export type Trf_TModelConfigForCtrl = TModelConfigForCtrl<any, any>;
-/**funcion asyncrona genérica que recibe el bag de una peticion,
- * esta función será implementada en las peticiones del controller
- * ____
- * @param bag el objeto contenedor de
- * toda la configuracion necesaria para
- * construir un bag interno en la peticion
- * ____
- * @return Promesa con el reporte de respuesta de
- * la ejecucion de la accion
- */
-export type TFieldCtrlActionFn<
-  TModel,
-  TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
-  TFieldValInstance extends FieldLogicValidation = FieldLogicValidation
-> = (
-  criteriaHandler: TStructureFieldBaseCriteria<
-    TModel,
-    TFieldMutateInstance["dfDiccActionConfig"],
-    TFieldValInstance["dfDiccActionConfig"]
-  >,
-  data: any
-) => Promise<IStructureResponse>;
-/**funcion asyncrona generica que recibe el bag de una petición,
- * esta funcion será implementada en las peticiones del controller
- * ____
- * @param bag el objeto contenedor de
- * toda la configuración necesaria para
- * construir un bag interno en la petición
- * ____
- * @return Promesa con el reporte de respuesta de
- * la ejecución de la acción
- */
-export type TModelCtrlActionFn<
-  TModel,
-  TModelMutateInstance extends ModelLogicMutater = ModelLogicMutater,
-  TModelValInstance extends ModelLogicValidation = ModelLogicValidation,
-  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
-  TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
-  TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
-  TKeyDiccActionRequest extends string = string
-> =
-  //método para lectura
-  | ((
-      criteriaHandler:
-        | TStructureModelBaseReadCriteria<
-            TModel,
-            TModelMutateInstance["dfDiccActionConfig"],
-            TModelValInstance["dfDiccActionConfig"],
-            TRequestValInstance["dfDiccActionConfig"],
-            TStructureHookInstance["dfDiccActionConfig"],
-            TStructureProviderInstance["dfDiccActionConfig"],
-            TKeyDiccActionRequest
-          >
-        | TStructureModelBaseModifyCriteria<
-            TModel,
-            TModelMutateInstance["dfDiccActionConfig"],
-            TModelValInstance["dfDiccActionConfig"],
-            TRequestValInstance["dfDiccActionConfig"],
-            TStructureHookInstance["dfDiccActionConfig"],
-            TStructureProviderInstance["dfDiccActionConfig"],
-            TKeyDiccActionRequest
-          >,
-      singleDataQ?: Partial<TModel>
-    ) => Promise<IStructureResponse>)
-  //método para modificación
-  | ((
-      criteriaHandler:
-        | TStructureModelBaseReadCriteria<
-            TModel,
-            TModelMutateInstance["dfDiccActionConfig"],
-            TModelValInstance["dfDiccActionConfig"],
-            TRequestValInstance["dfDiccActionConfig"],
-            TStructureHookInstance["dfDiccActionConfig"],
-            TStructureProviderInstance["dfDiccActionConfig"],
-            TKeyDiccActionRequest
-          >
-        | TStructureModelBaseModifyCriteria<
-            TModel,
-            TModelMutateInstance["dfDiccActionConfig"],
-            TModelValInstance["dfDiccActionConfig"],
-            TRequestValInstance["dfDiccActionConfig"],
-            TStructureHookInstance["dfDiccActionConfig"],
-            TStructureProviderInstance["dfDiccActionConfig"],
-            TKeyDiccActionRequest
-          >,
-      data: Partial<TModel>
-    ) => Promise<IStructureResponse>);

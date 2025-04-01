@@ -8,10 +8,20 @@ import {
   LogicError,
 } from "../../../../../../errors/logic-error";
 import { getStrategyGeneratorIdFnByKey } from "../../../../../../util/default-generators-id-fn";
-import { IBagForDriver } from "../../../../shared";
+import {
+  IPrimitiveBagForDriver,
+  IStructureBagForDriver,
+} from "../../../../shared";
 import { LocalRepositoryDriver } from "../_local-repository-driver";
-import { TLocalRepositoryCustomQueryDriverFn } from "../shared"; //❗Desde el padre❗
+import {
+  TPrimitiveLocalRepositoryCustomQueryDriverFn,
+  TStructureLocalRepositoryCustomQueryDriverFn,
+} from "../shared"; //❗Desde el padre❗
 import { IDBConnection, TSchemaConfig } from "./_connection";
+import {
+  PrimitiveLibraryIdbQueryFn,
+  StructureLibraryIdbQueryFn,
+} from "./library-idb-query-fn";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
@@ -29,6 +39,12 @@ export class IdbDriver
     name = `${prefixGroupName}${name}`;
     return name;
   };
+  /**librería de funciones para consulta*/
+  protected static primitiveLibraryQueryFn =
+    PrimitiveLibraryIdbQueryFn.getInstance(); //❗Solo set para acceder❗, el get es personalizado
+  /**librería de funciones para consulta*/
+  protected static structureLibraryQueryFn =
+    StructureLibraryIdbQueryFn.getInstance(); //❗Solo set para acceder❗, el get es personalizado
   public static override readonly getDefault = () => {
     const superDf = LocalRepositoryDriver.getDefault();
     return {
@@ -117,6 +133,52 @@ export class IdbDriver
   public override getLiteral(): ReturnType<IdbDriver["getDefault"]> {
     return super.getLiteral() as any;
   }
+  /**obtienen la librería de funciones de consultas
+   *
+   * @type `TValue` el tipo de dato a procesar
+   * @type `TCustomLibrary` si la librería es totalmente
+   * personalizada se debe definir en nombre de la clase de
+   * la librería personalizada (esta librería debió ser asignada
+   * a por medio del método `setPrimitiveLibraryQueryFn()` antes de poderse usar)
+   */
+  public static getPrimitiveLibraryQueryFn<
+    TValue,
+    TCustomLibrary extends PrimitiveLibraryIdbQueryFn<TValue> = PrimitiveLibraryIdbQueryFn<TValue>
+  >(): TCustomLibrary {
+    return IdbDriver.primitiveLibraryQueryFn as TCustomLibrary;
+  }
+  /**asignar librería totalmente personalizada a la propiedad
+   * que almacena dicha librería */
+  public static setPrimitiveLibraryQueryFn<
+    TCustomLibrary extends PrimitiveLibraryIdbQueryFn<any>
+  >(v: TCustomLibrary): void {
+    const util = Module.util;
+    if (!util.isInstance(v)) return;
+    IdbDriver.primitiveLibraryQueryFn = v;
+  }
+  /**obtienen la librería de funciones de consultas
+   *
+   * @type `TModel` el tipo de dato a procesar
+   * @type `TCustomLibrary` si la librería es totalmente
+   * personalizada se debe definir en nombre de la clase de
+   * la librería personalizada (esta librería debió ser asignada
+   * a por medio del método `setStructureLibraryQueryFn()` antes de poderse usar)
+   */
+  public static getStructureLibraryQueryFn<
+    TModel,
+    TCustomLibrary extends StructureLibraryIdbQueryFn<TModel> = StructureLibraryIdbQueryFn<TModel>
+  >(): TCustomLibrary {
+    return IdbDriver.structureLibraryQueryFn as TCustomLibrary;
+  }
+  /**asignar librería totalmente personalizada a la propiedad
+   * que almacena dicha librería */
+  public static setStructureLibraryQueryFn<
+    TCustomLibrary extends StructureLibraryIdbQueryFn<any>
+  >(v: TCustomLibrary): void {
+    const util = Module.util;
+    if (!util.isInstance(v)) return;
+    IdbDriver.structureLibraryQueryFn = v;
+  }
   /**
    * ____
    * @param keyCollection la clave
@@ -189,7 +251,9 @@ export class IdbDriver
     return;
   }
   //████ CRUD by Bag ████████████████████████████████████████████████████████████
-  protected override async primitiveReadByBag(literalBag: IBagForDriver) {
+  protected override async primitiveReadByBag(
+    literalBag: IPrimitiveBagForDriver
+  ) {
     let { data, literalCriteria } = literalBag;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
@@ -217,7 +281,10 @@ export class IdbDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalización
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TPrimitiveLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       registers = await fn(this, literalBag, registers);
     } else {
       //estándar
@@ -239,7 +306,9 @@ export class IdbDriver
     data = registers;
     return data;
   }
-  protected override async primitiveCreateByBag(literalBag: IBagForDriver) {
+  protected override async primitiveCreateByBag(
+    literalBag: IPrimitiveBagForDriver
+  ) {
     const { data, literalCriteria } = literalBag;
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(
@@ -281,7 +350,10 @@ export class IdbDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TPrimitiveLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       let registers = await tx.store.getAll();
       registers = await fn(this, literalBag, registers);
       //⚠ proceso extremadamente lento ⚠
@@ -307,7 +379,9 @@ export class IdbDriver
     await tx.done; //cerrar la transacción
     return data;
   }
-  protected override async primitiveUpdateByBag(literalBag: IBagForDriver) {
+  protected override async primitiveUpdateByBag(
+    literalBag: IPrimitiveBagForDriver
+  ) {
     const { data, literalCriteria } = literalBag;
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(
@@ -350,7 +424,10 @@ export class IdbDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TPrimitiveLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       let registers = await tx.store.getAll();
       registers = await fn(this, literalBag, registers);
       //⚠ proceso extremadamente lento ⚠
@@ -376,7 +453,9 @@ export class IdbDriver
     await tx.done; //cerrar la transacción
     return data;
   }
-  protected override async primitiveDeleteByBag(literalBag: IBagForDriver) {
+  protected override async primitiveDeleteByBag(
+    literalBag: IPrimitiveBagForDriver
+  ) {
     const { data, literalCriteria } = literalBag;
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(
@@ -407,7 +486,10 @@ export class IdbDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TPrimitiveLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       let registers = await tx.store.getAll();
       registers = await fn(this, literalBag, registers);
       //⚠ proceso extremadamente lento ⚠
@@ -420,7 +502,9 @@ export class IdbDriver
     await tx.done;
     return data;
   }
-  protected override async structureReadByBag(literalBag: IBagForDriver) {
+  protected override async structureReadByBag(
+    literalBag: IStructureBagForDriver<any>
+  ) {
     let { data, literalCriteria } = literalBag;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
@@ -440,7 +524,10 @@ export class IdbDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalización
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TStructureLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       registers = await fn(this, literalBag, registers);
     } else {
       //estándar
@@ -462,7 +549,9 @@ export class IdbDriver
     data = registers;
     return data;
   }
-  protected override async structureCreateByBag(literalBag: IBagForDriver) {
+  protected override async structureCreateByBag(
+    literalBag: IStructureBagForDriver<any>
+  ) {
     let { data, literalCriteria } = literalBag;
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(
@@ -507,7 +596,10 @@ export class IdbDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TStructureLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       let registers = await tx.store.getAll();
       registers = await fn(this, literalBag, registers);
       //⚠ proceso extremadamente lento ⚠
@@ -523,7 +615,9 @@ export class IdbDriver
     await tx.done; //cerrar la transacción
     return data;
   }
-  protected override async structureUpdateByBag(literalBag: IBagForDriver) {
+  protected override async structureUpdateByBag(
+    literalBag: IStructureBagForDriver<any>
+  ) {
     let { data, literalCriteria } = literalBag;
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(
@@ -566,7 +660,10 @@ export class IdbDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TStructureLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       let registers = await tx.store.getAll();
       registers = await fn(this, literalBag, registers);
       //⚠ proceso extremadamente lento ⚠
@@ -579,7 +676,9 @@ export class IdbDriver
     await tx.done; //cerrar la transacción
     return data;
   }
-  protected override async structureDeleteByBag(literalBag: IBagForDriver) {
+  protected override async structureDeleteByBag(
+    literalBag: IStructureBagForDriver<any>
+  ) {
     let { data, literalCriteria } = literalBag;
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(
@@ -615,7 +714,10 @@ export class IdbDriver
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TLocalRepositoryCustomQueryDriverFn<this>;
+        customQueryDriverFn as TStructureLocalRepositoryCustomQueryDriverFn<
+          this,
+          any
+        >;
       let registers = await tx.store.getAll();
       registers = await fn(this, literalBag, registers);
       //⚠ proceso extremadamente lento ⚠

@@ -15,10 +15,7 @@ import {
 import { StructureBag } from "../bag/structure-bag";
 import { StructureReportHandler } from "../reports/structure-report-handler";
 import { TStructureFnBagForActionModule } from "../bag/shared";
-import {
-  IDiccModelValActionConfigG,
-  ModelLogicValidation,
-} from "./model-validation";
+import { ModelLogicValidation } from "./model-validation";
 //████tipos e interfaces████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipo exclusivo para adicionar una configuracion
  * a la accion isRequired */
@@ -277,7 +274,10 @@ export interface IDiccFieldValActionConfigG {
   isEmbModel:
     | {
         embModelDiccAC: Partial<
-          TModelConfigForVal<IDiccModelValActionConfigG, any>["modelVal"]
+          TModelConfigForVal<
+            ModelLogicValidation["dfDiccActionConfig"],
+            any
+          >["modelVal"]
         >;
       }
     | undefined;
@@ -285,7 +285,10 @@ export interface IDiccFieldValActionConfigG {
   isArrayEmbModel:
     | {
         embModelDiccAC: Partial<
-          TModelConfigForVal<IDiccModelValActionConfigG, any>["modelVal"]
+          TModelConfigForVal<
+            ModelLogicValidation["dfDiccActionConfig"],
+            any
+          >["modelVal"]
         >;
       }
     | undefined;

@@ -1,21 +1,21 @@
-import { ActionModule, IBuildACOption, Module } from "../config/module";
+import { Module } from "../config/module";
 import {
   TKeyStructureContextBasic,
   TKeyStructureContextFull,
 } from "../config/shared-modules";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { TKeyStructureHookModuleContext } from "../hooks/shared";
-import { IDiccStructureHookActionConfigG } from "../hooks/structure-hook";
+import { StructureLogicHook } from "../hooks/structure-hook";
 import { TKeyStructureInternalACModuleContext } from "../meta/metadata-shared";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
-import { IDiccFieldMutateActionConfigG } from "../mutaters/field-mutater";
-import { IDiccModelMutateActionConfigG } from "../mutaters/model-mutater";
+import { FieldLogicMutater } from "../mutaters/field-mutater";
+import { ModelLogicMutater } from "../mutaters/model-mutater";
 import { TKeyStructureDeepMutateModuleContext } from "../mutaters/shared";
 import { TKeyStructureProviderModuleContext } from "../providers/shared";
-import { IDiccStructureProviderActionConfigG } from "../providers/structure-provider";
-import { IDiccFieldValActionConfigG } from "../validators/field-validation";
-import { IDiccModelValActionConfigG } from "../validators/model-validation";
-import { IDiccRequestValActionConfigG } from "../validators/request-validation";
+import { StructureLogicProvider } from "../providers/structure-provider";
+import { FieldLogicValidation } from "../validators/field-validation";
+import { ModelLogicValidation } from "../validators/model-validation";
+import { RequestLogicValidation } from "../validators/request-validation";
 import { TKeyStructureDeepValModuleContext } from "../validators/shared";
 import { CriteriaHandler } from "./_criteria-handler";
 import {
@@ -25,7 +25,6 @@ import {
   IStructureModelReadCriteria,
   TAConds,
   TKeyStructureCriteriaModuleContext,
-  TStructureFieldBaseCriteria,
   TStructureModelBaseCriteria,
   TStructureModelDiccGlobalAC,
 } from "./shared";
@@ -39,13 +38,13 @@ export type Trf_StructureCriteriaHandler = StructureCriteriaHandler<any>;
  */
 export class StructureCriteriaHandler<
   TModel,
-  TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
-  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-  TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG,
-  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG,
+  TIDiccFieldMutateAC extends FieldLogicMutater["dfDiccActionConfig"] = FieldLogicMutater["dfDiccActionConfig"],
+  TIDiccModelMutateAC extends ModelLogicMutater["dfDiccActionConfig"] = ModelLogicMutater["dfDiccActionConfig"],
+  TIDiccFieldValAC extends FieldLogicValidation["dfDiccActionConfig"] = FieldLogicValidation["dfDiccActionConfig"],
+  TIDiccModelValAC extends ModelLogicValidation["dfDiccActionConfig"] = ModelLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccStructureHookAC extends StructureLogicHook["dfDiccActionConfig"] = StructureLogicHook["dfDiccActionConfig"],
+  TIDiccStructureProviderAC extends StructureLogicProvider["dfDiccActionConfig"] = StructureLogicProvider["dfDiccActionConfig"],
   TKeyDiccActionRequest extends string = string
 > extends CriteriaHandler<TKeyDiccActionRequest> {
   public static override readonly getDefault = () => {

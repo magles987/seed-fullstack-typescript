@@ -3,17 +3,15 @@ import {
   IResponse,
   IStructureResponse,
 } from "../reports/shared";
-import { IDiccFieldMutateActionConfigG } from "../mutaters/field-mutater";
-import { IDiccModelMutateActionConfigG } from "../mutaters/model-mutater";
-import { IDiccFieldValActionConfigG } from "../validators/field-validation";
-import { IDiccModelValActionConfigG } from "../validators/model-validation";
-import { IDiccRequestValActionConfigG } from "../validators/request-validation";
-import { IDiccPrimitiveHookActionConfigG } from "../hooks/primitive-hook";
-import { IDiccPrimitiveMutateActionConfigG } from "../mutaters/primitive-mutater";
-import { IDiccPrimitiveValActionConfigG } from "../validators/primitive-validation";
-import { IDiccStructureHookActionConfigG } from "../hooks/structure-hook";
-import { IDiccStructureProviderActionConfigG } from "../providers/structure-provider";
-import { IDiccPrimitiveProviderActionConfigG } from "../providers/primitive-provider";
+import { FieldLogicMutater } from "../mutaters/field-mutater";
+import { ModelLogicMutater } from "../mutaters/model-mutater";
+import { FieldLogicValidation } from "../validators/field-validation";
+import { ModelLogicValidation } from "../validators/model-validation";
+import { RequestLogicValidation } from "../validators/request-validation";
+import { PrimitiveLogicMutater } from "../mutaters/primitive-mutater";
+import { PrimitiveLogicValidation } from "../validators/primitive-validation";
+import { StructureLogicHook } from "../hooks/structure-hook";
+import { StructureLogicProvider } from "../providers/structure-provider";
 import {
   IModifyCriteria,
   IPrimitiveModifyCriteria,
@@ -46,11 +44,11 @@ export type TKeyPrimitiveBagModuleContext = "primitiveBag";
 /**... */
 export interface IPrimitiveBag<
   TValue,
-  TIDiccPrimitiveMutateAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG,
-  TIDiccPrimitiveValAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccPrimitiveHookAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG,
-  TIDiccPrimitiveProviderAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
+  TIDiccPrimitiveMutateAC extends PrimitiveLogicMutater["dfDiccActionConfig"] = PrimitiveLogicMutater["dfDiccActionConfig"],
+  TIDiccPrimitiveValAC extends PrimitiveLogicValidation["dfDiccActionConfig"] = PrimitiveLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccPrimitiveHookAC extends StructureLogicHook["dfDiccActionConfig"] = StructureLogicHook["dfDiccActionConfig"],
+  TIDiccPrimitiveProviderAC extends StructureLogicProvider["dfDiccActionConfig"] = StructureLogicProvider["dfDiccActionConfig"]
 > extends IBagModule<TValue> {
   literalCriteria:
     | IPrimitiveReadCriteria<
@@ -84,13 +82,13 @@ export type TKeyStructureDeepBagModuleContext = "fieldBag" | "modelBag";
 /**... */
 export interface IStructureBag<
   TModel,
-  TIDiccFieldMutateAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG,
-  TIDiccModelMutateAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG,
-  TIDiccFieldValAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG,
-  TIDiccModelValAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG,
-  TIDiccRequestValAC extends IDiccRequestValActionConfigG = IDiccRequestValActionConfigG,
-  TIDiccStructureHookAC extends IDiccStructureHookActionConfigG = IDiccStructureHookActionConfigG,
-  TIDiccStructureProviderAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
+  TIDiccFieldMutateAC extends FieldLogicMutater["dfDiccActionConfig"] = FieldLogicMutater["dfDiccActionConfig"],
+  TIDiccModelMutateAC extends ModelLogicMutater["dfDiccActionConfig"] = ModelLogicMutater["dfDiccActionConfig"],
+  TIDiccFieldValAC extends FieldLogicValidation["dfDiccActionConfig"] = FieldLogicValidation["dfDiccActionConfig"],
+  TIDiccModelValAC extends ModelLogicValidation["dfDiccActionConfig"] = ModelLogicValidation["dfDiccActionConfig"],
+  TIDiccRequestValAC extends RequestLogicValidation["dfDiccActionConfig"] = RequestLogicValidation["dfDiccActionConfig"],
+  TIDiccStructureHookAC extends StructureLogicHook["dfDiccActionConfig"] = StructureLogicHook["dfDiccActionConfig"],
+  TIDiccStructureProviderAC extends StructureLogicProvider["dfDiccActionConfig"] = StructureLogicProvider["dfDiccActionConfig"]
 > extends IBagModule<TModel> {
   literalCriteria: IStructureModelReadCriteria<
     TModel,

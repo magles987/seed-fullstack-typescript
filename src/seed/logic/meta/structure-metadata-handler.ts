@@ -58,9 +58,9 @@ import {
   Trf_TModelConfigForCtrl,
 } from "../controllers/shared";
 import { ActionModule, Module } from "../config/module";
-import { StructureLogicController } from "../controllers/_structure-ctrl";
+import { StructureLogicController } from "../controllers/structure-ctrl";
 import { Driver } from "../providers/_drivers/_driver";
-import { IStructureBuilderBaseMetadata } from "./builder-shared";
+import { IStructureBuilderBaseCtrl } from "../controllers/builder-ctrl-shared";
 import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
 import {
   IStructureFieldCriteria,
@@ -250,7 +250,7 @@ export class StructureLogicMetadataHandler<
    * @param diccModuleContextInstance (opcional) diccionario de instancias de modulos
    */
   constructor(
-    baseConfigMeta: IStructureBuilderBaseMetadata<
+    baseConfigMeta: IStructureBuilderBaseCtrl<
       TModel,
       TFieldMutateInstance,
       TModelMutateInstance,
@@ -262,7 +262,8 @@ export class StructureLogicMetadataHandler<
     >
   ) {
     super("structure", baseConfigMeta);
-    const { customBase, customDiccModuleInstance } = baseConfigMeta;
+    const { customBaseMetadata: customBase, customDiccModuleInstance } =
+      baseConfigMeta;
     this.diccModuleInstanceContext = this.buildDiccModuleContextInstance(
       customDiccModuleInstance as any
     );
@@ -304,7 +305,7 @@ export class StructureLogicMetadataHandler<
         driversList: this.mergeDriversList([
           diccMIContext.driversList,
           diccDf.driversList,
-        ]) as IStructureBuilderBaseMetadata<any>["customDiccModuleInstance"]["driversList"],
+        ]) as IStructureBuilderBaseCtrl<any>["customDiccModuleInstance"]["driversList"],
       };
     }
     //inyectar Instancia de metadatos:
@@ -2106,7 +2107,7 @@ export class StructureLogicMetadataHandler<
       });
     }
     //❗Obligatorio la clonacion❗
-    data = this.util.clone(data);
+    data = this.util.clone(data, "stringify");
     return data;
   }
   /**
@@ -2140,17 +2141,30 @@ export class StructureLogicMetadataHandler<
   public getSchemaDataForGenericPurpose<TValue>(
     keyStructureContext: TKeyStructureContextFull,
     keyPath: string,
-    customizeValue: TValue = undefined
+    customizeValue: TValue = this.util.dfValue
   ): unknown {
     let modelGP = {} as any;
-    const extractMetadata = this.getExtractMetadataByStructureContext(
+    const dataDf = this.getDataDefault(
       keyStructureContext as any,
       keyPath
-    );
-    const keysProp = extractMetadata.__keysProp;
-    for (const key of keysProp) {
-      modelGP[key] = customizeValue;
-    }
+    ) as object;
+    if (!this.util.isObject(dataDf)) return modelGP;
+    const setDeepFn = (subDataDf, valueDf) => {
+      let r = {};
+      for (const keyProp in subDataDf) {
+        if (Object.prototype.hasOwnProperty.call(subDataDf, keyProp)) {
+          const prop = subDataDf[keyProp];
+          if ((this.util.isObject(prop), true)) {
+            //aqui si se permite objeto vacio
+            r[keyProp] = setDeepFn(prop, valueDf);
+          } else {
+            r[keyProp] = valueDf;
+          }
+        }
+      }
+      return r;
+    };
+    modelGP = setDeepFn(dataDf, customizeValue);
     return modelGP;
   }
   public override getModuleInstanceForActionContext(

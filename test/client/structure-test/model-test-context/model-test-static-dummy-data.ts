@@ -1,4 +1,4 @@
-import { ModelTest } from "./model-test";
+import { ModelTest } from "./model-test_full";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**interfaz para diccionario de datos invalido */
 interface IDiccDataInvalidForModify {

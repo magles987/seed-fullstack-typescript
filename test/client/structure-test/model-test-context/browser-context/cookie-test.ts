@@ -4,12 +4,16 @@ import {
   ELogicResStatusCode,
   IStructureResponse,
 } from "../../../../../src/seed/logic/reports/shared";
-import { ModelTestCtrl__full } from "../model-test-ctrl__full";
-import { bd_valid } from "../model-test-static-dummy-data";
+import { buildModelTestCtrl, ModelTest } from "../model-test_full";
+import { bd_valid, dataValid } from "../model-test-static-dummy-data";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const util = Util_Test.getInstance();
-const ctrl = new ModelTestCtrl__full();
+const ctrl = buildModelTestCtrl();
 const nameLogicDriver = CookieDriver.getNameLogicDriver();
+const commonBaseCriteria = ctrl.getEmptyBaseModelCritera();
+commonBaseCriteria.diccGlobalAC = {
+  structureProvider: { singleRunDriver: { nameLogicDriver } },
+};
 /**... */
 export async function runToLocalCookie() {
   await CookieDriver.emptyAllCookies();
@@ -18,18 +22,9 @@ export async function runToLocalCookie() {
   //====Crear todos los registros===========================
   //debe ser for clásico para que haga las esperas correspondientes a cada creación
   for (const data of bd_valid) {
-    res = await ctrl.create(
-      {
-        diccGlobalAC: {
-          structureProvider: {
-            singleRunDriver: {
-              nameLogicDriver,
-            },
-          },
-        },
-      },
-      data
-    );
+    res = await ctrl.modifyRequest("create", data, {
+      ...commonBaseCriteria,
+    });
     util.showStructureResponseTest(
       {
         data: res.data,
@@ -47,14 +42,8 @@ export async function runToLocalCookie() {
     );
   }
   //====Leer todos los registros (para verificar) ===========================
-  res = await ctrl.readAll({
-    diccGlobalAC: {
-      structureProvider: {
-        singleRunDriver: {
-          nameLogicDriver,
-        },
-      },
-    },
+  res = await ctrl.readRequest("readAll", {
+    ...commonBaseCriteria,
   });
   util.showStructureResponseTest(
     {
@@ -71,16 +60,10 @@ export async function runToLocalCookie() {
       detail: `first read, should de empty array`,
     }
   );
-  //████ consultas generales ████████████████████████████████████████████████████████████
+  //████ Lecturas generales ████████████████████████████████████████████████████████████
   //====Leer todos los registros (con limite) ===========================
-  res = await ctrl.readAll({
-    diccGlobalAC: {
-      structureProvider: {
-        singleRunDriver: {
-          nameLogicDriver,
-        },
-      },
-    },
+  res = await ctrl.readRequest("readAll", {
+    ...commonBaseCriteria,
     limit: 2, //solo 2
   });
   util.showStructureResponseTest(
@@ -99,14 +82,8 @@ export async function runToLocalCookie() {
     }
   );
   //====Leer todos los registros (con limite y paginación) ==============
-  res = await ctrl.readAll({
-    diccGlobalAC: {
-      structureProvider: {
-        singleRunDriver: {
-          nameLogicDriver,
-        },
-      },
-    },
+  res = await ctrl.readRequest("readAll", {
+    ...commonBaseCriteria,
     limit: 2, //solo 2
     targetPageLogic: 1, //lógica de inicio de paginación en 1
     targetPage: 2, //pagina 2 (serian los _id === '3' y _id === '4')
@@ -127,15 +104,9 @@ export async function runToLocalCookie() {
     }
   );
   //====verificar existencia de registro (según diccionario de parámetros de consulta) ==============
-  res = await ctrl.exist({
-    diccGlobalAC: {
-      structureProvider: {
-        singleRunDriver: {
-          nameLogicDriver,
-        },
-      },
-    },
-    diccQueryParam: { _pathDoc: "/1/" }, //buscar si existe este id?
+  res = await ctrl.readRequest("exist", {
+    ...commonBaseCriteria,
+    diccQueryParam: { _pathDoc: "/1/" }, //buscar si existe este path?
   });
   util.showStructureResponseTest(
     {
@@ -152,16 +123,10 @@ export async function runToLocalCookie() {
       detail: `exists for the search by _pathDoc`,
     }
   );
-  //====verificar existencia de registro (según diccionario de parámetros de consulta) ==============
-  res = await ctrl.count({
-    diccGlobalAC: {
-      structureProvider: {
-        singleRunDriver: {
-          nameLogicDriver,
-        },
-      },
-    },
-    diccQueryParam: { _pathDoc: "/1/" }, //buscar si existe este id?
+  //====verificar conteo de registro (según diccionario de parámetros de consulta) ==============
+  res = await ctrl.readRequest("count", {
+    ...commonBaseCriteria,
+    diccQueryParam: { _pathDoc: "/1/" }, //buscar si existe este path?
   });
   util.showStructureResponseTest(
     {
@@ -170,7 +135,26 @@ export async function runToLocalCookie() {
       responses: res.responses,
     },
     {
-      data: true,
+      data: 1,
+      status: ELogicResStatusCode.SUCCESS,
+    },
+    {
+      keyAction: `count`,
+      detail: `count the search by _pathDoc`,
+    }
+  );
+  res = await ctrl.readRequest("readById", {
+    ...commonBaseCriteria,
+    diccQueryParam: { _id: "1" }, //buscar si existe este id?
+  });
+  util.showStructureResponseTest(
+    {
+      data: res.data,
+      status: res.status,
+      responses: res.responses,
+    },
+    {
+      data: bd_valid[0],
       status: ELogicResStatusCode.SUCCESS,
     },
     {
@@ -178,5 +162,73 @@ export async function runToLocalCookie() {
       detail: `exists for the search by _pathDoc`,
     }
   );
+  //████ Modificaciones generales ████████████████████████████████████████████████████████████
+  let dt = dataValid;
+  res = await ctrl.modifyRequest("create", dt, {
+    ...commonBaseCriteria,
+  });
+  util.showStructureResponseTest(
+    {
+      data: res.data,
+      status: res.status,
+      responses: res.responses,
+    },
+    {
+      data: { ...dt },
+      status: ELogicResStatusCode.SUCCESS,
+    },
+    {
+      keyAction: `exist`,
+      detail: `exists for the search by _pathDoc`,
+    }
+  );
+  res = await ctrl.modifyRequest(
+    "update",
+    { ...dt, _pathDoc: "      /100/       " }, //modificación con espacios para probar el modulo de mutación
+    {
+      ...commonBaseCriteria,
+    }
+  );
+  util.showStructureResponseTest(
+    {
+      data: res.data,
+      status: res.status,
+      responses: res.responses,
+    },
+    {
+      data: { ...dt, _pathDoc: "/100/" } as ModelTest,
+      status: ELogicResStatusCode.SUCCESS,
+    },
+    {
+      keyAction: `exist`,
+      detail: `exists for the search by _pathDoc`,
+    }
+  );
+  res = await ctrl.modifyRequest(
+    "delete",
+    { _id: dt._id, _pathDoc: undefined },
+    {
+      ...commonBaseCriteria,
+    }
+  );
+  util.showStructureResponseTest(
+    {
+      data: res.data,
+      status: res.status,
+      responses: res.responses,
+    },
+    {
+      data: { _id: dt._id } as ModelTest,
+      status: ELogicResStatusCode.SUCCESS,
+    },
+    {
+      keyAction: `exist`,
+      detail: `exists for the search by _pathDoc`,
+    }
+  );
+  //████ Modificaciones invalidas ████████████████████████████████████████████████████████████
+  dt = res = await ctrl.modifyRequest("create", dt, {
+    ...commonBaseCriteria,
+  });
   return;
 }

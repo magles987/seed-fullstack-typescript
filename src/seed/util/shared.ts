@@ -179,3 +179,12 @@ export interface IOptionEqGtLt {
  */
 export type TCapitalizeFirstLetter<S extends string> =
   S extends `${infer First}${infer Rest}` ? `${Uppercase<First>}${Rest}` : S;
+/**tipado auxiliar para filtrar cada propiedad del esquema  extrayendo su tipo*/
+type TFilterStringKeys<TSchema> = keyof {
+  [K in keyof TSchema as K extends string | number ? K : never]: TSchema[K];
+};
+/**tipado que selecciona el tipo string de todas las propiedades de un esquema proporcionado */
+export type TExtractOnlyKeyString<TSchema> = Extract<
+  TFilterStringKeys<TSchema>,
+  string
+>;
