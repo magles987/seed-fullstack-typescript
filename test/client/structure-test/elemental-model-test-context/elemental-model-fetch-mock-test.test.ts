@@ -100,50 +100,38 @@ describe("GLobal test (modelTest)", async () => {
     });
     it("action: create ", async () => {
       mSH.microBackend.customQueryFn = undefined as any;
-      const txData = undefined;
+      const txData = { ...dataValid };
       const vExp = {
-        data: { ...dataValid }, //pagina 2 (el tercer y cuarto registro)
+        data: { ...txData },
         status: ELogicResStatusCode.VALID_DATA,
       } as IStructureResponse;
-      const res = await ctrl.modifyRequest(
-        "create",
-        { ...dataValid },
-        {
-          ...commonBaseCriteria,
-        }
-      );
+      const res = await ctrl.modifyRequest("create", txData, {
+        ...commonBaseCriteria,
+      });
       expect(res).toMatchObject(vExp);
     });
     it("action: update ", async () => {
       mSH.microBackend.customQueryFn = undefined as any;
-      const txData = undefined;
+      const txData = { ...dataValid, _pathDoc: "     /100/       " }; //espacios para comprobar mutación
       const vExp = {
-        data: { ...dataValid, _pathDoc: "/100/" }, //sin espacios (se mutó)
+        data: { ...txData, _pathDoc: "/100/" }, //sin espacios (se mutó)
         status: ELogicResStatusCode.VALID_DATA,
       } as IStructureResponse;
-      const res = await ctrl.modifyRequest(
-        "update",
-        { ...dataValid, _pathDoc: "     /100/       " },
-        {
-          ...commonBaseCriteria,
-        }
-      );
+      const res = await ctrl.modifyRequest("update", txData, {
+        ...commonBaseCriteria,
+      });
       expect(res).toMatchObject(vExp);
     });
     it("action: delete ", async () => {
       mSH.microBackend.customQueryFn = undefined as any;
-      const txData = undefined;
+      const txData = { _id: dataValid._id };
       const vExp = {
-        data: { _id: dataValid._id },
+        data: { ...txData },
         status: ELogicResStatusCode.VALID_DATA,
       } as IStructureResponse;
-      const res = await ctrl.modifyRequest(
-        "delete",
-        { _id: dataValid._id },
-        {
-          ...commonBaseCriteria,
-        }
-      );
+      const res = await ctrl.modifyRequest("delete", txData, {
+        ...commonBaseCriteria,
+      });
       expect(res).toMatchObject(vExp);
     });
   });
