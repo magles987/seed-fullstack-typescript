@@ -293,7 +293,7 @@ export class StructureCriteriaHandler<
           diccGlobalAC: util.isObject(nCC.diccGlobalAC)
             ? {
                 fieldMutate: util.mergeDiccActionConfig(
-                  [nCC.diccGlobalAC.fieldMutate, cCC.diccGlobalAC.fieldMutate],
+                  [cCC.diccGlobalAC.fieldMutate, nCC.diccGlobalAC.fieldMutate],
                   { mode: "hard" }
                 ),
                 fieldVal: util.mergeDiccActionConfig(
@@ -343,35 +343,35 @@ export class StructureCriteriaHandler<
           diccGlobalAC: util.isObject(nCC.diccGlobalAC)
             ? {
                 modelMutate: util.mergeDiccActionConfig(
-                  [nCC.diccGlobalAC.modelMutate, cCC.diccGlobalAC.modelMutate],
+                  [cCC.diccGlobalAC.modelMutate, nCC.diccGlobalAC.modelMutate],
                   { mode: "hard" }
                 ),
                 modelVal: util.mergeDiccActionConfig(
-                  [nCC.diccGlobalAC.modelVal, cCC.diccGlobalAC.modelVal],
+                  [cCC.diccGlobalAC.modelVal, nCC.diccGlobalAC.modelVal],
                   { mode: "hard" }
                 ),
                 requestVal: util.mergeDiccActionConfig(
-                  [nCC.diccGlobalAC.requestVal, cCC.diccGlobalAC.requestVal],
+                  [cCC.diccGlobalAC.requestVal, nCC.diccGlobalAC.requestVal],
                   { mode: "hard" }
                 ),
                 structureHook: util.mergeDiccActionConfig(
                   [
-                    nCC.diccGlobalAC.structureHook,
                     cCC.diccGlobalAC.structureHook,
+                    nCC.diccGlobalAC.structureHook,
                   ],
                   { mode: "hard" }
                 ),
                 structureProvider: util.mergeDiccActionConfig(
                   [
-                    nCC.diccGlobalAC.structureProvider,
                     cCC.diccGlobalAC.structureProvider,
+                    nCC.diccGlobalAC.structureProvider,
                   ],
                   { mode: "hard" }
                 ),
               }
             : cCC.diccGlobalAC,
           diccQueryParam: util.deepMergeObjects(
-            [nCC.diccQueryParam, cCC.diccQueryParam],
+            [cCC.diccQueryParam, nCC.diccQueryParam],
             { mode: "soft", isNullAsUndefined: true }
           ),
           aTCustomQueryDriverFunctions: util.isArray(

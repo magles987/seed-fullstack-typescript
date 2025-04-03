@@ -1,0 +1,654 @@
+import { getGlobalConfig } from "../../../src/seed/logic/config/global-config";
+import {
+  TKeyLogicContext,
+  TKeySrcSelector,
+} from "../../../src/seed/logic/config/shared-modules";
+import {
+  ELogicResStatusCode,
+  IDriverResponse,
+} from "../../../src/seed/logic/reports/shared";
+import { Util_Test } from "../../util-test";
+import { QueryTool } from "../../../src/seed/logic/util/query-tool";
+import {
+  ICriteria,
+  IModifyCriteria,
+  IPrimitiveModifyCriteria,
+  IPrimitiveReadCriteria,
+  IReadCriteria,
+  IStructureModelModifyCriteria,
+  IStructureModelReadCriteria,
+} from "../../../src/seed/logic/criterias/shared";
+import {
+  ELogicCodeError,
+  LogicError,
+} from "../../../src/seed/logic/errors/logic-error";
+import { getStrategyGeneratorIdFnByKey } from "../../../src/seed/logic/util/default-generators-id-fn";
+import {
+  TPrimitiveMockCustomQueryDriverFn,
+  TStructureMockCustomQueryDriverFn,
+} from "./shared";
+//████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+export type Trf_MicroBackend = MicroBackend;
+//████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/** *selfconstructor*
+ *
+ * ...
+ */
+export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
+  /**configuración global */
+  protected readonly _globalConfig_ = getGlobalConfig();
+  /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
+  public static readonly getDefault = () => {
+    return {
+      /**base de datos dummy */
+      db_collection: [] as any[],
+      /**determina que tipo de clave identificadora de recurso usar */
+      srcSelector: "plural" as TKeySrcSelector,
+      /**clave identificadora del campo de identificación del registro */
+      keyId: getGlobalConfig().keyId,
+      /**función de consulta personalizada */
+      customQueryFn: undefined as unknown as
+        | TPrimitiveMockCustomQueryDriverFn
+        | TStructureMockCustomQueryDriverFn,
+    };
+  };
+  /**@returns todas las constantes a usar en instancias de esta clase*/
+  protected static readonly getCONSTANTS = () => {
+    return {
+      //..aqui las constantes
+    };
+  };
+  /**herramientas para las queries */
+  protected queryTool = QueryTool.getInstance();
+  private _db_collection: any[];
+  public get db_collection(): any[] {
+    return this._db_collection ?? this.getDefault().db_collection;
+  }
+  protected set db_collection(v: any[]) {
+    this._db_collection = this.util.isArray(v)
+      ? v
+      : this._db_collection !== undefined
+      ? this._db_collection
+      : this.getDefault().db_collection;
+  }
+  /** el nombre de identificación del driver (debe ser único entre grupos) */
+  private _srcSelector: TKeySrcSelector;
+  public get srcSelector(): TKeySrcSelector {
+    return this._srcSelector;
+  }
+  protected set srcSelector(v: TKeySrcSelector) {
+    this._srcSelector =
+      v === "plural" || v === "singular"
+        ? v
+        : this._srcSelector !== undefined
+        ? this._srcSelector
+        : this.getDefault().srcSelector;
+  }
+  private _keyId: string;
+  public get keyId(): string {
+    return this._keyId;
+  }
+  protected set keyId(v: string) {
+    this._keyId = this.util.isString(v)
+      ? v
+      : this._keyId !== undefined
+      ? this._keyId
+      : this.getDefault().keyId;
+  }
+  private _customQueryFn = undefined as unknown as ReturnType<
+    MicroBackend["getDefault"]
+  >["customQueryFn"];
+  public get customQueryFn() {
+    return this._customQueryFn;
+  }
+  public set customQueryFn(v) {
+    this._customQueryFn = this.util.isFunction(v)
+      ? v
+      : MicroBackend.getDefault().customQueryFn;
+  }
+  /**clave identificadora del contexto lógico ya sea *primitive* o *structure* */
+  protected get keyLogicContext(): TKeyLogicContext {
+    return this._keyLogicContext;
+  }
+  /**utilidades */
+  protected util = Util_Test.getInstance();
+  /**
+   * @param _keyLogicContext clave identificadora del contexto lógico de esta clase
+   * @param base objeto literal con valores personalizados para inicializar las propiedades
+   * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedades
+   */
+  constructor(
+    private _keyLogicContext: TKeyLogicContext,
+    base: Partial<ReturnType<MicroBackend["getDefault"]>> = {},
+    isInit = true
+  ) {
+    this.util = Util_Test.getInstance();
+    this.queryTool = QueryTool.getInstance();
+    if (isInit) this.initProps(base);
+  }
+  /**@returns todos los campos con sus valores predefinidos*/
+  protected getDefault() {
+    return MicroBackend.getDefault();
+  }
+  /**@returns todas las constantes de la clase para las instancias*/
+  protected getCONST() {
+    return MicroBackend.getCONSTANTS();
+  }
+  /**inicializa las propiedades de manera dinámica
+   *
+   * @param base objeto literal con valores personalizados para iniicalizar las propiedades
+   */
+  protected initProps(
+    base: Partial<ReturnType<MicroBackend["getDefault"]>>
+  ): void {
+    base = typeof base === "object" && base !== null ? base : {};
+    for (const key in this.getDefault()) {
+      this[key] = base[key];
+    }
+    return;
+  }
+  /**⚠ Reinicia todas las propiedades al valor predefinido ⚠ */
+  public resetProps(): void {
+    const df = this.getDefault();
+    for (const key in df) {
+      this[key] = df[key];
+    }
+    return;
+  }
+  /**reinicia una propiedad al valor predefinido
+   *
+   * @param key clave identificadora de la propiedad a reiniciar
+   */
+  public resetPropByKey(
+    key: keyof ReturnType<MicroBackend["getDefault"]>
+  ): void {
+    const df = this.getDefault();
+    this[key] = df[key] as any;
+    return;
+  }
+  /**muta masivamente propiedades de manera dinámica
+   *
+   * @param base objeto literal con valores personalizados a mutar en las propiedades
+   */
+  public mutateProps(
+    base: Partial<ReturnType<MicroBackend["getDefault"]>>
+  ): void {
+    base = typeof base === "object" && base !== null ? base : ({} as any);
+    for (const key in base) {
+      this[key] = base[key];
+    }
+    return;
+  }
+  /**... */
+  protected async getData(): Promise<typeof this._db_collection> {
+    return this._db_collection;
+  }
+  /**... */
+  protected async setData(
+    registers: typeof this._db_collection
+  ): Promise<void> {
+    this._db_collection = registers;
+    return;
+  }
+  /**verifica si la data recibida corresponde la expectativa esperada*/
+  protected checkRxData(
+    rxData: any,
+    expectDataType: ICriteria["expectedDataType"]
+  ): boolean {
+    if (expectDataType === "boolean" && !this.util.isBoolean(rxData))
+      return false;
+    else if (expectDataType === "number" && !this.util.isNumber(rxData))
+      return false;
+    else if (expectDataType === "string" && !this.util.isString(rxData, true))
+      return false;
+    else if (expectDataType === "object" && !this.util.isObject(rxData, true))
+      return false;
+    else if (expectDataType === "array" && !this.util.isArray(rxData, true))
+      return false;
+    else return true;
+  }
+  /**... */
+  public async receiveMockRequest(
+    literalCriteria:
+      | IPrimitiveReadCriteria
+      | IPrimitiveModifyCriteria
+      | IStructureModelReadCriteria<any>
+      | IStructureModelModifyCriteria<any>,
+    data?: any
+  ): Promise<IDriverResponse> {
+    let driverRes: IDriverResponse;
+    try {
+      let rxData = await this.selectCRUDRunByBag(literalCriteria, data);
+      driverRes = this.buildMicrobackendResponse(literalCriteria, rxData);
+    } catch (error) {
+      driverRes = this.buildMicrobackendResponse(
+        literalCriteria,
+        this.util.dfValue,
+        error
+      );
+    }
+    return driverRes;
+  }
+  /**... */
+  protected buildMicrobackendResponse(
+    literalCriteria:
+      | IPrimitiveReadCriteria
+      | IPrimitiveModifyCriteria
+      | IStructureModelReadCriteria<any>
+      | IStructureModelModifyCriteria<any>,
+    rxData: any,
+    error?: any
+  ): IDriverResponse {
+    let driverRes = {
+      data: rxData,
+      status: ELogicResStatusCode.SUCCESS,
+      msn: ``,
+      error,
+    } as IDriverResponse;
+    const { expectedDataType } = literalCriteria;
+    const dfValue = this.util.dfValue;
+    if (this.util.isUndefinedOrNull(error)) {
+      //verificación de data recibida
+      if (this.checkRxData(rxData, expectedDataType)) {
+        driverRes.data = rxData;
+        driverRes.status = ELogicResStatusCode.SUCCESS;
+        driverRes.msn = `ok`;
+      } else {
+        driverRes.data = dfValue;
+        driverRes.status = ELogicResStatusCode.BAD;
+        driverRes.msn = `data has not been as expected`;
+      }
+    } else {
+      driverRes.data = dfValue;
+      driverRes.status = ELogicResStatusCode.ERROR;
+      driverRes.error = error;
+      driverRes.msn = this.util.isObject(error)
+        ? (error as Error).message ?? `internal error in local driver`
+        : this.util.isString(error)
+        ? error
+        : `internal error in local driver`;
+    }
+    return driverRes;
+  }
+  //████ CRUD by Bag ████████████████████████████████████████████████████████████
+  /**... */
+  protected async selectCRUDRunByBag(
+    literalCriteria:
+      | IPrimitiveReadCriteria
+      | IPrimitiveModifyCriteria
+      | IStructureModelReadCriteria<any>
+      | IStructureModelModifyCriteria<any>,
+    data: any
+  ): Promise<any> {
+    const { type, keyLogicContext } = literalCriteria;
+    let rxData: any;
+    if (keyLogicContext === "primitive") {
+      if (type === "read") {
+        const {} = literalCriteria as IReadCriteria;
+        rxData = await this.primitiveReadByBag(
+          literalCriteria as IPrimitiveReadCriteria,
+          data
+        );
+      } else if (type === "modify") {
+        const { modifyType } = literalCriteria as IModifyCriteria;
+        if (modifyType === "create") {
+          rxData = await this.primitiveCreateByBag(
+            literalCriteria as IPrimitiveModifyCriteria,
+            data
+          );
+        } else if (modifyType === "update") {
+          rxData = await this.primitiveUpdateByBag(
+            literalCriteria as IPrimitiveModifyCriteria,
+            data
+          );
+        } else if (modifyType === "delete") {
+          rxData = await this.primitiveDeleteByBag(
+            literalCriteria as IPrimitiveModifyCriteria,
+            data
+          );
+        } else {
+          throw new LogicError({
+            code: ELogicCodeError.MODULE_ERROR,
+            msn: `${modifyType} is not modify type request valid`,
+          });
+        }
+      } else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${type} is not type request valid`,
+        });
+      }
+    } else if (keyLogicContext === "structure") {
+      if (type === "read") {
+        const {} = literalCriteria as IReadCriteria;
+        rxData = await this.structureReadByBag(
+          literalCriteria as IStructureModelReadCriteria<any>,
+          data
+        );
+      } else if (type === "modify") {
+        const { modifyType } = literalCriteria as IModifyCriteria;
+        if (modifyType === "create") {
+          rxData = await this.structureCreateByBag(
+            literalCriteria as IStructureModelModifyCriteria<any>,
+            data
+          );
+        } else if (modifyType === "update") {
+          rxData = await this.structureUpdateByBag(
+            literalCriteria as IStructureModelModifyCriteria<any>,
+            data
+          );
+        } else if (modifyType === "delete") {
+          rxData = await this.structureDeleteByBag(
+            literalCriteria as IStructureModelModifyCriteria<any>,
+            data
+          );
+        } else {
+          throw new LogicError({
+            code: ELogicCodeError.MODULE_ERROR,
+            msn: `${modifyType} is not modify type request valid`,
+          });
+        }
+      } else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${type} is not type request valid`,
+        });
+      }
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyLogicContext} is not  type request`,
+      });
+    }
+    return rxData;
+  }
+  protected async primitiveReadByBag(
+    literalCriteria: IPrimitiveReadCriteria,
+    data: any
+  ) {
+    let registers = await this.getData();
+    registers = this.util.isNotUndefinedAndNotNull(registers)
+      ? Array.isArray(registers)
+        ? registers
+        : [registers]
+      : [];
+    //selecciona el tipo de lectura:
+    if (this.util.isFunction(this.customQueryFn)) {
+      //personalizada
+      const fn = this.customQueryFn;
+      registers = await fn(this, literalCriteria as any, registers);
+    } else {
+      //estándar
+    }
+    //verificación para ordenamiento y paginado
+    if (
+      this.util.isArray(registers) &&
+      literalCriteria.expectedDataType === "array"
+    ) {
+      registers = await this.queryTool.primitiveOrderByBagCriteria(
+        registers,
+        literalCriteria
+      );
+      registers = await this.queryTool.primitivePageByBagCriteria(
+        registers,
+        literalCriteria
+      );
+    }
+    data = registers;
+    return data;
+  }
+  protected async primitiveCreateByBag(
+    literalCriteria: IPrimitiveModifyCriteria,
+    data: any
+  ) {
+    let registers = (await this.getData()) as any[];
+    registers = Array.isArray(registers) ? registers : [registers];
+    const idxCData = registers.findIndex((dt) =>
+      this.util.isEquivalentTo([dt, data])
+    );
+    //verificar si ya esta creado
+    const isExist = idxCData > -1;
+    if (isExist) {
+      const { isCreateOrUpdate } = literalCriteria as IPrimitiveModifyCriteria;
+      if (!isCreateOrUpdate) {
+        //ya esta creado y no se permite su actualización
+        throw new LogicError({
+          code: ELogicCodeError.EXIST,
+          msn: `document with data : ${LogicError.valueToString(
+            data
+          )} id has not created because exist`,
+        });
+      }
+      return await this.primitiveUpdateByBag(literalCriteria, data);
+    }
+    //selecciona el tipo de creación:
+    if (this.util.isFunction(this.customQueryFn)) {
+      //personalizada
+      const fn = this.customQueryFn;
+      registers = await fn(this, literalCriteria as any, registers);
+    } else {
+      //estándar
+      registers.push(data);
+    }
+    await this.setData(registers);
+    return data;
+  }
+  protected async primitiveUpdateByBag(
+    literalCriteria: IPrimitiveModifyCriteria,
+    data: any
+  ) {
+    let registers = await this.getData();
+    const idxCData = registers.findIndex((dt) =>
+      this.util.isEquivalentTo([dt, data], {})
+    );
+    //verificar si no esta creado
+    const isExist = idxCData > -1;
+    if (!isExist) {
+      const { isCreateOrUpdate } =
+        literalCriteria as IPrimitiveModifyCriteria<any>;
+      if (!isCreateOrUpdate) {
+        //no esta creado y no se permite su creación
+        throw new LogicError({
+          code: ELogicCodeError.NOT_EXIST,
+          msn: `document with data : ${LogicError.valueToString(
+            data
+          )} id has not updated because not exist`,
+        });
+      }
+      return await this.primitiveCreateByBag(literalCriteria, data);
+    }
+    //selecciona el tipo de actualización:
+    if (this.util.isFunction(this.customQueryFn)) {
+      //personalizada
+      const fn = this.customQueryFn;
+      registers = await fn(this, literalCriteria as any, registers);
+    } else {
+      //estándar
+      registers[idxCData] = data;
+    }
+    await this.setData(registers);
+    return data;
+  }
+  protected async primitiveDeleteByBag(
+    literalCriteria: IPrimitiveModifyCriteria,
+    data: any
+  ) {
+    let registers = (await this.getData()) as any[];
+    registers = Array.isArray(registers) ? registers : [registers];
+    const fIdx = registers.findIndex((dt) =>
+      this.util.isEquivalentTo([dt, data], {})
+    );
+    const isExist = fIdx >= 0;
+    if (!isExist) return data;
+    //selecciona el tipo de eliminación:
+    if (this.util.isFunction(this.customQueryFn)) {
+      //personalizada
+      const fn = this.customQueryFn;
+      registers = await fn(this, literalCriteria as any, registers);
+    } else {
+      //estándar
+      registers.splice(fIdx, 1); //Eliminación
+    }
+    await this.setData(registers);
+    return data;
+  }
+  protected async structureReadByBag(
+    literalCriteria: IStructureModelReadCriteria<any>,
+    data: any
+  ) {
+    let registers = await this.getData();
+    registers = this.util.isNotUndefinedAndNotNull(registers)
+      ? Array.isArray(registers)
+        ? registers
+        : [registers]
+      : [];
+    //selecciona el tipo de lectura:
+    if (this.util.isFunction(this.customQueryFn)) {
+      //personalizada
+      const fn = this.customQueryFn;
+      registers = await fn(this, literalCriteria as any, registers);
+    } else {
+      //estándar
+    }
+    //verificación para ordenamiento y paginado
+    if (
+      this.util.isArray(registers) &&
+      literalCriteria.expectedDataType === "array"
+    ) {
+      registers = await this.queryTool.structureOrderByBagCriteria(
+        registers,
+        literalCriteria
+      );
+      registers = await this.queryTool.structurePageByBagCriteria(
+        registers,
+        literalCriteria
+      );
+    }
+    data = registers;
+    return data;
+  }
+  protected async structureCreateByBag(
+    literalCriteria: IStructureModelModifyCriteria<any>,
+    data: any
+  ) {
+    const kId = this.keyId;
+    if (!this.util.isObject(data)) {
+      throw new LogicError({
+        code: ELogicCodeError.NOT_VALID,
+        msn: `document with data = ${LogicError.valueToString(
+          data
+        )} does not valid`,
+      });
+    }
+    let registers = (await this.getData()) as any[];
+    registers = Array.isArray(registers) ? registers : [registers];
+    const idxCData = registers.findIndex((dt) => dt[kId] === data[kId]);
+    //verificar si ya esta creado
+    const isExist = idxCData > -1;
+    if (isExist) {
+      const { isCreateOrUpdate } = literalCriteria;
+      if (!isCreateOrUpdate) {
+        //ya esta creado y no se permite su actualización
+        throw new LogicError({
+          code: ELogicCodeError.EXIST,
+          msn: `document with data : ${LogicError.valueToString(
+            data
+          )} id has not created because exist`,
+        });
+      }
+      return await this.structureUpdateByBag(literalCriteria, data);
+    }
+    //selecciona el tipo de creación:
+    if (this.util.isFunction(this.customQueryFn)) {
+      //personalizada
+      const fn = this.customQueryFn;
+      registers = await fn(this, literalCriteria as any, registers);
+    } else {
+      //estándar
+      //creación de id:
+      const { strategyForIdBuild } = this._globalConfig_;
+      const buildIDFn = getStrategyGeneratorIdFnByKey(strategyForIdBuild);
+      data[kId] = buildIDFn(data[kId]);
+      registers.push(data);
+    }
+    await this.setData(registers);
+    return data;
+  }
+  protected async structureUpdateByBag(
+    literalCriteria: IStructureModelModifyCriteria<any>,
+    data: any
+  ) {
+    const kId = this.keyId;
+    if (!this.util.isObject(data)) {
+      throw new LogicError({
+        code: ELogicCodeError.NOT_VALID,
+        msn: `document with data = ${LogicError.valueToString(
+          data
+        )} does not valid`,
+      });
+    }
+    let registers = (await this.getData()) as any[];
+    registers = Array.isArray(registers) ? registers : [registers];
+    const idxCData = registers.findIndex((dt) => dt[kId] === data[kId]);
+    const isExist = idxCData > -1;
+    //verificar si no esta creado
+    if (!isExist) {
+      const { isCreateOrUpdate } = literalCriteria;
+      if (!isCreateOrUpdate) {
+        //no esta creado y no se permite su creación
+        throw new LogicError({
+          code: ELogicCodeError.NOT_EXIST,
+          msn: `document with data : ${LogicError.valueToString(
+            data
+          )} id has not updated because not exist`,
+        });
+      }
+      return await this.structureCreateByBag(literalCriteria, data);
+    }
+    //selecciona el tipo de actualización:
+    if (this.util.isFunction(this.customQueryFn)) {
+      //personalizada
+      const fn = this.customQueryFn;
+      registers = await fn(this, literalCriteria as any, registers);
+    } else {
+      //estándar
+      registers[idxCData] = data;
+    }
+    await this.setData(registers);
+    return data;
+  }
+  protected async structureDeleteByBag(
+    literalCriteria: IStructureModelModifyCriteria<any>,
+    data: any
+  ) {
+    const kId = this.keyId;
+    if (!this.util.isObject(data)) {
+      throw new LogicError({
+        code: ELogicCodeError.NOT_VALID,
+        msn: `document with data = ${LogicError.valueToString(
+          data
+        )} does not valid`,
+      });
+    }
+    let registers = (await this.getData()) as any[];
+    registers = Array.isArray(registers) ? registers : [registers];
+    const idxCData = registers.findIndex((dt) => dt[kId] === data[kId]);
+    const isExist = idxCData > -1;
+    /**data especial de eliminación */
+    let dData = {};
+    dData[kId] = data[kId]; //solo envía id
+    if (!isExist) return dData; //ya está eliminado
+    //selecciona el tipo de eliminación:
+    if (this.util.isFunction(this.customQueryFn)) {
+      //personalizada
+      const fn = this.customQueryFn;
+      registers = await fn(this, literalCriteria as any, registers);
+    } else {
+      //estándar
+      registers.splice(idxCData, 1);
+    }
+    await this.setData(registers);
+    data = dData; //mutar data ya eliminada
+    return data;
+  }
+}

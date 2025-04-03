@@ -1,4 +1,4 @@
-import { runModelTestBrowserContext } from "./model-test-context/browser-context/local-repo-test";
+import { runModelTestBrowserContext } from "./elemental-model-test-context/elemental-model-local-repo-test";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export async function runStructureTestClient() {

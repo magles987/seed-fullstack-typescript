@@ -196,31 +196,31 @@ export class PrimitiveCriteriaHandler<
                 { mode: "hard" }
               ),
               primitiveVal: util.mergeDiccActionConfig(
-                [nCC.diccGlobalAC.primitiveVal, cCC.diccGlobalAC.primitiveVal],
+                [cCC.diccGlobalAC.primitiveVal, nCC.diccGlobalAC.primitiveVal],
                 { mode: "hard" }
               ),
               requestVal: util.mergeDiccActionConfig(
-                [nCC.diccGlobalAC.requestVal, cCC.diccGlobalAC.requestVal],
+                [cCC.diccGlobalAC.requestVal, nCC.diccGlobalAC.requestVal],
                 { mode: "hard" }
               ),
               primitiveHook: util.mergeDiccActionConfig(
                 [
-                  nCC.diccGlobalAC.primitiveHook,
                   cCC.diccGlobalAC.primitiveHook,
+                  nCC.diccGlobalAC.primitiveHook,
                 ],
                 { mode: "hard" }
               ),
               primitiveProvider: util.mergeDiccActionConfig(
                 [
-                  nCC.diccGlobalAC.primitiveProvider,
                   cCC.diccGlobalAC.primitiveProvider,
+                  nCC.diccGlobalAC.primitiveProvider,
                 ],
                 { mode: "hard" }
               ),
             }
           : cCC.diccGlobalAC,
         diccQueryParam: util.deepMergeObjects(
-          [nCC.diccQueryParam, cCC.diccQueryParam],
+          [cCC.diccQueryParam, nCC.diccQueryParam],
           { mode: "soft", isNullAsUndefined: true }
         ),
         aTCustomQueryDriverFunctions: util.isArray(

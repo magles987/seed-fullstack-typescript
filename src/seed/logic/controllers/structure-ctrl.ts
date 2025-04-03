@@ -612,7 +612,7 @@ export class StructureLogicController<
   /**... */
   public async modifyRequest(
     keyActionRequest: TKeyDiccActionRequest,
-    data: TModel,
+    data: Partial<TModel>,
     baseCriteria?: TStructureModelBaseModifyCriteria<
       TModel,
       TModelMutateInstance["dfDiccActionConfig"],
@@ -625,7 +625,7 @@ export class StructureLogicController<
   ): Promise<IStructureResponse> {
     const res = await this.runCommonRequest(
       keyActionRequest,
-      data,
+      data as TModel,
       baseCriteria
     );
     return res;

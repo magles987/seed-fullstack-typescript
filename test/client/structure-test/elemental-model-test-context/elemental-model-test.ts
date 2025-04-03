@@ -1,7 +1,6 @@
 //import { ModelTest } from "./model-test";
 import { StructureLogicController } from "../../../../src/seed/logic/controllers/structure-ctrl";
 import {
-  IStructureBuilderBaseCtrl,
   TStructureBaseDiccModuleInstance,
   TStructureBaseDriversList,
   TStructureBaseMetadata,
@@ -56,19 +55,19 @@ type TStructureCriteriaInstance = StructureCriteriaHandler<
   TStructureProviderInstance["dfDiccActionConfig"],
   TKeyDiccActionRequest
 >;
-type TModel = ModelTest;
+type TModel = ElementalModelTest;
 /** interfaz de este modelo para propósitos generales*/
 //⚠ la interfaz debe permanecer **vacía**
-export interface IModelTest<TExtend>
-  extends Partial<Record<keyof ModelTest, TExtend>> {}
+export interface IElementalModelTest<TExtend>
+  extends Partial<Record<keyof ElementalModelTest, TExtend>> {}
 /**Tipado de las claves identificadoras de cada campo del modelo */
-export type TKeyFieldModelTest = keyof IModelTest<any>;
+export type TKeyFieldElementalModelTest = keyof IElementalModelTest<any>;
 //███ definición modelo █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** Define las propiedades del modelo
  * ❗esta clase está pensada para definición de
  * campos, no para ejecución de métodos❗
  */
-export class ModelTest extends Model {
+export class ElementalModelTest extends Model {
   //boleano: boolean = false;
   // texto :string = "";
   // texto_tel: string;
@@ -103,13 +102,16 @@ const util = Module.util;
  * Construye el controlador configurado para este modelo
  * @returns instancia del controlador ya configurado
  */
-function _buildModelTestCtrl() {
-  const dfModel = new ModelTest();
+function buildCtrlInstance() {
+  const dfModel = new ElementalModelTest();
   const driversList: TStructureBaseDriversList = [
     new CookieDriver(),
     new StorageDriver(),
     new IdbDriver(),
-    new FetchDriver(),
+    new FetchDriver({
+      urlRoot: "http://www.mytest.com",
+      srcSelector: "plural",
+    }),
   ];
   const customDiccModuleInstance: TStructureBaseDiccModuleInstance<
     TFieldMutateInstance,
@@ -448,14 +450,14 @@ function _buildModelTestCtrl() {
 }
 /** almacena la instancia actual del controller de este modelo
  * (funciona como un singleton artesanal, sin clase) */
-let currentCtrl: ReturnType<typeof _buildModelTestCtrl> = undefined;
+let currentCtrl: ReturnType<typeof buildCtrlInstance> = undefined;
 /**
  * @facade
  * Construye el controlador configurado para este modelo
  * @returns instancia del controlador ya configurado
  */
-export function buildModelTestCtrl() {
+export function buildElementalModelTestCtrl() {
   if (util.isInstance(currentCtrl)) return currentCtrl;
-  currentCtrl = _buildModelTestCtrl();
+  currentCtrl = buildCtrlInstance();
   return currentCtrl;
 }

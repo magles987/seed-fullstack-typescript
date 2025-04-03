@@ -1,14 +1,14 @@
-import { ModelTest } from "./model-test_full";
+import { ElementalModelTest } from "./elemental-model-test";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**interfaz para diccionario de datos invalido */
 interface IDiccDataInvalidForModify {
-  _undefined_: ModelTest;
-  _null_: ModelTest;
-  _boolean_: ModelTest;
-  _number_: ModelTest;
-  _string_: ModelTest;
-  _object_: ModelTest;
-  _array_: ModelTest;
+  _undefined_: ElementalModelTest;
+  _null_: ElementalModelTest;
+  _boolean_: ElementalModelTest;
+  _number_: ElementalModelTest;
+  _string_: ElementalModelTest;
+  _object_: ElementalModelTest;
+  _array_: ElementalModelTest;
 }
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**obtener el backup de los datos válidos */
@@ -34,14 +34,14 @@ function getBkAData_valid() {
       _id: "5",
       _pathDoc: "/5/",
     },
-  ] as Array<ModelTest>;
+  ] as Array<ElementalModelTest>;
 }
 /**... */
 function getSingleDataValid() {
   return {
     _id: "10",
     _pathDoc: "/10/",
-  } as ModelTest;
+  } as ElementalModelTest;
 }
 /**obtener el backup de los datos inválidos */
 function getBkAData_invalid() {
@@ -66,7 +66,7 @@ function getBkAData_invalid() {
       _id: "5",
       _pathDoc: {},
     },
-  ] as Array<ModelTest>;
+  ] as Array<ElementalModelTest>;
 }
 /**... */
 function getDiccDataForModify() {

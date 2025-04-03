@@ -303,8 +303,8 @@ export class StructureLogicMetadataHandler<
           ? diccMIContext.structureProvider
           : diccDf.structureProvider,
         driversList: this.mergeDriversList([
-          diccMIContext.driversList,
           diccDf.driversList,
+          diccMIContext.driversList,
         ]) as IStructureBuilderBaseCtrl<any>["customDiccModuleInstance"]["driversList"],
       };
     }

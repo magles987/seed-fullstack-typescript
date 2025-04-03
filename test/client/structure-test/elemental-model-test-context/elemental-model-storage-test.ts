@@ -1,22 +1,26 @@
-import { Util_Test } from "../../../../util-test";
-import { CookieDriver } from "../../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/cookie/cookie-driver";
+import { Util_Test } from "../../../util-test";
+import { StorageDriver } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/storage/storage-driver";
+import {
+  buildElementalModelTestCtrl,
+  ElementalModelTest,
+} from "./elemental-model-test";
 import {
   ELogicResStatusCode,
   IStructureResponse,
-} from "../../../../../src/seed/logic/reports/shared";
-import { buildModelTestCtrl, ModelTest } from "../model-test_full";
-import { bd_valid, dataValid } from "../model-test-static-dummy-data";
+} from "../../../../src/seed/logic/reports/shared";
+import { bd_valid, dataValid } from "./elemental-model-static-dummy-data-test";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const util = Util_Test.getInstance();
-const ctrl = buildModelTestCtrl();
-const nameLogicDriver = CookieDriver.getNameLogicDriver();
+const ctrl = buildElementalModelTestCtrl();
+const nameLogicDriver = StorageDriver.getNameLogicDriver();
 const commonBaseCriteria = ctrl.getEmptyBaseModelCritera();
 commonBaseCriteria.diccGlobalAC = {
   structureProvider: { singleRunDriver: { nameLogicDriver } },
 };
 /**... */
-export async function runToLocalCookie() {
-  await CookieDriver.emptyAllCookies();
+export async function runToLocalStorage() {
+  await StorageDriver.emptyAllStorage();
   let res: IStructureResponse;
   //████ Creación y comprobación inicial ████████████████████████████████████████████████████████████
   //====Crear todos los registros===========================
@@ -196,7 +200,7 @@ export async function runToLocalCookie() {
       responses: res.responses,
     },
     {
-      data: { ...dt, _pathDoc: "/100/" } as ModelTest,
+      data: { ...dt, _pathDoc: "/100/" } as ElementalModelTest,
       status: ELogicResStatusCode.SUCCESS,
     },
     {
@@ -206,7 +210,7 @@ export async function runToLocalCookie() {
   );
   res = await ctrl.modifyRequest(
     "delete",
-    { _id: dt._id, _pathDoc: undefined },
+    { _id: dt._id, _pathDoc: undefined as any },
     {
       ...commonBaseCriteria,
     }
@@ -218,7 +222,7 @@ export async function runToLocalCookie() {
       responses: res.responses,
     },
     {
-      data: { _id: dt._id } as ModelTest,
+      data: { _id: dt._id } as ElementalModelTest,
       status: ELogicResStatusCode.SUCCESS,
     },
     {
@@ -227,7 +231,7 @@ export async function runToLocalCookie() {
     }
   );
   //████ Modificaciones invalidas ████████████████████████████████████████████████████████████
-  dt = res = await ctrl.modifyRequest("create", dt, {
+  res = await ctrl.modifyRequest("create", dt, {
     ...commonBaseCriteria,
   });
   return;

@@ -275,7 +275,9 @@ export abstract class HttpDriver
       ...urlBodyParts,
       this.urlPostfix,
     ];
-    let urlBase = this.util.buildPath(urlParts);
+    let urlBase = this.util.buildPath(urlParts, {
+      charSeparator: this.util.charSeparatorUrlPath,
+    });
     const urlLen = urlBase.length;
     const URL_LIMIT = this.getCONST().URL_LIMIT;
     if (urlLen > URL_LIMIT)

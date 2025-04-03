@@ -207,8 +207,8 @@ export class PrimitiveLogicMetadataHandler<
           ? diccMIContext.primitiveProvider
           : diccDf.primitiveProvider,
         driversList: this.mergeDriversList([
-          diccMIContext.driversList,
           diccDf.driversList,
+          diccMIContext.driversList,
         ]) as IPrimitiveBuilderBaseCtrl<any>["customDiccModuleInstance"]["driversList"],
       };
     }

@@ -246,7 +246,7 @@ export class PrimitiveLogicController<
     return;
   }
   /**... */
-  public getEmptyBaseModelCritera():
+  public getEmptyBasePrimitiveCritera():
     | TPrimitiveBaseReadCriteria<
         TPrimitiveMutateInstance["dfDiccActionConfig"],
         TPrimitiveValInstance["dfDiccActionConfig"],
