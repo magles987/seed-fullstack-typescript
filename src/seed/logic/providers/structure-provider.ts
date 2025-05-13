@@ -1,24 +1,25 @@
-import { LogicProvider } from "./_provider";
-import { StructureBag, Trf_StructureBag } from "../bag/structure-bag";
+import { Module } from "../modules/index-barrel";
 import {
-  Trf_TStructureMetaAndProvider,
-  TStructureMetaAndProvider,
-} from "../meta/metadata-shared";
-import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
-import { IStructureResponse, TSelectorDataDriver } from "../reports/shared";
-import { StructureReportHandler } from "../reports/structure-report-handler";
+  StructureCriteriaHandler,
+  Trf_StructureCriteriaHandler,
+  TStructureActionConfigFn,
+} from "../criterias/index-barrel";
+import { ELogicCodeError, LogicError } from "../errors/index-barrel";
+import { Trf_StructureLogicMetadataHandler } from "../meta/index-barrel";
+import {
+  IStructureResponse,
+  StructureReportHandler,
+  TSelectorDataDriver,
+} from "../reports/index-barrel";
+import { Driver } from "./_drivers/index-barrel";
+import { LogicProvider } from "./_provider";
 import {
   TKeyStructureProviderModuleContext,
-  TModelConfigForProvider,
-  TStructureProviderModuleConfigForStructure,
-} from "./shared";
-import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
-import { TStructureFnBagForActionModule } from "../bag/shared";
-import { Driver } from "./_drivers/_driver";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
+  TStructureProviderBaseConfig,
+} from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del provider */
-export interface IDiccStructureProviderActionConfigG {
+export interface IDiccStructureProviderActionConfig {
   singleRunDriver: {
     nameLogicDriver: string;
     opDriver?: Partial<Driver["getDefault"]>;
@@ -26,40 +27,41 @@ export interface IDiccStructureProviderActionConfigG {
 }
 /**claves identificadoras del diccionario
  * de acciones de configuración */
-export type TKeysDiccStructureProviderActionConfigG =
-  keyof IDiccStructureProviderActionConfigG;
-/**refactorizacion de la clase */
+export type TKeysDiccStructureProviderActionConfig =
+  keyof IDiccStructureProviderActionConfig;
+/**refactorización de la clase */
 export type Trf_StructureLogicProvider = StructureLogicProvider<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class StructureLogicProvider<
-    TIDiccAC extends IDiccStructureProviderActionConfigG = IDiccStructureProviderActionConfigG
+    TIDiccAC extends IDiccStructureProviderActionConfig = IDiccStructureProviderActionConfig
   >
   extends LogicProvider<TIDiccAC>
   implements
     Record<
-      TKeysDiccStructureProviderActionConfigG,
-      TStructureFnBagForActionModule
+      TKeysDiccStructureProviderActionConfig,
+      TStructureActionConfigFn<any>
     >
 {
-  /** configuracion de valores predefinidos para el modulo*/
+  /** configuración de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = LogicProvider.getDefault();
     return {
       ...superDf,
-      dfDiccActionConfig: {
-        ...(superDf.dfDiccActionConfig as any),
+      driverList: [...superDf.driverList], //as [Driver, ...Driver[]], //tipado de array especial que indica NO se permite inicializar con vacíos,
+      diccActionConfig: {
+        ...(superDf.diccActionConfig as any),
         singleRunDriver: {
           nameLogicDriver: "",
           opDriver: {},
         },
-      } as IDiccStructureProviderActionConfigG,
+      } as IDiccStructureProviderActionConfig,
       topPriorityKeysAction: [
         ...superDf.topPriorityKeysAction,
-      ] as Array<TKeysDiccStructureProviderActionConfigG>,
+      ] as Array<TKeysDiccStructureProviderActionConfig>,
       topMandatoryKeysAction: [
         ...superDf.topMandatoryKeysAction,
-      ] as Array<TKeysDiccStructureProviderActionConfigG>,
+      ] as Array<TKeysDiccStructureProviderActionConfig>,
     };
   };
   public override get metadataHandler(): Trf_StructureLogicMetadataHandler {
@@ -72,65 +74,31 @@ export class StructureLogicProvider<
     return "structureProvider";
   }
   /** */
-  constructor() {
-    super("structure");
+  constructor(baseConfig?: TStructureProviderBaseConfig) {
+    super("structure", baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return StructureLogicProvider.getDefault();
   }
-  protected override rebuildCustomConfigFromModuleContext(
-    currentContextConfig: TStructureProviderModuleConfigForStructure<TIDiccAC>,
-    newContextConfig: TStructureProviderModuleConfigForStructure<TIDiccAC>,
-    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
-  ): TStructureProviderModuleConfigForStructure<TIDiccAC> {
-    const cCC = currentContextConfig;
-    const nCC = newContextConfig;
-    let rConfig: TStructureProviderModuleConfigForStructure<TIDiccAC>;
-    if (!this.util.isObject(nCC)) {
-      rConfig = cCC;
+  /**... */
+  protected static buildInstanceForMetadata<
+    TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider
+  >(preInstance: TStructureProviderInstance): TStructureProviderInstance {
+    const util = Module.util;
+
+    let inst: TStructureProviderInstance;
+    if (util.isInstance(preInstance)) {
+      inst = preInstance;
     } else {
-      rConfig = {
-        ...nCC,
-        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
-          ? this.util.mergeDiccActionConfig(
-              [cCC.diccActionsConfig, nCC.diccActionsConfig],
-              {
-                mode: mergeMode,
-              }
-            )
-          : cCC.diccActionsConfig,
-      };
-    }
-    //...aqui configuracion refinada:
-    return rConfig;
-  }
-  protected override getMetadataWithContextModule(): TStructureMetaAndProvider<
-    any,
-    StructureLogicProvider
-  > {
-    let extractMetadataByContext: Trf_TStructureMetaAndProvider;
-    extractMetadataByContext =
-      this.metadataHandler.getExtractMetadataByModuleContext(
-        "structureModel",
-        "provider"
+      const { structureModuleFactory } =
+        Module._globalConfig_.diccModuleFactory;
+      inst = structureModuleFactory.makeModuleInstance(
+        "structureProvider",
+        preInstance as any
       ) as any;
-    return extractMetadataByContext;
-  }
-  protected override getMetadataOnlyModuleConfig(): TModelConfigForProvider<TIDiccAC> {
-    const metadata =
-      this.getMetadataWithContextModule() as TStructureMetaAndProvider<
-        any,
-        StructureLogicProvider
-      >;
-    const config =
-      metadata.__providerConfig as TModelConfigForProvider<TIDiccAC>;
-    return config;
-  }
-  protected override getDiccMetadataActionConfig(): TIDiccAC {
-    const config = this.getMetadataOnlyModuleConfig();
-    const configStructure = config.structureProvider;
-    const diccAC = configStructure.diccActionsConfig as TIDiccAC;
-    return diccAC;
+    }
+    return inst;
   }
   /**obtiene una funcion de accion de acuerdo a su clave identificadora
    * preparada para ser inyectada en el middleware
@@ -141,7 +109,7 @@ export class StructureLogicProvider<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keyAction: TKeys): TStructureFnBagForActionModule;
+  >(keyAction: TKeys): TStructureActionConfigFn<any>;
   /**obtiene un array de funciones de accion de acuerdo a sus claves identificadoras
    * preparadas para ser inyectadas en el middleware
    *
@@ -151,7 +119,7 @@ export class StructureLogicProvider<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keysAction: TKeys[]): Array<TStructureFnBagForActionModule>;
+  >(keysAction: TKeys[]): Array<TStructureActionConfigFn<any>>;
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
@@ -162,20 +130,34 @@ export class StructureLogicProvider<
     keyAction: TKey
   ): [TKey, TIDiccAC[TKey]] {
     const tKeyGlobalAC = [this.keyModuleContext, keyAction];
-    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
-      tKeyGlobalAC as any
-    );
+    const actionConfig =
+      criteriaHandler.findGlobalActionByKeyModuleAndKeyAction(
+        tKeyGlobalAC as any
+      );
     return [keyAction, actionConfig];
   }
   protected override buildReportHandler(
-    bag: Trf_StructureBag,
+    criteriaHandler: StructureCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): StructureReportHandler {
-    const { data, criteriaHandler, firstData } = bag;
-    const { type, modifyType, keyPath, keyActionRequest } = criteriaHandler;
+    const {
+      data,
+      firstData,
+      type,
+      modifyType,
+      keyPath,
+      keyActionRequest,
+      keyStructureContext,
+    } = criteriaHandler;
+    //adapta clave de contexto general a profundo
+    const deep_keyModuleContext =
+      StructureReportHandler.adapatKeyStructureContextToDeepKeyModuleContext(
+        this.keyModule as any,
+        keyStructureContext
+      );
     let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
-      keyRepModuleContext: this.keyModuleContext,
+      keyRepModuleContext: deep_keyModuleContext as any,
       keyRepLogicContext: this.keyLogicContext,
       keyActionRequest: keyActionRequest,
       keyAction: keyAction as any,
@@ -192,24 +174,24 @@ export class StructureLogicProvider<
     return rH;
   }
   public override preRunAction(
-    bag: Trf_StructureBag,
+    criteriaHandler: StructureCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): void {
-    super.preRunAction(bag, keyAction) as any;
+    super.preRunAction(criteriaHandler, keyAction) as any;
     return;
   }
   public override postRunAction(
-    bag: Trf_StructureBag,
+    criteriaHandler: StructureCriteriaHandler<any>,
     res: IStructureResponse
   ): void {
-    super.postRunAction(bag, res) as any;
+    super.postRunAction(criteriaHandler, res) as any;
     return;
   }
   //================================================================
   public async singleRunDriver(
-    bag: StructureBag<any>
+    criteriaHandler: StructureCriteriaHandler<any>
   ): Promise<IStructureResponse> {
-    const { data, criteriaHandler } = bag;
+    const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
@@ -224,10 +206,10 @@ export class StructureLogicProvider<
       });
     }
     if (this.util.isObject(opDriver)) driver.mutateProps(opDriver);
-    const rH = this.buildReportHandler(bag, keyAction);
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     let driverResponse = await driver.sendRequestFromService(
-      bag.getLiteralBagDriver()
+      criteriaHandler.getLiteral()
     );
     const selectorDataDriver: TSelectorDataDriver = "first";
     res = rH.mutateResponse(res, {

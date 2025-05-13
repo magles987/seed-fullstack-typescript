@@ -1,12 +1,14 @@
-import { StructureLogicMutater } from "./_structure-mutater";
+import { Module } from "../modules/index-barrel";
 import {
-  TFieldConfigForMutate,
-  TStructureMutateModuleConfigForField,
-} from "./shared";
-import { ELogicResStatusCode, IStructureResponse } from "../reports/shared";
-import { TStructureFieldMetaAndMutater } from "../meta/metadata-shared";
-import { StructureBag } from "../bag/structure-bag";
-import { TStructureFnBagForActionModule } from "../bag/shared";
+  StructureCriteriaHandler,
+  TStructureActionConfigFn,
+} from "../criterias/index-barrel";
+import {
+  ELogicResStatusCode,
+  IStructureResponse,
+} from "../reports/index-barrel";
+import { StructureLogicMutater } from "./_structure-mutater";
+import { TFieldMutateBaseConfig } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** define las propiedades de cada formateo
  * que puede configurar y ejecutar un campo
@@ -16,7 +18,7 @@ import { TStructureFnBagForActionModule } from "../bag/shared";
  * asignados varias de estos formatos, estas
  * propiedades deben ser **opcionales**
  */
-export interface IDiccFieldMutateActionConfigG {
+export interface IDiccFieldMutateActionConfig {
   // //====formateo booleano===========================
   // /**
   //  * si el campo es booleano determina
@@ -145,89 +147,72 @@ export interface IDiccFieldMutateActionConfigG {
 }
 /**claves identificadoras del diccionario de
  * acciones de configuracion */
-export type TKeysDiccFieldMutateActionConfigG =
-  keyof IDiccFieldMutateActionConfigG;
+export type TKeysDiccFieldMutateActionConfig =
+  keyof IDiccFieldMutateActionConfig;
 /**tipado refactorizado de la clase */
 export type Trf_FieldLogicMutater = FieldLogicMutater;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class FieldLogicMutater<
-    TIDiccAC extends IDiccFieldMutateActionConfigG = IDiccFieldMutateActionConfigG
+    TIDiccAC extends IDiccFieldMutateActionConfig = IDiccFieldMutateActionConfig
   >
   extends StructureLogicMutater<TIDiccAC>
   implements
-    Record<TKeysDiccFieldMutateActionConfigG, TStructureFnBagForActionModule>
+    Record<TKeysDiccFieldMutateActionConfig, TStructureActionConfigFn<any>>
 {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = StructureLogicMutater.getDefault();
     return {
       ...superDf,
-      dfDiccActionConfig: {
-        ...(superDf.dfDiccActionConfig as any),
+      diccActionConfig: {
+        ...(superDf.diccActionConfig as any),
         anyTrim: false,
-      } as IDiccFieldMutateActionConfigG,
+      } as IDiccFieldMutateActionConfig,
       topPriorityKeysAction: [
         ...superDf.topPriorityKeysAction,
         "anyTrim",
-      ] as Array<TKeysDiccFieldMutateActionConfigG>,
+      ] as Array<TKeysDiccFieldMutateActionConfig>,
       topMandatoryKeysAction: [
         ...superDf.topMandatoryKeysAction,
-      ] as Array<TKeysDiccFieldMutateActionConfigG>,
+      ] as Array<TKeysDiccFieldMutateActionConfig>,
     };
   };
   /** */
-  constructor() {
-    super("fieldMutate");
+  constructor(baseConfig?: TFieldMutateBaseConfig) {
+    super("fieldMutate", baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return FieldLogicMutater.getDefault();
   }
-  protected override rebuildCustomConfigFromModuleContext(
-    currentContextConfig: TStructureMutateModuleConfigForField<TIDiccAC>,
-    newContextConfig: TStructureMutateModuleConfigForField<TIDiccAC>,
-    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
-  ): TStructureMutateModuleConfigForField<TIDiccAC> {
-    const cCC = currentContextConfig;
-    const nCC = newContextConfig;
-    let rConfig: TStructureMutateModuleConfigForField<TIDiccAC>;
-    if (!this.util.isObject(nCC)) {
-      rConfig = cCC;
+  /**... */
+  protected static buildInstanceForMetadata<
+    TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater
+  >(preInstance: TFieldMutateInstance): TFieldMutateInstance {
+    const util = Module.util;
+    let inst: TFieldMutateInstance;
+    if (util.isInstance(preInstance)) {
+      inst = preInstance;
     } else {
-      rConfig = {
-        ...nCC,
-        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
-          ? this.util.mergeDiccActionConfig(
-              [cCC.diccActionsConfig, nCC.diccActionsConfig],
-              {
-                mode: mergeMode,
-                //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
-              }
-            )
-          : cCC.diccActionsConfig,
-      };
+      const { structureModuleFactory } =
+        Module._globalConfig_.diccModuleFactory;
+      inst = structureModuleFactory.makeModuleInstance(
+        "fieldMutate",
+        preInstance as any
+      ) as any;
     }
-    //...aqui configuracion refinada:
-    return rConfig;
-  }
-  protected override getMetadataWithContextModule(
-    keyPath?: string
-  ): TStructureFieldMetaAndMutater<FieldLogicMutater> {
-    return super.getMetadataWithContextModule(keyPath) as any;
-  }
-  protected override getMetadataOnlyModuleConfig(
-    keyPath?: string
-    //❕Retorno <TIDiccAC, TIDiccAC> para simplificar el tipado sin sobreescribir el metodo en las hijas❕
-  ): TFieldConfigForMutate<TIDiccAC> {
-    return super.getMetadataOnlyModuleConfig(keyPath);
+    return inst;
   }
   //================================================================================================================================
-  public async anyTrim(bag: StructureBag<any>): Promise<IStructureResponse> {
+  public async anyTrim(
+    criteriaHandler: StructureCriteriaHandler<any>
+  ): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler: cH } = bag;
+    const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
-      this.getTupleActionConfigFromCriteriaHandler(cH, "anyTrim");
-    const rH = this.buildReportHandler(bag, keyAction);
+      this.getTupleActionConfigFromCriteriaHandler(criteriaHandler, "anyTrim");
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     //const {} = actionConfig;
     if (
@@ -422,82 +407,8 @@ export class FieldLogicMutater<
   //   // });
   //   // return res;
   // }
-  public async arrayItemFormat(
-    bag: StructureBag<any>
-  ): Promise<IStructureResponse> {
-    // //Desempaquetar la accion e inicializar
-    // const keyAction: TLibKeyAction = "array_itemFormat";
-    // const actionConfig = diccActionConfig[keyAction];
-    // // const {  } = this.getFieldOrEmbFieldConfig(keyField, embAbsolutePath);
-    // const { aDiccActionsConfig } = actionConfig;
-    // let res = this.mutateResponseForAction(undefined, {
-    //   data,
-    //   keyAction,
-    //   key: keyFieldOrKeyEmbField,
-    // });
-    // const { isValArray } = ValLib.getDiccValHelper(false);
-    // if (!isValArray(data)) {
-    //   res = this.mutateResponseForAction(res, {
-    //     data,
-    //     status: ELogicResStatusCode.WARNING,
-    //   });
-    //   return res;
-    // }
-    // //valida si ahi la suficiente configuracion para este tipo de formateo
-    // if (this.util.isNotArray(aDiccActionsConfig)) {
-    //   res = this.mutateResponseForAction(res, {
-    //     data: data,
-    //     status: ELogicResStatusCode.WARNING,
-    //   });
-    //   return res;
-    // }
-    // const promisesResponses = (<any[]>data).map(async (subData, idx) => {
-    //   let subRes = this.mutateResponseForAction(undefined, {
-    //     data: subData,
-    //     keyAction,
-    //     status: ELogicResStatusCode.SUCCESS,
-    //   });
-    //   //se define un array de diccionarios fachada (o virtual):
-    //   let sub_aDiccAC: TADiccActionConfig<IDiccFieldFormatActionConfigG>;
-    //   if (this.util.isNotObject(subData)) {
-    //     //valida si ahi la suficiente configuracion para este tipo de validacion
-    //     sub_aDiccAC = aDiccActionsConfig;
-    //     if (this.util.isNotArray(sub_aDiccAC)) {
-    //       subRes = this.mutateResponseForAction(subRes, {
-    //         data: subData,
-    //         status: ELogicResStatusCode.ERROR,
-    //       });
-    //       return subRes;
-    //     }
-    //     subRes.embeddedResponses = await this.runFieldActionSequence(
-    //       fieldHandlerContext,
-    //       subData,
-    //       sub_aDiccAC,
-    //       bag,
-    //       keyFieldOrKeyEmbField,
-    //       `${idx}`
-    //     );
-    //   } else {
-    //     //apoyarse de la validacion de objeto
-    //     subRes = await this.objectFormatter(
-    //       fieldHandlerContext,
-    //       subData,
-    //       { objectFormatter: { aDiccActionsConfig: sub_aDiccAC } }, //se envia la configuracion del aDicc del array como si fuera la del objeto
-    //       bag,
-    //       keyFieldOrKeyEmbField
-    //     );
-    //   }
-    //   subRes = this.mutateResponseForAction(subRes, { data: subData });
-    //   //garantizar integridad de dato;
-    //   data[idx] = subRes.data;
-    //   return subRes;
-    // });
-    // res.embeddedResponses = await Promise.all(promisesResponses);
-    // res = this.mutateResponseForAction(res, { data }); //se analizará internamente los reportes embebidos
-    // return res;
-  }
   public async objectFormatter(
-    bag: StructureBag<any>
+    criteriaHandler: StructureCriteriaHandler<any>
   ): Promise<IStructureResponse> {
     // //Desempaquetar la accion e inicializar
     // const keyAction: TLibKeyAction = "objectFormatter";
@@ -605,6 +516,80 @@ export class FieldLogicMutater<
     // //se asume que a este punto es valido mientras
     // //no se sepa el estado de los embebidos
     // res = this.mutateResponseForAction(res, { data });
+    // return res;
+  }
+  public async arrayItemFormat(
+    criteriaHandler: StructureCriteriaHandler<any>
+  ): Promise<IStructureResponse> {
+    // //Desempaquetar la accion e inicializar
+    // const keyAction: TLibKeyAction = "array_itemFormat";
+    // const actionConfig = diccActionConfig[keyAction];
+    // // const {  } = this.getFieldOrEmbFieldConfig(keyField, embAbsolutePath);
+    // const { aDiccActionsConfig } = actionConfig;
+    // let res = this.mutateResponseForAction(undefined, {
+    //   data,
+    //   keyAction,
+    //   key: keyFieldOrKeyEmbField,
+    // });
+    // const { isValArray } = ValLib.getDiccValHelper(false);
+    // if (!isValArray(data)) {
+    //   res = this.mutateResponseForAction(res, {
+    //     data,
+    //     status: ELogicResStatusCode.WARNING,
+    //   });
+    //   return res;
+    // }
+    // //valida si ahi la suficiente configuracion para este tipo de formateo
+    // if (this.util.isNotArray(aDiccActionsConfig)) {
+    //   res = this.mutateResponseForAction(res, {
+    //     data: data,
+    //     status: ELogicResStatusCode.WARNING,
+    //   });
+    //   return res;
+    // }
+    // const promisesResponses = (<any[]>data).map(async (subData, idx) => {
+    //   let subRes = this.mutateResponseForAction(undefined, {
+    //     data: subData,
+    //     keyAction,
+    //     status: ELogicResStatusCode.SUCCESS,
+    //   });
+    //   //se define un array de diccionarios fachada (o virtual):
+    //   let sub_aDiccAC: TADiccActionConfig<IDiccFieldFormatActionConfigG>;
+    //   if (this.util.isNotObject(subData)) {
+    //     //valida si ahi la suficiente configuracion para este tipo de validacion
+    //     sub_aDiccAC = aDiccActionsConfig;
+    //     if (this.util.isNotArray(sub_aDiccAC)) {
+    //       subRes = this.mutateResponseForAction(subRes, {
+    //         data: subData,
+    //         status: ELogicResStatusCode.ERROR,
+    //       });
+    //       return subRes;
+    //     }
+    //     subRes.embeddedResponses = await this.runFieldActionSequence(
+    //       fieldHandlerContext,
+    //       subData,
+    //       sub_aDiccAC,
+    //       bag,
+    //       keyFieldOrKeyEmbField,
+    //       `${idx}`
+    //     );
+    //   } else {
+    //     //apoyarse de la validacion de objeto
+    //     subRes = await this.objectFormatter(
+    //       fieldHandlerContext,
+    //       subData,
+    //       { objectFormatter: { aDiccActionsConfig: sub_aDiccAC } }, //se envia la configuracion del aDicc del array como si fuera la del objeto
+    //       bag,
+    //       keyFieldOrKeyEmbField
+    //     );
+    //   }
+    //   subRes = this.mutateResponseForAction(subRes, { data: subData });
+    //   //garantizar integridad de dato;
+    //   data[idx] = subRes.data;
+    //   return subRes;
+    // });
+    // res.embeddedResponses = await Promise.all(promisesResponses);
+    // res = this.mutateResponseForAction(res, { data }); //se analizará internamente los reportes embebidos
     // return res;
   }
 }

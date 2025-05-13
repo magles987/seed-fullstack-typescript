@@ -2,7 +2,7 @@
  * https://www.npmjs.com/package/idb?activeTab=versions
  */
 import { openDB, deleteDB, wrap, unwrap, DBSchema, IDBPDatabase } from "idb";
-import { Module } from "../../../../../../config/module";
+import { Module } from "../../../../../../modules/module";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define tipo configuracion para un esquema de datos */

@@ -1,21 +1,22 @@
-import { HandlerModule, Module } from "../config/module";
 import {
+  HandlerModule,
+  Module,
   TKeyLogicContext,
   TKeyRequestModifyType,
   TKeyRequestType,
-} from "../config/shared-modules";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
+} from "../modules/index-barrel";
+import { ELogicCodeError, LogicError } from "../errors/index-barrel";
 import {
   LogicMetadataHandler,
   Trf_LogicMetadataHandler,
-} from "../meta/_metadata-handler";
+} from "../meta/index-barrel";
 import {
   ICriteria,
   IModifyCriteria,
   IReadCriteria,
   TAConds,
   TExpectedDataType,
-} from "./shared";
+} from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_CriteriaCursor = CriteriaHandler;
@@ -32,9 +33,11 @@ export abstract class CriteriaHandler<
 {
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
+    const util = Module.util;
     const superDf = HandlerModule.getDefault();
     return {
       ...superDf,
+      data: util.dfValue,
       expectedDataType: "any",
       keyActionRequest: undefined,
       limit: 5,
@@ -48,10 +51,10 @@ export abstract class CriteriaHandler<
       s_Key: undefined,
       urlsExtended: [],
       diccGlobalAC: {},
-      aTKeysGlobalActionConfig: [],
+      aTGlobalActionConfig: [],
       diccQueryParam: {},
       aTCustomQueryDriverFunctions: [],
-    } as typeof superDf & IModifyCriteria & IReadCriteria;
+    } as typeof superDf & IModifyCriteria<any> & IReadCriteria<any>;
   };
   /**@returns todas las constantes a usar en instancias de esta clase*/
   protected static readonly getCONSTANTS = () => {
@@ -69,7 +72,9 @@ export abstract class CriteriaHandler<
         "diccGlobalAC",
         "aTKeysGlobalActionConfig",
         "aTCustomQueryDriverFunctions",
-      ] as Array<keyof (IReadCriteria & IModifyCriteria)>,
+        "data",
+        "firstData",
+      ] as Array<keyof (IReadCriteria<any> & IModifyCriteria<any>)>,
     };
   };
   /**instancia de manejador de metadatos de este recurso */
@@ -94,6 +99,23 @@ export abstract class CriteriaHandler<
   }
   /**clave identificadora del contexto del modulo */
   public abstract get keyModuleContext(): unknown;
+  private _data: ReturnType<CriteriaHandler["getDefault"]>["data"];
+  public get data(): ReturnType<CriteriaHandler["getDefault"]>["data"] {
+    return this._data;
+  }
+  public set data(v: ReturnType<CriteriaHandler["getDefault"]>["data"]) {
+    this._data = v;
+  }
+  /**... */
+  private _firstData: any;
+  public get firstData(): any {
+    return this._firstData;
+  }
+  protected set firstData(v: any) {
+    //❗Simulado, la asignación se hace internamente❗
+    if (this.util.isNotUndefinedAndNotNull(this._firstData)) return; //solo se permite una vez
+    this._firstData = this.util.clone(this.data, "stringify");
+  }
   private _limit: number;
   public get limit(): number {
     return this._limit;
@@ -208,34 +230,25 @@ export abstract class CriteriaHandler<
       ? this._isCreateOrUpdate
       : this.getDefault().isCreateOrUpdate;
   }
-  private _diccGlobalAC: unknown;
-  public get diccGlobalAC() {
-    return this._diccGlobalAC;
+  private _aTGlobalActionConfig: any;
+  public get aTGlobalActionConfig(): any {
+    return this._aTGlobalActionConfig;
   }
-  public set diccGlobalAC(v) {
-    this._diccGlobalAC = this.util.isObject(v)
+  public set aTGlobalActionConfig(v: any) {
+    this._aTGlobalActionConfig = this.util.isArrayTuple(v, 3)
       ? v
-      : this._diccGlobalAC !== undefined
-      ? this._diccGlobalAC
-      : this.getDefault().diccGlobalAC;
-  }
-  private _aTKeysGlobalActionConfig: Array<[string, string]>;
-  public get aTKeysGlobalActionConfig(): Array<[string, string]> {
-    return this._aTKeysGlobalActionConfig;
-  }
-  public set aTKeysGlobalActionConfig(v: Array<[string, string]>) {
-    this._aTKeysGlobalActionConfig = this.util.isArrayTuple(v, 2)
-      ? v
-      : this._aTKeysGlobalActionConfig !== undefined
-      ? this._aTKeysGlobalActionConfig
-      : this.getDefault().aTKeysGlobalActionConfig;
+      : this._aTGlobalActionConfig !== undefined
+      ? this._aTGlobalActionConfig
+      : (this.getDefault().aTGlobalActionConfig as Array<
+          [string, string, any]
+        >);
   }
   /**... */
-  private _diccQueryParam: ICriteria["diccQueryParam"];
-  public get diccQueryParam(): ICriteria["diccQueryParam"] {
+  private _diccQueryParam: ICriteria<any>["diccQueryParam"];
+  public get diccQueryParam(): ICriteria<any>["diccQueryParam"] {
     return this._diccQueryParam;
   }
-  public set diccQueryParam(v: ICriteria["diccQueryParam"]) {
+  public set diccQueryParam(v: ICriteria<any>["diccQueryParam"]) {
     this._diccQueryParam = this.util.isObject(v)
       ? v
       : this._diccQueryParam !== undefined
@@ -243,12 +256,12 @@ export abstract class CriteriaHandler<
       : this.getDefault().diccQueryParam;
   }
   /**... */
-  private _aTCustomQueryDriverFunctions: ICriteria["aTCustomQueryDriverFunctions"];
-  public get aTCustomQueryDriverFunctions(): ICriteria["aTCustomQueryDriverFunctions"] {
+  private _aTCustomQueryDriverFunctions: ICriteria<any>["aTCustomQueryDriverFunctions"];
+  public get aTCustomQueryDriverFunctions(): ICriteria<any>["aTCustomQueryDriverFunctions"] {
     return this._aTCustomQueryDriverFunctions;
   }
   public set aTCustomQueryDriverFunctions(
-    v: ICriteria["aTCustomQueryDriverFunctions"]
+    v: ICriteria<any>["aTCustomQueryDriverFunctions"]
   ) {
     this._aTCustomQueryDriverFunctions = this.util.isArrayTuple(v, 2)
       ? v
@@ -263,7 +276,7 @@ export abstract class CriteriaHandler<
   constructor(
     keyLogicContext: TKeyLogicContext,
     metadataHandler: unknown,
-    base: Partial<ReturnType<CriteriaHandler["getDefault"]>> = {},
+    base: any,
     isInit = true
   ) {
     super("criteria", keyLogicContext);
@@ -287,9 +300,7 @@ export abstract class CriteriaHandler<
    *
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    */
-  protected initProps(
-    base: Partial<ReturnType<CriteriaHandler["getDefault"]>>
-  ): void {
+  protected initProps(base: any): void {
     base = this.mergeBaseCriteriaWithPriority(base);
     for (const key in this.getDefault()) {
       this[key] = base[key];
@@ -331,8 +342,8 @@ export abstract class CriteriaHandler<
     return;
   }
   /**@returns un objeto literal con las propiedades base */
-  public getLiteral(): IReadCriteria | IModifyCriteria {
-    let literal = {} as IReadCriteria | IModifyCriteria;
+  public getLiteral(): unknown {
+    let literal = {} as IReadCriteria<any> | IModifyCriteria<any>;
     const df = this.getDefault();
     for (const key in df) {
       literal[key] = this[key];
@@ -346,70 +357,42 @@ export abstract class CriteriaHandler<
   /**.. */
   protected abstract mergeBaseCriteriaWithPriority(baseCRC: unknown): unknown;
   /**... */
-  public getGlobalActionByTKeyGlobalAC(tKeyGlobalAC: any[]): unknown {
+  public findGlobalActionByKeyModuleAndKeyAction(
+    tKeyGlobalAC: [string, string]
+  ): unknown {
     if (!this.util.isTuple(tKeyGlobalAC, 2)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
         msn: `${tKeyGlobalAC} is not global key tuple valid`,
       });
     }
-    const keyModuleContext = tKeyGlobalAC[0] as any as string;
-    const keyAction = tKeyGlobalAC[1] as any as string;
-    if (!this.util.isObject(this.diccGlobalAC[keyModuleContext], true)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${keyModuleContext} and/or ${keyAction} is no exist into array tuple of global action keys`,
-      });
-    }
-    const action = this.diccGlobalAC[keyModuleContext][keyAction];
+    const [keyModuleContext, keyAction] = tKeyGlobalAC;
+    const aTGAC = this
+      .aTGlobalActionConfig as ICriteria<any>["aTGlobalActionConfig"];
+    const tGlobalActionConfig = aTGAC.find((tGAC) => {
+      const [_keyModuleContext, _keyAction] = tGAC;
+      const r =
+        keyModuleContext === _keyModuleContext && keyAction === _keyAction;
+      return r;
+    });
+    let action = [];
+    if (!this.util.isTuple(tGlobalActionConfig, 3)) return action; //vacio
+    action = tGlobalActionConfig[2]; //la accion
     return action;
   }
   /**... */
-  public buildATupleKeyGlobalActionConfigFromCommonKeyModule(
-    keyModule: unknown,
-    aTKeyAC: unknown[]
-  ): Array<[unknown, unknown]> {
-    aTKeyAC = Array.isArray(aTKeyAC) ? aTKeyAC : [aTKeyAC];
-    let aTKeyGlobalAC = aTKeyAC.map((tKeyAC) => [keyModule, tKeyAC]) as Array<
-      [unknown, unknown]
-    >;
-    return aTKeyGlobalAC;
-  }
-  /**... */
-  public getSubAnonymSchemaForGlobalActionConfig(
-    keyModule: unknown,
-    aTupleGlobalActionConfig: Array<[unknown, unknown]>
-  ) {
-    if (!this.util.isArrayTuple(aTupleGlobalActionConfig, 2, true)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${aTupleGlobalActionConfig} is not array of global action config valid`,
-      });
-    }
-    let bf_subDiccGlobalAC = {};
-    let bf_subDiccAC = {};
-    let bf_aTGAC = [];
-    for (const tGAC of aTupleGlobalActionConfig) {
-      const [keyAction, actionConfig] = tGAC;
-      bf_subDiccAC[keyAction as string] = actionConfig;
-      bf_aTGAC.push([keyModule, keyAction]);
-    }
-    bf_subDiccGlobalAC[keyModule as string] = bf_subDiccAC;
-    let subSchema = {
-      diccGlobalAC: bf_subDiccGlobalAC,
-      aTKeysGlobalActionConfig: bf_aTGAC,
-    };
-    const mH = this.metadataHandler as LogicMetadataHandler;
-    let actionModule = mH.getModuleInstanceForActionContext(keyModule);
-    actionModule.buildContainerActionsConfig(
-      "toActionConfig_DiccWrapped",
-      subSchema.aTKeysGlobalActionConfig,
-      {
-        mergeMode: "soft",
-        sourceDiccBase: "default", //la metadata no existe para anónimos
-      }
-    );
-    return subSchema;
+  public filterGlobalActionByKeyModule(keysModuleContext: unknown): unknown {
+    keysModuleContext = Array.isArray(keysModuleContext)
+      ? keysModuleContext
+      : [keysModuleContext];
+    const aTGAC = this
+      .aTGlobalActionConfig as ICriteria<any>["aTGlobalActionConfig"];
+    const f_tAGC = aTGAC.filter((tGAC) => {
+      const [_keysModuleContext] = tGAC;
+      const r = (keysModuleContext as string[]).includes(_keysModuleContext);
+      return r;
+    });
+    return f_tAGC;
   }
   /**construye un query sencillo a partir de una base
    *
@@ -428,42 +411,11 @@ export abstract class CriteriaHandler<
    * @param conds las condiciones del query
    */
   protected abstract checkQueryConds(conds: TAConds): void;
-  /**
-   * extrae y **modifica** el diccionario global de acciones de
-   * configuración a partir de una o varias claves identificadoras de
-   * módulos de contexto
-   *
-   * ⚠Este método modifica el diccionario y no se puede recuperar el original⚠
-   *
-   * usar en caso de que el contexto necesite que solo
-   * @param keysModuleContext array con claves identificadoras de los módulos
-   */
-  public extractDiccByKeyModuleContext(
-    keysModuleContext: string | string[]
-  ): void {
-    let newDiccGAC = {} as typeof this.diccGlobalAC;
-    let newATKGAC = [] as typeof this.aTKeysGlobalActionConfig;
-    keysModuleContext = Array.isArray(keysModuleContext)
-      ? keysModuleContext
-      : [keysModuleContext];
-    for (const tKGAC of this.aTKeysGlobalActionConfig) {
-      const [keyMC, keyAC] = tKGAC;
-      const isKeyMC = keysModuleContext.includes(keyMC);
-      if (isKeyMC) {
-        newDiccGAC[keyMC] = this.diccGlobalAC[keyMC];
-        newATKGAC.push(tKGAC);
-      }
-    }
-    //⚠ Sobreescribe las propiedades⚠
-    this.diccGlobalAC = newDiccGAC;
-    this.aTKeysGlobalActionConfig = newATKGAC;
-    return;
-  }
   /**"adelgazar" el objeto literal de
    * criterios para poder ser
    * enviado fuera del entorno*/
   public static toSlimLiteralCriteriaForSend(
-    literalCriteria: IReadCriteria & IModifyCriteria
+    literalCriteria: IReadCriteria<any> & IModifyCriteria<any>
   ) {
     const util = Module.util;
     const keysNotSend =

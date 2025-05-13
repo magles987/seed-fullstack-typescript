@@ -1,9 +1,9 @@
-import { Module } from "../../../../../config/module";
+import { Module } from "../../../../../modules/module";
 import { LocalRepositoryDriver } from "./_local-repository-driver";
 import {
   TPrimitiveLocalRepositoryCustomQueryDriverFn,
   TStructureLocalRepositoryCustomQueryDriverFn,
-} from "./shared";
+} from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *abstract*
  *

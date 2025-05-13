@@ -1,15 +1,20 @@
-import { getGlobalConfig } from "../../config/global-config";
-import { Module } from "../../config/module";
-import { TKeySrcSelector } from "../../config/shared-modules";
+import { Module } from "../../modules/module";
+import { TKeySrcSelector } from "../../modules/shared-types";
 import { ELogicCodeError, LogicError } from "../../errors/logic-error";
-import { IDriverResponse } from "../../reports/shared";
-import { IBagForDriver } from "./shared";
+import { IDriverResponse } from "../../reports/shared-types";
+import {
+  TPrimitiveLiteralCriteriaUnion,
+  TStructureLiteralCriteriaUnion,
+} from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfconstructor*
  *
  * ...
  */
-export abstract class Driver implements ReturnType<Driver["getDefault"]> {
+export abstract class Driver
+  extends Module
+  implements ReturnType<Driver["getDefault"]>
+{
   /**@returns el nombre de identificación del driver (debe ser único entre grupos) */
   public static readonly getNameLogicDriver = () => {
     const util = Module.util;
@@ -21,7 +26,9 @@ export abstract class Driver implements ReturnType<Driver["getDefault"]> {
   };
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
+    const superDf = Module.getDefault();
     return {
+      ...superDf,
       /**determina que tipo de clave identificadora de recurso usar */
       srcSelector: "plural" as TKeySrcSelector,
     };
@@ -46,10 +53,6 @@ export abstract class Driver implements ReturnType<Driver["getDefault"]> {
         ? this._srcSelector
         : this.getDefault().srcSelector;
   }
-  /**configuración global */
-  protected readonly _globalConfig_ = getGlobalConfig();
-  /**utilidades */
-  protected util = Module.util;
   /**
    * @param base objeto literal con valores personalizados para inicializar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
@@ -58,7 +61,7 @@ export abstract class Driver implements ReturnType<Driver["getDefault"]> {
     base: Partial<ReturnType<Driver["getDefault"]>> = {},
     isInit = true
   ) {
-    this.util = Module.util;
+    super("driver");
     if (isInit) this.initProps(base);
   }
   /**@returns todos los campos con sus valores predefinidos*/
@@ -94,7 +97,7 @@ export abstract class Driver implements ReturnType<Driver["getDefault"]> {
    */
   public resetPropByKey(key: keyof ReturnType<Driver["getDefault"]>): void {
     const df = this.getDefault();
-    this[key] = df[key];
+    this[key as any] = df[key];
     return;
   }
   /**muta masivamente propiedades de manera dinámica
@@ -118,29 +121,29 @@ export abstract class Driver implements ReturnType<Driver["getDefault"]> {
   }
   /**... */
   protected abstract buildDriverResponse(
-    literalCriteria: IBagForDriver["literalCriteria"],
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>,
     rxData: any,
     error?: any
   ): IDriverResponse;
   /**verifica que el bag recibido este optimo para el
    * driver, de lo contrario lanza error */
-  protected checkBag(bagDriver: IBagForDriver): void {
-    if (!this.util.isObject(bagDriver)) {
+  protected checkLiteralCriteria(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+  ): void {
+    if (!this.util.isObject(literalCriteria)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagDriver} is not bag repository valid`,
+        msn: `${literalCriteria} is not criteria dictionary valid`,
       });
     }
-    if (!this.util.isObject(bagDriver.literalCriteria)) {
+    if (!this.util.isString(literalCriteria.keyActionRequest)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagDriver.literalCriteria} is not criteria valid`,
-      });
-    }
-    if (!this.util.isString(bagDriver.literalCriteria.keyActionRequest)) {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${bagDriver.literalCriteria.keyActionRequest} is not key request action valid`,
+        msn: `${literalCriteria.keyActionRequest} is not key request action valid`,
       });
     }
     return;
@@ -150,7 +153,9 @@ export abstract class Driver implements ReturnType<Driver["getDefault"]> {
   */
   protected getKeySrcContext(
     srcSelector: TKeySrcSelector,
-    literalCriteria: IBagForDriver["literalCriteria"]
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
   ): string {
     const { p_Key, s_Key, keySrc } = literalCriteria;
     let keySrcContext: string;
@@ -161,11 +166,17 @@ export abstract class Driver implements ReturnType<Driver["getDefault"]> {
   }
   /**... */
   public abstract sendRequestFromService(
-    bagDriver: IBagForDriver
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
   ): Promise<IDriverResponse>;
   /**... */
-  protected preRequestFromService(bagDriver: IBagForDriver): void {
-    this.checkBag(bagDriver);
+  protected preRequestFromService(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+  ): void {
+    this.checkLiteralCriteria(literalCriteria);
   }
   /**... */
   protected postRequestFromService(driverRes: IDriverResponse): void {}
@@ -173,7 +184,9 @@ export abstract class Driver implements ReturnType<Driver["getDefault"]> {
   public abstract sendRequest(): Promise<any>;
   /**... */
   protected getCustomQueryFn(
-    literalCriteria: IBagForDriver["literalCriteria"]
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
   ) {
     const { aTCustomQueryDriverFunctions } = literalCriteria;
     const tCustomQueryFn = aTCustomQueryDriverFunctions.find((tCQDFn) => {

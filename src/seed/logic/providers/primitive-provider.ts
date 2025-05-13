@@ -1,23 +1,24 @@
-import { PrimitiveBag, Trf_PrimitiveBag } from "../bag/primitive-bag";
-import { TPrimitiveFnBagForActionModule } from "../bag/shared";
-import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
+import { Module } from "../modules/index-barrel";
 import {
-  TPrimitiveMetaAndProvider,
-  Trf_TPrimitiveMetaAndProvider,
-} from "../meta/metadata-shared";
-import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
-import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
-import { IPrimitiveResponse, TSelectorDataDriver } from "../reports/shared";
-import { Driver } from "./_drivers/_driver";
+  PrimitiveCriteriaHandler,
+  TPrimitiveActionConfigFn,
+  Trf_PrimitiveCriteriaHandler,
+} from "../criterias/index-barrel";
+import { Trf_PrimitiveLogicMetadataHandler } from "../meta/index-barrel";
+import {
+  IPrimitiveResponse,
+  PrimitiveReportHandler,
+  TSelectorDataDriver,
+} from "../reports/index-barrel";
+import { Driver } from "./_drivers/index-barrel";
 import { LogicProvider } from "./_provider";
 import {
   TKeyPrimitiveProviderModuleContext,
-  TPrimitiveConfigForProvider,
-  TPrimitiveProviderModuleConfigForPrimitive,
-} from "./shared";
+  TPrimitiveProviderBaseConfig,
+} from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del provider */
-export interface IDiccPrimitiveProviderActionConfigG {
+export interface IDiccPrimitiveProviderActionConfig {
   singleRunDriver: {
     nameLogicDriver: string;
     opDriver?: Partial<Driver["getDefault"]>;
@@ -25,20 +26,20 @@ export interface IDiccPrimitiveProviderActionConfigG {
 }
 /**claves identificadoras del diccionario
  * de acciones de configuracion */
-export type TKeysDiccPrimitiveProviderActionConfigG =
-  keyof IDiccPrimitiveProviderActionConfigG;
+export type TKeysDiccPrimitiveProviderActionConfig =
+  keyof IDiccPrimitiveProviderActionConfig;
 /**refactorizacion de la clase */
 export type Trf_PrimitiveLogicProvider = PrimitiveLogicProvider<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class PrimitiveLogicProvider<
-    TIDiccAC extends IDiccPrimitiveProviderActionConfigG = IDiccPrimitiveProviderActionConfigG
+    TIDiccAC extends IDiccPrimitiveProviderActionConfig = IDiccPrimitiveProviderActionConfig
   >
   extends LogicProvider<TIDiccAC>
   implements
     Record<
-      TKeysDiccPrimitiveProviderActionConfigG,
-      TPrimitiveFnBagForActionModule
+      TKeysDiccPrimitiveProviderActionConfig,
+      TPrimitiveActionConfigFn<any>
     >
 {
   /** configuracion de valores predefinidos para el modulo*/
@@ -46,19 +47,20 @@ export class PrimitiveLogicProvider<
     const superDf = LogicProvider.getDefault();
     return {
       ...superDf,
-      dfDiccActionConfig: {
-        ...(superDf.dfDiccActionConfig as any),
+      driverList: [...superDf.driverList] as Driver[], //tipado de array especial que indica NO se permite inicializar con vacíos,
+      diccActionConfig: {
+        ...(superDf.diccActionConfig as any),
         singleRunDriver: {
           nameLogicDriver: "",
           opDriver: {},
         },
-      } as IDiccPrimitiveProviderActionConfigG,
+      } as IDiccPrimitiveProviderActionConfig,
       topPriorityKeysAction: [
         ...superDf.topPriorityKeysAction,
-      ] as Array<TKeysDiccPrimitiveProviderActionConfigG>,
+      ] as Array<TKeysDiccPrimitiveProviderActionConfig>,
       topMandatoryKeysAction: [
         ...superDf.topMandatoryKeysAction,
-      ] as Array<TKeysDiccPrimitiveProviderActionConfigG>,
+      ] as Array<TKeysDiccPrimitiveProviderActionConfig>,
     };
   };
   public override get metadataHandler(): Trf_PrimitiveLogicMetadataHandler {
@@ -71,58 +73,32 @@ export class PrimitiveLogicProvider<
     return "primitiveProvider";
   }
   /** */
-  constructor() {
-    super("structure");
+  constructor(baseConfig?: TPrimitiveProviderBaseConfig) {
+    super("structure", baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return PrimitiveLogicProvider.getDefault();
   }
-  protected override rebuildCustomConfigFromModuleContext(
-    currentContextConfig: TPrimitiveProviderModuleConfigForPrimitive<TIDiccAC>,
-    newContextConfig: TPrimitiveProviderModuleConfigForPrimitive<TIDiccAC>,
-    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
-  ): TPrimitiveProviderModuleConfigForPrimitive<TIDiccAC> {
-    const cCC = currentContextConfig;
-    const nCC = newContextConfig;
-    let rConfig: TPrimitiveProviderModuleConfigForPrimitive<TIDiccAC>;
-    if (!this.util.isObject(nCC)) {
-      rConfig = cCC;
+  /**... */
+  protected static buildInstanceForMetadata<
+    TPrimitivePrimitiveInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider
+  >(preInstance: TPrimitivePrimitiveInstance): TPrimitivePrimitiveInstance {
+    const util = Module.util;
+    let inst: TPrimitivePrimitiveInstance;
+    if (util.isInstance(preInstance)) {
+      inst = preInstance;
     } else {
-      rConfig = {
-        ...nCC,
-        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
-          ? this.util.mergeDiccActionConfig(
-              [cCC.diccActionsConfig, nCC.diccActionsConfig],
-              {
-                mode: mergeMode,
-              }
-            )
-          : cCC.diccActionsConfig,
-      };
+      const { primitiveModuleFactory } =
+        Module._globalConfig_.diccModuleFactory;
+      inst = primitiveModuleFactory.makeModuleInstance(
+        "primitiveProvider",
+        preInstance as any
+      ) as any;
     }
-    //...aqui configuracion refinada:
-    return rConfig;
+    return inst;
   }
-  protected override getMetadataWithContextModule(): TPrimitiveMetaAndProvider<PrimitiveLogicProvider> {
-    let extractMetadataByContext: Trf_TPrimitiveMetaAndProvider;
-    extractMetadataByContext =
-      this.metadataHandler.getExtractMetadataByModuleContext("provider") as any;
-    return extractMetadataByContext;
-  }
-  protected override getMetadataOnlyModuleConfig(): TPrimitiveConfigForProvider<TIDiccAC> {
-    const metadata =
-      this.getMetadataWithContextModule() as Trf_TPrimitiveMetaAndProvider;
-    const config =
-      metadata.__providerConfig as TPrimitiveConfigForProvider<TIDiccAC>;
-    return config as TPrimitiveConfigForProvider<TIDiccAC>;
-  }
-  protected override getDiccMetadataActionConfig(): TIDiccAC {
-    const config = this.getMetadataOnlyModuleConfig();
-    const configPrimitive = config.primitiveProvider;
-    const diccAC = configPrimitive.diccActionsConfig as TIDiccAC;
-    return diccAC;
-  }
-  /**obtiene una funcion de accion de acuerdo a su clave identificadora
+  /**obtiene una función de acción de acuerdo a su clave identificadora
    * preparada para ser inyectada en el middleware
    *
    * @param keyAction la clave identificadora de la funcion de accion solicitada
@@ -131,7 +107,7 @@ export class PrimitiveLogicProvider<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keyAction: TKeys): TPrimitiveFnBagForActionModule;
+  >(keyAction: TKeys): TPrimitiveActionConfigFn<any>;
   /**obtiene un array de funciones de accion de acuerdo a sus claves identificadoras
    * preparadas para ser inyectadas en el middleware
    *
@@ -141,7 +117,7 @@ export class PrimitiveLogicProvider<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keysAction: TKeys[]): Array<TPrimitiveFnBagForActionModule>;
+  >(keysAction: TKeys[]): Array<TPrimitiveActionConfigFn<any>>;
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
@@ -152,17 +128,18 @@ export class PrimitiveLogicProvider<
     keyAction: TKey
   ): [TKey, TIDiccAC[TKey]] {
     const tKeyGlobalAC = [this.keyModuleContext, keyAction];
-    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
-      tKeyGlobalAC as any
-    );
+    const actionConfig =
+      criteriaHandler.findGlobalActionByKeyModuleAndKeyAction(
+        tKeyGlobalAC as any
+      );
     return [keyAction, actionConfig];
   }
   protected override buildReportHandler(
-    bag: Trf_PrimitiveBag,
+    criteriaHandler: PrimitiveCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): PrimitiveReportHandler {
-    const { data, criteriaHandler, firstData } = bag;
-    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    const { data, firstData, type, modifyType, keyActionRequest } =
+      criteriaHandler;
     let rH = new PrimitiveReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
@@ -181,35 +158,35 @@ export class PrimitiveLogicProvider<
     return rH;
   }
   public override preRunAction(
-    bag: Trf_PrimitiveBag,
+    criteriaHandler: PrimitiveCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): void {
-    super.preRunAction(bag, keyAction as any) as any;
+    super.preRunAction(criteriaHandler, keyAction as any) as any;
     return;
   }
   public override postRunAction(
-    bag: Trf_PrimitiveBag,
+    criteriaHandler: PrimitiveCriteriaHandler<any>,
     res: IPrimitiveResponse
   ): void {
-    super.postRunAction(bag, res) as any;
+    super.postRunAction(criteriaHandler, res) as any;
     return;
   }
   //================================================================
   public async singleRunDriver(
-    bag: PrimitiveBag<any>
+    criteriaHandler: PrimitiveCriteriaHandler<any>
   ): Promise<IPrimitiveResponse> {
-    const { data, criteriaHandler } = bag;
+    const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
         "singleRunDriver"
       );
     let driverInstance = actionConfig;
-    const rH = this.buildReportHandler(bag, keyAction);
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     const selectorDataDriver: TSelectorDataDriver = "first";
     let driverResponse = await driverInstance.sendRequestFromService(
-      bag.getLiteralBag()
+      criteriaHandler.getLiteral()
     );
     res = rH.mutateResponse(res, {
       ...rH.adaptDriverResponseToResponse(

@@ -1,5 +1,5 @@
 import { reconfigure } from "./seed/start-seed";
-import { getSeedEnvironment } from "./seed/logic/config/seed-environment";
+import { getSeedEnvironment } from "./seed/logic/config/index-barrel";
 import { runTestClient } from "../test/client/index-client";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 reconfigure({

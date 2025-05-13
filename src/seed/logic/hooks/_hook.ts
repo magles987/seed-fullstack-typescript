@@ -1,7 +1,6 @@
-import { Trf_BagModule } from "../bag/_bag";
-import { ActionModule } from "../config/module";
-import { TKeyLogicContext } from "../config/shared-modules";
-import { ELogicResStatusCode, IResponse } from "../reports/shared";
+import { ActionModule, TKeyLogicContext } from "../modules/index-barrel";
+import { CriteriaHandler } from "../criterias/index-barrel";
+import { ELogicResStatusCode, IResponse } from "../reports/index-barrel";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipado refactorizado de la clase */
 export type Trf_HookLib = LogicHook<any>;
@@ -18,23 +17,35 @@ export abstract class LogicHook<TIDiccAC> extends ActionModule<TIDiccAC> {
     };
   };
   /**
-   * @param keyLogicContext el contexto logico de esta libreria
+   * @param keyLogicContext el contexto lógico de esta libreria
    */
-  constructor(keyLogicContext: TKeyLogicContext) {
-    super("hook", keyLogicContext);
+  constructor(
+    keyLogicContext: TKeyLogicContext,
+    baseConfig?: Partial<
+      Pick<
+        ReturnType<LogicHook<TIDiccAC>["getDefault"]>,
+        "diccActionConfig" | "topMandatoryKeysAction" | "topPriorityKeysAction"
+      >
+    >
+  ) {
+    super("hook", keyLogicContext, baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return LogicHook.getDefault();
   }
   public override preRunAction(
-    bag: Trf_BagModule,
-    keyAction: keyof TIDiccAC
+    criteriaHandler: CriteriaHandler,
+    keyActionConfig: keyof TIDiccAC
   ): void {
     return;
   }
-  public override postRunAction(bag: Trf_BagModule, res: IResponse): void {
-    //mutar data de res a bag
-    bag.data = res.data;
+  public override postRunAction(
+    criteriaHandler: CriteriaHandler,
+    res: IResponse
+  ): void {
+    //mutar data de res a criteriaHandler
+    criteriaHandler.data = res.data;
     return;
   }
   /**

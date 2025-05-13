@@ -1,8 +1,8 @@
-import { LogicController } from "../controllers/_controller";
-import { LogicMutater } from "../mutaters/_mutater";
-import { LogicHook } from "../hooks/_hook";
-import { LogicProvider } from "../providers/_provider";
-import { LogicValidation } from "../validators/_validation";
+import { LogicController } from "../controllers/index-barrel";
+import { LogicHook } from "../hooks/index-barrel";
+import { LogicMutater } from "../mutaters/index-barrel";
+import { LogicProvider } from "../providers/index-barrel";
+import { LogicValidation } from "../validators/index-barrel";
 import { ReportHandler } from "./_reportHandler";
 import {
   ELogicResStatusCode,
@@ -12,7 +12,7 @@ import {
   TPrimitiveResponseForMutate,
   Trf_IPrimitiveResponse,
   TSelectorDataDriver,
-} from "./shared";
+} from "./shared-types";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
@@ -101,49 +101,72 @@ export class PrimitiveReportHandler
     response: IPrimitiveResponse
   ): IPrimitiveResponse {
     const { keyRepModule } = response;
-    const res = response as Trf_IPrimitiveResponse;
-    const reses = res.responses;
-    /**funcion lanzadora de reductoras personalizadas */
-    let lanchReducerFn = (
-      currentStatus: ELogicResStatusCode,
-      nextStatus: ELogicResStatusCode
-    ) => {
-      let stateStatus: ELogicResStatusCode;
-      if (keyRepModule === "controller")
-        stateStatus = LogicController.getControlReduceStatusResponse(
-          currentStatus,
-          nextStatus
-        );
-      if (keyRepModule === "mutater")
-        stateStatus = LogicMutater.getControlReduceStatusResponse(
-          currentStatus,
-          nextStatus
-        );
-      else if (keyRepModule === "validator")
-        stateStatus = LogicValidation.getControlReduceStatusResponse(
-          currentStatus,
-          nextStatus
-        );
-      else if (keyRepModule === "hook")
-        stateStatus = LogicHook.getControlReduceStatusResponse(
-          currentStatus,
-          nextStatus
-        );
-      else if (keyRepModule === "provider")
-        stateStatus = LogicProvider.getControlReduceStatusResponse(
-          currentStatus,
-          nextStatus
-        );
-      else stateStatus = ELogicResStatusCode.ERROR;
-      return stateStatus;
-    };
-    lanchReducerFn.bind(this);
+    let res = response as Trf_IPrimitiveResponse;
+    let reses = res.responses;
     for (let idx = 0; idx < reses.length; idx++) {
       const embRes = this.reduceResponses(reses[idx]); //recursivo para res embebidos internos
-      res.status = lanchReducerFn(res.status, embRes.status);
-      this.mutateData(embRes.data, res);
+      if (keyRepModule === "controller") {
+        res.status = LogicController.getControlReduceStatusResponse(
+          res.status,
+          embRes.status
+        );
+      } else if (keyRepModule === "mutater") {
+        res.status = LogicMutater.getControlReduceStatusResponse(
+          res.status,
+          embRes.status
+        );
+      } else if (keyRepModule === "validator") {
+        res.status = LogicValidation.getControlReduceStatusResponse(
+          res.status,
+          embRes.status
+        );
+      } else if (keyRepModule === "hook") {
+        res.status = LogicHook.getControlReduceStatusResponse(
+          res.status,
+          embRes.status
+        );
+      } else if (keyRepModule === "provider") {
+        res.status = LogicProvider.getControlReduceStatusResponse(
+          res.status,
+          embRes.status
+        );
+      } else res.status = ELogicResStatusCode.ERROR;
+      res = this.mutateData(res, embRes);
     }
-    return response;
+    return res;
+  }
+  protected override mutateData(
+    rootRes: IPrimitiveResponse,
+    embRes: IPrimitiveResponse
+  ): IPrimitiveResponse {
+    let newData: any;
+    const { keyRepModuleContext: root_keyRepModuleContext, data: root_data } =
+      rootRes;
+    const { keyRepModuleContext: emb_keyRepModuleContext, data: emb_data } =
+      embRes;
+    //banderas raiz
+    const isRootPrimitiveMutater =
+      root_keyRepModuleContext === "primitiveMutate";
+    const isRootPrimitiveVal = root_keyRepModuleContext === "primitiveVal";
+    const isRootRequestVal = root_keyRepModuleContext === "requestVal";
+    const isRootPrimitiveHook = root_keyRepModuleContext === "primitiveHook";
+    const isRootPrimitiveProvider =
+      root_keyRepModuleContext === "primitiveProvider";
+    const isRootPrimitiveCtrl = root_keyRepModuleContext === "primitiveCtrl";
+    //banderas embebido
+    const isEmbPrimitiveMutater = emb_keyRepModuleContext === "primitiveMutate";
+    const isEmbPrimitiveVal = emb_keyRepModuleContext === "primitiveVal";
+    const isEmbRequestVal = emb_keyRepModuleContext === "requestVal";
+    const isEmbPrimitiveHook = emb_keyRepModuleContext === "primitiveHook";
+    const isEmbPrimitiveProvider =
+      emb_keyRepModuleContext === "primitiveProvider";
+    const isEmbPrimitiveCtrl = emb_keyRepModuleContext === "primitiveCtrl";
+    //mutar dato según combinaciones:
+    //❔...definir aquí combinaciones❔
+    newData = emb_data;
+    //
+    rootRes.data = newData;
+    return rootRes;
   }
   public override adaptDriverResponseToResponse(
     driverResponses: IDriverResponse | IDriverResponse[],

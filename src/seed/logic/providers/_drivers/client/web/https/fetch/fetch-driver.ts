@@ -1,22 +1,22 @@
 import {
   ELogicResStatusCode,
   IDriverResponse,
-} from "../../../../../../reports/shared";
+} from "../../../../../../reports/shared-types";
 import {
   EHttpStatusCode,
   TKeyHttpMethod,
 } from "../../../../../../util/http-tool";
-import { IFetchOption, TFetchCustomQueryFnReturn } from "./shared";
+import { IFetchOption, TFetchCustomQueryFnReturn } from "./shared-types";
 import {
-  IPrimitiveBagForDriver,
-  IStructureBagForDriver,
-} from "../../../../shared";
+  TPrimitiveLiteralCriteriaUnion,
+  TStructureLiteralCriteriaUnion,
+} from "../../../../shared-types";
 import { HttpDriver } from "../_https-driver";
 import {
   TPrimitiveHttpCustomQueryDriverFn,
   TStructureHttpCustomQueryDriverFn,
-} from "../shared";
-import { Module } from "../../../../../../config/module";
+} from "../shared-types";
+import { Module } from "../../../../../../modules/module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
@@ -68,10 +68,10 @@ export class FetchDriver
   };
   public override nameLogicDriver = FetchDriver.getNameLogicDriver();
   private _option: ReturnType<FetchDriver["getDefault"]>["option"];
-  public get option(): ReturnType<FetchDriver["getDefault"]>["option"] {
+  public get option(): typeof this._option {
     return this._option;
   }
-  protected set option(v: ReturnType<FetchDriver["getDefault"]>["option"]) {
+  protected set option(v: typeof this._option) {
     this._option = this.util.isObject(v)
       ? v
       : this._option !== undefined
@@ -126,19 +126,22 @@ export class FetchDriver
     return super.getLiteral() as any;
   }
   public override async sendRequestFromService(
-    literalBag: IPrimitiveBagForDriver | IStructureBagForDriver<any>
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
   ): Promise<IDriverResponse> {
     let option = this.util.clone(this.option);
     //try-catch especializado para fetch
     let response: Response;
     let driverResponse: IDriverResponse;
     try {
-      this.checkBag(literalBag);
-      const { data: txData, literalCriteria } = literalBag;
+      this.checkLiteralCriteria(literalCriteria);
+      const { data: txData } = literalCriteria;
       //configuración de opciones obligatorias
-      option.method = this.getHttpMethodFromCriteria(literalCriteria);
+      option.method = this.getHttpMethodFromLiteralCriteria(literalCriteria);
       option.body = this.dataToBody(txData);
-      const urlBodyParts = this.getUrlBodyPartsFromBag(literalCriteria);
+      const urlBodyParts =
+        this.getUrlBodyPartsFromLiteralCriteria(literalCriteria);
       let url = this.buildUrl(urlBodyParts);
       //selección tipo de ejecución de la api de envío http
       const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
@@ -153,7 +156,7 @@ export class FetchDriver
             >;
         const { url: mod_url, option: mod_option } = await fn(
           this,
-          literalBag as any
+          literalCriteria as any
         );
         url = this.util.isString(mod_url) ? mod_url : url;
         option = this.util.deepMergeObjects([option, mod_option], {

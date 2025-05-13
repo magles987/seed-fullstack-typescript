@@ -1,8 +1,25 @@
-import { LogicController } from "../controllers/_controller";
-import { LogicMutater } from "../mutaters/_mutater";
-import { LogicHook } from "../hooks/_hook";
-import { LogicProvider } from "../providers/_provider";
-import { LogicValidation } from "../validators/_validation";
+import {
+  TKeyActionModule,
+  TKeyStructureContextFull,
+} from "../modules/index-barrel";
+import {
+  LogicController,
+  TKeyStructureCtrlModuleContext,
+  TKeyStructureDeepCtrlModuleContext,
+} from "../controllers/index-barrel";
+import { ELogicCodeError, LogicError } from "../errors/index-barrel";
+import {
+  LogicHook,
+  TKeyStructureDeepHookModuleContext,
+  TKeyStructureHookModuleContext,
+} from "../hooks/index-barrel";
+import { LogicMutater } from "../mutaters/index-barrel";
+import {
+  LogicProvider,
+  TKeyStructureDeepProviderModuleContext,
+  TKeyStructureProviderModuleContext,
+} from "../providers/index-barrel";
+import { LogicValidation } from "../validators/index-barrel";
 import { ReportHandler } from "./_reportHandler";
 import {
   ELogicResStatusCode,
@@ -12,7 +29,8 @@ import {
   TSelectorDataDriver,
   TStructureModuleContext,
   TStructureResponseForMutate,
-} from "./shared";
+} from "./shared-types";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_StructureReportHandler = StructureReportHandler;
@@ -141,20 +159,76 @@ export class StructureReportHandler
           embRes.status
         );
       } else res.status = ELogicResStatusCode.ERROR;
-      const isFieldContext =
-        embRes.keyRepModuleContext === "fieldCtrl" ||
-        embRes.keyRepModuleContext === "fieldMutate" ||
-        embRes.keyRepModuleContext === "fieldVal";
-      const isModelContext =
-        res.keyRepModuleContext === "modelCtrl" ||
-        res.keyRepModuleContext === "modelMutate" ||
-        res.keyRepModuleContext === "modelVal";
-      if (!(isFieldContext && isModelContext)) {
-        //solo muta si la reduccion no compromete de campo a modelo
-        this.mutateData(embRes.data, res);
-      }
+      res = this.mutateData(res, embRes);
     }
     return res;
+  }
+  protected override mutateData(
+    rootRes: IStructureResponse,
+    embRes: IStructureResponse
+  ): IStructureResponse {
+    let newData: any;
+    const {
+      keyRepModuleContext: root_keyRepModuleContext,
+      data: root_data,
+      keyLogic: root_keyLogic,
+    } = rootRes;
+    const {
+      keyRepModuleContext: emb_keyRepModuleContext,
+      data: emb_data,
+      keyLogic: emb_keyLogic,
+    } = embRes;
+    //banderas raiz
+    const isRootFieldMutater = root_keyRepModuleContext === "fieldMutate";
+    const isRootModelMutater = root_keyRepModuleContext === "modelMutate";
+    const isRootFieldVal = root_keyRepModuleContext === "fieldVal";
+    const isRootModelVal = root_keyRepModuleContext === "modelVal";
+    const isRootRequestVal = root_keyRepModuleContext === "requestVal";
+    const isRootFieldHook = root_keyRepModuleContext === "fieldHook";
+    const isRootModelHook = root_keyRepModuleContext === "modelHook";
+    const isRootFieldProvider = root_keyRepModuleContext === "fieldProvider";
+    const isRootModelProvider = root_keyRepModuleContext === "modelProvider";
+    const isRootFieldCtrl = root_keyRepModuleContext === "fieldCtrl";
+    const isRootModelCtrl = root_keyRepModuleContext === "modelCtrl";
+    //banderas embebido
+    const isEmbFieldMutater = emb_keyRepModuleContext === "fieldMutate";
+    const isEmbModelMutater = emb_keyRepModuleContext === "modelMutate";
+    const isEmbFieldVal = emb_keyRepModuleContext === "fieldVal";
+    const isEmbModelVal = emb_keyRepModuleContext === "modelVal";
+    const isEmbRequestVal = emb_keyRepModuleContext === "requestVal";
+    const isEmbFieldHook = emb_keyRepModuleContext === "fieldHook";
+    const isEmbModelHook = emb_keyRepModuleContext === "modelHook";
+    const isEmbFieldProvider = emb_keyRepModuleContext === "fieldProvider";
+    const isEmbModelProvider = emb_keyRepModuleContext === "modelProvider";
+    const isEmbFieldCtrl = emb_keyRepModuleContext === "fieldCtrl";
+    const isEmbModelCtrl = emb_keyRepModuleContext === "modelCtrl";
+    //mutar dato según combinaciones:
+    if (
+      (isRootModelMutater && isEmbFieldMutater) ||
+      (isRootModelVal && isEmbFieldVal) ||
+      (isRootModelHook && isEmbFieldHook) ||
+      (isRootModelProvider && isEmbFieldProvider) ||
+      (isRootModelCtrl && isEmbFieldCtrl)
+    ) {
+      //mutación de campo a modelo (o embebido)
+      newData = this.util.isObject(root_data) ? root_data : {};
+      newData[emb_keyLogic] = emb_data;
+    } else if (
+      (isRootFieldMutater && isEmbModelMutater) ||
+      (isRootFieldVal && isEmbModelVal) ||
+      (isRootFieldHook && isEmbModelHook) ||
+      (isRootFieldProvider && isEmbModelProvider) ||
+      (isRootFieldCtrl && isEmbModelCtrl)
+    ) {
+      //mutación de modelo embebido a campo
+      //❗Reemplaza todo sin verificación❗
+      newData = emb_data;
+    } else {
+      //❗Reemplaza todo sin verificación❗
+      newData = emb_data; //❓Verificaiones entre modulos❓
+    }
+    rootRes.data = newData;
+    return rootRes;
   }
   public override adaptDriverResponseToResponse(
     driverResponses: IDriverResponse | IDriverResponse[],
@@ -166,5 +240,116 @@ export class StructureReportHandler
       response,
       selectorDataDriver
     ) as IStructureResponse;
+  }
+  /**... */
+  public static adapatKeyStructureContextToDeepKeyModuleContext(
+    keyModule: "hook",
+    keyStructureContext: TKeyStructureContextFull
+  ): TKeyStructureDeepHookModuleContext;
+  public static adapatKeyStructureContextToDeepKeyModuleContext(
+    keyModule: "provider",
+    keyStructureContext: TKeyStructureContextFull
+  ): TKeyStructureDeepProviderModuleContext;
+  public static adapatKeyStructureContextToDeepKeyModuleContext(
+    keyModule: "controller",
+    keyStructureContext: TKeyStructureContextFull
+  ): TKeyStructureDeepCtrlModuleContext;
+  public static adapatKeyStructureContextToDeepKeyModuleContext(
+    keyModule: Extract<TKeyActionModule, "hook" | "provider" | "controller">,
+    keyStructureContext: TKeyStructureContextFull
+  ): unknown {
+    let deep_keyModuleContext: unknown;
+    if (keyModule === "hook") {
+      let deep_hKMC: TKeyStructureDeepHookModuleContext;
+      if (keyStructureContext === "structureField") deep_hKMC = "fieldHook";
+      else if (keyStructureContext === "structureEmbedded")
+        deep_hKMC = "modelHook";
+      else if (keyStructureContext === "structureModel")
+        deep_hKMC = "modelHook";
+      else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${keyStructureContext} is not structure context key valid from criteria`,
+        });
+      }
+      deep_keyModuleContext = deep_hKMC;
+    } else if (keyModule === "provider") {
+      let deep_hKMC: TKeyStructureDeepProviderModuleContext;
+      if (keyStructureContext === "structureField") deep_hKMC = "fieldProvider";
+      else if (keyStructureContext === "structureEmbedded")
+        deep_hKMC = "modelProvider";
+      else if (keyStructureContext === "structureModel")
+        deep_hKMC = "modelProvider";
+      else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${keyStructureContext} is not structure context key valid from criteria`,
+        });
+      }
+      deep_keyModuleContext = deep_hKMC;
+    } else if (keyModule === "controller") {
+      let deep_hKMC: TKeyStructureDeepCtrlModuleContext;
+      if (keyStructureContext === "structureField") deep_hKMC = "fieldCtrl";
+      else if (keyStructureContext === "structureEmbedded")
+        deep_hKMC = "modelCtrl";
+      else if (keyStructureContext === "structureModel")
+        deep_hKMC = "modelCtrl";
+      else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${keyStructureContext} is not structure context key valid from criteria`,
+        });
+      }
+      deep_keyModuleContext = deep_hKMC;
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${keyModule} is not module context key valid from criteria`,
+      });
+    }
+    return deep_keyModuleContext;
+  }
+  /**... */
+  public static adaptDeepKeyModuleContextToStructureKeyModuleContext(
+    deepKeyModuleContext: TKeyStructureDeepHookModuleContext
+  ): TKeyStructureHookModuleContext;
+  public static adaptDeepKeyModuleContextToStructureKeyModuleContext(
+    deepKeyModuleContext: TKeyStructureDeepHookModuleContext
+  ): TKeyStructureProviderModuleContext;
+  public static adaptDeepKeyModuleContextToStructureKeyModuleContext(
+    deepKeyModuleContext: TKeyStructureDeepCtrlModuleContext
+  ): TKeyStructureCtrlModuleContext;
+  public static adaptDeepKeyModuleContextToStructureKeyModuleContext(
+    deepKeyModuleContext:
+      | TKeyStructureDeepHookModuleContext
+      | TKeyStructureDeepProviderModuleContext
+      | TKeyStructureDeepCtrlModuleContext
+  ): unknown {
+    let structure_keyModuleContext: unknown;
+    if (
+      deepKeyModuleContext === "fieldHook" ||
+      deepKeyModuleContext === "modelHook"
+    ) {
+      structure_keyModuleContext =
+        "structureHook" as TKeyStructureHookModuleContext;
+    } else if (
+      deepKeyModuleContext === "fieldProvider" ||
+      deepKeyModuleContext === "modelProvider"
+    ) {
+      structure_keyModuleContext =
+        "structureProvider" as TKeyStructureProviderModuleContext;
+    } else if (
+      deepKeyModuleContext === "fieldCtrl" ||
+      deepKeyModuleContext === "modelCtrl"
+    ) {
+      structure_keyModuleContext =
+        "structureCtrl" as TKeyStructureCtrlModuleContext;
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${deepKeyModuleContext} is not deep module context key valid from criteria`,
+      });
+    }
+    return structure_keyModuleContext;
   }
 }

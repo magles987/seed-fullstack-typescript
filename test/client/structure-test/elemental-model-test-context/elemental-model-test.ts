@@ -1,61 +1,49 @@
-//import { ModelTest } from "./model-test";
-import { StructureLogicController } from "../../../../src/seed/logic/controllers/structure-ctrl";
+import { IStructureModelReadCriteria } from "../../../../src/seed/logic/criterias/index-barrel";
 import {
-  TStructureBaseDiccModuleInstance,
-  TStructureBaseDriversList,
-  TStructureBaseMetadata,
-} from "../../../../src/seed/logic/controllers/builder-ctrl-shared";
-import { StructureCriteriaHandler } from "../../../../src/seed/logic/criterias/structure-criteria-handler";
-import { StructureLogicHook } from "../../../../src/seed/logic/hooks/structure-hook";
-import { FieldLogicMutater } from "../../../../src/seed/logic/mutaters/field-mutater";
-import { ModelLogicMutater } from "../../../../src/seed/logic/mutaters/model-mutater";
-import { StructureLogicProvider } from "../../../../src/seed/logic/providers/structure-provider";
-import { FieldLogicValidation } from "../../../../src/seed/logic/validators/field-validation";
-import { ModelLogicValidation } from "../../../../src/seed/logic/validators/model-validation";
-import { RequestLogicValidation } from "../../../../src/seed/logic/validators/request-validation";
+  StructureLogicMetadataHandler,
+  TFieldMutateInstance,
+  TFieldValInstance,
+  TKeyStructureDiccActionRequest,
+  TModelMutateInstance,
+  TModelValInstance,
+  TRequestValInstance,
+  TStructureCtrlInstance,
+  TStructureHookInstance,
+  TStructureProviderInstance,
+} from "../../../../src/seed/logic/meta/index-barrel";
+import { Model } from "../../../../src/seed/logic/models/index-barrel";
+import { Module } from "../../../../src/seed/logic/modules/index-barrel";
 import {
-  TKeyStructureDiccRequestCtrl,
-  TKeyStructureModifyRequestCtrl,
-  TKeyStructureReadRequestCtrl,
-} from "../../../../src/seed/logic/controllers/shared";
-import { CookieDriver } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/cookie/cookie-driver";
-import { TStructureCookieCustomQueryDriverFn } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/cookie/shared";
-import { IStructureModelReadCriteria } from "../../../../src/seed/logic/criterias/shared";
-import { Module } from "../../../../src/seed/logic/config/module";
-import { IdbDriver } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/idb/_idb-driver";
-import { StorageDriver } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/storage/storage-driver";
-import { FetchDriver } from "../../../../src/seed/logic/providers/_drivers/client/web/https/fetch/fetch-driver";
-import { Model } from "../../../../src/seed/logic/models/_model";
+  CookieDriver,
+  FetchDriver,
+  IdbDriver,
+  StorageDriver,
+  TStructureCookieCustomQueryDriverFn,
+} from "../../../../src/seed/logic/providers/_drivers/index-barrel";
 //████ Tipos personalizados ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-type TKeyReadRequestCtrl =
-  // aquí las claves identificadoras personalizadas de peticiones para este controller
-  "inform" | TKeyStructureReadRequestCtrl;
-type TKeyModifyRequestCtrl =
-  //  aquí las claves identificadoras personalizadas de peticiones para este controller
-  TKeyStructureModifyRequestCtrl;
-type TKeyDiccActionRequest = TKeyStructureDiccRequestCtrl<
-  TKeyReadRequestCtrl,
-  TKeyModifyRequestCtrl
->;
-type TFieldMutateInstance = FieldLogicMutater;
-type TModelMutateInstance = ModelLogicMutater;
-type TFieldValInstance = FieldLogicValidation;
-type TModelValInstance = ModelLogicValidation;
-type TRequestValInstance = RequestLogicValidation;
-type TStructureHookInstance = StructureLogicHook;
-type TStructureProviderInstance = StructureLogicProvider;
-type TStructureCriteriaInstance = StructureCriteriaHandler<
-  TModel,
-  TFieldMutateInstance["dfDiccActionConfig"],
-  TModelMutateInstance["dfDiccActionConfig"],
-  TFieldValInstance["dfDiccActionConfig"],
-  TModelValInstance["dfDiccActionConfig"],
-  TRequestValInstance["dfDiccActionConfig"],
-  TStructureHookInstance["dfDiccActionConfig"],
-  TStructureProviderInstance["dfDiccActionConfig"],
-  TKeyDiccActionRequest
->;
 type TModel = ElementalModelTest;
+type TFMI = TFieldMutateInstance;
+type TMMI = TModelMutateInstance;
+type TFVI = TFieldValInstance;
+type TMVI = TModelValInstance;
+type TRVI = TRequestValInstance;
+type TSHI = TStructureHookInstance;
+type TSPI = TStructureProviderInstance;
+type TKeyDAR = TKeyStructureDiccActionRequest<
+  "inform", //aquí los tipo read personalizados (reemplazar `never`)
+  never //aquí los tipo modify personalizados (reemplazar `never`)
+>;
+type TSCI = TStructureCtrlInstance<
+  TModel,
+  TFMI,
+  TMMI,
+  TFVI,
+  TMVI,
+  TRVI,
+  TSHI,
+  TSPI,
+  TKeyDAR
+>;
 /** interfaz de este modelo para propósitos generales*/
 //⚠ la interfaz debe permanecer **vacía**
 export interface IElementalModelTest<TExtend>
@@ -68,177 +56,61 @@ export type TKeyFieldElementalModelTest = keyof IElementalModelTest<any>;
  * campos, no para ejecución de métodos❗
  */
 export class ElementalModelTest extends Model {
-  //boleano: boolean = false;
-  // texto :string = "";
-  // texto_tel: string;
-  // texto_email: string;
-  // texto_url: string;
-  // texto_pw: string;
-  // v_text_c_pw: string;
-  // texto_radio: string;
-  // texto_checkbox: string[];
-  // texto_switch: string[];
-  // texto_select: string;
-  // numero: number = 5;
-  // numero_range: number = 8;
-  // numero_especial_counter: number = 0;
-  // numero_especial_rating: number = 3;
-  // numero_radio: number[] = [5];
-  // numero_checkbox: number[] = [1, 3];
-  // numero_switch: number = 3;
-  // numero_select: number[] = [1];
-  // objeto_radio:Object = {};
-  // objeto_checkbox:Object[] = [];
-  // objeto_switch: Object[] = [];
-  // a_texto:string[] = [];
-  // a_numero:number[] = [];
-  // a_boleano:boolean[] = [];
-  // a_objeto:Object[] = [];
+  //...aquí las propiedades
 }
-//███ configuración controlador █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+//███ Constructor de Metadatos █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/**utilidades de módulos */
 const util = Module.util;
-/**
- * @real
- * Construye el controlador configurado para este modelo
- * @returns instancia del controlador ya configurado
- */
-function buildCtrlInstance() {
-  const dfModel = new ElementalModelTest();
-  const driversList: TStructureBaseDriversList = [
-    new CookieDriver(),
-    new StorageDriver(),
-    new IdbDriver(),
-    new FetchDriver({
-      urlRoot: "http://www.mytest.com",
-      srcSelector: "plural",
-    }),
-  ];
-  const customDiccModuleInstance: TStructureBaseDiccModuleInstance<
-    TFieldMutateInstance,
-    TModelMutateInstance,
-    TFieldValInstance,
-    TModelValInstance,
-    TRequestValInstance,
-    TStructureHookInstance,
-    TStructureProviderInstance
-  > = {
-    driversList,
-    //...aquí instancias de módulos personalizados si se requieren
-  };
-  const customBaseMetadata: TStructureBaseMetadata<
+/**instancia actual del manejador de metadatos */
+let metadataHandlerInstance: ReturnType<typeof buildMetadataHandler>;
+/**@returns un manejador de metadatos personalizado para este modelo*/
+function buildMetadataHandler() {
+  const baseModel = new ElementalModelTest();
+  const keySrc = util.getClassName(baseModel);
+  return new StructureLogicMetadataHandler<
     TModel,
-    TFieldMutateInstance,
-    TModelMutateInstance,
-    TFieldValInstance,
-    TModelValInstance,
-    TRequestValInstance,
-    TStructureHookInstance,
-    TStructureProviderInstance,
-    TKeyDiccActionRequest
-  > = {
-    __dfData: dfModel,
-    _id: {
-      __dfData: dfModel._id ?? "1",
-      __fieldType: "string",
-      __emb: undefined,
-      __isArray: false,
-      __isVirtual: false,
-      __keyPath: undefined,
-      __keysProp: undefined,
-      __structureType: undefined,
-      __mutateConfig: {
-        fieldMutate: {
-          diccActionsConfig: {
-            anyTrim: true,
-          },
-        },
+    TFMI,
+    TMMI,
+    TFVI,
+    TMVI,
+    TRVI,
+    TSHI,
+    TSPI,
+    TKeyDAR,
+    TSCI
+  >({
+    keySrc,
+    baseMeta: {
+      __dfData: baseModel,
+      __structureType: "structureModel",
+      // __mutateInstance: {}, //configuración personalizada o instancia personalizada
+      // __valInstance: {}, //configuración personalizada o instancia personalizada
+      // __requestValInstance: {}, //configuración personalizada o instancia personalizada
+      // __hookInstance: {}, //configuración personalizada o instancia personalizada
+      __providerInstance: {
+        driverList: [
+          new CookieDriver(),
+          new StorageDriver(),
+          new IdbDriver(),
+          new FetchDriver({
+            urlRoot: "http://www.mytest.com",
+            srcSelector: "plural",
+          }),
+        ],
       },
-      __valConfig: {
-        fieldVal: {
-          diccActionsConfig: {
-            isTypeOf: {
-              fieldType: "string",
-              isArray: false,
-            },
-            isRequired: true,
-          },
-        },
-      },
-      __ctrlConfig: {
-        fieldCtrl: {
-          criteriaRequestConfig: {
-            aTKeysGlobalActionConfig: [
-              ["fieldMutate", "anyTrim"],
-              ["fieldVal", "isTypeOf"],
-              ["fieldVal", "isRequired"],
-            ],
-          },
-        },
-      },
-    },
-    _pathDoc: {
-      __dfData: dfModel._pathDoc ?? "/1/",
-      __fieldType: "string",
-      __emb: undefined,
-      __isArray: false,
-      __isVirtual: false,
-      __keyPath: undefined,
-      __keysProp: undefined,
-      __structureType: undefined,
-      __mutateConfig: {
-        fieldMutate: {
-          diccActionsConfig: { anyTrim: true },
-        },
-      },
-      __valConfig: {
-        fieldVal: {
-          diccActionsConfig: {
-            isTypeOf: { fieldType: "string" },
-            isRequired: true,
-          },
-        },
-      },
-      __ctrlConfig: {
-        fieldCtrl: {
-          criteriaRequestConfig: {
-            aTKeysGlobalActionConfig: [
-              ["fieldMutate", "anyTrim"],
-              ["fieldVal", "isTypeOf"],
-              ["fieldVal", "isRequired"],
-            ],
-          },
-        },
-      },
-    },
-    __valConfig: {
-      modelVal: {
-        diccActionsConfig: {
-          isRequired: true,
-          isModel: {
-            modelForDiccAC: undefined, //automatico
-          },
-        },
-      },
-    },
-    __providerConfig: {
-      structureProvider: {
-        diccActionsConfig: {
-          singleRunDriver: {
-            nameLogicDriver: CookieDriver.getNameLogicDriver(),
-          },
-        },
-      },
-    },
-    __ctrlConfig: {
-      modelCtrl: {
+      __ctrlInstance: {
         diccCriteriaRequestConfig: {
           readAll: {
             type: "read",
             keyActionRequest: "readAll",
             expectedDataType: "array",
             limit: 5,
-            aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+            aTGlobalActionConfig: [
+              [
+                "structureProvider",
+                "singleRunDriver",
+                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+              ],
             ],
           },
           readOne: {
@@ -252,8 +124,12 @@ function buildCtrlInstance() {
                 },
               },
             },
-            aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+            aTGlobalActionConfig: [
+              [
+                "structureProvider",
+                "singleRunDriver",
+                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+              ],
             ],
             aTCustomQueryDriverFunctions: [
               [
@@ -276,8 +152,12 @@ function buildCtrlInstance() {
             keyActionRequest: "readMany",
             expectedDataType: "array",
             limit: 5,
-            aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+            aTGlobalActionConfig: [
+              [
+                "structureProvider",
+                "singleRunDriver",
+                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+              ],
             ],
             aTCustomQueryDriverFunctions: [
               [
@@ -299,8 +179,12 @@ function buildCtrlInstance() {
             type: "read",
             keyActionRequest: "readById",
             expectedDataType: "object", //solo puede ser 1
-            aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+            aTGlobalActionConfig: [
+              [
+                "structureProvider",
+                "singleRunDriver",
+                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+              ],
             ],
             aTCustomQueryDriverFunctions: [
               [
@@ -321,8 +205,12 @@ function buildCtrlInstance() {
             type: "read",
             keyActionRequest: "exist",
             expectedDataType: "boolean",
-            aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+            aTGlobalActionConfig: [
+              [
+                "structureProvider",
+                "singleRunDriver",
+                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+              ],
             ],
             aTCustomQueryDriverFunctions: [
               [
@@ -344,8 +232,12 @@ function buildCtrlInstance() {
             type: "read",
             keyActionRequest: "count",
             expectedDataType: "number",
-            aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+            aTGlobalActionConfig: [
+              [
+                "structureProvider",
+                "singleRunDriver",
+                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+              ],
             ],
             aTCustomQueryDriverFunctions: [
               [
@@ -367,15 +259,18 @@ function buildCtrlInstance() {
             type: "read",
             keyActionRequest: "inform",
             expectedDataType: "string",
-            aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+            aTGlobalActionConfig: [
+              [
+                "structureProvider",
+                "singleRunDriver",
+                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+              ],
             ],
             aTCustomQueryDriverFunctions: [
               [
                 CookieDriver.getNameLogicDriver(),
-                (async (driver, literalBag, registers) => {
+                (async (driver, literalCriteria, registers) => {
                   const util = Module.util; //mejor usar una genérica
-                  const { literalCriteria } = literalBag;
                   const { diccQueryParam } =
                     literalCriteria as IStructureModelReadCriteria<TModel>;
                   const regs = registers as TModel[];
@@ -394,11 +289,15 @@ function buildCtrlInstance() {
             keyActionRequest: "create",
             expectedDataType: "object",
             isCreateOrUpdate: true,
-            aTKeysGlobalActionConfig: [
-              ["modelMutate", "mutateModel"],
-              ["modelVal", "isTypeOfModel"],
-              ["modelVal", "isModel"],
-              ["structureProvider", "singleRunDriver"],
+            aTGlobalActionConfig: [
+              //["modelMutate", "mutateModel", { modelForDiccAC: undefined }],
+              ["modelVal", "isTypeOfModel", true],
+              ["structureCtrl", "checkAllFields", true],
+              [
+                "structureProvider",
+                "singleRunDriver",
+                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+              ],
             ],
           },
           update: {
@@ -407,11 +306,15 @@ function buildCtrlInstance() {
             keyActionRequest: "update",
             expectedDataType: "object",
             isCreateOrUpdate: true,
-            aTKeysGlobalActionConfig: [
-              ["modelMutate", "mutateModel"],
-              ["modelVal", "isTypeOfModel"],
-              ["modelVal", "isModel"],
-              ["structureProvider", "singleRunDriver"],
+            aTGlobalActionConfig: [
+              //["modelMutate", "mutateModel", { modelForDiccAC: undefined }],
+              ["modelVal", "isTypeOfModel", true],
+              ["structureCtrl", "checkAllFields", true],
+              [
+                "structureProvider",
+                "singleRunDriver",
+                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+              ],
             ],
           },
           delete: {
@@ -420,44 +323,62 @@ function buildCtrlInstance() {
             keyActionRequest: "delete",
             expectedDataType: "object",
             //isCreateOrUpdate: true,
-            aTKeysGlobalActionConfig: [
-              //["modelMutate", "mutateModel"],
-              //["modelVal", "isTypeOfModel"],
-              //["modelVal", "isModel"],
-              ["structureProvider", "singleRunDriver"],
+            aTGlobalActionConfig: [
+              //["modelMutate", "mutateModel", {modelForDiccAC: undefined}],
+              //["modelVal", "isTypeOfModel", true],
+              //["modelVal", "isModel", {modelForDiccAC: undefined}],
+              [
+                "structureProvider",
+                "singleRunDriver",
+                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+              ],
+            ],
+          },
+        },
+      },
+      _id: {
+        __dfData: baseModel._id,
+        __fieldType: "string",
+        __emb: undefined,
+        __isArray: false,
+        __isVirtual: false,
+        __ctrlInstance: {
+          criteriaFieldRequestConfig: {
+            aTGlobalActionConfig: [
+              ["fieldMutate", "anyTrim", true],
+              ["fieldVal", "isTypeOf", true],
+              ["fieldVal", "isRequired", true],
+            ],
+          },
+        },
+      },
+      _pathDoc: {
+        __dfData: baseModel._pathDoc,
+        __fieldType: "string",
+        __emb: undefined,
+        __isArray: false,
+        __isVirtual: false,
+        __ctrlInstance: {
+          criteriaFieldRequestConfig: {
+            aTGlobalActionConfig: [
+              ["fieldMutate", "anyTrim", true],
+              ["fieldVal", "isTypeOf", true],
+              ["fieldVal", "isRequired", true],
             ],
           },
         },
       },
     },
-  };
-  return new StructureLogicController<
-    TModel,
-    TFieldMutateInstance,
-    TModelMutateInstance,
-    TFieldValInstance,
-    TModelValInstance,
-    TRequestValInstance,
-    TStructureHookInstance,
-    TStructureProviderInstance,
-    TKeyDiccActionRequest,
-    TStructureCriteriaInstance
-  >({
-    keySrc: util.getClassName(dfModel),
-    customDiccModuleInstance,
-    customBaseMetadata,
   });
 }
-/** almacena la instancia actual del controller de este modelo
- * (funciona como un singleton artesanal, sin clase) */
-let currentCtrl: ReturnType<typeof buildCtrlInstance> = undefined;
-/**
- * @facade
- * Construye el controlador configurado para este modelo
- * @returns instancia del controlador ya configurado
- */
-export function buildElementalModelTestCtrl() {
-  if (util.isInstance(currentCtrl)) return currentCtrl;
-  currentCtrl = buildCtrlInstance();
-  return currentCtrl;
+/**@returns la instancia de manejador actual de metadatos para este modelo */
+export function getElementalModelTestMetadataHandler() {
+  return util.isInstance(metadataHandlerInstance)
+    ? metadataHandlerInstance
+    : buildMetadataHandler();
+}
+/**@returns la instancia del controlador asociado a este modelo */
+export function getElementalModelTestCtrl() {
+  let mH = getElementalModelTestMetadataHandler();
+  return mH.getRootCtrlInstance();
 }

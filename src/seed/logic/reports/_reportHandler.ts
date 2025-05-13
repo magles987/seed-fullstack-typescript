@@ -1,11 +1,11 @@
-import { HandlerModule } from "../config/module";
 import {
+  HandlerModule,
+  TKeyActionModule,
   TKeyLogicContext,
-  TKeyModuleWithReport,
   TKeyRequestModifyType,
   TKeyRequestType,
-} from "../config/shared-modules";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
+} from "../modules/index-barrel";
+import { ELogicCodeError, LogicError } from "../errors/index-barrel";
 import {
   EKeyActionGroupForRes,
   ELogicResStatusCode,
@@ -14,7 +14,7 @@ import {
   TResponseForMutate,
   TSelectorDataDriver,
   TSelectorDataDriverFn,
-} from "./shared";
+} from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
 export type Trf_ReportHandler = ReportHandler;
@@ -63,11 +63,11 @@ export abstract class ReportHandler
   protected set data(v: any) {
     this._data = v; //❗ todo permitido ❗
   }
-  private _keyRepModule: TKeyModuleWithReport;
-  public get keyRepModule(): TKeyModuleWithReport {
+  private _keyRepModule: TKeyActionModule;
+  public get keyRepModule(): TKeyActionModule {
     return this._keyRepModule;
   }
-  public set keyRepModule(v: TKeyModuleWithReport) {
+  public set keyRepModule(v: TKeyActionModule) {
     this._keyRepModule =
       v === "controller" ||
       v === "mutater" ||
@@ -352,16 +352,10 @@ export abstract class ReportHandler
     return res;
   }
   /**... */
-  protected mutateData(newData: any, res: IResponse): void {
-    //modulos prohibidos para mutar dato
-    if (this.keyRepModule === "validator" || this.keyRepModule === "hook")
-      return;
-    if (res.data !== newData) res.data = newData; //debería ser con equivalencia❓❓
-    if (this.data !== res.data) {
-      this.data = res.data;
-    }
-    return;
-  }
+  protected abstract mutateData(
+    rootRes: IResponse,
+    embRes: IResponse
+  ): IResponse;
   /**... */
   protected abstract reduceResponses(response: IResponse): IResponse;
   /**... */

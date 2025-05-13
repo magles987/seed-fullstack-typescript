@@ -1,7 +1,10 @@
 import { Driver } from "../_driver";
-import { IBagForDriver } from "../shared"; //❗Desde el padre❗
-import { IDriverResponse } from "../../../reports/shared";
-import { Module } from "../../../config/module";
+import { IDriverResponse } from "../../../reports/shared-types";
+import { Module } from "../../../modules/module";
+import {
+  TPrimitiveLiteralCriteriaUnion,
+  TStructureLiteralCriteriaUnion,
+} from "../shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
 /** *selfcontructor*
@@ -61,8 +64,12 @@ export abstract class ClientDriver
   public override getLiteral(): ReturnType<ClientDriver["getDefault"]> {
     return super.getLiteral() as any;
   }
-  protected override preRequestFromService(bagDriver: IBagForDriver): void {
-    super.preRequestFromService(bagDriver);
+  protected override preRequestFromService(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+  ): void {
+    super.preRequestFromService(literalCriteria);
     return;
   }
   protected override postRequestFromService(driverRes: IDriverResponse): void {

@@ -1,6 +1,6 @@
 import { ClientDriver } from "../_client-driver";
-import { TKeyGroupDriver as TKeyDriver } from "./shared";
-import { TKeyDriverPrefix as TSuperKeyPrefix } from "../shared"; //❗Desde el padre❗
+import { TKeyGroupDriver as TKeyDriver } from "./shared-types";
+import { TKeyDriverPrefix as TSuperKeyPrefix } from "../shared-types"; //❗Desde el padre❗
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
 /** *selfcontructor*

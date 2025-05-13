@@ -1,15 +1,11 @@
-import { StructureLogicMutater } from "./_structure-mutater";
+import { Module } from "../modules/index-barrel";
 import {
-  TModelConfigForMutate,
-  TStructureMutateModuleConfigForModel,
-} from "./shared";
-import { EKeyActionGroupForRes, IStructureResponse } from "../reports/shared";
-import { TStructureMetaAndMutater } from "../meta/metadata-shared";
-import { StructureBag } from "../bag/structure-bag";
-import { FieldLogicMutater } from "./field-mutater";
-import { LogicController } from "../controllers/_controller";
-import { TStructureFnBagForActionModule } from "../bag/shared";
-import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
+  StructureCriteriaHandler,
+  TStructureActionConfigFn,
+} from "../criterias/index-barrel";
+import { IStructureResponse } from "../reports/index-barrel";
+import { StructureLogicMutater } from "./_structure-mutater";
+import { TModelMutateBaseConfig } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** define las propiedades de cada formateo
  * que puede configurar y ejecutar un campo
@@ -19,32 +15,14 @@ import { StructureCriteriaHandler } from "../criterias/structure-criteria-handle
  * asignados varias de estos formatos, estas
  * propiedades deben ser **opcionales**
  */
-export interface IDiccModelMutateActionConfigG<
-  TIDiccFieldMutateAC extends FieldLogicMutater["dfDiccActionConfig"] = FieldLogicMutater["dfDiccActionConfig"]
-> {
-  /**formatear todos los campos del registro */
-  mutateModel:
-    | {
-        /**representa un modelo de diccionario
-         * de configuracion de acciones de formateo
-         * para cada campo
-         *
-         * ⚠ El tipo debería ser:
-         *
-         * `Record<keyof Model, TIDiccFieldFormatAction>`
-         *
-         * donde `TIADiccFieldFormatActionsConfig` es el diccionario personalizado
-         */
-        modelForDiccAC: Partial<Record<any, Partial<TIDiccFieldMutateAC>>>;
-      }
-    | undefined;
+export interface IDiccModelMutateActionConfig {
   /**eliminar los campos virtuales del modelo */
   deleteAllVirtualField: boolean | undefined;
 }
 /**claves identificadoras del diccionario de
  * acciones de configuracion */
-export type TKeysDiccModelMutateActionConfigG =
-  keyof IDiccModelMutateActionConfigG;
+export type TKeysDiccModelMutateActionConfig =
+  keyof IDiccModelMutateActionConfig;
 /**tipado refactorizado de la clase */
 export type Trf_ModelLogicMutater = ModelLogicMutater;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -52,133 +30,58 @@ export type Trf_ModelLogicMutater = ModelLogicMutater;
  *
  */
 export class ModelLogicMutater<
-    TIDiccAC extends IDiccModelMutateActionConfigG = IDiccModelMutateActionConfigG
+    TIDiccAC extends IDiccModelMutateActionConfig = IDiccModelMutateActionConfig
   >
   extends StructureLogicMutater<TIDiccAC>
   implements
-    Record<TKeysDiccModelMutateActionConfigG, TStructureFnBagForActionModule>
+    Record<TKeysDiccModelMutateActionConfig, TStructureActionConfigFn<any>>
 {
-  /** configuracion de valores predefinidos para el modulo*/
+  /** configuración de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = StructureLogicMutater.getDefault();
     return {
       ...superDf,
-      dfDiccActionConfig: {
-        ...(superDf.dfDiccActionConfig as any),
-        mutateModel: {
-          modelForDiccAC: {},
-        },
+      diccActionConfig: {
+        ...(superDf.diccActionConfig as any),
         deleteAllVirtualField: true,
-      } as IDiccModelMutateActionConfigG,
+      } as IDiccModelMutateActionConfig,
       topPriorityKeysAction: [
         ...superDf.topPriorityKeysAction,
-      ] as Array<TKeysDiccModelMutateActionConfigG>,
+      ] as Array<TKeysDiccModelMutateActionConfig>,
       topMandatoryKeysAction: [
         ...superDf.topMandatoryKeysAction,
-      ] as Array<TKeysDiccModelMutateActionConfigG>,
+      ] as Array<TKeysDiccModelMutateActionConfig>,
     };
   };
   /** */
-  constructor() {
-    super("modelMutate");
+  constructor(baseConfig?: TModelMutateBaseConfig) {
+    super("modelMutate", baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return ModelLogicMutater.getDefault();
   }
-  protected override rebuildCustomConfigFromModuleContext(
-    currentContextConfig: TStructureMutateModuleConfigForModel<TIDiccAC>,
-    newContextConfig: TStructureMutateModuleConfigForModel<TIDiccAC>,
-    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
-  ): TStructureMutateModuleConfigForModel<TIDiccAC> {
-    const cCC = currentContextConfig;
-    const nCC = newContextConfig;
-    let rConfig: TStructureMutateModuleConfigForModel<TIDiccAC>;
-    if (!this.util.isObject(nCC)) {
-      rConfig = cCC;
+  /**... */
+  protected static buildInstanceForMetadata<
+    TModelMutateInstance extends ModelLogicMutater = ModelLogicMutater
+  >(preInstance: TModelMutateInstance): TModelMutateInstance {
+    const util = Module.util;
+    let inst: TModelMutateInstance;
+    if (util.isInstance(preInstance)) {
+      inst = preInstance;
     } else {
-      rConfig = {
-        ...nCC,
-        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
-          ? this.util.mergeDiccActionConfig(
-              [cCC.diccActionsConfig, nCC.diccActionsConfig],
-              {
-                mode: mergeMode,
-              }
-            )
-          : cCC.diccActionsConfig,
-      };
+      const { structureModuleFactory } =
+        Module._globalConfig_.diccModuleFactory;
+      inst = structureModuleFactory.makeModuleInstance(
+        "modelMutate",
+        preInstance as any
+      ) as any;
     }
-    //...aqui configuracion refinada:
-    return rConfig;
-  }
-  protected override getMetadataWithContextModule(
-    keyPath?: string
-  ): TStructureMetaAndMutater<any, any, ModelLogicMutater> {
-    return super.getMetadataWithContextModule(keyPath) as any;
-  }
-  protected override getMetadataOnlyModuleConfig(
-    keyPath?: string
-  ): TModelConfigForMutate<TIDiccAC> {
-    return super.getMetadataOnlyModuleConfig(keyPath);
+    return inst;
   }
   //================================================================================================================================
-  public async mutateModel(
-    bag: StructureBag<any>
-  ): Promise<IStructureResponse> {
-    const { data, criteriaHandler: cH } = bag;
-    const [keyAction, actionConfig] =
-      this.getTupleActionConfigFromCriteriaHandler(cH, "mutateModel");
-    const rH = this.buildReportHandler(bag, keyAction);
-    let res = rH.mutateResponse(undefined, { data });
-    let { modelForDiccAC } = actionConfig;
-    modelForDiccAC = this.util.isObject(modelForDiccAC) ? modelForDiccAC : {};
-    const mH = this.metadataHandler;
-    const modelMetadata =
-      mH.getExtractMetadataByStructureContext("structureModel");
-    const keysField = modelMetadata.__keysProp;
-    const promForField = keysField.map(async (keyField) => {
-      const fieldData = data[keyField];
-      const fieldMetadata = modelMetadata[keyField];
-      const fieldKeyPath = fieldMetadata.__keyPath;
-      const fieldMutateInst = mH.diccModuleInstanceContext
-        .fieldMutate as FieldLogicMutater;
-      const sub_cH = new StructureCriteriaHandler(mH, "structureField", {
-        keyPath: fieldKeyPath,
-        diccGlobalAC: modelForDiccAC[keyField as any] as any,
-      });
-      sub_cH.extractDiccByKeyModuleContext("fieldMutate");
-      const sub_Bag = new StructureBag(this.keySrc, "fieldBag", {
-        //❗el contexto es campo fieldBag❗
-        data: fieldData,
-        criteriaHandler: sub_cH as any,
-      });
-      const sub_rH = (fieldMutateInst as any as this) //❗hack❗ permite acceder a la propiedad protegida a las malas 🐱‍👤
-        .buildReportHandler(sub_Bag, EKeyActionGroupForRes.fields as any);
-      let resForField = sub_rH.mutateResponse(undefined, { data: fieldData });
-      for (const tKeysForReq of sub_cH.aTKeysGlobalActionConfig) {
-        const [keyModuleContext, sub_keyAction] = tKeysForReq;
-        const resForFieldForAction = (await LogicController.runActionRequest(
-          fieldMutateInst,
-          sub_Bag,
-          sub_keyAction
-        )) as IStructureResponse;
-        resForField.responses.push(resForFieldForAction);
-        if (resForFieldForAction.status > fieldMutateInst["globalTolerance"])
-          break; //😉 trampa `globalTolerance` es protected pero se llama asi para saltarse la proteccion
-      }
-      resForField = sub_rH.mutateResponse(resForField);
-      //mutacion de campo a modelo
-      res.data[keyField] = resForField.data;
-      return resForField;
-    });
-    const resesForField = await Promise.all(promForField);
-    res = rH.mutateResponse(res, {
-      responses: resesForField,
-    });
-    return res;
-  }
   public async deleteAllVirtualField(
-    bag: StructureBag<any>
+    criteriaHandler: StructureCriteriaHandler<any>
   ): Promise<IStructureResponse> {
     return res;
     // //Desempaquetar la accion e inicializar

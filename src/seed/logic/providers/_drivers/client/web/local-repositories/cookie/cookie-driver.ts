@@ -1,23 +1,19 @@
-import { Module } from "../../../../../../config/module";
-import {
-  IPrimitiveModifyCriteria,
-  IStructureModelModifyCriteria,
-} from "../../../../../../criterias/shared";
+import { Module } from "../../../../../../modules/module";
 import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../errors/logic-error";
-import { getStrategyGeneratorIdFnByKey } from "../../../../../../util/default-generators-id-fn";
-
 import {
-  IPrimitiveBagForDriver,
-  IStructureBagForDriver,
-} from "../../../../shared";
+  TPrimitiveModifyLiteralCriteria,
+  TPrimitiveReadLiteralCriteria,
+  TStructureModifyLiteralCriteria,
+  TStructureReadLiteralCriteria,
+} from "../../../../shared-types";
 import { LocalRepositoryDriver } from "../_local-repository-driver";
 import {
   TPrimitiveLocalRepositoryCustomQueryDriverFn,
   TStructureLocalRepositoryCustomQueryDriverFn,
-} from "../shared"; //❗Desde el padre❗
+} from "../shared-types"; //❗Desde el padre❗
 import {
   PrimitiveLibraryCookieQueryFn,
   StructureLibraryCookieQueryFn,
@@ -300,10 +296,10 @@ export class CookieDriver
     return;
   }
   //████ CRUD by Bag ████████████████████████████████████████████████████████████
-  protected override async primitiveReadByBag(
-    literalBag: IPrimitiveBagForDriver
+  protected override async primitiveReadByLiteralCriteria(
+    literalCriteria: TPrimitiveReadLiteralCriteria
   ) {
-    let { data, literalCriteria } = literalBag;
+    let { data } = literalCriteria;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
       literalCriteria
@@ -325,7 +321,7 @@ export class CookieDriver
           this,
           any
         >;
-      registers = await fn(this, literalBag, registers);
+      registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
     }
@@ -346,10 +342,10 @@ export class CookieDriver
     data = registers;
     return data;
   }
-  protected override async primitiveCreateByBag(
-    literalBag: IPrimitiveBagForDriver
+  protected override async primitiveCreateByLiteralCriteria(
+    literalCriteria: TPrimitiveModifyLiteralCriteria
   ) {
-    let { data, literalCriteria } = literalBag;
+    let { data } = literalCriteria;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
       literalCriteria
@@ -362,7 +358,8 @@ export class CookieDriver
     //verificar si ya esta creado
     const isExist = idxCData > -1;
     if (isExist) {
-      const { isCreateOrUpdate } = literalCriteria as IPrimitiveModifyCriteria;
+      const { isCreateOrUpdate } =
+        literalCriteria as TPrimitiveModifyLiteralCriteria;
       if (!isCreateOrUpdate) {
         //ya esta creado y no se permite su actualización
         throw new LogicError({
@@ -372,7 +369,7 @@ export class CookieDriver
           )} id has not created because exist`,
         });
       }
-      return await this.primitiveUpdateByBag(literalBag);
+      return await this.primitiveUpdateByLiteralCriteria(literalCriteria);
     }
     //selecciona el tipo de creación:
     const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
@@ -383,7 +380,7 @@ export class CookieDriver
           this,
           any
         >;
-      registers = await fn(this, literalBag, registers);
+      registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
       registers.push(data);
@@ -391,10 +388,10 @@ export class CookieDriver
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async primitiveUpdateByBag(
-    literalBag: IPrimitiveBagForDriver
+  protected override async primitiveUpdateByLiteralCriteria(
+    literalCriteria: TPrimitiveModifyLiteralCriteria
   ) {
-    let { data, literalCriteria } = literalBag;
+    let { data } = literalCriteria;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
       literalCriteria
@@ -407,7 +404,7 @@ export class CookieDriver
     const isExist = idxCData > -1;
     if (!isExist) {
       const { isCreateOrUpdate } =
-        literalCriteria as IPrimitiveModifyCriteria<any>;
+        literalCriteria as TPrimitiveModifyLiteralCriteria;
       if (!isCreateOrUpdate) {
         //no esta creado y no se permite su creación
         throw new LogicError({
@@ -417,7 +414,7 @@ export class CookieDriver
           )} id has not updated because not exist`,
         });
       }
-      return await this.primitiveCreateByBag(literalBag);
+      return await this.primitiveCreateByLiteralCriteria(literalCriteria);
     }
     //selecciona el tipo de actualización:
     const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
@@ -428,7 +425,7 @@ export class CookieDriver
           this,
           any
         >;
-      registers = await fn(this, literalBag, registers);
+      registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
       registers[idxCData] = data;
@@ -436,10 +433,10 @@ export class CookieDriver
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async primitiveDeleteByBag(
-    literalBag: IPrimitiveBagForDriver
+  protected override async primitiveDeleteByLiteralCriteria(
+    literalCriteria: TPrimitiveModifyLiteralCriteria
   ) {
-    let { data, literalCriteria } = literalBag;
+    let { data } = literalCriteria;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
       literalCriteria
@@ -460,7 +457,7 @@ export class CookieDriver
           this,
           any
         >;
-      registers = await fn(this, literalBag, registers);
+      registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
       registers.splice(fIdx, 1); //Eliminación
@@ -468,10 +465,10 @@ export class CookieDriver
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async structureReadByBag(
-    literalBagDriver: IStructureBagForDriver<any>
+  protected override async structureReadByLiteralCriteria(
+    literalCriteria: TStructureReadLiteralCriteria<any>
   ) {
-    let { data, literalCriteria } = literalBagDriver;
+    let { data } = literalCriteria;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
       literalCriteria
@@ -491,7 +488,7 @@ export class CookieDriver
           this,
           any
         >;
-      registers = await fn(this, literalBagDriver, registers);
+      registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
     }
@@ -512,10 +509,10 @@ export class CookieDriver
     data = registers;
     return data;
   }
-  protected override async structureCreateByBag(
-    literalBagDriver: IStructureBagForDriver<any>
+  protected override async structureCreateByLiteralCriteria(
+    literalCriteria: TStructureModifyLiteralCriteria<any>
   ) {
-    let { data, literalCriteria } = literalBagDriver;
+    let { data } = literalCriteria;
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
@@ -536,7 +533,7 @@ export class CookieDriver
     const isExist = idxCData > -1;
     if (isExist) {
       const { isCreateOrUpdate } =
-        literalCriteria as IStructureModelModifyCriteria<any>;
+        literalCriteria as TStructureModifyLiteralCriteria<any>;
       if (!isCreateOrUpdate) {
         //ya esta creado y no se permite su actualización
         throw new LogicError({
@@ -546,7 +543,7 @@ export class CookieDriver
           )} id has not created because exist`,
         });
       }
-      return await this.structureUpdateByBag(literalBagDriver);
+      return await this.structureUpdateByLiteralCriteria(literalCriteria);
     }
     //selecciona el tipo de creación:
     const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
@@ -557,22 +554,20 @@ export class CookieDriver
           this,
           any
         >;
-      registers = await fn(this, literalBagDriver, registers);
+      registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
       //creación de id:
-      const { strategyForIdBuild } = this._globalConfig_;
-      const buildIDFn = getStrategyGeneratorIdFnByKey(strategyForIdBuild);
-      data[kId] = buildIDFn(data[kId]);
+      data[kId] = this.buildStructureLocalId(registers, data[kId]);
       registers.push(data);
     }
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async structureUpdateByBag(
-    literalBagDriver: IStructureBagForDriver<any>
+  protected override async structureUpdateByLiteralCriteria(
+    literalCriteria: TStructureModifyLiteralCriteria<any>
   ) {
-    let { data, literalCriteria } = literalBagDriver;
+    let { data } = literalCriteria;
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
@@ -593,7 +588,7 @@ export class CookieDriver
     //verificar si no esta creado
     if (!isExist) {
       const { isCreateOrUpdate } =
-        literalCriteria as IStructureModelModifyCriteria<any>;
+        literalCriteria as TStructureModifyLiteralCriteria<any>;
       if (!isCreateOrUpdate) {
         //no esta creado y no se permite su creación
         throw new LogicError({
@@ -603,7 +598,7 @@ export class CookieDriver
           )} id has not updated because not exist`,
         });
       }
-      return await this.structureCreateByBag(literalBagDriver);
+      return await this.structureCreateByLiteralCriteria(literalCriteria);
     }
     //selecciona el tipo de actualización:
     const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
@@ -614,7 +609,7 @@ export class CookieDriver
           this,
           any
         >;
-      registers = await fn(this, literalBagDriver, registers);
+      registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
       registers[idxCData] = data;
@@ -622,10 +617,10 @@ export class CookieDriver
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async structureDeleteByBag(
-    literalBagDriver: IStructureBagForDriver<any>
+  protected override async structureDeleteByLiteralCriteria(
+    literalCriteria: TStructureModifyLiteralCriteria<any>
   ) {
-    let { data, literalCriteria } = literalBagDriver;
+    let { data } = literalCriteria;
     const kId = this.keyId;
     const keySrcContext = this.getKeySrcContext(
       this.srcSelector,
@@ -656,7 +651,7 @@ export class CookieDriver
           this,
           any
         >;
-      registers = await fn(this, literalBagDriver, registers);
+      registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
       registers.splice(idxCData, 1);

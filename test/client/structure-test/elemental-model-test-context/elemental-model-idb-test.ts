@@ -1,20 +1,20 @@
-import { IdbDriver } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/idb/_idb-driver";
+import { IdbDriver } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/idb/idb-driver";
 import {
   ELogicResStatusCode,
   IStructureResponse,
-} from "../../../../src/seed/logic/reports/shared";
+} from "../../../../src/seed/logic/reports/shared-types";
 import { Util_Test } from "../../../util-test";
 import { bd_valid, dataValid } from "./elemental-model-static-dummy-data-test";
 import {
-  buildElementalModelTestCtrl,
   ElementalModelTest,
+  getElementalModelTestCtrl,
 } from "./elemental-model-test";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const util = Util_Test.getInstance();
-const ctrl = buildElementalModelTestCtrl();
+const ctrl = getElementalModelTestCtrl();
 const nameLogicDriver = IdbDriver.getNameLogicDriver();
-const commonBaseCriteria = ctrl.getEmptyBaseModelCritera();
+const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
 commonBaseCriteria.diccGlobalAC = {
   structureProvider: { singleRunDriver: { nameLogicDriver } },
 };
@@ -26,8 +26,10 @@ export async function runToLocalIdb() {
   //====Crear todos los registros===========================
   //debe ser for clásico para que haga las esperas correspondientes a cada creación
   for (const data of bd_valid) {
-    res = await ctrl.modifyRequest("create", data, {
+    res = await ctrl.modifyRequest({
       ...commonBaseCriteria,
+      keyActionRequest: "create",
+      data,
     });
     util.showStructureResponseTest(
       {
@@ -46,8 +48,9 @@ export async function runToLocalIdb() {
     );
   }
   //====Leer todos los registros (para verificar) ===========================
-  res = await ctrl.readRequest("readAll", {
+  res = await ctrl.readRequest({
     ...commonBaseCriteria,
+    keyActionRequest: "readAll",
   });
   util.showStructureResponseTest(
     {
@@ -66,8 +69,9 @@ export async function runToLocalIdb() {
   );
   //████ Lecturas generales ████████████████████████████████████████████████████████████
   //====Leer todos los registros (con limite) ===========================
-  res = await ctrl.readRequest("readAll", {
+  res = await ctrl.readRequest({
     ...commonBaseCriteria,
+    keyActionRequest: "readAll",
     limit: 2, //solo 2
   });
   util.showStructureResponseTest(
@@ -86,8 +90,9 @@ export async function runToLocalIdb() {
     }
   );
   //====Leer todos los registros (con limite y paginación) ==============
-  res = await ctrl.readRequest("readAll", {
+  res = await ctrl.readRequest({
     ...commonBaseCriteria,
+    keyActionRequest: "readAll",
     limit: 2, //solo 2
     targetPageLogic: 1, //lógica de inicio de paginación en 1
     targetPage: 2, //pagina 2 (serian los _id === '3' y _id === '4')
@@ -108,8 +113,9 @@ export async function runToLocalIdb() {
     }
   );
   //====verificar existencia de registro (según diccionario de parámetros de consulta) ==============
-  res = await ctrl.readRequest("exist", {
+  res = await ctrl.readRequest({
     ...commonBaseCriteria,
+    keyActionRequest: "exist",
     diccQueryParam: { _pathDoc: "/1/" }, //buscar si existe este path?
   });
   util.showStructureResponseTest(
@@ -128,8 +134,9 @@ export async function runToLocalIdb() {
     }
   );
   //====verificar conteo de registro (según diccionario de parámetros de consulta) ==============
-  res = await ctrl.readRequest("count", {
+  res = await ctrl.readRequest({
     ...commonBaseCriteria,
+    keyActionRequest: "count",
     diccQueryParam: { _pathDoc: "/1/" }, //buscar si existe este path?
   });
   util.showStructureResponseTest(
@@ -147,8 +154,9 @@ export async function runToLocalIdb() {
       detail: `count the search by _pathDoc`,
     }
   );
-  res = await ctrl.readRequest("readById", {
+  res = await ctrl.readRequest({
     ...commonBaseCriteria,
+    keyActionRequest: "readById",
     diccQueryParam: { _id: "1" }, //buscar si existe este id?
   });
   util.showStructureResponseTest(
@@ -168,8 +176,10 @@ export async function runToLocalIdb() {
   );
   //████ Modificaciones generales ████████████████████████████████████████████████████████████
   let dt = dataValid;
-  res = await ctrl.modifyRequest("create", dt, {
+  res = await ctrl.modifyRequest({
     ...commonBaseCriteria,
+    keyActionRequest: "create",
+    data: dt,
   });
   util.showStructureResponseTest(
     {
@@ -186,13 +196,11 @@ export async function runToLocalIdb() {
       detail: `exists for the search by _pathDoc`,
     }
   );
-  res = await ctrl.modifyRequest(
-    "update",
-    { ...dt, _pathDoc: "      /100/       " }, //modificación con espacios para probar el modulo de mutación
-    {
-      ...commonBaseCriteria,
-    }
-  );
+  res = await ctrl.modifyRequest({
+    ...commonBaseCriteria,
+    keyActionRequest: "update",
+    data: { ...dt, _pathDoc: "      /100/       " }, //modificación con espacios para probar el modulo de mutación
+  });
   util.showStructureResponseTest(
     {
       data: res.data,
@@ -208,13 +216,11 @@ export async function runToLocalIdb() {
       detail: `exists for the search by _pathDoc`,
     }
   );
-  res = await ctrl.modifyRequest(
-    "delete",
-    { _id: dt._id, _pathDoc: undefined as any },
-    {
-      ...commonBaseCriteria,
-    }
-  );
+  res = await ctrl.modifyRequest({
+    ...commonBaseCriteria,
+    keyActionRequest: "delete",
+    data: { _id: dt._id, _pathDoc: undefined as any },
+  });
   util.showStructureResponseTest(
     {
       data: res.data,
@@ -231,8 +237,10 @@ export async function runToLocalIdb() {
     }
   );
   //████ Modificaciones invalidas ████████████████████████████████████████████████████████████
-  res = await ctrl.modifyRequest("create", dt, {
+  res = await ctrl.modifyRequest({
     ...commonBaseCriteria,
+    keyActionRequest: "create",
+    data: dt,
   });
   return;
 }

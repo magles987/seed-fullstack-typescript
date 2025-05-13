@@ -2,31 +2,34 @@ import { getGlobalConfig } from "../../../src/seed/logic/config/global-config";
 import {
   TKeyLogicContext,
   TKeySrcSelector,
-} from "../../../src/seed/logic/config/shared-modules";
+} from "../../../src/seed/logic/modules/shared-types";
 import {
   ELogicResStatusCode,
   IDriverResponse,
-} from "../../../src/seed/logic/reports/shared";
+} from "../../../src/seed/logic/reports/shared-types";
 import { Util_Test } from "../../util-test";
 import { QueryTool } from "../../../src/seed/logic/util/query-tool";
-import {
-  ICriteria,
-  IModifyCriteria,
-  IPrimitiveModifyCriteria,
-  IPrimitiveReadCriteria,
-  IReadCriteria,
-  IStructureModelModifyCriteria,
-  IStructureModelReadCriteria,
-} from "../../../src/seed/logic/criterias/shared";
 import {
   ELogicCodeError,
   LogicError,
 } from "../../../src/seed/logic/errors/logic-error";
-import { getStrategyGeneratorIdFnByKey } from "../../../src/seed/logic/util/default-generators-id-fn";
+import {
+  buildIdByStrategy,
+  isIdValid,
+  TOptionForAutoincrement,
+} from "../../../src/seed/logic/util/default-generators-id-fn";
 import {
   TPrimitiveMockCustomQueryDriverFn,
   TStructureMockCustomQueryDriverFn,
-} from "./shared";
+} from "./shared-types";
+import {
+  TPrimitiveLiteralCriteriaUnion,
+  TPrimitiveModifyLiteralCriteria,
+  TPrimitiveReadLiteralCriteria,
+  TStructureLiteralCriteriaUnion,
+  TStructureModifyLiteralCriteria,
+  TStructureReadLiteralCriteria,
+} from "../../../src/seed/logic/providers/_drivers/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type Trf_MicroBackend = MicroBackend;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -193,7 +196,10 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
   /**verifica si la data recibida corresponde la expectativa esperada*/
   protected checkRxData(
     rxData: any,
-    expectDataType: ICriteria["expectedDataType"]
+    expectDataType: (
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+    )["expectedDataType"]
   ): boolean {
     if (expectDataType === "boolean" && !this.util.isBoolean(rxData))
       return false;
@@ -210,15 +216,12 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
   /**... */
   public async receiveMockRequest(
     literalCriteria:
-      | IPrimitiveReadCriteria
-      | IPrimitiveModifyCriteria
-      | IStructureModelReadCriteria<any>
-      | IStructureModelModifyCriteria<any>,
-    data?: any
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
   ): Promise<IDriverResponse> {
     let driverRes: IDriverResponse;
     try {
-      let rxData = await this.selectCRUDRunByBag(literalCriteria, data);
+      let rxData = await this.selectCRUDRun(literalCriteria);
       driverRes = this.buildMicrobackendResponse(literalCriteria, rxData);
     } catch (error) {
       driverRes = this.buildMicrobackendResponse(
@@ -229,13 +232,36 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     }
     return driverRes;
   }
+  /**construir id si es necesario */
+  protected buildStructureMockId(
+    registers: any[],
+    possibleId: any,
+    customValidFn?: Function
+  ): any {
+    const { strategyForIdBuild } = this._globalConfig_;
+    const isId = isIdValid(possibleId, customValidFn as any);
+    if (!isId) {
+      let id;
+      if (strategyForIdBuild === "df_autoincrement") {
+        const kId = this.keyId;
+        //autoincremento tiene tratamiento especial
+        let ids = registers.map((reg) => reg[kId]).sort(); //ordenamiento básico
+        const option = {
+          lastId: this.util.getArrayItem(ids, -1),
+        } as TOptionForAutoincrement;
+        id = buildIdByStrategy(strategyForIdBuild, option);
+      } else {
+        id = buildIdByStrategy(strategyForIdBuild);
+      }
+      return id;
+    }
+    return possibleId;
+  }
   /**... */
   protected buildMicrobackendResponse(
     literalCriteria:
-      | IPrimitiveReadCriteria
-      | IPrimitiveModifyCriteria
-      | IStructureModelReadCriteria<any>
-      | IStructureModelModifyCriteria<any>,
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>,
     rxData: any,
     error?: any
   ): IDriverResponse {
@@ -272,39 +298,33 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
   }
   //████ CRUD by Bag ████████████████████████████████████████████████████████████
   /**... */
-  protected async selectCRUDRunByBag(
+  protected async selectCRUDRun(
     literalCriteria:
-      | IPrimitiveReadCriteria
-      | IPrimitiveModifyCriteria
-      | IStructureModelReadCriteria<any>
-      | IStructureModelModifyCriteria<any>,
-    data: any
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
   ): Promise<any> {
     const { type, keyLogicContext } = literalCriteria;
     let rxData: any;
     if (keyLogicContext === "primitive") {
       if (type === "read") {
-        const {} = literalCriteria as IReadCriteria;
-        rxData = await this.primitiveReadByBag(
-          literalCriteria as IPrimitiveReadCriteria,
-          data
+        const {} = literalCriteria as TPrimitiveReadLiteralCriteria;
+        rxData = await this.primitiveReadByLiteralCriteria(
+          literalCriteria as TPrimitiveReadLiteralCriteria
         );
       } else if (type === "modify") {
-        const { modifyType } = literalCriteria as IModifyCriteria;
+        const { modifyType } =
+          literalCriteria as TPrimitiveModifyLiteralCriteria;
         if (modifyType === "create") {
-          rxData = await this.primitiveCreateByBag(
-            literalCriteria as IPrimitiveModifyCriteria,
-            data
+          rxData = await this.primitiveCreateByLiteralCriteria(
+            literalCriteria as TPrimitiveModifyLiteralCriteria
           );
         } else if (modifyType === "update") {
-          rxData = await this.primitiveUpdateByBag(
-            literalCriteria as IPrimitiveModifyCriteria,
-            data
+          rxData = await this.primitiveUpdateByLiteralCriteria(
+            literalCriteria as TPrimitiveModifyLiteralCriteria
           );
         } else if (modifyType === "delete") {
-          rxData = await this.primitiveDeleteByBag(
-            literalCriteria as IPrimitiveModifyCriteria,
-            data
+          rxData = await this.primitiveDeleteByLiteralCriteria(
+            literalCriteria as TPrimitiveModifyLiteralCriteria
           );
         } else {
           throw new LogicError({
@@ -320,27 +340,24 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
       }
     } else if (keyLogicContext === "structure") {
       if (type === "read") {
-        const {} = literalCriteria as IReadCriteria;
-        rxData = await this.structureReadByBag(
-          literalCriteria as IStructureModelReadCriteria<any>,
-          data
+        const {} = literalCriteria as TStructureReadLiteralCriteria<any>;
+        rxData = await this.structureReadByBagLiteralCriteria(
+          literalCriteria as TStructureReadLiteralCriteria<any>
         );
       } else if (type === "modify") {
-        const { modifyType } = literalCriteria as IModifyCriteria;
+        const { modifyType } =
+          literalCriteria as TStructureModifyLiteralCriteria<any>;
         if (modifyType === "create") {
-          rxData = await this.structureCreateByBag(
-            literalCriteria as IStructureModelModifyCriteria<any>,
-            data
+          rxData = await this.structureCreateByLiteralCriteria(
+            literalCriteria as TStructureModifyLiteralCriteria<any>
           );
         } else if (modifyType === "update") {
-          rxData = await this.structureUpdateByBag(
-            literalCriteria as IStructureModelModifyCriteria<any>,
-            data
+          rxData = await this.structureUpdateByLiteralCriteria(
+            literalCriteria as TStructureModifyLiteralCriteria<any>
           );
         } else if (modifyType === "delete") {
-          rxData = await this.structureDeleteByBag(
-            literalCriteria as IStructureModelModifyCriteria<any>,
-            data
+          rxData = await this.structureDeleteByLiteralCriteria(
+            literalCriteria as TStructureModifyLiteralCriteria<any>
           );
         } else {
           throw new LogicError({
@@ -362,10 +379,10 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     }
     return rxData;
   }
-  protected async primitiveReadByBag(
-    literalCriteria: IPrimitiveReadCriteria,
-    data: any
+  protected async primitiveReadByLiteralCriteria(
+    literalCriteria: TPrimitiveReadLiteralCriteria
   ) {
+    let { data } = literalCriteria;
     let registers = await this.getData();
     registers = this.util.isNotUndefinedAndNotNull(registers)
       ? Array.isArray(registers)
@@ -397,10 +414,10 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     data = registers;
     return data;
   }
-  protected async primitiveCreateByBag(
-    literalCriteria: IPrimitiveModifyCriteria,
-    data: any
+  protected async primitiveCreateByLiteralCriteria(
+    literalCriteria: TPrimitiveModifyLiteralCriteria
   ) {
+    let { data } = literalCriteria;
     let registers = (await this.getData()) as any[];
     registers = Array.isArray(registers) ? registers : [registers];
     const idxCData = registers.findIndex((dt) =>
@@ -409,7 +426,8 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     //verificar si ya esta creado
     const isExist = idxCData > -1;
     if (isExist) {
-      const { isCreateOrUpdate } = literalCriteria as IPrimitiveModifyCriteria;
+      const { isCreateOrUpdate } =
+        literalCriteria as TPrimitiveModifyLiteralCriteria;
       if (!isCreateOrUpdate) {
         //ya esta creado y no se permite su actualización
         throw new LogicError({
@@ -419,7 +437,7 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
           )} id has not created because exist`,
         });
       }
-      return await this.primitiveUpdateByBag(literalCriteria, data);
+      return await this.primitiveUpdateByLiteralCriteria(literalCriteria);
     }
     //selecciona el tipo de creación:
     if (this.util.isFunction(this.customQueryFn)) {
@@ -433,10 +451,10 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     await this.setData(registers);
     return data;
   }
-  protected async primitiveUpdateByBag(
-    literalCriteria: IPrimitiveModifyCriteria,
-    data: any
+  protected async primitiveUpdateByLiteralCriteria(
+    literalCriteria: TPrimitiveModifyLiteralCriteria
   ) {
+    let { data } = literalCriteria;
     let registers = await this.getData();
     const idxCData = registers.findIndex((dt) =>
       this.util.isEquivalentTo([dt, data], {})
@@ -444,8 +462,7 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     //verificar si no esta creado
     const isExist = idxCData > -1;
     if (!isExist) {
-      const { isCreateOrUpdate } =
-        literalCriteria as IPrimitiveModifyCriteria<any>;
+      const { isCreateOrUpdate } = literalCriteria;
       if (!isCreateOrUpdate) {
         //no esta creado y no se permite su creación
         throw new LogicError({
@@ -455,7 +472,7 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
           )} id has not updated because not exist`,
         });
       }
-      return await this.primitiveCreateByBag(literalCriteria, data);
+      return await this.primitiveCreateByLiteralCriteria(literalCriteria);
     }
     //selecciona el tipo de actualización:
     if (this.util.isFunction(this.customQueryFn)) {
@@ -469,10 +486,10 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     await this.setData(registers);
     return data;
   }
-  protected async primitiveDeleteByBag(
-    literalCriteria: IPrimitiveModifyCriteria,
-    data: any
+  protected async primitiveDeleteByLiteralCriteria(
+    literalCriteria: TPrimitiveModifyLiteralCriteria
   ) {
+    let { data } = literalCriteria;
     let registers = (await this.getData()) as any[];
     registers = Array.isArray(registers) ? registers : [registers];
     const fIdx = registers.findIndex((dt) =>
@@ -492,10 +509,10 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     await this.setData(registers);
     return data;
   }
-  protected async structureReadByBag(
-    literalCriteria: IStructureModelReadCriteria<any>,
-    data: any
+  protected async structureReadByBagLiteralCriteria(
+    literalCriteria: TStructureReadLiteralCriteria<any>
   ) {
+    let { data } = literalCriteria;
     let registers = await this.getData();
     registers = this.util.isNotUndefinedAndNotNull(registers)
       ? Array.isArray(registers)
@@ -527,10 +544,10 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     data = registers;
     return data;
   }
-  protected async structureCreateByBag(
-    literalCriteria: IStructureModelModifyCriteria<any>,
-    data: any
+  protected async structureCreateByLiteralCriteria(
+    literalCriteria: TStructureModifyLiteralCriteria<any>
   ) {
+    let { data } = literalCriteria;
     const kId = this.keyId;
     if (!this.util.isObject(data)) {
       throw new LogicError({
@@ -556,7 +573,7 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
           )} id has not created because exist`,
         });
       }
-      return await this.structureUpdateByBag(literalCriteria, data);
+      return await this.structureUpdateByLiteralCriteria(literalCriteria);
     }
     //selecciona el tipo de creación:
     if (this.util.isFunction(this.customQueryFn)) {
@@ -566,18 +583,16 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     } else {
       //estándar
       //creación de id:
-      const { strategyForIdBuild } = this._globalConfig_;
-      const buildIDFn = getStrategyGeneratorIdFnByKey(strategyForIdBuild);
-      data[kId] = buildIDFn(data[kId]);
+      data[kId] = this.buildStructureMockId(registers, data[kId]);
       registers.push(data);
     }
     await this.setData(registers);
     return data;
   }
-  protected async structureUpdateByBag(
-    literalCriteria: IStructureModelModifyCriteria<any>,
-    data: any
+  protected async structureUpdateByLiteralCriteria(
+    literalCriteria: TStructureModifyLiteralCriteria<any>
   ) {
+    let { data } = literalCriteria;
     const kId = this.keyId;
     if (!this.util.isObject(data)) {
       throw new LogicError({
@@ -603,7 +618,7 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
           )} id has not updated because not exist`,
         });
       }
-      return await this.structureCreateByBag(literalCriteria, data);
+      return await this.structureCreateByLiteralCriteria(literalCriteria);
     }
     //selecciona el tipo de actualización:
     if (this.util.isFunction(this.customQueryFn)) {
@@ -617,10 +632,10 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     await this.setData(registers);
     return data;
   }
-  protected async structureDeleteByBag(
-    literalCriteria: IStructureModelModifyCriteria<any>,
-    data: any
+  protected async structureDeleteByLiteralCriteria(
+    literalCriteria: TStructureModifyLiteralCriteria<any>
   ) {
+    let { data } = literalCriteria;
     const kId = this.keyId;
     if (!this.util.isObject(data)) {
       throw new LogicError({

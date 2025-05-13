@@ -1,5 +1,5 @@
 import { UtilExtension } from "../../util/extension-util";
-import { getGlobalConfig } from "../config/global-config";
+import { getGlobalConfig } from "../config/index-barrel";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** @info <hr>

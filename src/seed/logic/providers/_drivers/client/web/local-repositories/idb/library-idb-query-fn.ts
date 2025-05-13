@@ -2,7 +2,7 @@ import {
   PrimitiveLibraryLocalRepositoryQueryFn,
   StructureLibraryLocalRepositoryQueryFn,
 } from "../library-local-repository-query-fn";
-import { IdbDriver } from "./_idb-driver";
+import { IdbDriver } from "./idb-driver";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *Singleton*
  *

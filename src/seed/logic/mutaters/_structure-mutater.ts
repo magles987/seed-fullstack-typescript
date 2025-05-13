@@ -1,17 +1,13 @@
-import { TStructureFnBagForActionModule } from "../bag/shared";
-import { Trf_StructureBag } from "../bag/structure-bag";
-import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { Trf_TStructureFieldMetaAndMutater } from "../meta/metadata-shared";
-import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
-import { IStructureResponse } from "../reports/shared";
+import {
+  TStructureActionConfigFn,
+  StructureCriteriaHandler,
+  Trf_StructureCriteriaHandler,
+} from "../criterias/index-barrel";
+import { Trf_StructureLogicMetadataHandler } from "../meta/index-barrel";
+import { IStructureResponse } from "../reports/shared-types";
 import { StructureReportHandler } from "../reports/structure-report-handler";
 import { LogicMutater } from "./_mutater";
-import {
-  TFieldConfigForMutate,
-  TKeyStructureDeepMutateModuleContext,
-  TModelConfigForMutate,
-} from "./shared";
+import { TKeyStructureDeepMutateModuleContext } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipado refactorizado de la clase */
 export type Trf_StructureLogicMutater = StructureLogicMutater<any>;
@@ -42,80 +38,19 @@ export abstract class StructureLogicMutater<
    * @param _keyStructureModuleContext contexto de acciones para este modulo estructurado
    */
   constructor(
-    private readonly _keyStructureModuleContext: TKeyStructureDeepMutateModuleContext
+    private readonly _keyStructureModuleContext: TKeyStructureDeepMutateModuleContext,
+    baseConfig?: Partial<
+      Pick<
+        ReturnType<StructureLogicMutater<TIDiccAC>["getDefault"]>,
+        "diccActionConfig" | "topMandatoryKeysAction" | "topPriorityKeysAction"
+      >
+    >
   ) {
-    super("structure");
+    super("structure", baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return StructureLogicMutater.getDefault();
-  }
-  protected override getMetadataWithContextModule(keyPath?: string): unknown {
-    let extractMetadataByContext: unknown;
-    if (this.keyModuleContext === "fieldMutate") {
-      extractMetadataByContext =
-        this.metadataHandler.getExtractMetadataByModuleContext(
-          "structureField",
-          "mutater",
-          keyPath
-        ) as any;
-    } else if (this.keyModuleContext === "modelMutate") {
-      if (this.util.isEmbeddedFromKeyPath(keyPath)) {
-        extractMetadataByContext =
-          this.metadataHandler.getExtractMetadataByModuleContext(
-            "structureEmbedded",
-            "mutater",
-            keyPath
-          ) as any;
-      } else {
-        extractMetadataByContext =
-          this.metadataHandler.getExtractMetadataByModuleContext(
-            "structureModel",
-            "mutater"
-          ) as any;
-      }
-    } else {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${this.keyModuleContext} does not module context valid`,
-      });
-    }
-    return extractMetadataByContext;
-  }
-  protected override getMetadataOnlyModuleConfig(keyPath?: string): unknown {
-    let config: unknown;
-    const metadata = this.getMetadataWithContextModule(keyPath);
-    if (this.keyModuleContext === "fieldMutate") {
-      const metadataField = metadata as Trf_TStructureFieldMetaAndMutater;
-      config = metadataField.__mutateConfig;
-    } else if (this.keyModuleContext === "modelMutate") {
-      const metadataInModel = metadata as Trf_TStructureFieldMetaAndMutater;
-      config = metadataInModel.__mutateConfig;
-    } else {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${this.keyModuleContext} does not module context valid`,
-      });
-    }
-    return config;
-  }
-  protected override getDiccMetadataActionConfig(keyPath?: string): TIDiccAC {
-    let diccAC: TIDiccAC;
-    const config = this.getMetadataOnlyModuleConfig(keyPath);
-    if (this.keyModuleContext === "fieldMutate") {
-      const configInField = (config as TFieldConfigForMutate<TIDiccAC>)
-        .fieldMutate;
-      diccAC = configInField.diccActionsConfig as TIDiccAC;
-    } else if (this.keyModuleContext === "modelMutate") {
-      const configInModel = (config as TModelConfigForMutate<TIDiccAC>)
-        .modelMutate;
-      diccAC = configInModel.diccActionsConfig as TIDiccAC;
-    } else {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${this.keyModuleContext} does not module context valid`,
-      });
-    }
-    return diccAC;
   }
   /**obtiene una función de acción de acuerdo a su clave identificadora
    * preparada para ser inyectada en el middleware
@@ -126,7 +61,7 @@ export abstract class StructureLogicMutater<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keyAction: TKeys): TStructureFnBagForActionModule;
+  >(keyAction: TKeys): TStructureActionConfigFn<any>;
   /**obtiene un array de funciones de accion de acuerdo a sus claves identificadoras
    * preparadas para ser inyectadas en el middleware
    *
@@ -136,7 +71,7 @@ export abstract class StructureLogicMutater<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keysAction: TKeys[]): Array<TStructureFnBagForActionModule>;
+  >(keysAction: TKeys[]): Array<TStructureActionConfigFn<any>>;
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
@@ -147,17 +82,18 @@ export abstract class StructureLogicMutater<
     keyAction: TKey
   ): [TKey, TIDiccAC[TKey]] {
     const tKeyGlobalAC = [this.keyModuleContext, keyAction];
-    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
-      tKeyGlobalAC as any
-    );
+    const actionConfig =
+      criteriaHandler.findGlobalActionByKeyModuleAndKeyAction(
+        tKeyGlobalAC as any
+      );
     return [keyAction, actionConfig];
   }
   protected override buildReportHandler(
-    bag: Trf_StructureBag,
+    criteriaHandler: StructureCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): StructureReportHandler {
-    const { data, criteriaHandler, firstData } = bag;
-    const { type, modifyType, keyPath, keyActionRequest } = criteriaHandler;
+    const { data, firstData, type, modifyType, keyPath, keyActionRequest } =
+      criteriaHandler;
     let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
@@ -177,17 +113,17 @@ export abstract class StructureLogicMutater<
     return rH;
   }
   public override preRunAction(
-    bag: Trf_StructureBag,
+    criteriaHandler: StructureCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): void {
-    super.preRunAction(bag, keyAction) as any;
+    super.preRunAction(criteriaHandler, keyAction) as any;
     return;
   }
   public override postRunAction(
-    bag: Trf_StructureBag,
+    criteriaHandler: StructureCriteriaHandler<any>,
     res: IStructureResponse
   ): void {
-    super.postRunAction(bag, res) as any;
+    super.postRunAction(criteriaHandler, res) as any;
     return;
   }
 }

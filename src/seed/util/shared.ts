@@ -19,6 +19,8 @@ export type TExtPrimitiveTypes =
   | "array"
   | "tuple"
   | "function";
+/**tipos de redondeo de número */
+export type TRoundType = "round" | "floor" | "ceil";
 /**tipado interno para permitir la recursividad en el método isValueType */
 interface IRecursiveObjectForTypes {
   [key: string]: TAExtValueType;

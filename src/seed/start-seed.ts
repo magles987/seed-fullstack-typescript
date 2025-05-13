@@ -1,19 +1,16 @@
 import {
   getGlobalConfig,
-  IGlobalConfig,
   setGlobalConfig,
-} from "./logic/config/global-config";
-import {
   setSeedEnvironment,
   ISeedEnvironment,
   getSeedEnvironment,
-} from "./logic/config/seed-environment";
+} from "./logic/config/index-barrel";
 import { UtilNative } from "./util/native-util";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export interface IStartConfig {
   envSeed: Partial<ISeedEnvironment>;
-  globalConfig: Partial<IGlobalConfig>;
+  globalConfig: Partial<ReturnType<typeof getGlobalConfig>>;
 }
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const CONFIG: IStartConfig = {

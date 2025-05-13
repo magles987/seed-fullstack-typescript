@@ -1,8 +1,11 @@
-import { Trf_BagModule } from "../bag/_bag";
-import { ActionModule, Module } from "../config/module";
-import { TKeyLogicContext } from "../config/shared-modules";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { ELogicResStatusCode, IResponse } from "../reports/shared";
+import {
+  TKeyLogicContext,
+  ActionModule,
+  Module,
+} from "../modules/index-barrel";
+import { CriteriaHandler } from "../criterias/index-barrel";
+import { ELogicCodeError, LogicError } from "../errors/index-barrel";
+import { ELogicResStatusCode, IResponse } from "../reports/index-barrel";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**calves identificadoras del los
  * drivers (librerias) a usar
@@ -26,8 +29,17 @@ export abstract class LogicMutater<TIDiccAC> extends ActionModule<TIDiccAC> {
   /**
    * @param keyLogicContext el contexto logico de esta libreria
    */
-  constructor(keyLogicContext: TKeyLogicContext) {
-    super("mutater", keyLogicContext);
+  constructor(
+    keyLogicContext: TKeyLogicContext,
+    baseConfig?: Partial<
+      Pick<
+        ReturnType<LogicMutater<TIDiccAC>["getDefault"]>,
+        "diccActionConfig" | "topMandatoryKeysAction" | "topPriorityKeysAction"
+      >
+    >
+  ) {
+    super("mutater", keyLogicContext, baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected getDefault() {
     return LogicMutater.getDefault();
@@ -75,14 +87,17 @@ export abstract class LogicMutater<TIDiccAC> extends ActionModule<TIDiccAC> {
     };
   }
   public override preRunAction(
-    bag: Trf_BagModule,
-    keyAction: keyof TIDiccAC
+    criteriaHandler: CriteriaHandler,
+    keyActionConfig: keyof TIDiccAC
   ): void {
     return;
   }
-  public override postRunAction(bag: Trf_BagModule, res: IResponse): void {
-    //mutar data de res a bag
-    bag.data = res.data;
+  public override postRunAction(
+    criteriaHandler: CriteriaHandler,
+    res: IResponse
+  ): void {
+    //mutar data de res a criteriaHandler
+    criteriaHandler.data = res.data;
     return;
   }
   /**

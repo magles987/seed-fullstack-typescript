@@ -1,19 +1,22 @@
-import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
+import { Module } from "../modules/index-barrel";
+import {
+  PrimitiveCriteriaHandler,
+  TPrimitiveActionConfigFn,
+  Trf_PrimitiveCriteriaHandler,
+} from "../criterias/index-barrel";
+import { Trf_PrimitiveLogicMetadataHandler } from "../meta/index-barrel";
+import {
+  IPrimitiveResponse,
+  PrimitiveReportHandler,
+} from "../reports/index-barrel";
 import { LogicHook } from "./_hook";
 import {
   TKeyPrimitiveHookModuleContext,
-  TPrimitiveConfigForHook,
-  TPrimitiveHookModuleConfigForPrimitive,
-} from "./shared";
-import { IPrimitiveResponse } from "../reports/shared";
-import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
-import { TPrimitiveMetaAndHook } from "../meta/metadata-shared";
-import { PrimitiveBag, Trf_PrimitiveBag } from "../bag/primitive-bag";
-import { TPrimitiveFnBagForActionModule } from "../bag/shared";
-import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
+  TPrimitiveHookBaseConfig,
+} from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del hook */
-export interface IDiccPrimitiveHookActionConfigG {
+export interface IDiccPrimitiveHookActionConfig {
   /**hook genérico para la lectura de documentos de un modelo*/
   read: boolean | undefined;
   /**hook genérico para la modificación de documentos de un modelo*/
@@ -21,64 +24,37 @@ export interface IDiccPrimitiveHookActionConfigG {
 }
 /**claves identificadoras del diccionario
  * de acciones de configuración */
-export type TKeysDiccPrimitiveHookActionConfigG =
-  keyof IDiccPrimitiveHookActionConfigG;
+export type TKeysDiccPrimitiveHookActionConfig =
+  keyof IDiccPrimitiveHookActionConfig;
 /**refactorizacion de la clase */
 export type Trf_PrimitiveLogicHook = PrimitiveLogicHook<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class PrimitiveLogicHook<
-    TIDiccAC extends IDiccPrimitiveHookActionConfigG = IDiccPrimitiveHookActionConfigG
+    TIDiccAC extends IDiccPrimitiveHookActionConfig = IDiccPrimitiveHookActionConfig
   >
   extends LogicHook<TIDiccAC>
   implements
-    Record<TKeysDiccPrimitiveHookActionConfigG, TPrimitiveFnBagForActionModule>
+    Record<TKeysDiccPrimitiveHookActionConfig, TPrimitiveActionConfigFn<any>>
 {
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = LogicHook.getDefault();
     return {
       ...superDf,
-      dfDiccActionConfig: {
-        ...(superDf.dfDiccActionConfig as any),
+      diccActionConfig: {
+        ...(superDf.diccActionConfig as any),
         modify: false,
         read: false,
-      } as IDiccPrimitiveHookActionConfigG,
+      } as IDiccPrimitiveHookActionConfig,
       topPriorityKeysAction: [
         ...superDf.topPriorityKeysAction,
-      ] as Array<TKeysDiccPrimitiveHookActionConfigG>,
+      ] as Array<TKeysDiccPrimitiveHookActionConfig>,
       topMandatoryKeysAction: [
         ...superDf.topMandatoryKeysAction,
-      ] as Array<TKeysDiccPrimitiveHookActionConfigG>,
+      ] as Array<TKeysDiccPrimitiveHookActionConfig>,
     };
   };
-  protected override rebuildCustomConfigFromModuleContext(
-    currentContextConfig: TPrimitiveHookModuleConfigForPrimitive<TIDiccAC>,
-    newContextConfig: TPrimitiveHookModuleConfigForPrimitive<TIDiccAC>,
-    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
-  ): TPrimitiveHookModuleConfigForPrimitive<TIDiccAC> {
-    const cCC = currentContextConfig;
-    const nCC = newContextConfig;
-    let rConfig: TPrimitiveHookModuleConfigForPrimitive<TIDiccAC>;
-    if (!this.util.isObject(nCC)) {
-      rConfig = cCC;
-    } else {
-      rConfig = {
-        ...nCC,
-        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
-          ? this.util.mergeDiccActionConfig(
-              [cCC.diccActionsConfig, nCC.diccActionsConfig],
-              {
-                mode: mergeMode,
-              }
-            )
-          : cCC.diccActionsConfig,
-      };
-    }
-    //...aqui configuracion refinada:
-    return rConfig;
-  }
-
   public override get metadataHandler(): Trf_PrimitiveLogicMetadataHandler {
     const mH = super.metadataHandler as Trf_PrimitiveLogicMetadataHandler;
     return mH;
@@ -92,27 +68,30 @@ export class PrimitiveLogicHook<
   /**
    * @param _keyPrimitiveModuleContext contexto de acciones para este modulo estructurado
    */
-  constructor() {
-    super("primitive");
+  constructor(baseConfig?: TPrimitiveHookBaseConfig) {
+    super("primitive", baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return PrimitiveLogicHook.getDefault();
   }
-  protected override getMetadataWithContextModule(): TPrimitiveMetaAndHook<PrimitiveLogicHook> {
-    const metadata =
-      this.metadataHandler.getExtractMetadataByModuleContext("hook");
-    return metadata;
-  }
-  protected override getMetadataOnlyModuleConfig(): TPrimitiveConfigForHook<TIDiccAC> {
-    const metadata =
-      this.getMetadataWithContextModule() as TPrimitiveMetaAndHook<PrimitiveLogicHook>;
-    let config = metadata.__hookConfig as TPrimitiveConfigForHook<TIDiccAC>;
-    return config as TPrimitiveConfigForHook<TIDiccAC>;
-  }
-  protected override getDiccMetadataActionConfig(): TIDiccAC {
-    const config = this.getMetadataOnlyModuleConfig();
-    const diccAC = config.primitiveHook.diccActionsConfig as TIDiccAC;
-    return diccAC;
+  /**... */
+  protected static buildInstanceForMetadata<
+    TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook
+  >(preInstance: TPrimitiveHookInstance): TPrimitiveHookInstance {
+    const util = Module.util;
+    let inst: TPrimitiveHookInstance;
+    if (util.isInstance(preInstance)) {
+      inst = preInstance;
+    } else {
+      const { primitiveModuleFactory } =
+        Module._globalConfig_.diccModuleFactory;
+      inst = primitiveModuleFactory.makeModuleInstance(
+        "primitiveHook",
+        preInstance as any
+      ) as any;
+    }
+    return inst;
   }
   /**obtiene una funcion de accion de acuerdo a su clave identificadora
    * preparada para ser inyectada en el middleware
@@ -123,7 +102,7 @@ export class PrimitiveLogicHook<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keyAction: TKeys): TPrimitiveFnBagForActionModule;
+  >(keyAction: TKeys): TPrimitiveActionConfigFn<any>;
   /**obtiene un array de funciones de accion de acuerdo a sus claves identificadoras
    * preparadas para ser inyectadas en el middleware
    *
@@ -133,7 +112,7 @@ export class PrimitiveLogicHook<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keysAction: TKeys[]): Array<TPrimitiveFnBagForActionModule>;
+  >(keysAction: TKeys[]): Array<TPrimitiveActionConfigFn<any>>;
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
@@ -144,17 +123,18 @@ export class PrimitiveLogicHook<
     keyAction: TKey
   ): [TKey, TIDiccAC[TKey]] {
     const tKeyGlobalAC = [this.keyModuleContext, keyAction];
-    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
-      tKeyGlobalAC as any
-    );
+    const actionConfig =
+      criteriaHandler.findGlobalActionByKeyModuleAndKeyAction(
+        tKeyGlobalAC as any
+      );
     return [keyAction, actionConfig];
   }
   protected override buildReportHandler(
-    bag: Trf_PrimitiveBag,
+    criteriaHandler: PrimitiveCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): PrimitiveReportHandler {
-    const { data, criteriaHandler, firstData } = bag;
-    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    const { data, firstData, type, modifyType, keyActionRequest } =
+      criteriaHandler;
     let rH = new PrimitiveReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
@@ -173,25 +153,27 @@ export class PrimitiveLogicHook<
     return rH;
   }
   public override preRunAction(
-    bag: Trf_PrimitiveBag,
+    criteriaHandler: PrimitiveCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): void {
-    super.preRunAction(bag, keyAction as any) as any;
+    super.preRunAction(criteriaHandler, keyAction as any) as any;
     return;
   }
   public override postRunAction(
-    bag: Trf_PrimitiveBag,
+    criteriaHandler: PrimitiveCriteriaHandler<any>,
     res: IPrimitiveResponse
   ): void {
-    super.postRunAction(bag, res) as any;
+    super.postRunAction(criteriaHandler, res) as any;
     return;
   }
   //================================================================
-  public async read(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
+  public async read(
+    criteriaHandler: PrimitiveCriteriaHandler<any>
+  ): Promise<IPrimitiveResponse> {
     return res;
     // //Desempaquetar la accion e inicializar
     // const { data, keyAction, keyPath, actionConfig } = this.adapBagForContext(
-    //   bag,
+    //   criteriaHandler,
     //   "isTypeOf"
     // );
     // const { isArray, fieldType } = actionConfig;
@@ -200,13 +182,15 @@ export class PrimitiveLogicHook<
     //   keyAction,
     //   keyPath,
     // });
-    // return await this.preNext(bag, res, next);
+    // return await this.preNext(criteriaHandler, res, next);
   }
-  public async modify(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
+  public async modify(
+    criteriaHandler: PrimitiveCriteriaHandler<any>
+  ): Promise<IPrimitiveResponse> {
     return res;
     // //Desempaquetar la accion e inicializar
     // const { data, keyAction, keyPath, actionConfig } = this.adapBagForContext(
-    //   bag,
+    //   criteriaHandler,
     //   "isTypeOf"
     // );
     // //const { } = actionConfig;
@@ -215,6 +199,6 @@ export class PrimitiveLogicHook<
     //   keyAction,
     //   keyPath,
     // });
-    // return await this.preNext(bag, res, next);
+    // return await this.preNext(criteriaHandler, res, next);
   }
 }

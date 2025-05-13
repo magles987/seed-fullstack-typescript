@@ -1,6 +1,5 @@
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { Model } from "../models/_model";
-import { Driver } from "../providers/_drivers/_driver";
 import { Util_Logic } from "./util-logic";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *Singleton*
@@ -263,7 +262,7 @@ export class Util_Module extends Util_Logic {
     }
     return aTupleAC;
   }
-  /**convierte un diccionario de acciones de configuracion
+  /**convierte un diccionario de acciones de configuración
    * a un array de tuplas y lo ordena de acuerdo a las prioridades*/
   public sortDiccActionConfigBySortKeys<TDiccAC>(
     diccAC: TDiccAC,
@@ -302,12 +301,12 @@ export class Util_Module extends Util_Logic {
   }
   /**
    * @param keyPath la ruta de la clave identificadora del recurso
-   * @returns si es o no embebido segun su path
+   * @returns si es un campo embebido o no
    */
-  public isEmbeddedFromKeyPath(keyPath: string | undefined): boolean {
+  public isEmbeddedFieldFromKeyPath(keyPath: string | undefined): boolean {
     if (!this.isString(keyPath)) return false;
     const cS = this.charSeparatorLogicPath;
-    const r = keyPath.split(cS).length > 1; //debe tener mas de un nivel
+    const r = keyPath.split(cS).length > 2; //debe tener mas de 2 niveles
     return r;
   }
   /**
@@ -329,7 +328,7 @@ export class Util_Module extends Util_Logic {
   public getKeySrcByKeyPath(keyPath: string): string {
     const sp = this.charSeparatorLogicPath;
     const aPath = keyPath.split(sp);
-    let r = aPath[0];
+    let r = this.getArrayItem(aPath, 0);
     return r;
   }
   /**
@@ -351,8 +350,7 @@ export class Util_Module extends Util_Logic {
   public getKeyLogicByKeyPath(keyPath: string): string {
     const sp = this.charSeparatorLogicPath;
     const aPath = keyPath.split(sp);
-    const lenAPath = aPath.length;
-    let r = aPath[lenAPath - 1];
+    let r = this.getArrayItem(aPath, -1);
     return r;
   }
 }

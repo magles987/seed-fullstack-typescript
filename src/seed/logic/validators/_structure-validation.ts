@@ -1,33 +1,30 @@
 import { LogicValidation } from "./_validation";
-import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
+import { Trf_StructureLogicMetadataHandler } from "../meta/index-barrel";
+import { TKeyStructureDeepValModuleContext } from "./shared-types";
 import {
-  TFieldConfigForVal,
-  TModelConfigForVal,
-  TKeyStructureDeepValModuleContext,
-} from "./shared";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { IStructureResponse } from "../reports/shared";
-import { StructureReportHandler } from "../reports/structure-report-handler";
+  StructureReportHandler,
+  IStructureResponse,
+} from "../reports/index-barrel";
 import {
-  Trf_TStructureFieldMetaAndValidator,
-  Trf_TStructureMetaAndValidator,
-} from "../meta/metadata-shared";
-import { StructureBag, Trf_StructureBag } from "../bag/structure-bag";
-import { Trf_StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
-import { TStructureFnBagForActionModule } from "../bag/shared";
+  StructureCriteriaHandler,
+  Trf_StructureCriteriaHandler,
+  TStructureActionConfigFn,
+} from "../criterias/index-barrel";
+
 //████Interfaz y tipo████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**refactorizacion de la clase */
+/**refactorización de la clase */
 export type Trf_StructureLogicValidation = StructureLogicValidation<any>;
 //████Clases████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export abstract class StructureLogicValidation<
   TIDiccAC
 > extends LogicValidation<TIDiccAC> {
-  /** configuracion de valores predefinidos para el modulo*/
+  /** configuración de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
     const superDf = LogicValidation.getDefault();
     return {
       ...superDf,
+      isRequiredSpecialConfig: undefined,
     };
   };
   public override get metadataHandler(): Trf_StructureLogicMetadataHandler {
@@ -39,6 +36,18 @@ export abstract class StructureLogicValidation<
   public override get keyModuleContext(): Trf_StructureLogicValidation["_keyStructureModuleContext"] {
     return this._keyStructureModuleContext;
   }
+  /**... */
+  private _isRequiredSpecialConfig: unknown;
+  public get isRequiredSpecialConfig(): unknown {
+    return this._isRequiredSpecialConfig;
+  }
+  protected set isRequiredSpecialConfig(v: unknown) {
+    this._isRequiredSpecialConfig = this.util.isObject(v)
+      ? v
+      : this._isRequiredSpecialConfig !== undefined
+      ? this._isRequiredSpecialConfig
+      : this.getDefault().isRequiredSpecialConfig;
+  }
   /**
    * @param _keyStructureModuleContext contexto de acciones para este modulo estructurado
    */
@@ -46,79 +55,19 @@ export abstract class StructureLogicValidation<
     private readonly _keyStructureModuleContext: Extract<
       TKeyStructureDeepValModuleContext,
       "fieldVal" | "modelVal"
+    >,
+    baseConfig?: Partial<
+      Pick<
+        ReturnType<StructureLogicValidation<TIDiccAC>["getDefault"]>,
+        "diccActionConfig" | "topMandatoryKeysAction" | "topPriorityKeysAction"
+      >
     >
   ) {
-    super("structure");
+    super("structure", baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return StructureLogicValidation.getDefault();
-  }
-  protected override getMetadataWithContextModule(keyPath?: string): unknown {
-    let extractMetadataByContext: unknown;
-    if (this.keyModuleContext === "fieldVal") {
-      extractMetadataByContext =
-        this.metadataHandler.getExtractMetadataByModuleContext(
-          "structureField",
-          "validator",
-          keyPath
-        ) as any;
-    } else if (this.keyModuleContext === "modelVal") {
-      if (this.util.isEmbeddedFromKeyPath(keyPath)) {
-        extractMetadataByContext =
-          this.metadataHandler.getExtractMetadataByModuleContext(
-            "structureEmbedded",
-            "validator",
-            keyPath
-          ) as any;
-      } else {
-        extractMetadataByContext =
-          this.metadataHandler.getExtractMetadataByModuleContext(
-            "structureModel",
-            "validator"
-          ) as any;
-      }
-    } else {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${this.keyModuleContext} does not module context valid`,
-      });
-    }
-    return extractMetadataByContext;
-  }
-  protected override getMetadataOnlyModuleConfig(keyPath?: string): unknown {
-    let config: unknown;
-    const metadata = this.getMetadataWithContextModule(keyPath);
-    if (this.keyModuleContext === "fieldVal") {
-      const metadataField = metadata as Trf_TStructureFieldMetaAndValidator;
-      config = metadataField.__valConfig;
-    } else if (this.keyModuleContext === "modelVal") {
-      const metadataModel = metadata as Trf_TStructureMetaAndValidator;
-      config = metadataModel.__valConfig;
-    } else {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${this.keyModuleContext} does not module context valid`,
-      });
-    }
-    return config;
-  }
-  protected override getDiccMetadataActionConfig(keyPath?: string): TIDiccAC {
-    let diccAC: TIDiccAC;
-    const config = this.getMetadataOnlyModuleConfig(keyPath);
-    if (this.keyModuleContext === "fieldVal") {
-      const configField = (config as TFieldConfigForVal<TIDiccAC>).fieldVal;
-      diccAC = configField.diccActionsConfig as TIDiccAC;
-    } else if (this.keyModuleContext === "modelVal") {
-      const configModel = (config as TModelConfigForVal<TIDiccAC, any>)
-        .modelVal;
-      diccAC = configModel.diccActionsConfig as TIDiccAC;
-    } else {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${this.keyModuleContext} does not module context valid`,
-      });
-    }
-    return diccAC;
   }
   /**obtiene una función de acción de acuerdo a su clave identificadora
    * preparada para ser inyectada en el middleware
@@ -129,7 +78,7 @@ export abstract class StructureLogicValidation<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keyAction: TKeys): TStructureFnBagForActionModule;
+  >(keyAction: TKeys): TStructureActionConfigFn<any>;
   /**obtiene un array de funciones de accion de acuerdo a sus claves identificadoras
    * preparadas para ser inyectadas en el middleware
    *
@@ -139,7 +88,7 @@ export abstract class StructureLogicValidation<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keysAction: TKeys[]): Array<TStructureFnBagForActionModule>;
+  >(keysAction: TKeys[]): Array<TStructureActionConfigFn<any>>;
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
@@ -150,17 +99,18 @@ export abstract class StructureLogicValidation<
     keyAction: TKey
   ): [TKey, TIDiccAC[TKey]] {
     const tKeyGlobalAC = [this.keyModuleContext, keyAction];
-    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
-      tKeyGlobalAC as any
-    );
+    const actionConfig =
+      criteriaHandler.findGlobalActionByKeyModuleAndKeyAction(
+        tKeyGlobalAC as any
+      );
     return [keyAction, actionConfig];
   }
   protected override buildReportHandler(
-    bag: Trf_StructureBag,
+    criteriaHandler: StructureCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): StructureReportHandler {
-    const { data, criteriaHandler, firstData } = bag;
-    const { type, modifyType, keyPath, keyActionRequest } = criteriaHandler;
+    const { data, firstData, type, modifyType, keyPath, keyActionRequest } =
+      criteriaHandler;
     let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
@@ -180,17 +130,17 @@ export abstract class StructureLogicValidation<
     return rH;
   }
   public override preRunAction(
-    bag: Trf_StructureBag,
-    keyAction: keyof TIDiccAC
+    criteriaHandler: StructureCriteriaHandler<any>,
+    keyActionConfig: keyof TIDiccAC
   ): void {
-    super.preRunAction(bag, keyAction) as any;
+    super.preRunAction(criteriaHandler, keyActionConfig) as any;
     return;
   }
   public override postRunAction(
-    bag: Trf_StructureBag,
+    criteriaHandler: StructureCriteriaHandler<any>,
     res: IStructureResponse
   ): void {
-    super.postRunAction(bag, res) as any;
+    super.postRunAction(criteriaHandler, res) as any;
     return;
   }
   /**... */
@@ -210,7 +160,7 @@ export abstract class StructureLogicValidation<
    */
   protected abstract checkEmptyDataWithRes(
     reportHandler: StructureReportHandler,
-    bag: StructureBag<any>,
+    criteriaHandler: StructureCriteriaHandler<any>,
     data: any
   ): IStructureResponse;
 }

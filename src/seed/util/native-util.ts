@@ -9,6 +9,7 @@ import {
   TAExtValueType,
   IValueTypeOption,
   TExtValueType,
+  TRoundType,
 } from "./shared";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
@@ -406,6 +407,49 @@ export class UtilNative {
     return r;
   }
   /**
+   * Determina si un número es impar. Si el número es decimal, se puede especificar un tipo de redondeo
+   * para ajustar su valor antes de la verificación.
+   *
+   * @param {number | string} num - Número a evaluar. Puede ser un número o una cadena representando un número.
+   * @param {boolean} allowString - Indica si se permite el uso de cadenas como números (`true` para permitirlo).
+   * @param {TRoundType | undefined} roundType - Define el tipo de redondeo (`undefined` para no aplicar ninguno).
+   * @returns {boolean} `true` si el número es impar, `false` en caso contrario.
+   *
+   * @throws "Invalid number format" Si `num` no es un número válido o cadena numérica.
+   *
+   * @example
+   * ````typescript
+   * const result1 = isOddNumber(7); // `true`
+   * const result2 = isOddNumber(4); // `false`
+   * const result3 = isOddNumber("9", true); // `true`
+   * const result4 = isOddNumber(4.8, false, "round"); // `true` porque se redondea a 5
+   * const result4 = isOddNumber(4.8, false, "floor"); // `false` porque se redondea a 4
+   * const result4 = isOddNumber(4.8, false, "ceil"); // `true` porque se redondea a 5
+   * ````
+   */
+  public isOddNumber(
+    num: number | string,
+    allowString = false,
+    roundType: TRoundType | undefined = undefined
+  ): boolean {
+    if (!this.isNumber(num, allowString, false)) return false;
+    //convertir posible string a numero
+    num = this.stringToNumber(num as any) as number;
+    //los impares solo pueden ser enteros
+    const isInteger = Number.isInteger(num);
+    if (isInteger) {
+      return num % 2 !== 0;
+    } else {
+      //verificar si se desea redondeo
+      if (roundType) {
+        num = this.roundNumber(roundType, num, 0); //debe ser a la unidad (no sub múltiplos ni sub divisores)
+        return num % 2 !== 0;
+      } else {
+        return false;
+      }
+    }
+  }
+  /**
    * Obtiene un reporte básico del tipo de número.
    *
    * @param {number | string} num - El número o cadena numérica a analizar.
@@ -589,13 +633,19 @@ export class UtilNative {
    * ```
    */
   public toggleNumberSign(
+    num: string | number,
+    allowString?: true
+  ): string | number;
+  public toggleNumberSign(num: number, allowString?: false): number;
+  public toggleNumberSign(
     num: number | string,
     allowString = false
   ): number | string {
     allowString = this.convertToBoolean(allowString);
     if (!this.isNumber(num, allowString)) num;
     let r: number | string;
-    if (!allowString) r = -num;
+    const isOnlyNumber = this.isNumber(num, false); //solo numero
+    if (!allowString || isOnlyNumber) r = -num;
     else r = `${-this.stringToNumber(num)}`;
     return r;
   }
@@ -2926,6 +2976,41 @@ export class UtilNative {
     return r;
   }
   /**
+   * Obtiene un elemento de un array utilizando índices negativos o positivos, asegurando compatibilidad con versiones anteriores.
+   *
+   * @param {TItem[]} arr El array del cual se obtendrá el elemento.
+   * @param {number} idx Índice del elemento a obtener. Puede ser negativo para acceder desde el final del array.
+   * @returns {TItem | undefined} Retorna el elemento correspondiente si el índice es válido, `undefined` de lo contrario.
+   *
+   * @example
+   * ```typescript
+   * let a = [10, 20, 30, 40, 50];
+   *
+   * // Índices positivos
+   * console.log(getItem(a, 2)); // salida `30`
+   *
+   * // Índices negativos
+   * console.log(getItem(a, -1)); // salida `50` (último elemento)
+   * console.log(getItem(a, -3)); // salida `30`
+   *
+   * // Índices fuera de rango
+   * console.log(getItem(a, -10)); // salida `undefined` (fuera de rango)
+   * console.log(getItem(a, 10));  // salida `undefined` (fuera de rango)
+   * ```
+   */
+  public getArrayItem<TItem>(arr: TItem[], idx: number): TItem | undefined {
+    if (
+      !this.isArray(arr, true) ||
+      !this.isNumber(idx, false) //por seguridad no permite strings numéricos
+    )
+      return undefined;
+    const len = arr.length;
+    //verificar que idx no este fuera del rango del tamaño del array
+    if (idx < -len || idx >= len) return undefined;
+    if (idx < 0) idx = len + idx;
+    return arr[idx];
+  }
+  /**
    * permite ordenar un array de booleanos, numeros, cadenas de texto o objetos, con opciones de direccion, eliminacion de duplicados entre otras
    *
    * **⚠⚠ Importante los pesos de los tipos ⚠⚠**
@@ -3844,14 +3929,81 @@ export class UtilNative {
     fn = (fn as Function).bind(context);
     return fn;
   }
+  /**
+   * Obtiene el nombre de una función a partir del índice inverso en el stack de llamadas.
+   *
+   * 🧪 Experimental, posibles problemas en entornos antiguos 🧪
+   *
+   * @param {number} idxReverse - Índice inverso en el stack de llamadas. **Debe ser negativo y no igual a `0`.**, ejemplos:
+   *    - `idxReverse === -1`, la funcion que se está usando actualmente.
+   *    - `idxReverse === -2`, la funcion "padre" que llamó o invocó a esta que se está ejecutando.
+   *    - `idxReverse === -3`, la funcion "abuelo" que llamó o invocó a la padre que a su vez llamó o invocó a esta que se está ejecutando.
+   * @returns {string | typeof this.dfValue} Retorna el nombre de la función o el valor predeterminado `this.dfValue` si no se encuentra un nombre válido.
+   *
+   * @throws {Error} "`<valor>` is not idx reverse valid" Si el parámetro `idxReverse` no es un número válido.
+   * @throws {Error} "`<valor>` is not negative idx reverse valid" Si el parámetro `idxReverse` no es un número negativo.
+   *
+   * @example
+   * ````typescript
+   * const util = UtilNative.getinstance();
+   * function hacer_1(){
+   *   const fnName = util.getFunctionName(-2); //❗Punto de referencia❗, -2 solicita en nombre de la funcion "padre" que llamó a esta
+   *   console.log(functionName); // Salida: "hacer_2"
+   *   return
+   * }
+   *
+   * function hacer_2(){
+   *   return hacer_1()
+   * }
+   *
+   * function hacer_3(){
+   *   return hacer_2()
+   * }
+   *
+   * hacer_3();
+   *
+   * ````
+   */
+  public getFunctionName(idxReverse: number): string | typeof this.dfValue {
+    if (!this.isNumber(idxReverse, true))
+      throw new Error(`${idxReverse} is not idx reverse valid`);
+    //❗Debe ser negativo y no 0❗
+    if (!this.isNumberSign(idxReverse, "-", false))
+      throw new Error(`${idxReverse} is not negative idx reverse valid`);
+    idxReverse = this.stringToNumber(idxReverse); //garantizar numérico
+    idxReverse = idxReverse - 1; //modificar el offset para no retornar el nombre de esta misma funcion
+    const idxToInject = this.toggleNumberSign(idxReverse, true) as number;
+    //procesar:
+    const error = new Error();
+    let stackLine = error.stack?.split("\n")[idxToInject]?.trim() || "";
+    // Expresión regular optimizada para todos los casos conocidos
+    const regex = /at\s+(?:[\w.]+\.)?([^(\s]+)|\(([^)]+)\)|([^\s]+)/;
+    const match = stackLine.match(regex);
+    // Extracción del nombre con prioridad
+    let functionName = this.dfValue as string;
+    if (match) {
+      functionName = match[1] || match[2] || match[3] || this.dfValue;
+      // Limpieza adicional para casos como "UtilNative.getNameFunction"
+      if (functionName.includes(".")) {
+        functionName = functionName.split(".").pop()!;
+      }
+      // Filtrado de casos como "<anonymous>", "eval", "[native code]"
+      const invalidNames = ["<anonymous>", "eval", "[native code]"];
+      if (invalidNames.includes(functionName)) {
+        functionName = this.dfValue;
+      }
+      // debe ser un nombre de funcion de acuerdo al estandar de definicion de nombres
+      if (!/^[a-zA-Z_$]\w*$/.test(functionName)) {
+        functionName = this.dfValue;
+      }
+    }
+    return functionName;
+  }
   //████ Generales ████████████████████████████████████████████████████
   /**
    * Realiza la clonación de objetos JSON o Arrays de JSONs a diferentes niveles de profundidad.
    *
-   * xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
    * ⚠ **NO** se puede clonar instancias de clase ⚠
-   * xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-   *
    *
    * @param {T} objOrArray El objeto a clonar. El tipo `T` se asume implícitamente al enviar el parámetro.
    * @param {"stringify" | "structuredClone"} driver `= "structuredClone"` el driver o libreria para hacer clonación.

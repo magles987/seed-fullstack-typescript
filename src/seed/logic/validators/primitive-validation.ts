@@ -1,23 +1,22 @@
-import { LogicValidation, TZodSchemaForClose } from "./_validation";
-import { TPrimitiveType } from "../meta/shared";
-import { TPrimitiveMetaAndValidator } from "../meta/metadata-shared";
+import { Module } from "../modules/index-barrel";
 import {
-  TKeyPrimitiveValModuleContext,
-  TPrimitiveConfigForVal,
-  TPrimitiveValModuleConfigForPrimitive,
-} from "./shared";
+  PrimitiveCriteriaHandler,
+  TPrimitiveActionConfigFn,
+  Trf_PrimitiveCriteriaHandler,
+} from "../criterias/index-barrel";
+import { Trf_PrimitiveLogicMetadataHandler } from "../meta/index-barrel";
+import { TPrimitiveType } from "../meta/shared-types";
 import {
   EKeyActionGroupForRes,
   ELogicResStatusCode,
   IPrimitiveResponse,
-} from "../reports/shared";
-import { PrimitiveBag, Trf_PrimitiveBag } from "../bag/primitive-bag";
-
-import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
-import { TPrimitiveFnBagForActionModule } from "../bag/shared";
-import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
+  PrimitiveReportHandler,
+} from "../reports/index-barrel";
+import { LogicValidation } from "./_validation";
+import {
+  TKeyPrimitiveValModuleContext,
+  TPrimitiveValBaseConfig,
+} from "./shared-types";
 
 //████tipos e interfaces████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipo exclusivo para adicionar una configuracion
@@ -41,28 +40,32 @@ type TisRequiredConfig = {
    */
   isEmptyObjectOrArrayAsValue?: boolean;
 };
+/**tipado para casos especiales del validador isTypeof
+ * (casos anónimos o que no tienen metadatos ) */
+type TITypeOf = {
+  /**tipo de dato (no array) */
+  primitiveType: TPrimitiveType;
+  /**si se debe considerar como array */
+  isArray: boolean;
+};
 /** define todas las propiedades de configuracion
  * de cada accion de validacion para  un campo
  * del modelo
  */
-export interface IDiccPrimitiveValActionConfigG {
+export interface IDiccPrimitiveValActionConfig {
   /**determina si el valor del campo
    * corresponde a el tipo configurado
    * en metadatos o si es de estos
    * tipos: `null`, `undefined`.
    *
-   * ❗esta validacion **SIEMPRE**
+   * ❗esta validación **SIEMPRE**
    * debe ejecutarse inicialmente❗
    *
    *
    */
-  isTypeOf: {
-    /**tipo de campo */
-    type: TPrimitiveType;
-    /**si el campo es array de tipos
-     * de campo (`fieldType`) */
-    isArray?: boolean;
-  }; //❗Siempre activa❗
+  isTypeOf:
+    | true //❗Siempre activa❗
+    | TITypeOf;
   /**determina si el valor actual del campo
    * es vacio
    *
@@ -74,7 +77,7 @@ export interface IDiccPrimitiveValActionConfigG {
    * `[]`
    * `{}`
    */
-  isRequired: boolean | TisRequiredConfig | undefined;
+  isRequired: boolean | TisRequiredConfig;
   // /**determina caracteres minimos y maximos
   //  * que puede tener un campo de tipo
   //  * string
@@ -227,8 +230,8 @@ export interface IDiccPrimitiveValActionConfigG {
           any,
           Array<
             [
-              keyof IDiccPrimitiveValActionConfigG,
-              IDiccPrimitiveValActionConfigG[keyof IDiccPrimitiveValActionConfigG]
+              keyof IDiccPrimitiveValActionConfig,
+              IDiccPrimitiveValActionConfig[keyof IDiccPrimitiveValActionConfig]
             ]
           > //tupla de acciones [keyAction, ActionConfig]
         >; //Modelo o esquema con los campos asinando a cada uno un array de diccionarios de acciones de configuracion (ADiccAC)
@@ -271,8 +274,8 @@ export interface IDiccPrimitiveValActionConfigG {
         /**array de diccionarios de acciones para cada elemento del array del dato*/
         aTupleAC: Array<
           [
-            keyof IDiccPrimitiveValActionConfigG,
-            IDiccPrimitiveValActionConfigG[keyof IDiccPrimitiveValActionConfigG]
+            keyof IDiccPrimitiveValActionConfig,
+            IDiccPrimitiveValActionConfig[keyof IDiccPrimitiveValActionConfig]
           ]
         >;
       }
@@ -280,29 +283,29 @@ export interface IDiccPrimitiveValActionConfigG {
 }
 /**claves identificadoras del diccionario
  * de acciones de configuracion */
-export type TKeysDiccPrimitiveValActionConfigG =
-  keyof IDiccPrimitiveValActionConfigG;
+export type TKeysDiccPrimitiveValActionConfig =
+  keyof IDiccPrimitiveValActionConfig;
 /**tipado refactorizado de la clase */
 export type Trf_PrimitiveLogicValidation = PrimitiveLogicValidation;
 //████Clases████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class PrimitiveLogicValidation<
-    TIDiccAC extends IDiccPrimitiveValActionConfigG = IDiccPrimitiveValActionConfigG
+    TIDiccAC extends IDiccPrimitiveValActionConfig = IDiccPrimitiveValActionConfig
   >
   extends LogicValidation<TIDiccAC>
   implements
-    Record<TKeysDiccPrimitiveValActionConfigG, TPrimitiveFnBagForActionModule>
+    Record<TKeysDiccPrimitiveValActionConfig, TPrimitiveActionConfigFn<any>>
 {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = LogicValidation.getDefault();
     return {
       ...superDf,
-      dfDiccActionConfig: {
-        ...(superDf.dfDiccActionConfig as any),
+      diccActionConfig: {
+        ...(superDf.diccActionConfig as any),
         isTypeOf: {
           isArray: false,
-          type: "string",
+          primitiveType: "string",
         },
         isRequired: false,
         isAnonimusObject: {
@@ -313,54 +316,55 @@ export class PrimitiveLogicValidation<
         isAnonimusArray: {
           aTupleAC: [],
         },
-      } as IDiccPrimitiveValActionConfigG,
+      } as IDiccPrimitiveValActionConfig,
       topPriorityKeysAction: [
         ...superDf.topPriorityKeysAction,
         "isTypeOf",
         "isRequired",
-      ] as Array<TKeysDiccPrimitiveValActionConfigG>,
+      ] as Array<TKeysDiccPrimitiveValActionConfig>,
       topMandatoryKeysAction: [
         ...superDf.topMandatoryKeysAction,
-      ] as Array<TKeysDiccPrimitiveValActionConfigG>,
-      dfIsRequiredSpecialConfig: {
+      ] as Array<TKeysDiccPrimitiveValActionConfig>,
+      isRequiredSpecialConfig: {
         isNullAsValue: false,
         isEmptyObjectOrArrayAsValue: false,
       } as TisRequiredConfig,
     };
   };
+  /**... */
+  private _isRequiredSpecialConfig: TisRequiredConfig;
+  public get isRequiredSpecialConfig(): TisRequiredConfig {
+    return this._isRequiredSpecialConfig;
+  }
+  protected set isRequiredSpecialConfig(v: TisRequiredConfig) {
+    this._isRequiredSpecialConfig = this.util.isObject(v)
+      ? v
+      : this._isRequiredSpecialConfig !== undefined
+      ? this._isRequiredSpecialConfig
+      : this.getDefault().isRequiredSpecialConfig;
+  }
   /** */
-  constructor() {
-    super("primitive");
+  constructor(baseConfig?: TPrimitiveValBaseConfig) {
+    super("primitive", baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return PrimitiveLogicValidation.getDefault();
   }
-  protected override rebuildCustomConfigFromModuleContext(
-    currentContextConfig: TPrimitiveValModuleConfigForPrimitive<TIDiccAC>,
-    newContextConfig: TPrimitiveValModuleConfigForPrimitive<TIDiccAC>,
-    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
-  ): TPrimitiveValModuleConfigForPrimitive<TIDiccAC> {
-    const cCC = currentContextConfig;
-    const nCC = newContextConfig;
-    let rConfig: TPrimitiveValModuleConfigForPrimitive<TIDiccAC>;
-    if (!this.util.isObject(nCC)) {
-      rConfig = cCC;
+  /** */
+  protected static buildInstanceForMetadata<
+    TPrimitiveValInstance extends PrimitiveLogicValidation = PrimitiveLogicValidation
+  >(preInstance: TPrimitiveValInstance): TPrimitiveValInstance {
+    const util = Module.util;
+    let inst: TPrimitiveValInstance;
+    if (util.isInstance(preInstance)) {
+      inst = preInstance;
+    } else if (util.isObject(preInstance, true)) {
+      inst = new PrimitiveLogicValidation(preInstance) as TPrimitiveValInstance;
     } else {
-      rConfig = {
-        ...nCC,
-        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
-          ? this.util.mergeDiccActionConfig(
-              [cCC.diccActionsConfig, nCC.diccActionsConfig],
-              {
-                mode: mergeMode,
-                //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
-              }
-            )
-          : cCC.diccActionsConfig,
-      };
+      inst = new PrimitiveLogicValidation() as TPrimitiveValInstance;
     }
-    //...aqui configuracion refinada:
-    return rConfig;
+    return inst;
   }
   public override get metadataHandler(): Trf_PrimitiveLogicMetadataHandler {
     const mH = super.metadataHandler as Trf_PrimitiveLogicMetadataHandler;
@@ -372,25 +376,6 @@ export class PrimitiveLogicValidation<
   public override get keyModuleContext(): TKeyPrimitiveValModuleContext {
     return "primitiveVal";
   }
-  protected override getMetadataWithContextModule(): TPrimitiveMetaAndValidator<PrimitiveLogicValidation> {
-    const metadata =
-      this.metadataHandler.getExtractMetadataByModuleContext("validator");
-    return metadata as any;
-  }
-  protected override getMetadataOnlyModuleConfig(): TPrimitiveConfigForVal<
-    TIDiccAC,
-    any
-  > {
-    const metadata = this.getMetadataWithContextModule();
-    const config = metadata.__valConfig;
-    return config as TPrimitiveConfigForVal<TIDiccAC, any>;
-  }
-  protected override getDiccMetadataActionConfig(): TIDiccAC {
-    const config = this.getMetadataOnlyModuleConfig();
-    const configPrimitive = config.primitiveVal;
-    const diccAC = configPrimitive.diccActionsConfig as TIDiccAC;
-    return diccAC;
-  }
   /**obtiene una función de acción de acuerdo a su clave identificadora
    * preparada para ser inyectada en el middleware
    *
@@ -400,7 +385,7 @@ export class PrimitiveLogicValidation<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keyAction: TKeys): TPrimitiveFnBagForActionModule;
+  >(keyAction: TKeys): TPrimitiveActionConfigFn<any>;
   /**obtiene un array de funciones de accion de acuerdo a sus claves identificadoras
    * preparadas para ser inyectadas en el middleware
    *
@@ -410,7 +395,7 @@ export class PrimitiveLogicValidation<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keysAction: TKeys[]): Array<TPrimitiveFnBagForActionModule>;
+  >(keysAction: TKeys[]): Array<TPrimitiveActionConfigFn<any>>;
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
@@ -421,17 +406,18 @@ export class PrimitiveLogicValidation<
     keyAction: TKey
   ): [TKey, TIDiccAC[TKey]] {
     const tKeyGlobalAC = [this.keyModuleContext, keyAction];
-    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
-      tKeyGlobalAC as any
-    );
+    const actionConfig =
+      criteriaHandler.findGlobalActionByKeyModuleAndKeyAction(
+        tKeyGlobalAC as any
+      );
     return [keyAction, actionConfig];
   }
   protected override buildReportHandler(
-    bag: Trf_PrimitiveBag,
+    criteriaHandler: PrimitiveCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): PrimitiveReportHandler {
-    const { data, criteriaHandler, firstData } = bag;
-    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    const { data, firstData, type, modifyType, keyActionRequest } =
+      criteriaHandler;
     let rH = new PrimitiveReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
@@ -450,17 +436,17 @@ export class PrimitiveLogicValidation<
     return rH;
   }
   public override preRunAction(
-    bag: Trf_PrimitiveBag,
+    criteriaHandler: PrimitiveCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): void {
-    super.preRunAction(bag, keyAction as any) as any;
+    super.preRunAction(criteriaHandler, keyAction as any) as any;
     return;
   }
   public override postRunAction(
-    bag: Trf_PrimitiveBag,
+    criteriaHandler: PrimitiveCriteriaHandler<any>,
     res: IPrimitiveResponse
   ): void {
-    super.postRunAction(bag, res) as any;
+    super.postRunAction(criteriaHandler, res) as any;
     return;
   }
   protected checkEmptyData(
@@ -469,7 +455,7 @@ export class PrimitiveLogicValidation<
   ): boolean {
     specialEmptyConfig = this.util.isObject(specialEmptyConfig)
       ? specialEmptyConfig
-      : this.getDefault().dfIsRequiredSpecialConfig;
+      : this.getDefault().isRequiredSpecialConfig;
     const { isNullAsValue, isEmptyObjectOrArrayAsValue } = specialEmptyConfig;
     let isEmpty = false;
     //posibilidades de falta de datos
@@ -489,11 +475,11 @@ export class PrimitiveLogicValidation<
   }
   protected checkEmptyDataWithRes(
     reportHandler: PrimitiveReportHandler,
-    bag: PrimitiveBag<any>
+    criteriaHandler: PrimitiveCriteriaHandler<any>
   ): IPrimitiveResponse {
-    const { criteriaHandler, data } = bag;
+    const { data } = criteriaHandler;
     const tKeyGlobalAC = [this.keyModuleContext, "isRequired"];
-    const isRequired = criteriaHandler.getGlobalActionByTKeyGlobalAC(
+    const isRequired = criteriaHandler.findGlobalActionByKeyModuleAndKeyAction(
       tKeyGlobalAC as any
     );
     const isEmpty = this.checkEmptyData(data, isRequired as any);
@@ -515,45 +501,58 @@ export class PrimitiveLogicValidation<
     return res;
   }
   //================================================================
-  public async isTypeOf(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
+  public async isTypeOf(
+    criteriaHandler: PrimitiveCriteriaHandler<any>
+  ): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler } = bag;
+    const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(criteriaHandler, "isTypeOf");
-    const rH = this.buildReportHandler(bag, keyAction);
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    const { isArray, type } = actionConfig;
+    //❗tratamiento especial, dependiendo de la fuente de
+    // configuración (metadatos (normalemnte) o anonimos)❗
+    let primitiveType: TPrimitiveType;
+    let isArray: boolean;
+    if (this.util.isObject(actionConfig)) {
+      primitiveType = (actionConfig as TITypeOf).primitiveType;
+      isArray = (actionConfig as TITypeOf).isArray;
+    } else {
+      const mH = this.metadataHandler;
+      const fieldMeta = mH.getExtractMetadataByModuleContext("metadata");
+      isArray = fieldMeta.__isArray;
+      primitiveType = fieldMeta.__type;
+    }
     //❗❗❗isTypeof no necesita saber si es dato vacio o no❗❗❗
-    //validaciones primitivas con zod:
-    let zodCursor: TZodSchemaForClose;
+    let isValid: boolean;
+    //❗OBLIGATORIO iniciar las evaluación con array❗
     if (isArray === true)
-      zodCursor = this.zod.optional(this.zod.array(this.zod.any())).nullable();
-    else if (type === "boolean")
-      zodCursor = this.zod.optional(this.zod.boolean()).nullable();
-    else if (type === "number")
-      zodCursor = this.zod.optional(this.zod.number()).nullable();
-    else if (type === "bigint")
-      zodCursor = this.zod.optional(this.zod.bigint()).nullable();
-    else if (type === "string")
-      zodCursor = this.zod.optional(this.zod.string()).nullable();
-    else if (type === "string-RegExp")
-      zodCursor = this.zod.optional(this.zod.string()).nullable();
-    else if (type === "string-Date")
-      zodCursor = this.zod.optional(this.zod.string()).nullable();
-    else if (type === "timestamp")
-      zodCursor = this.zod.optional(this.zod.number()).nullable();
-    else if (type === "symbol")
-      zodCursor = this.zod.optional(this.zod.symbol()).nullable();
-    //else if(__fieldType === "undefined") zodCursor = this.zod.undefined();
-    //else if(__fieldType === "null") zodCursor = this.zod.null();
-    else if (type === "object")
-      zodCursor = this.zod.optional(this.zod.object({})).nullable();
-    else if (type === "structure")
-      zodCursor = this.zod.optional(this.zod.object({})).nullable();
-    else if (type === "_system")
-      zodCursor = this.zod.any(); //❗Aqui es generico❗
-    else zodCursor = data === null ? this.zod.null() : this.zod.undefined(); //❗Por default solo aceptaria `undefined` y `null` rechazando todo lo demas ❗
-    let isValid = zodCursor.safeParse(data).success;
+      isValid = this.util.isValueType(data, ["undefined", "null", "array"]);
+    else if (primitiveType === "boolean")
+      isValid = this.util.isValueType(data, ["undefined", "null", "boolean"]);
+    else if (primitiveType === "number")
+      isValid = this.util.isValueType(data, ["undefined", "null", "number"]);
+    else if (primitiveType === "bigint")
+      isValid = this.util.isValueType(data, ["undefined", "null", "bigint"]);
+    else if (primitiveType === "string")
+      isValid = this.util.isValueType(data, ["undefined", "null", "string"]);
+    else if (primitiveType === "string-RegExp")
+      isValid = this.util.isValueType(data, ["undefined", "null", "string"]);
+    else if (primitiveType === "string-Date")
+      isValid = this.util.isValueType(data, ["undefined", "null", "string"]);
+    else if (primitiveType === "timestamp")
+      isValid = this.util.isValueType(data, ["undefined", "null", "number"]);
+    else if (primitiveType === "symbol")
+      isValid = this.util.isValueType(data, ["undefined", "null", "symbol"]);
+    else if (primitiveType === "object")
+      isValid = this.util.isValueType(data, ["undefined", "null", "object"]);
+    else if (primitiveType === "structure")
+      isValid = this.util.isValueType(data, ["undefined", "null", "object"]);
+    // else if (fieldType === "function")
+    //   isValid = this.util.isValueType(data, ["undefined", "null", "function"]);
+    else if (primitiveType === "_system")
+      isValid = this.util.isNotUndefinedAndNotNull(data);
+    else isValid = this.util.isUndefinedOrNull(data); //❗Por default solo aceptaría `undefined` o `null`, rechazando todo lo demás ❗
     //finalizar, siguiente accion o reportar
     if (isValid === false) {
       res = rH.mutateResponse(res, {
@@ -562,24 +561,24 @@ export class PrimitiveLogicValidation<
     }
     return res;
   }
-  public async isRequired(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
+  public async isRequired(
+    criteriaHandler: PrimitiveCriteriaHandler<any>
+  ): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler } = bag;
+    const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
         "isRequired"
       );
-    const rH = this.buildReportHandler(bag, keyAction);
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     //❗se verifica el vacion sin res❗
     const isEmptyData = this.checkEmptyData(
       data,
       actionConfig as TisRequiredConfig
     );
-    //validacion personalizada con zod para requerido:
-    let zodCursor = this.zod.unknown().refine(() => !isEmptyData);
-    let isValid = zodCursor.safeParse(data).success;
+    let isValid = !isEmptyData;
     //finalizar, siguiente accion o reportar
     if (isValid === false) {
       res = rH.mutateResponse(res, {
@@ -589,21 +588,21 @@ export class PrimitiveLogicValidation<
     return res;
   }
   public async isAnonimusObject(
-    bag: PrimitiveBag<any>
+    criteriaHandler: PrimitiveCriteriaHandler<any>
   ): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler } = bag;
+    const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
         "isAnonimusObject"
       );
-    const rH = this.buildReportHandler(bag, keyAction);
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     let { anonimuSchemaForATupleAC, isAllowedExtraProp } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(rH, bag);
+    res = this.checkEmptyDataWithRes(rH, criteriaHandler);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
     if (!this.util.isObject(anonimuSchemaForATupleAC)) {
@@ -614,7 +613,7 @@ export class PrimitiveLogicValidation<
       return res;
     }
     const keysPropSchema = Object.keys(anonimuSchemaForATupleAC);
-    //analisis de propiedades adicionales al esquema
+    //análisis de propiedades adicionales al esquema
     if (!isAllowedExtraProp) {
       const keysData = Object.keys(data);
       const keysDiff = this.util.getArrayDifference(
@@ -637,15 +636,7 @@ export class PrimitiveLogicValidation<
         keyLogic: keyProp,
         keyAction: EKeyActionGroupForRes.props,
       });
-      const subBag = new PrimitiveBag(this.keySrc, {
-        data: subData,
-        aTupleGlobalActionConfig:
-          bag.buildATupleModuleContextActionConfigFromATupleAC(
-            this,
-            aTupleAC as any[]
-          ),
-        criteriaHandler: bag.criteriaHandler,
-      });
+
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];
         let actionFn = this.getActionFnByKey(keyAction as any);
@@ -660,21 +651,21 @@ export class PrimitiveLogicValidation<
     return res;
   }
   public async isAnonimusArray(
-    bag: PrimitiveBag<any>
+    criteriaHandler: PrimitiveCriteriaHandler<any>
   ): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler } = bag;
+    const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
         "isAnonimusArray"
       );
-    const rH = this.buildReportHandler(bag, keyAction);
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     let { aTupleAC } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(rH, bag);
+    res = this.checkEmptyDataWithRes(rH, criteriaHandler);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
     if (!this.util.isArray(data, true)) {
@@ -692,15 +683,7 @@ export class PrimitiveLogicValidation<
         keyLogic: keyIdx,
         keyAction: EKeyActionGroupForRes.items,
       });
-      const subBag = new PrimitiveBag(this.keySrc, {
-        data: subData,
-        aTupleGlobalActionConfig:
-          bag.buildATupleModuleContextActionConfigFromATupleAC(
-            this,
-            aTupleAC as any[]
-          ),
-        criteriaHandler: bag.criteriaHandler,
-      });
+
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];
         let actionFn = this.getActionFnByKey(keyAction as any);

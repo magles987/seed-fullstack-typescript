@@ -1,163 +1,97 @@
-import { TKeyLogicContext } from "../config/shared-modules";
-import { ELogicResStatusCode, IResponse } from "../reports/shared";
-import { ActionModule, LogicModuleWithReport } from "../config/module";
-import { BagModule } from "../bag/_bag";
-import { IBuilderBaseCtrl } from "./builder-ctrl-shared";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { TFnBagForActionModule } from "../bag/shared";
-import { LogicMetadataHandler } from "../meta/_metadata-handler";
+import { ActionModule, TKeyLogicContext } from "../modules/index-barrel";
+import { TTGlobalActionConfig } from "../criterias/index-barrel";
+import { ELogicResStatusCode } from "../reports/index-barrel";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/** define todas las propiedades de configuración
+ * de cada acción  para este modulo
+ */
+export interface IDiccCtrlActionConfig {
+  /** */
+  readRequest: boolean;
+  /** */
+  modifyRequest: boolean;
+}
+/**claves identificadoras del diccionario de acciones de configuración */
+export type TKeysDiccCtrlActionConfig = keyof IDiccCtrlActionConfig;
 /**refactorización de la clase*/
-export type Trf_LogicController = LogicController;
+export type Trf_LogicController = LogicController<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
  * base controller
  */
-export abstract class LogicController extends LogicModuleWithReport {
+export abstract class LogicController<TIDiccAC> extends ActionModule<TIDiccAC> {
   public static getDefault = () => {
-    const superDf = LogicModuleWithReport.getDefault();
+    const superDf = ActionModule.getDefault();
     return {
       ...superDf,
       status: ELogicResStatusCode.VALID_DATA, //personalizada para validación
       globalTolerance: ELogicResStatusCode.INVALID_DATA, //tolerancia a partir de invalida para validaciones
+      diccActionConfig: {
+        ...(superDf.diccActionConfig as any),
+        readRequest: true,
+        modifyRequest: true,
+      } as IDiccCtrlActionConfig,
     };
   };
   /**clave identificadora del contexto */
   public abstract get keyModuleContext(): unknown;
   /**
-   * @param keyLogicContext configuracion de
+   * @param keyLogicContext configuración de
    * inicialización
-   * @param baseConfigMetadata configuracion base de metadatos
-   * (es un objeto literal no el manejador)
    */
   constructor(
     keyLogicContext: TKeyLogicContext,
-    baseConfigMetadata: IBuilderBaseCtrl<any, any>
+    baseConfig?: Partial<
+      Pick<
+        ReturnType<LogicController<TIDiccAC>["getDefault"]>,
+        "diccActionConfig" | "topMandatoryKeysAction" | "topPriorityKeysAction"
+      >
+    >
   ) {
     super("controller", keyLogicContext);
-    if (!this.util.isObject(baseConfigMetadata, false)) {
-      throw new LogicError({
-        code: ELogicCodeError.NOT_VALID,
-        msn: `${baseConfigMetadata} is not metadata base object valid`,
-      });
-    }
-    this.keySrc = baseConfigMetadata.keySrc;
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return LogicController.getDefault();
   }
-  /**... */
-  public getDiccModuleInstance() {
-    const mH = this.metadataHandler;
-    const diccMI = (mH as LogicMetadataHandler).diccModuleInstanceContext;
-    return diccMI;
-  }
-  /**micro hook embebido que se ejecuta antes de ejecutar la accion
-   *
-   * @param bag
-   * @param keyAction
-   * @returns el objeto bag (posiblemente mutado)
-   */
-  protected preRunAction(bag: unknown, keyAction: unknown): void {
+  public override preRunAction(
+    criteriaHandler: unknown,
+    keyActionConfig: unknown
+  ): void {
     return;
   }
-  /**micro hook embebido que se ejecuta despues de ejecutar la accion
-   *
-   * @param bag
-   * @param res
-   * @returns el objeto res (posiblemente mutado), el bag puede tambien mutarse
-   */
-  protected postRunAction(bag: unknown, res: unknown): void {
-    //mutar data de res a bag
-    bag["data"] = res["data"];
+  public override postRunAction(criteriaHandler: unknown, res: unknown): void {
+    //mutar data de res a criteriaHandler
+    criteriaHandler["data"] = res["data"];
     return;
   }
   /**propiedad especial que simula una acción genérica para el controller */
-  protected abstract actionCtrl: TFnBagForActionModule;
-  /**
-   * @param actionModuleInstContext
-   * @param bag
-   * @param keyAction
-   * @returns
-   */
-  public static async runActionRequest(
-    actionModuleInstContext: ActionModule<any>,
-    bag: BagModule,
-    keyAction: any
-  ): Promise<IResponse> {
-    let res: IResponse = undefined;
-    const { keyModule } = actionModuleInstContext;
-    let actionFn: TFnBagForActionModule;
-    if (
-      keyModule === "mutater" ||
-      keyModule === "validator" ||
-      keyModule === "hook" ||
-      keyModule === "provider"
-    )
-      actionFn = actionModuleInstContext.getActionFnByKey(keyAction);
-    else if (keyModule === "controller")
-      actionFn = (
-        actionModuleInstContext as any as LogicController
-      ).actionCtrl.bind(actionModuleInstContext);
-    else {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${keyModule} is not key module valid`,
-      });
-    }
-    if (typeof actionFn !== "function") {
-      throw new LogicError({
-        code: ELogicCodeError.MODULE_ERROR,
-        msn: `${actionFn} is not action function valid`,
-      });
-    }
-    actionModuleInstContext.preRunAction(bag, keyAction) as any;
-    res = await actionFn(bag);
-    actionModuleInstContext.postRunAction(bag, res);
-    return res;
-  }
+  protected abstract runCommonActionRequest(
+    keyActionConfig: unknown,
+    criteriaHandler: unknown
+  ): Promise<unknown>;
   /**verifica si la acción es permitida ejecutarla, se gun las condiciones necesarias
    *
-   *  - Debe existir la tupla de `[keyModuleContext, keyAction]` bien configurada.
+   *  - Debe existir la tupla de `[keyModuleContext, keyActionConfig]` bien configurada.
    *  - El diccionario de configuraciones debe estar bien configurado
    *  - La configuración asignada a esa acción no puede ser `undefined` o `null`
    *
-   * @param tKeyGlobalAC tupla formada conformada por:
+   * @param tGlobalActionConfig tupla formada conformada por:
    *  - `[0]` clave identificadora del modulo en contexto (`keyModuleContext`).
-   *  - `[1]` clave identificadora de la acción (`keyAction`)
-   * @param diccGlobalAC diccionario con las configuraciones de acciones globales (**ya deben esta fusionadas**)
+   *  - `[1]` clave identificadora de la acción (`keyActionConfig`)
+   *  - `[2]` acoin de configuración
    *
    * @returns si es o no permitido la ejecución de la acción
    */
   protected isAllowRunAction(
-    tKeyGlobalAC: [string, string],
-    diccGlobalAC: object
+    tGlobalActionConfig: TTGlobalActionConfig<any>
   ): boolean {
     let r = false;
-    if (
-      !this.util.isTuple(tKeyGlobalAC, 2) ||
-      !this.util.isObject(diccGlobalAC)
-    )
-      return r;
-    const [keyModuleContext, keyAction] = tKeyGlobalAC;
-    const diccAC = diccGlobalAC[keyModuleContext as any];
-    if (!this.util.isObject(diccAC)) return r;
-    const actionConfig = diccAC[keyAction];
+    if (!this.util.isTuple(tGlobalActionConfig, 3)) return r;
+    const [keyModuleContext, keyActionConfig, actionConfig] =
+      tGlobalActionConfig;
     r = this.util.isNotUndefinedAndNotNull(actionConfig);
     return r;
-  }
-  /**... */
-  protected async runActionRequest(
-    actionModuleInstContext: ActionModule<any>,
-    bag: BagModule,
-    keyAction: any
-  ): Promise<IResponse> {
-    const res = (await LogicController.runActionRequest(
-      actionModuleInstContext,
-      bag,
-      keyAction
-    )) as IResponse;
-    return res;
   }
   /**
    * @returns el estado de respuesta reducido

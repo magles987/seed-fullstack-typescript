@@ -1,23 +1,23 @@
 import { WebDriver } from "../_web-driver";
-import { IBagForDriver } from "../../../shared";
 import { EncryptAndCompressDataHandler } from "../../../../../util/encripter-handler";
 import { CriteriaHandler } from "../../../../../criterias/_criteria-handler";
 import { ELogicCodeError, LogicError } from "../../../../../errors/logic-error";
 import {
   ELogicResStatusCode,
   IDriverResponse,
-} from "../../../../../reports/shared";
-import {
-  IModifyCriteria,
-  IReadCriteria,
-} from "../../../../../criterias/shared";
-import { TUrlActionType } from "./shared";
+} from "../../../../../reports/shared-types";
+import { TUrlActionType } from "./shared-types";
 import {
   EHttpRangeStatusCode,
   EHttpStatusCode,
   TKeyHttpMethod,
 } from "../../../../../util/http-tool";
-import { Module } from "../../../../../config/module";
+import { Module } from "../../../../../modules/module";
+import {
+  TPrimitiveLiteralCriteriaUnion,
+  TStructureLiteralCriteriaUnion,
+  TStructureModifyLiteralCriteria,
+} from "../../../shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
@@ -179,8 +179,12 @@ export abstract class HttpDriver
   public override getLiteral(): ReturnType<HttpDriver["getDefault"]> {
     return super.getLiteral() as any;
   }
-  protected override preRequestFromService(bagDriver: IBagForDriver): void {
-    super.preRequestFromService(bagDriver);
+  protected override preRequestFromService(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+  ): void {
+    super.preRequestFromService(literalCriteria);
     return;
   }
   protected override postRequestFromService(driverRes: IDriverResponse): void {
@@ -188,19 +192,22 @@ export abstract class HttpDriver
     return;
   }
   /**obtiene un string con la accion CRUD generica que se añadirá a la url
-   * @param criteria el objeto literal con los criterios de la solicutud
+   * @param literalCriteria el objeto literal con los criterios de la solicutud
    * @returns string de la accion
    */
-  private getUrlActionFromBag(
-    criteria: IBagForDriver["literalCriteria"]
+  private getUrlActionFromLiteralCriteria(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
   ): string {
-    const { type, modifyType, keyActionRequest } = criteria as IReadCriteria &
-      IModifyCriteria;
+    const { type, keyActionRequest } = literalCriteria;
     let urlAction: string = undefined;
     if (this.urlActionType === "basic") {
       if (type === "read") {
         urlAction = type;
       } else if (type === "modify") {
+        const { modifyType } =
+          literalCriteria as TStructureModifyLiteralCriteria<any>;
         if (!this.util.isString(modifyType)) {
           throw new LogicError({
             code: ELogicCodeError.MODULE_ERROR,
@@ -225,7 +232,11 @@ export abstract class HttpDriver
     return urlAction;
   }
   /**... */
-  private getUrlSrcFromBag(criteria: IBagForDriver["literalCriteria"]): string {
+  private getUrlSrcFromLiteralCriteria(
+    criteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+  ): string {
     const { p_Key, s_Key } = criteria;
     let urlSrc = "";
     if (this.srcSelector === "singular") urlSrc = s_Key;
@@ -239,8 +250,10 @@ export abstract class HttpDriver
     return urlSrc;
   }
   /**... */
-  private getUrlCriteriaFromBag(
-    literalCriteria: IBagForDriver["literalCriteria"]
+  private getUrlCriteriaFromLiteralCriteria(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
   ): string {
     const eH = EncryptAndCompressDataHandler.getInstance();
     let slimLC = CriteriaHandler.toSlimLiteralCriteriaForSend(
@@ -250,12 +263,14 @@ export abstract class HttpDriver
     return urlCriteria;
   }
   /**... */
-  protected getUrlBodyPartsFromBag(
-    criteria: IBagForDriver["literalCriteria"]
+  protected getUrlBodyPartsFromLiteralCriteria(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
   ): string[] {
-    const urlSrc = this.getUrlSrcFromBag(criteria);
-    const urlAction = this.getUrlActionFromBag(criteria);
-    const urlCriteria = this.getUrlCriteriaFromBag(criteria);
+    const urlSrc = this.getUrlSrcFromLiteralCriteria(literalCriteria);
+    const urlAction = this.getUrlActionFromLiteralCriteria(literalCriteria);
+    const urlCriteria = this.getUrlCriteriaFromLiteralCriteria(literalCriteria);
     let urlBodyParts: string[] = [urlSrc, urlAction, urlCriteria];
     return urlBodyParts;
   }
@@ -365,18 +380,21 @@ export abstract class HttpDriver
     return logicStatusCode;
   }
   /**obtiene el método http correspondiente a la solicitud
-   * @param criteria el objeto literal con los criterios de la solicitud
+   * @param literalCriteria el objeto literal con los criterios de la solicitud
    * @returns el método http correspondiente a la solicitud
    */
-  protected getHttpMethodFromCriteria(
-    criteria: IBagForDriver["literalCriteria"]
+  protected getHttpMethodFromLiteralCriteria(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
   ): TKeyHttpMethod {
     let httpMethod: TKeyHttpMethod;
-    const { type } = criteria;
+    const { type } = literalCriteria;
     if (type === "read") {
       httpMethod = "GET";
     } else if (type === "modify") {
-      const { modifyType } = criteria as IModifyCriteria;
+      const { modifyType } =
+        literalCriteria as TStructureModifyLiteralCriteria<any>;
       if (modifyType === "create") httpMethod = "POST";
       else if (modifyType === "update") httpMethod = "PUT";
       else if (modifyType === "delete") httpMethod = "DELETE";

@@ -1,19 +1,24 @@
-import { http, HttpHandler, HttpResponse, RequestHandler } from "msw";
+import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
-import { beforeAll, afterEach, afterAll } from "vitest";
+import { afterAll, afterEach, beforeAll } from "vitest";
+import { getSeedEnvironment } from "../../../src/seed/logic/config/index-barrel";
+import { LogicController } from "../../../src/seed/logic/controllers/_controller";
+import {
+  PrimitiveLogicController,
+  StructureLogicController,
+} from "../../../src/seed/logic/controllers/index-barrel";
 import {
   TKeyLogicContext,
   TKeySrcSelector,
-} from "../../../src/seed/logic/config/shared-modules";
-import { LogicController } from "../../../src/seed/logic/controllers/_controller";
-import { getSeedEnvironment } from "../../../src/seed/logic/config/seed-environment";
-import { MicroBackend } from "./microbackend";
+} from "../../../src/seed/logic/modules/index-barrel";
+import {
+  HttpDriver,
+  TPrimitiveLiteralCriteriaUnion,
+  TStructureReadLiteralCriteria,
+} from "../../../src/seed/logic/providers/_drivers/index-barrel";
+import { EncryptAndCompressDataHandler } from "../../../src/seed/logic/util/index-barrel";
 import { Util_Test } from "../../util-test";
-import { HttpDriver } from "../../../src/seed/logic/providers/_drivers/client/web/https/_https-driver";
-import { EncryptAndCompressDataHandler } from "../../../src/seed/logic/util/encripter-handler";
-import { IBagForDriver } from "../../../src/seed/logic/providers/_drivers/shared";
-import { StructureLogicController } from "../../../src/seed/logic/controllers/structure-ctrl";
-import { PrimitiveLogicController } from "../../../src/seed/logic/controllers/primitive-ctrl";
+import { MicroBackend } from "./microbackend";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
@@ -68,12 +73,16 @@ export class MockServerHandler<TData> {
       http.get(
         `${this.urlBase}/${this.keyUrlSrc}/${_read_}/*`,
         async ({ request, params, cookies }) => {
-          const literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
+          //const data = await request.json(); //get NO recibe body
+          let literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
             params[idxCriteriaParam] as string
-          ) as IBagForDriver["literalCriteria"];
+          ) as
+            | TPrimitiveLiteralCriteriaUnion
+            | TStructureReadLiteralCriteria<any>;
+          //fusionar la data a los criterios
+          //literalCriteria = { ...literalCriteria, data };
           const driverResponse = await mBackend.receiveMockRequest(
-            literalCriteria,
-            undefined
+            literalCriteria
           );
           return HttpResponse.json(driverResponse);
         }
@@ -82,12 +91,15 @@ export class MockServerHandler<TData> {
         `${this.urlBase}/${this.keyUrlSrc}/${_create_}/*`,
         async ({ request, params, cookies }) => {
           const data = await request.json();
-          const literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
+          let literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
             params[idxCriteriaParam] as string
-          ) as IBagForDriver["literalCriteria"];
+          ) as
+            | TPrimitiveLiteralCriteriaUnion
+            | TStructureReadLiteralCriteria<any>;
+          //fusionar la data a los criterios
+          literalCriteria = { ...literalCriteria, data };
           const driverResponse = await mBackend.receiveMockRequest(
-            literalCriteria,
-            data
+            literalCriteria
           );
           return HttpResponse.json(driverResponse);
         }
@@ -96,12 +108,15 @@ export class MockServerHandler<TData> {
         `${this.urlBase}/${this.keyUrlSrc}/${_update_}/*`,
         async ({ request, params, cookies }) => {
           const data = await request.json();
-          const literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
+          let literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
             params[idxCriteriaParam] as string
-          ) as IBagForDriver["literalCriteria"];
+          ) as
+            | TPrimitiveLiteralCriteriaUnion
+            | TStructureReadLiteralCriteria<any>;
+          //fusionar la data a los criterios
+          literalCriteria = { ...literalCriteria, data };
           const driverResponse = await mBackend.receiveMockRequest(
-            literalCriteria,
-            data
+            literalCriteria
           );
           return HttpResponse.json(driverResponse);
         }
@@ -110,12 +125,15 @@ export class MockServerHandler<TData> {
         `${this.urlBase}/${this.keyUrlSrc}/${_delete_}/*`,
         async ({ request, params, cookies }) => {
           const data = await request.json();
-          const literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
+          let literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
             params[idxCriteriaParam] as string
-          ) as IBagForDriver["literalCriteria"];
+          ) as
+            | TPrimitiveLiteralCriteriaUnion
+            | TStructureReadLiteralCriteria<any>;
+          //fusionar la data a los criterios
+          literalCriteria = { ...literalCriteria, data };
           const driverResponse = await mBackend.receiveMockRequest(
-            literalCriteria,
-            data
+            literalCriteria
           );
           return HttpResponse.json(driverResponse);
         }
@@ -147,9 +165,12 @@ export class MockServerHandler<TData> {
     this.keyLogicContext = this.ctrl.keyLogicContext;
     this.db_collection = db_collection;
     if (this.keyLogicContext === "primitive") {
-      const ctrl = this.ctrl as PrimitiveLogicController<any>;
+      const ctrl = this.ctrl as unknown as PrimitiveLogicController<any>;
       const mH = ctrl.metadataHandler;
-      const driver = mH.getDriverByName(nameLogicDriver) as HttpDriver;
+      const pH = mH.getInstanceModuleByModuleContext("provider");
+      const driver = pH.getDriverByNameLogicDriver(
+        nameLogicDriver
+      ) as HttpDriver;
       this.urlConfig = {
         urlActionType: driver.urlActionType,
         urlPrefix: driver.urlPrefix,
@@ -165,9 +186,15 @@ export class MockServerHandler<TData> {
           ? (metadata.__P_Key as string)
           : (metadata.__S_Key as string);
     } else if (this.keyLogicContext === "structure") {
-      const ctrl = this.ctrl as StructureLogicController<any>;
+      const ctrl = this.ctrl as unknown as StructureLogicController<any>;
       const mH = ctrl.metadataHandler;
-      const driver = mH.getDriverByName(nameLogicDriver) as HttpDriver;
+      const pH = mH.getInstanceModuleByModuleContext(
+        "structureModel",
+        "provider"
+      );
+      const driver = pH.getDriverByNameLogicDriver(
+        nameLogicDriver
+      ) as HttpDriver;
       this.urlConfig = {
         urlActionType: driver.urlActionType,
         urlPrefix: driver.urlPrefix,

@@ -1,5 +1,5 @@
 import lodash from "lodash";
-import { TKeyLogicContext } from "../config/shared-modules";
+import { TKeyLogicContext } from "../modules/shared-types";
 import {
   ELogicOperatorForCondition,
   ELogicOperatorForGroup,
@@ -8,8 +8,7 @@ import {
   ISingleCondition,
   IStructureModelReadCriteria,
   TAConds,
-} from "../criterias/shared";
-import { IBagForDriver } from "../providers/_drivers/shared";
+} from "../criterias/shared-types";
 import { Util_Logic } from "./util-logic";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *Singleton*

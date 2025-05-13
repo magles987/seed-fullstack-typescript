@@ -1,16 +1,24 @@
-import { getGlobalConfig } from "../../../../../config/global-config";
-import { Module } from "../../../../../config/module";
-import {
-  IModifyCriteria,
-  IReadCriteria,
-} from "../../../../../criterias/shared";
+import { getGlobalConfig } from "../../../../../config/index-barrel";
+import { Module } from "../../../../../modules/module";
 import { ELogicCodeError, LogicError } from "../../../../../errors/logic-error";
 import {
   ELogicResStatusCode,
   IDriverResponse,
-} from "../../../../../reports/shared";
+} from "../../../../../reports/shared-types";
+import {
+  buildIdByStrategy,
+  isIdValid,
+  TOptionForAutoincrement,
+} from "../../../../../util/default-generators-id-fn";
 import { QueryTool } from "../../../../../util/query-tool";
-import { IBagForDriver } from "../../../shared";
+import {
+  TPrimitiveLiteralCriteriaUnion,
+  TPrimitiveModifyLiteralCriteria,
+  TPrimitiveReadLiteralCriteria,
+  TStructureLiteralCriteriaUnion,
+  TStructureModifyLiteralCriteria,
+  TStructureReadLiteralCriteria,
+} from "../../../shared-types";
 import { WebDriver } from "../_web-driver";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -109,7 +117,10 @@ export abstract class LocalRepositoryDriver
   /**verifica si la data recibida corresponde la expectativa esperada*/
   protected checkRxData(
     rxData: any,
-    expectDataType: IBagForDriver["literalCriteria"]["expectedDataType"]
+    expectDataType: (
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+    )["expectedDataType"]
   ): boolean {
     if (expectDataType === "boolean" && !this.util.isBoolean(rxData))
       return false;
@@ -124,7 +135,9 @@ export abstract class LocalRepositoryDriver
     else return true;
   }
   protected override buildDriverResponse(
-    literalCriteria: IBagForDriver["literalCriteria"],
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>,
     rxData: any,
     error?: any
   ): IDriverResponse {
@@ -162,16 +175,18 @@ export abstract class LocalRepositoryDriver
     return driverRes;
   }
   public override async sendRequestFromService(
-    bagDriver: IBagForDriver
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
   ): Promise<IDriverResponse> {
     let driverRes: IDriverResponse;
     try {
-      this.preRequestFromService(bagDriver);
-      let rxData = await this.selectCRUDRunByBag(bagDriver);
-      driverRes = this.buildDriverResponse(bagDriver.literalCriteria, rxData);
+      this.preRequestFromService(literalCriteria);
+      let rxData = await this.selectCRUDRunByLiteralCriteria(literalCriteria);
+      driverRes = this.buildDriverResponse(literalCriteria, rxData);
     } catch (error) {
       driverRes = this.buildDriverResponse(
-        bagDriver.literalCriteria,
+        literalCriteria,
         this.util.dfValue,
         error
       );
@@ -179,34 +194,73 @@ export abstract class LocalRepositoryDriver
     this.postRequestFromService(driverRes);
     return driverRes;
   }
-  protected override preRequestFromService(bagDriver: IBagForDriver): void {
-    super.preRequestFromService(bagDriver);
+  protected override preRequestFromService(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+  ): void {
+    super.preRequestFromService(literalCriteria);
     return;
   }
   protected override postRequestFromService(driverRes: IDriverResponse): void {
     super.postRequestFromService(driverRes);
     return;
   }
+  /**construir id si es necesario */
+  protected buildStructureLocalId(
+    registers: any[],
+    possibleId: any,
+    customValidFn?: Function
+  ): any {
+    const { strategyForIdBuild } = this._globalConfig_;
+    const isId = isIdValid(possibleId, customValidFn as any);
+    if (!isId) {
+      let id;
+      if (strategyForIdBuild === "df_autoincrement") {
+        const kId = this.keyId;
+        //autoincremento tiene tratamiento especial
+        let ids = registers.map((reg) => reg[kId]).sort(); //ordenamiento básico
+        const option = {
+          lastId: this.util.getArrayItem(ids, -1),
+        } as TOptionForAutoincrement;
+        id = buildIdByStrategy(strategyForIdBuild, option);
+      } else {
+        id = buildIdByStrategy(strategyForIdBuild);
+      }
+      return id;
+    }
+    return possibleId;
+  }
   //████ CRUD by Bag ████████████████████████████████████████████████████████████
   /**... */
-  protected async selectCRUDRunByBag(
-    literalBagDriver: IBagForDriver
+  protected async selectCRUDRunByLiteralCriteria(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
   ): Promise<any> {
-    const { literalCriteria } = literalBagDriver;
     const { type, keyLogicContext } = literalCriteria;
     let rxData: any;
     if (keyLogicContext === "primitive") {
       if (type === "read") {
-        const {} = literalCriteria as IReadCriteria;
-        rxData = await this.primitiveReadByBag(literalBagDriver);
+        const {} = literalCriteria as TPrimitiveReadLiteralCriteria;
+        rxData = await this.primitiveReadByLiteralCriteria(
+          literalCriteria as TPrimitiveReadLiteralCriteria
+        );
       } else if (type === "modify") {
-        const { modifyType } = literalCriteria as IModifyCriteria;
+        const { modifyType } =
+          literalCriteria as TPrimitiveModifyLiteralCriteria;
         if (modifyType === "create") {
-          rxData = await this.primitiveCreateByBag(literalBagDriver);
+          rxData = await this.primitiveCreateByLiteralCriteria(
+            literalCriteria as TPrimitiveModifyLiteralCriteria
+          );
         } else if (modifyType === "update") {
-          rxData = await this.primitiveUpdateByBag(literalBagDriver);
+          rxData = await this.primitiveUpdateByLiteralCriteria(
+            literalCriteria as TPrimitiveModifyLiteralCriteria
+          );
         } else if (modifyType === "delete") {
-          rxData = await this.primitiveDeleteByBag(literalBagDriver);
+          rxData = await this.primitiveDeleteByLiteralCriteria(
+            literalCriteria as TPrimitiveModifyLiteralCriteria
+          );
         } else {
           throw new LogicError({
             code: ELogicCodeError.MODULE_ERROR,
@@ -221,16 +275,25 @@ export abstract class LocalRepositoryDriver
       }
     } else if (keyLogicContext === "structure") {
       if (type === "read") {
-        const {} = literalCriteria as IReadCriteria;
-        rxData = await this.structureReadByBag(literalBagDriver);
+        const {} = literalCriteria as TStructureReadLiteralCriteria<any>;
+        rxData = await this.structureReadByLiteralCriteria(
+          literalCriteria as TStructureModifyLiteralCriteria<any>
+        );
       } else if (type === "modify") {
-        const { modifyType } = literalCriteria as IModifyCriteria;
+        const { modifyType } =
+          literalCriteria as TStructureModifyLiteralCriteria<any>;
         if (modifyType === "create") {
-          rxData = await this.structureCreateByBag(literalBagDriver);
+          rxData = await this.structureCreateByLiteralCriteria(
+            literalCriteria as TStructureModifyLiteralCriteria<any>
+          );
         } else if (modifyType === "update") {
-          rxData = await this.structureUpdateByBag(literalBagDriver);
+          rxData = await this.structureUpdateByLiteralCriteria(
+            literalCriteria as TStructureModifyLiteralCriteria<any>
+          );
         } else if (modifyType === "delete") {
-          rxData = await this.structureDeleteByBag(literalBagDriver);
+          rxData = await this.structureDeleteByLiteralCriteria(
+            literalCriteria as TStructureModifyLiteralCriteria<any>
+          );
         } else {
           throw new LogicError({
             code: ELogicCodeError.MODULE_ERROR,
@@ -259,8 +322,8 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract primitiveReadByBag(
-    literalBagDriver: IBagForDriver
+  protected abstract primitiveReadByLiteralCriteria(
+    literalCriteria: TPrimitiveReadLiteralCriteria
   ): Promise<any>;
   /**
    * descrip...
@@ -270,8 +333,8 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract primitiveCreateByBag(
-    literalBagDriver: IBagForDriver
+  protected abstract primitiveCreateByLiteralCriteria(
+    literalCriteria: TPrimitiveModifyLiteralCriteria
   ): Promise<any>;
   /**
    * descrip...
@@ -281,8 +344,8 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract primitiveUpdateByBag(
-    literalBagDriver: IBagForDriver
+  protected abstract primitiveUpdateByLiteralCriteria(
+    literalCriteria: TPrimitiveModifyLiteralCriteria
   ): Promise<any>;
   /**
    * descrip...
@@ -292,8 +355,8 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract primitiveDeleteByBag(
-    literalBagDriver: IBagForDriver
+  protected abstract primitiveDeleteByLiteralCriteria(
+    literalCriteria: TPrimitiveModifyLiteralCriteria
   ): Promise<any>;
   /**
    * descrip...
@@ -303,8 +366,8 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract structureReadByBag(
-    literalBagDriver: IBagForDriver
+  protected abstract structureReadByLiteralCriteria(
+    literalCriteria: TStructureModifyLiteralCriteria<any>
   ): Promise<any>;
   /**
    * descrip...
@@ -314,8 +377,8 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract structureCreateByBag(
-    literalBagDriver: IBagForDriver
+  protected abstract structureCreateByLiteralCriteria(
+    literalCriteria: TStructureModifyLiteralCriteria<any>
   ): Promise<any>;
   /**
    * descrip...
@@ -325,8 +388,8 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract structureUpdateByBag(
-    literalBagDriver: IBagForDriver
+  protected abstract structureUpdateByLiteralCriteria(
+    literalCriteria: TStructureModifyLiteralCriteria<any>
   ): Promise<any>;
   /**
    * descrip...
@@ -336,7 +399,7 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract structureDeleteByBag(
-    literalBagDriver: IBagForDriver
+  protected abstract structureDeleteByLiteralCriteria(
+    literalCriteria: TStructureModifyLiteralCriteria<any>
   ): Promise<any>;
 }

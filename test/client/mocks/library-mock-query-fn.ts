@@ -2,7 +2,7 @@ import { Util_Test } from "../../util-test";
 import {
   TPrimitiveMockCustomQueryDriverFn,
   TStructureMockCustomQueryDriverFn,
-} from "./shared";
+} from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *Singleton*
  *

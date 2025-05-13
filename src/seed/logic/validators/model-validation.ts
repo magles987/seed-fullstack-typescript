@@ -1,21 +1,16 @@
-import { TZodSchemaForClose } from "./_validation";
-import { StructureLogicValidation } from "./_structure-validation";
-import { TStructureMetaAndValidator } from "../meta/metadata-shared";
+import { Module } from "../modules/index-barrel";
 import {
-  TModelConfigForVal,
-  TStructureValModuleConfigForModel,
-} from "./shared";
+  StructureCriteriaHandler,
+  TStructureActionConfigFn,
+} from "../criterias/index-barrel";
 import {
-  EKeyActionGroupForRes,
   ELogicResStatusCode,
   IStructureResponse,
-} from "../reports/shared";
-import { StructureBag } from "../bag/structure-bag";
-import { FieldLogicValidation } from "./field-validation";
-import { LogicController } from "../controllers/_controller";
-import { StructureReportHandler } from "../reports/structure-report-handler";
-import { TStructureFnBagForActionModule } from "../bag/shared";
-import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
+  StructureReportHandler,
+} from "../reports/index-barrel";
+import { StructureLogicValidation } from "./_structure-validation";
+import { TModelValBaseConfig } from "./shared-types";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipo exclusivo para adicionar una configuracion
  * a la accion isRequired */
@@ -41,34 +36,14 @@ type TisRequiredConfig = {
  * de cada accion de validacion para un registro
  * completo del modelo
  */
-export interface IDiccModelValActionConfigG<
-  TIDiccFieldValAC extends FieldLogicValidation["dfDiccActionConfig"] = FieldLogicValidation["dfDiccActionConfig"]
-> {
+export interface IDiccModelValActionConfig {
   /**configuracion para validar si es un modelo valido*/
   isTypeOfModel: true; //❗Siempre activa❗
   /**configuracion para validar si el modelo es requerido */
   isRequired: boolean | TisRequiredConfig | undefined;
-  /**configuracion para validar campos del modelo*/
-  isModel:
-    | {
-        /**representa un modelo de diccionario
-         * de configuracion de acciones de validacion
-         * para cada campo
-         *
-         *
-         * ⚠ El tipo debería ser:
-         *
-         * `Record<keyof Model, TIDiccFieldValAction>`
-         *
-         * donde `TIADiccFieldValActionsConfig` es el diccionario personalizado
-         */
-        modelForDiccAC: Partial<Record<any, Partial<TIDiccFieldValAC>>>;
-      }
-    | undefined;
 }
 /**claves identificadoras del diccionario de acciones de configuracion */
-export type TKeysDiccModelValActionConfigG =
-  keyof IDiccModelValActionConfigG<any>;
+export type TKeysDiccModelValActionConfig = keyof IDiccModelValActionConfig;
 /**tipado refactorizado de la clase */
 export type Trf_ModelLogicValidation = ModelLogicValidation;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -77,78 +52,66 @@ export type Trf_ModelLogicValidation = ModelLogicValidation;
  * libreria de validadores para el model
  */
 export class ModelLogicValidation<
-    TIDiccAC extends IDiccModelValActionConfigG = IDiccModelValActionConfigG
+    TIDiccAC extends IDiccModelValActionConfig = IDiccModelValActionConfig
   >
   extends StructureLogicValidation<TIDiccAC>
   implements
-    Record<TKeysDiccModelValActionConfigG, TStructureFnBagForActionModule>
+    Record<TKeysDiccModelValActionConfig, TStructureActionConfigFn<any>>
 {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = StructureLogicValidation.getDefault();
     return {
       ...superDf,
-      dfDiccActionConfig: {
-        ...(superDf.dfDiccActionConfig as any),
+      diccActionConfig: {
+        ...(superDf.diccActionConfig as any),
         isRequired: false,
         isTypeOfModel: true, //siempre activa
-        isModel: { modelForDiccAC: {} },
-      } as IDiccModelValActionConfigG,
+      } as IDiccModelValActionConfig,
       topPriorityKeysAction: [
         ...superDf.topPriorityKeysAction,
         "isRequired",
-      ] as Array<TKeysDiccModelValActionConfigG>,
+      ] as Array<TKeysDiccModelValActionConfig>,
       topMandatoryKeysAction: [
         ...superDf.topMandatoryKeysAction,
-      ] as Array<TKeysDiccModelValActionConfigG>,
+      ] as Array<TKeysDiccModelValActionConfig>,
       dfIsRequiredSpecialConfig: {
         isNullAsValue: false,
         isEmptyObjectAsValue: false,
       } as TisRequiredConfig,
     };
   };
+  public override get isRequiredSpecialConfig(): TisRequiredConfig {
+    return super.isRequiredSpecialConfig;
+  }
+  protected override set isRequiredSpecialConfig(v: TisRequiredConfig) {
+    super.isRequiredSpecialConfig = v;
+  }
   /** */
-  constructor() {
-    super("modelVal");
+  constructor(baseConfig?: TModelValBaseConfig) {
+    super("modelVal", baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return ModelLogicValidation.getDefault();
   }
-  protected override rebuildCustomConfigFromModuleContext(
-    currentContextConfig: TStructureValModuleConfigForModel<TIDiccAC>,
-    newContextConfig: TStructureValModuleConfigForModel<TIDiccAC>,
-    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
-  ): TStructureValModuleConfigForModel<TIDiccAC> {
-    const cCC = currentContextConfig;
-    const nCC = newContextConfig;
-    let rConfig: TStructureValModuleConfigForModel<TIDiccAC>;
-    if (!this.util.isObject(nCC)) {
-      rConfig = cCC;
+  /**... */
+  protected static buildInstanceForMetadata<
+    TModelValInstance extends ModelLogicValidation = ModelLogicValidation
+  >(preInstance: TModelValInstance): TModelValInstance {
+    const util = Module.util;
+    let inst: TModelValInstance;
+    if (util.isInstance(preInstance)) {
+      inst = preInstance;
     } else {
-      rConfig = {
-        ...nCC,
-        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
-          ? this.util.mergeDiccActionConfig(
-              [cCC.diccActionsConfig, nCC.diccActionsConfig],
-              {
-                mode: mergeMode,
-              }
-            )
-          : cCC.diccActionsConfig,
-      };
+      const { structureModuleFactory } =
+        Module._globalConfig_.diccModuleFactory;
+      inst = structureModuleFactory.makeModuleInstance(
+        "modelVal",
+        preInstance as any
+      ) as any;
     }
-    //...aqui configuracion refinada:
-    return rConfig;
-  }
-  protected override getMetadataWithContextModule(
-    keyPath?: string
-  ): TStructureMetaAndValidator<any, any, ModelLogicValidation> {
-    return super.getMetadataWithContextModule(keyPath) as any;
-  }
-  protected override getMetadataOnlyModuleConfig(
-    keyPath?: string
-  ): TModelConfigForVal<TIDiccAC, any> {
-    return super.getMetadataOnlyModuleConfig(keyPath);
+    return inst;
   }
   /**... */
   protected override checkEmptyData(
@@ -185,11 +148,11 @@ export class ModelLogicValidation<
    */
   protected override checkEmptyDataWithRes(
     reportHandler: StructureReportHandler,
-    bag: StructureBag<any>
+    criteriaHandler: StructureCriteriaHandler<any>
   ): IStructureResponse {
-    const { criteriaHandler, data } = bag;
+    const { data } = criteriaHandler;
     const tKeyGlobalAC = [this.keyModuleContext, "isRequired"];
-    const isRequired = criteriaHandler.getGlobalActionByTKeyGlobalAC(
+    const isRequired = criteriaHandler.findGlobalActionByKeyModuleAndKeyAction(
       tKeyGlobalAC as any
     );
     const isEmpty = this.checkEmptyData(data, isRequired as any);
@@ -212,20 +175,21 @@ export class ModelLogicValidation<
   }
   //================================================================================================================================
   public async isTypeOfModel(
-    bag: StructureBag<any>
+    criteriaHandler: StructureCriteriaHandler<any>
   ): Promise<IStructureResponse> {
-    const { data, criteriaHandler } = bag;
+    const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
         "isTypeOfModel"
       );
-    const rH = this.buildReportHandler(bag, keyAction);
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    let zodCursor: TZodSchemaForClose = this.zod
-      .optional(this.zod.object({}))
-      .nullable();
-    const isValid = zodCursor.safeParse(data).success;
+    const isValid = this.util.isValueType(data, [
+      "undefined",
+      "null",
+      "object",
+    ]);
     if (isValid === false) {
       res = rH.mutateResponse(res, {
         status: ELogicResStatusCode.INVALID_DATA,
@@ -233,86 +197,30 @@ export class ModelLogicValidation<
     }
     return res;
   }
-  public async isRequired(bag: StructureBag<any>): Promise<IStructureResponse> {
+  public async isRequired(
+    criteriaHandler: StructureCriteriaHandler<any>
+  ): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler } = bag;
+    const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
         "isRequired"
       );
-    const rH = this.buildReportHandler(bag, keyAction);
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     //❗se verifica el vacion sin res❗
     const isEmptyData = this.checkEmptyData(
       data,
       actionConfig as TisRequiredConfig
     );
-    //validacion personalizada con zod para requerido:
-    let zodCursor = this.zod.unknown().refine(() => !isEmptyData);
-    let isValid = zodCursor.safeParse(data).success;
+    const isValid = !isEmptyData;
     //finalizar, siguiente accion o reportar
     if (isValid === false) {
       res = rH.mutateResponse(res, {
         status: ELogicResStatusCode.INVALID_DATA,
       });
     }
-    return res;
-  }
-  public async isModel(bag: StructureBag<any>): Promise<IStructureResponse> {
-    const { data, criteriaHandler: cH } = bag;
-    const [keyAction, actionConfig] =
-      this.getTupleActionConfigFromCriteriaHandler(cH, "isModel");
-    const rH = this.buildReportHandler(bag, keyAction);
-    let res = rH.mutateResponse(undefined, { data });
-    let { modelForDiccAC } = actionConfig;
-    //===============================================
-    //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(rH, bag);
-    if (res.status > ELogicResStatusCode.VALID_DATA) return res;
-    //===============================================
-    modelForDiccAC = this.util.isObject(modelForDiccAC) ? modelForDiccAC : {};
-    const mH = this.metadataHandler;
-    const modelMetadata =
-      mH.getExtractMetadataByStructureContext("structureModel");
-    const keysField = modelMetadata.__keysProp;
-    const promForField = keysField.map(async (keyField) => {
-      const fieldData = data[keyField];
-      const fieldMetadata = modelMetadata[keyField];
-      const fieldKeyPath = fieldMetadata.__keyPath;
-      const fieldValInst = mH.diccModuleInstanceContext
-        .fieldVal as FieldLogicValidation;
-      const sub_cH = new StructureCriteriaHandler(mH, "structureField", {
-        keyPath: fieldKeyPath,
-        diccGlobalAC: modelForDiccAC[keyField as any] as any,
-      });
-      sub_cH.extractDiccByKeyModuleContext("fieldVal");
-      const sub_Bag = new StructureBag(this.keySrc, "fieldBag", {
-        //❗el contexto es campo fieldBag❗
-        data: fieldData,
-        criteriaHandler: sub_cH as any,
-      });
-      const sub_rH = (fieldValInst as any as this) //❗hack❗ permite acceder a la propiedad protegida a las malas 🐱‍👤
-        .buildReportHandler(sub_Bag, EKeyActionGroupForRes.fields as any);
-      let resForField = sub_rH.mutateResponse(undefined, { data: fieldData });
-      for (const tKeysForReq of sub_cH.aTKeysGlobalActionConfig) {
-        const [keyModuleContext, sub_keyAction] = tKeysForReq;
-        const resForFieldForAction = (await LogicController.runActionRequest(
-          fieldValInst,
-          sub_Bag,
-          sub_keyAction
-        )) as IStructureResponse;
-        resForField.responses.push(resForFieldForAction);
-        if (resForFieldForAction.status > fieldValInst["globalTolerance"])
-          break; //😉 trampa `globalTolerance` es protected pero se llama asi para saltarse la proteccion
-      }
-      resForField = sub_rH.mutateResponse(resForField);
-      return resForField;
-    });
-    const resesForField = await Promise.all(promForField);
-    res = rH.mutateResponse(res, {
-      responses: resesForField,
-    });
     return res;
   }
 }

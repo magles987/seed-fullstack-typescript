@@ -1,4 +1,4 @@
-import { Module } from "../config/module";
+import { Module } from "../modules/index-barrel";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TLogicBuildParam = {

@@ -1,17 +1,19 @@
+import { Module } from "../modules/index-barrel";
+import {
+  PrimitiveCriteriaHandler,
+  TPrimitiveActionConfigFn,
+  Trf_PrimitiveCriteriaHandler,
+} from "../criterias/index-barrel";
+import { Trf_PrimitiveLogicMetadataHandler } from "../meta/index-barrel";
+import {
+  IPrimitiveResponse,
+  PrimitiveReportHandler,
+} from "../reports/index-barrel";
 import { LogicMutater } from "./_mutater";
 import {
-  TPrimitiveConfigForMutate,
   TKeyPrimitiveMutateModuleContext,
-  TPrimitiveMutateModuleConfigForPrimitive,
-} from "./shared";
-import { IPrimitiveResponse } from "../reports/shared";
-import { TPrimitiveMetaAndMutater } from "../meta/metadata-shared";
-import { PrimitiveBag, Trf_PrimitiveBag } from "../bag/primitive-bag";
-import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
-import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { TPrimitiveFnBagForActionModule } from "../bag/shared";
-import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
+  TPrimitiveMutateBaseConfig,
+} from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** define las propiedades de cada formateo
  * que puede configurar y ejecutar un campo
@@ -21,7 +23,7 @@ import { Trf_PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-ha
  * asignados varias de estos formatos, estas
  * propiedades deben ser **opcionales**
  */
-export interface IDiccPrimitiveMutateActionConfigG {
+export interface IDiccPrimitiveMutateActionConfig {
   // //====formateo booleano===========================
   // /**
   //  * si el campo es booleano determina
@@ -150,38 +152,35 @@ export interface IDiccPrimitiveMutateActionConfigG {
 }
 /**claves identificadoras del diccionario de
  * acciones de configuracion */
-export type TKeysDiccPrimitiveMutateActionConfigG =
-  keyof IDiccPrimitiveMutateActionConfigG;
+export type TKeysDiccPrimitiveMutateActionConfig =
+  keyof IDiccPrimitiveMutateActionConfig;
 /**tipado refactorizado de la clase */
 export type Trf_PrimitiveLogicMutater = PrimitiveLogicMutater;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class PrimitiveLogicMutater<
-    TIDiccAC extends IDiccPrimitiveMutateActionConfigG = IDiccPrimitiveMutateActionConfigG
+    TIDiccAC extends IDiccPrimitiveMutateActionConfig = IDiccPrimitiveMutateActionConfig
   >
   extends LogicMutater<TIDiccAC>
   implements
-    Record<
-      TKeysDiccPrimitiveMutateActionConfigG,
-      TPrimitiveFnBagForActionModule
-    >
+    Record<TKeysDiccPrimitiveMutateActionConfig, TPrimitiveActionConfigFn<any>>
 {
   /** configuracion de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = LogicMutater.getDefault();
     return {
       ...superDf,
-      dfDiccActionConfig: {
-        ...(superDf.dfDiccActionConfig as any),
+      diccActionConfig: {
+        ...(superDf.diccActionConfig as any),
         anyTrim: false,
-      } as IDiccPrimitiveMutateActionConfigG,
+      } as IDiccPrimitiveMutateActionConfig,
       topPriorityKeysAction: [
         ...superDf.topPriorityKeysAction,
         "anyTrim",
-      ] as Array<TKeysDiccPrimitiveMutateActionConfigG>,
+      ] as Array<TKeysDiccPrimitiveMutateActionConfig>,
       topMandatoryKeysAction: [
         ...superDf.topMandatoryKeysAction,
-      ] as Array<TKeysDiccPrimitiveMutateActionConfigG>,
+      ] as Array<TKeysDiccPrimitiveMutateActionConfig>,
     };
   };
   public override get metadataHandler(): Trf_PrimitiveLogicMetadataHandler {
@@ -194,54 +193,30 @@ export class PrimitiveLogicMutater<
     return "primitiveMutate";
   }
   /** */
-  constructor() {
-    super("primitive");
+  constructor(baseConfig?: TPrimitiveMutateBaseConfig) {
+    super("primitive", baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return PrimitiveLogicMutater.getDefault();
   }
-  protected override rebuildCustomConfigFromModuleContext(
-    currentContextConfig: TPrimitiveMutateModuleConfigForPrimitive<TIDiccAC>,
-    newContextConfig: TPrimitiveMutateModuleConfigForPrimitive<TIDiccAC>,
-    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
-  ): TPrimitiveMutateModuleConfigForPrimitive<TIDiccAC> {
-    const cCC = currentContextConfig;
-    const nCC = newContextConfig;
-    let rConfig: TPrimitiveMutateModuleConfigForPrimitive<TIDiccAC>;
-    if (!this.util.isObject(nCC)) {
-      rConfig = cCC;
+  /** */
+  protected static buildInstanceForMetadata<
+    TPrimitiveMutateInstance extends PrimitiveLogicMutater = PrimitiveLogicMutater
+  >(preInstance: TPrimitiveMutateInstance): TPrimitiveMutateInstance {
+    const util = Module.util;
+    let inst: TPrimitiveMutateInstance;
+    if (util.isInstance(preInstance)) {
+      inst = preInstance;
     } else {
-      rConfig = {
-        ...nCC,
-        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
-          ? this.util.mergeDiccActionConfig(
-              [cCC.diccActionsConfig, nCC.diccActionsConfig],
-              {
-                mode: mergeMode,
-                //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
-              }
-            )
-          : cCC.diccActionsConfig,
-      };
+      const { primitiveModuleFactory } =
+        Module._globalConfig_.diccModuleFactory;
+      inst = primitiveModuleFactory.makeModuleInstance(
+        "primitiveMutate",
+        preInstance as any
+      ) as any;
     }
-    //...aqui configuracion refinada:
-    return rConfig;
-  }
-  protected override getMetadataWithContextModule(): TPrimitiveMetaAndMutater<PrimitiveLogicMutater> {
-    const metadata =
-      this.metadataHandler.getExtractMetadataByModuleContext("mutater");
-    return metadata as any;
-  }
-  protected override getMetadataOnlyModuleConfig(): TPrimitiveConfigForMutate<TIDiccAC> {
-    const metadata = this.getMetadataWithContextModule();
-    const config = metadata.__mutateConfig;
-    return config as TPrimitiveConfigForMutate<TIDiccAC>;
-  }
-  protected override getDiccMetadataActionConfig(): TIDiccAC {
-    const config = this.getMetadataOnlyModuleConfig();
-    const configPrimitive = config.primitiveMutate;
-    const diccAC = configPrimitive.diccActionsConfig as TIDiccAC;
-    return diccAC;
+    return inst;
   }
   /**obtiene una funcion de accion de acuerdo a su clave identificadora
    * preparada para ser inyectada en el middleware
@@ -252,7 +227,7 @@ export class PrimitiveLogicMutater<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keyAction: TKeys): TPrimitiveFnBagForActionModule;
+  >(keyAction: TKeys): TPrimitiveActionConfigFn<any>;
   /**obtiene un array de funciones de accion de acuerdo a sus claves identificadoras
    * preparadas para ser inyectadas en el middleware
    *
@@ -262,16 +237,16 @@ export class PrimitiveLogicMutater<
    */
   public override getActionFnByKey<
     TKeys extends keyof TIDiccAC = keyof TIDiccAC
-  >(keysAction: TKeys[]): Array<TPrimitiveFnBagForActionModule>;
+  >(keysAction: TKeys[]): Array<TPrimitiveActionConfigFn<any>>;
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
   }
   protected override buildReportHandler(
-    bag: Trf_PrimitiveBag,
+    criteriaHandler: PrimitiveCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): PrimitiveReportHandler {
-    const { data, criteriaHandler, firstData } = bag;
-    const { type, modifyType, keyActionRequest } = criteriaHandler;
+    const { data, firstData, type, modifyType, keyActionRequest } =
+      criteriaHandler;
     let rH = new PrimitiveReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
       keyRepModuleContext: this.keyModuleContext,
@@ -296,32 +271,35 @@ export class PrimitiveLogicMutater<
     keyAction: TKey
   ): [TKey, TIDiccAC[TKey]] {
     const tKeyGlobalAC = [this.keyModuleContext, keyAction];
-    const actionConfig = criteriaHandler.getGlobalActionByTKeyGlobalAC(
-      tKeyGlobalAC as any
-    );
+    const actionConfig =
+      criteriaHandler.findGlobalActionByKeyModuleAndKeyAction(
+        tKeyGlobalAC as any
+      );
     return [keyAction, actionConfig];
   }
   public override preRunAction(
-    bag: Trf_PrimitiveBag,
+    criteriaHandler: PrimitiveCriteriaHandler<any>,
     keyAction: keyof TIDiccAC
   ): void {
-    super.preRunAction(bag, keyAction as any) as any;
+    super.preRunAction(criteriaHandler, keyAction as any) as any;
     return;
   }
   public override postRunAction(
-    bag: Trf_PrimitiveBag,
+    criteriaHandler: PrimitiveCriteriaHandler<any>,
     res: IPrimitiveResponse
   ): void {
-    super.postRunAction(bag, res) as any;
+    super.postRunAction(criteriaHandler, res) as any;
     return;
   }
   //================================================================================================================================
-  public async anyTrim(bag: PrimitiveBag<any>): Promise<IPrimitiveResponse> {
+  public async anyTrim(
+    criteriaHandler: PrimitiveCriteriaHandler<any>
+  ): Promise<IPrimitiveResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler } = bag;
+    const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(criteriaHandler, "anyTrim");
-    const rH = this.buildReportHandler(bag, keyAction);
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     const {} = actionConfig;
 
@@ -330,7 +308,7 @@ export class PrimitiveLogicMutater<
     // const actionConfig = diccActionConfig[keyAction];
     // // const {  } = this.getPrimitiveOrEmbPrimitiveConfig(keyPrimitive, embAbsolutePath);
     // const pVL = new PrimitiveFormatLib();
-    // const pRes = await pVL.any_trim(data, { any_trim: actionConfig }, bag);
+    // const pRes = await pVL.any_trim(data, { any_trim: actionConfig }, criteriaHandler);
     // let res = this.mutateResponseForAction(undefined, {
     //   data: pRes.data,
     //   keyAction,
@@ -340,7 +318,7 @@ export class PrimitiveLogicMutater<
     return res;
   }
   // public async booleanIsFormat(
-  //   bag: Trf_IPrimitiveMiddlewareBag,
+  //   criteriaHandler: Trf_IPrimitiveMiddlewareBag,
   //   middlewareStatus?: IMiddlewareReportStatus
   // ): Promise<IPrimitiveResponseForMiddleware> {
   //   // //Desempaquetar la accion e inicializar
@@ -351,7 +329,7 @@ export class PrimitiveLogicMutater<
   //   // const pRes = await pVL.boolean_isFormat(
   //   //   data,
   //   //   { boolean_isFormat: actionConfig },
-  //   //   bag
+  //   //   criteriaHandler
   //   // );
   //   // let res = this.mutateResponseForAction(undefined, {
   //   //   data: pRes.data,
@@ -362,7 +340,7 @@ export class PrimitiveLogicMutater<
   //   // return res;
   // }
   // public async numberIsBoolean(
-  //   bag: Trf_IPrimitiveMiddlewareBag,
+  //   criteriaHandler: Trf_IPrimitiveMiddlewareBag,
   //   middlewareStatus?: IMiddlewareReportStatus
   // ): Promise<IPrimitiveResponseForMiddleware> {
   //   // //Desempaquetar la accion e inicializar
@@ -373,7 +351,7 @@ export class PrimitiveLogicMutater<
   //   // const pRes = await pVL.number_isBoolean(
   //   //   data,
   //   //   { number_isBoolean: actionConfig },
-  //   //   bag
+  //   //   criteriaHandler
   //   // );
   //   // let res = this.mutateResponseForAction(undefined, {
   //   //   data: pRes.data,
@@ -384,7 +362,7 @@ export class PrimitiveLogicMutater<
   //   // return res;
   // }
   // public async numberTypeZ(
-  //   bag: Trf_IPrimitiveMiddlewareBag,
+  //   criteriaHandler: Trf_IPrimitiveMiddlewareBag,
   //   middlewareStatus?: IMiddlewareReportStatus
   // ): Promise<IPrimitiveResponseForMiddleware> {
   //   // //Desempaquetar la accion e inicializar
@@ -395,7 +373,7 @@ export class PrimitiveLogicMutater<
   //   // const pRes = await pVL.number_typeZ(
   //   //   data,
   //   //   { number_typeZ: actionConfig },
-  //   //   bag
+  //   //   criteriaHandler
   //   // );
   //   // let res = this.mutateResponseForAction(undefined, {
   //   //   data: pRes.data,
@@ -406,7 +384,7 @@ export class PrimitiveLogicMutater<
   //   // return res;
   // }
   // public async numberRound(
-  //   bag: Trf_IPrimitiveMiddlewareBag,
+  //   criteriaHandler: Trf_IPrimitiveMiddlewareBag,
   //   middlewareStatus?: IMiddlewareReportStatus
   // ): Promise<IPrimitiveResponseForMiddleware> {
   //   // //Desempaquetar la accion e inicializar
@@ -417,7 +395,7 @@ export class PrimitiveLogicMutater<
   //   // const pRes = await pVL.number_round(
   //   //   data,
   //   //   { number_round: actionConfig },
-  //   //   bag
+  //   //   criteriaHandler
   //   // );
   //   // let res = this.mutateResponseForAction(undefined, {
   //   //   data: pRes.data,
@@ -428,7 +406,7 @@ export class PrimitiveLogicMutater<
   //   // return res;
   // }
   // public async numberStringToNumber(
-  //   bag: Trf_IPrimitiveMiddlewareBag,
+  //   criteriaHandler: Trf_IPrimitiveMiddlewareBag,
   //   middlewareStatus?: IMiddlewareReportStatus
   // ): Promise<IPrimitiveResponseForMiddleware> {
   //   // //Desempaquetar la accion e inicializar
@@ -439,7 +417,7 @@ export class PrimitiveLogicMutater<
   //   // const pRes = await pVL.number_stringToNumber(
   //   //   data,
   //   //   { number_stringToNumber: actionConfig },
-  //   //   bag
+  //   //   criteriaHandler
   //   // );
   //   // let res = this.mutateResponseForAction(undefined, {
   //   //   data: pRes.data,
@@ -450,7 +428,7 @@ export class PrimitiveLogicMutater<
   //   // return res;
   // }
   // public async stringSetFix(
-  //   bag: Trf_IPrimitiveMiddlewareBag,
+  //   criteriaHandler: Trf_IPrimitiveMiddlewareBag,
   //   middlewareStatus?: IMiddlewareReportStatus
   // ): Promise<IPrimitiveResponseForMiddleware> {
   //   // //Desempaquetar la accion e inicializar
@@ -461,7 +439,7 @@ export class PrimitiveLogicMutater<
   //   // const pRes = await pVL.string_setFix(
   //   //   data,
   //   //   { string_setFix: actionConfig },
-  //   //   bag
+  //   //   criteriaHandler
   //   // );
   //   // let res = this.mutateResponseForAction(undefined, {
   //   //   data: pRes.data,
@@ -472,7 +450,7 @@ export class PrimitiveLogicMutater<
   //   // return res;
   // }
   // public async stringCaseType(
-  //   bag: Trf_IPrimitiveMiddlewareBag,
+  //   criteriaHandler: Trf_IPrimitiveMiddlewareBag,
   //   middlewareStatus?: IMiddlewareReportStatus
   // ): Promise<IPrimitiveResponseForMiddleware> {
   //   // //Desempaquetar la accion e inicializar
@@ -483,7 +461,7 @@ export class PrimitiveLogicMutater<
   //   // const pRes = await pVL.string_caseType(
   //   //   data,
   //   //   { string_caseType: actionConfig },
-  //   //   bag
+  //   //   criteriaHandler
   //   // );
   //   // let res = this.mutateResponseForAction(undefined, {
   //   //   data: pRes.data,
@@ -494,7 +472,7 @@ export class PrimitiveLogicMutater<
   //   // return res;
   // }
   // public async arrayStringToArray(
-  //   bag: Trf_IPrimitiveMiddlewareBag,
+  //   criteriaHandler: Trf_IPrimitiveMiddlewareBag,
   //   middlewareStatus?: IMiddlewareReportStatus
   // ): Promise<IPrimitiveResponseForMiddleware> {
   //   // //Desempaquetar la accion e inicializar
@@ -506,7 +484,7 @@ export class PrimitiveLogicMutater<
   //   // const pRes = await pVL.array_stringToArray(
   //   //   data,
   //   //   { array_stringToArray: actionConfig },
-  //   //   bag
+  //   //   criteriaHandler
   //   // );
   //   // let res = this.mutateResponseForAction(undefined, {
   //   //   data: pRes.data,
@@ -517,7 +495,7 @@ export class PrimitiveLogicMutater<
   //   // return res;
   // }
   public async arrayItemFormat(
-    bag: PrimitiveBag<any>
+    criteriaHandler: PrimitiveCriteriaHandler<any>
   ): Promise<IPrimitiveResponse> {
     return res;
     // //Desempaquetar la accion e inicializar
@@ -568,7 +546,7 @@ export class PrimitiveLogicMutater<
     //       fieldHandlerContext,
     //       subData,
     //       sub_aDiccAC,
-    //       bag,
+    //       criteriaHandler,
     //       keyPrimitiveOrKeyEmbPrimitive,
     //       `${idx}`
     //     );
@@ -578,7 +556,7 @@ export class PrimitiveLogicMutater<
     //       fieldHandlerContext,
     //       subData,
     //       { objectFormatter: { aDiccActionsConfig: sub_aDiccAC } }, //se envia la configuracion del aDicc del array como si fuera la del objeto
-    //       bag,
+    //       criteriaHandler,
     //       keyPrimitiveOrKeyEmbPrimitive
     //     );
     //   }
@@ -592,7 +570,7 @@ export class PrimitiveLogicMutater<
     // return res;
   }
   public async objectFormatter(
-    bag: PrimitiveBag<any>
+    criteriaHandler: PrimitiveCriteriaHandler<any>
   ): Promise<IPrimitiveResponse> {
     return res;
     // //Desempaquetar la accion e inicializar
@@ -662,7 +640,7 @@ export class PrimitiveLogicMutater<
     //         fieldHandlerContext,
     //         subData,
     //         sub_aDiccAC,
-    //         bag,
+    //         criteriaHandler,
     //         keyPrimitiveOrKeyEmbPrimitive,
     //         embAbsolutePath,
     //         keySubPrimitive
@@ -686,7 +664,7 @@ export class PrimitiveLogicMutater<
     //       fieldHandlerContext,
     //       subData,
     //       sub_aDiccAC,
-    //       bag,
+    //       criteriaHandler,
     //       keyPrimitiveOrKeyEmbPrimitive,
     //       embAbsolutePath,
     //       keySubPrimitive

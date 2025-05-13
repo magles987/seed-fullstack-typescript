@@ -1,10 +1,8 @@
-import { TKeySrcSelector } from "../src/seed/logic/config/shared-modules";
-import { IBagForDriver } from "../src/seed/logic/providers/_drivers/shared";
 import {
   IPrimitiveResponse,
   IResponse,
   IStructureResponse,
-} from "../src/seed/logic/reports/shared";
+} from "../src/seed/logic/reports/shared-types";
 import { Util_Module } from "../src/seed/logic/util/util-module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**

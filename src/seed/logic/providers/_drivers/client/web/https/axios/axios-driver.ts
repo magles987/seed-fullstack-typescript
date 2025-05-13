@@ -1,4 +1,4 @@
-import { Module } from "../../../../../../config/module";
+import { Module } from "../../../../../../modules/module";
 import { HttpDriver } from "../_https-driver";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*

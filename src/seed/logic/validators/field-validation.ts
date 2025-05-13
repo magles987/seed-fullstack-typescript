@@ -1,21 +1,23 @@
-import { StructureLogicValidation } from "./_structure-validation";
-import { TFieldType } from "../meta/shared";
-import { TZodSchemaForClose } from "./_validation";
-import { TStructureFieldMetaAndValidator } from "../meta/metadata-shared";
+import { Module } from "../modules/index-barrel";
 import {
-  TFieldConfigForVal,
-  TModelConfigForVal,
-  TStructureValModuleConfigForField,
-} from "./shared";
+  StructureCriteriaHandler,
+  TStructureActionConfigFn,
+  TTGlobalActionConfig,
+} from "../criterias/index-barrel";
+import { ELogicCodeError, LogicError } from "../errors/index-barrel";
+import { TFieldType } from "../meta/index-barrel";
 import {
   EKeyActionGroupForRes,
   ELogicResStatusCode,
   IStructureResponse,
-} from "../reports/shared";
-import { StructureBag } from "../bag/structure-bag";
-import { StructureReportHandler } from "../reports/structure-report-handler";
-import { TStructureFnBagForActionModule } from "../bag/shared";
-import { ModelLogicValidation } from "./model-validation";
+  StructureReportHandler,
+} from "../reports/index-barrel";
+import { StructureLogicValidation } from "./_structure-validation";
+import {
+  TFieldValBaseConfig,
+  TStructureFieldValDiccACForCriteria,
+} from "./shared-types";
+
 //████tipos e interfaces████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**tipo exclusivo para adicionar una configuracion
  * a la accion isRequired */
@@ -38,11 +40,19 @@ type TisRequiredConfig = {
    */
   isEmptyObjectOrArrayAsValue?: boolean;
 };
+/**tipado para casos especiales del validador isTypeof
+ * (casos anónimos o que no tienen metadatos ) */
+type TITypeOf = {
+  /**tipo de dato (no array) */
+  fieldType: TFieldType;
+  /**si se debe considerar como array */
+  isArray: boolean;
+};
 /** define todas las propiedades de configuracion
  * de cada accion de validacion para  un campo
  * del modelo
  */
-export interface IDiccFieldValActionConfigG {
+export interface IDiccFieldValActionConfig {
   /**determina si el valor del campo
    * corresponde a el tipo configurado
    * en metadatos o si es de estos
@@ -53,13 +63,9 @@ export interface IDiccFieldValActionConfigG {
    *
    *
    */
-  isTypeOf: {
-    /**tipo de campo */
-    fieldType: TFieldType;
-    /**si el campo es array de tipos
-     * de campo (`fieldType`) */
-    isArray?: boolean;
-  }; //❗Siempre activa❗ por eso no se permite booleano
+  isTypeOf:
+    | true //❗Siempre activa❗
+    | TITypeOf;
   /**determina si el valor actual del campo
    * es vacio
    *
@@ -214,20 +220,24 @@ export interface IDiccFieldValActionConfigG {
    * ⚠ SOLO para arrays de tipos primitivos, NO
    * usar con modelos embebidos
    */
-  isAnonimusObject: {
-    //❓POSIBLES ERRORES DE CONFIGURACION❓
+  isAnonymusObject: {
     //se aplicará a cada propiedad del objeto por
     //lo que deben ser validaciones muy genericas
-    /**recursivo para los subcampos */
-    anonimuSchemaForATupleAC: Record<
+    /**esquema recursivo para asignar acciones de configuración a
+     * cada subcampo, las acciones de configuración
+     * son asignadas a traves de una array de tuplas
+     *
+     * ⚠ Por complejidad aun no es posible tener acceso a
+     * diccionarios de acciones de configuración personalizados ⚠
+     */
+    schemaForATActionConfig: Record<
       any,
       Array<
-        [
-          keyof IDiccFieldValActionConfigG,
-          IDiccFieldValActionConfigG[keyof IDiccFieldValActionConfigG]
-        ]
-      > //tupla de acciones [keyAction, ActionConfig]
-    >; //Modelo o esquema con los campos asinando a cada uno un array de diccionarios de acciones de configuracion (ADiccAC)
+        TTGlobalActionConfig<
+          TStructureFieldValDiccACForCriteria<IDiccFieldValActionConfig>
+        >
+      >
+    >;
     /**determina si se permite propiedades
      * adicionales en el dato que no esten
      * en la configuracion de `schemaADiccActionsConfig`
@@ -264,130 +274,89 @@ export interface IDiccFieldValActionConfigG {
   isAnonimusArray: {
     /**array de diccionarios de acciones para cada elemento del array del dato*/
     aTupleAC: Array<
-      [
-        keyof IDiccFieldValActionConfigG,
-        IDiccFieldValActionConfigG[keyof IDiccFieldValActionConfigG]
-      ]
+      TTGlobalActionConfig<
+        TStructureFieldValDiccACForCriteria<IDiccFieldValActionConfig>
+      >
     >;
   };
-  /**determina si es un modelo embebido y lo valida internamente */
-  isEmbModel:
-    | {
-        embModelDiccAC: Partial<
-          TModelConfigForVal<
-            ModelLogicValidation["dfDiccActionConfig"],
-            any
-          >["modelVal"]
-        >;
-      }
-    | undefined;
-  /**determina si es un array de modelos embebidos y los valida internamente */
-  isArrayEmbModel:
-    | {
-        embModelDiccAC: Partial<
-          TModelConfigForVal<
-            ModelLogicValidation["dfDiccActionConfig"],
-            any
-          >["modelVal"]
-        >;
-      }
-    | undefined;
 }
 /**claves identificadoras del diccionario
  * de acciones de configuracion */
-export type TKeysDiccFieldValActionConfigG = keyof IDiccFieldValActionConfigG;
+export type TKeysDiccFieldValActionConfig = keyof IDiccFieldValActionConfig;
 /**tipado refactorizado de la clase */
 export type Trf_FieldLogicValidation = FieldLogicValidation;
 //████Clases████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export class FieldLogicValidation<
-    TIDiccAC extends IDiccFieldValActionConfigG = IDiccFieldValActionConfigG
+    TIDiccAC extends IDiccFieldValActionConfig = IDiccFieldValActionConfig
   >
   extends StructureLogicValidation<TIDiccAC>
   implements
-    Record<TKeysDiccFieldValActionConfigG, TStructureFnBagForActionModule>
+    Record<TKeysDiccFieldValActionConfig, TStructureActionConfigFn<any>>
 {
   /** configuración de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = StructureLogicValidation.getDefault();
     return {
       ...superDf,
-      dfDiccActionConfig: {
-        ...(superDf.dfDiccActionConfig as any),
-        isTypeOf: {
-          isArray: false,
-          fieldType: "string",
-        },
+      diccActionConfig: {
+        ...(superDf.diccActionConfig as any),
+        isTypeOf: true, //siempre
         isRequired: false,
-        isEmbModel: { embModelDiccAC: {} },
-        isArrayEmbModel: { embModelDiccAC: {} },
-        isAnonimusObject: {
-          anonimuSchemaForATupleAC: undefined,
+        isAnonymusObject: {
+          schemaForATActionConfig: undefined,
           isAllowedExtraProp: true,
           isEmbModel: false,
         },
         isAnonimusArray: {
           aTupleAC: [],
         },
-      } as IDiccFieldValActionConfigG,
+      } as IDiccFieldValActionConfig,
       topPriorityKeysAction: [
         ...superDf.topPriorityKeysAction,
         "isTypeOf",
         "isRequired",
-      ] as Array<TKeysDiccFieldValActionConfigG>,
+      ] as Array<TKeysDiccFieldValActionConfig>,
       topMandatoryKeysAction: [
         ...superDf.topMandatoryKeysAction,
-      ] as Array<TKeysDiccFieldValActionConfigG>,
-      dfIsRequiredSpecialConfig: {
+      ] as Array<TKeysDiccFieldValActionConfig>,
+      isRequiredSpecialConfig: {
         isNullAsValue: false,
         isEmptyObjectOrArrayAsValue: false,
       } as TisRequiredConfig,
     };
   };
+  public override get isRequiredSpecialConfig(): TisRequiredConfig {
+    return super.isRequiredSpecialConfig;
+  }
+  protected override set isRequiredSpecialConfig(v: TisRequiredConfig) {
+    super.isRequiredSpecialConfig = v;
+  }
   /** */
-  constructor() {
-    super("fieldVal");
+  constructor(baseConfig?: TFieldValBaseConfig) {
+    super("fieldVal", baseConfig);
+    baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
   }
   protected override getDefault() {
     return FieldLogicValidation.getDefault();
   }
-  protected override rebuildCustomConfigFromModuleContext(
-    currentContextConfig: TStructureValModuleConfigForField<TIDiccAC>,
-    newContextConfig: TStructureValModuleConfigForField<TIDiccAC>,
-    mergeMode: Parameters<typeof this.util.deepMergeObjects>[1]["mode"]
-  ): TStructureValModuleConfigForField<TIDiccAC> {
-    const cCC = currentContextConfig;
-    const nCC = newContextConfig;
-    let rConfig: TStructureValModuleConfigForField<TIDiccAC>;
-    if (!this.util.isObject(nCC)) {
-      rConfig = cCC;
+  /**... */
+  protected static buildInstanceForMetadata<
+    TFieldValInstance extends FieldLogicValidation = FieldLogicValidation
+  >(preInstance: TFieldValInstance): TFieldValInstance {
+    const util = Module.util;
+    let inst: TFieldValInstance;
+    if (util.isInstance(preInstance)) {
+      inst = preInstance;
     } else {
-      rConfig = {
-        ...nCC,
-        diccActionsConfig: this.util.isObject(nCC.diccActionsConfig)
-          ? this.util.mergeDiccActionConfig(
-              [cCC.diccActionsConfig, nCC.diccActionsConfig],
-              {
-                mode: mergeMode,
-                //isNullAsUndefined: fieldContextInst.g,❓❓como insertar las configuraciones especiales como null como undefined❓❓
-              }
-            )
-          : cCC.diccActionsConfig,
-      };
+      const { structureModuleFactory } =
+        Module._globalConfig_.diccModuleFactory;
+      inst = structureModuleFactory.makeModuleInstance(
+        "fieldVal",
+        preInstance as any
+      ) as any;
     }
-    //...aqui configuracion refinada:
-    const { diccActionsConfig } = rConfig;
-    return rConfig;
-  }
-  protected override getMetadataWithContextModule(
-    keyPath?: string
-  ): TStructureFieldMetaAndValidator<FieldLogicValidation> {
-    return super.getMetadataWithContextModule(keyPath) as any;
-  }
-  protected override getMetadataOnlyModuleConfig(
-    keyPath?: string
-  ): TFieldConfigForVal<TIDiccAC> {
-    return super.getMetadataOnlyModuleConfig(keyPath);
+    return inst;
   }
   protected override checkEmptyData(
     data: any,
@@ -395,7 +364,7 @@ export class FieldLogicValidation<
   ): boolean {
     specialEmptyConfig = this.util.isObject(specialEmptyConfig)
       ? specialEmptyConfig
-      : this.getDefault().dfIsRequiredSpecialConfig;
+      : this.getDefault().isRequiredSpecialConfig;
     const { isNullAsValue, isEmptyObjectOrArrayAsValue } = specialEmptyConfig;
     let isEmpty = false;
     //posibilidades de falta de datos
@@ -403,7 +372,7 @@ export class FieldLogicValidation<
     const isNull = data === null;
     const isEmptyString = data === "";
     const isEmptyObjectOrArray =
-      typeof data === "object" &&
+      typeof data === "object" && //❗Incluye arrays❗
       data !== null &&
       Object.keys(data).length === 0; //SI VACIO
     isEmpty =
@@ -415,11 +384,11 @@ export class FieldLogicValidation<
   }
   protected override checkEmptyDataWithRes(
     reportHandler: StructureReportHandler,
-    bag: StructureBag<any>
+    criteriaHandler: StructureCriteriaHandler<any>
   ): IStructureResponse {
-    const { criteriaHandler, data } = bag;
+    const { data } = criteriaHandler;
     const tKeyGlobalAC = [this.keyModuleContext, "isRequired"];
-    const isRequired = criteriaHandler.getGlobalActionByTKeyGlobalAC(
+    const isRequired = criteriaHandler.findGlobalActionByKeyModuleAndKeyAction(
       tKeyGlobalAC as any
     );
     const isEmpty = this.checkEmptyData(data, isRequired as any);
@@ -441,45 +410,62 @@ export class FieldLogicValidation<
     return res;
   }
   //================================================================
-  public async isTypeOf(bag: StructureBag<any>): Promise<IStructureResponse> {
-    //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler: cH } = bag;
+  public async isTypeOf(
+    criteriaHandler: StructureCriteriaHandler<any>
+  ): Promise<IStructureResponse> {
+    //Desempaquetar la acción e inicializar
+    const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
-      this.getTupleActionConfigFromCriteriaHandler(cH, "isTypeOf");
-    const rH = this.buildReportHandler(bag, keyAction);
+      this.getTupleActionConfigFromCriteriaHandler(criteriaHandler, "isTypeOf");
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    const { isArray, fieldType } = actionConfig;
+    //❗tratamiento especial, dependiendo de la fuente de
+    // configuración (metadatos (normalemnte) o anonimos)❗
+    let fieldType: TFieldType;
+    let isArray: boolean;
+    if (this.util.isObject(actionConfig)) {
+      fieldType = (actionConfig as TITypeOf).fieldType;
+      isArray = (actionConfig as TITypeOf).isArray;
+    } else {
+      const mH = this.metadataHandler;
+      const fieldMeta = mH.getExtractMetadataByModuleContext(
+        "structureField",
+        "metadata",
+        criteriaHandler.keyPath
+      );
+      isArray = fieldMeta.__isArray;
+      fieldType = fieldMeta.__fieldType;
+    }
     //❗❗❗isTypeof no necesita saber si es dato vacio o no❗❗❗
-    //validaciones primitivas con zod:
-    let zodCursor: TZodSchemaForClose;
+    let isValid: boolean;
+    //❗OBLIGATORIO iniciar las evaluación con array❗
     if (isArray === true)
-      zodCursor = this.zod.optional(this.zod.array(this.zod.any())).nullable();
+      isValid = this.util.isValueType(data, ["undefined", "null", "array"]);
     else if (fieldType === "boolean")
-      zodCursor = this.zod.optional(this.zod.boolean()).nullable();
+      isValid = this.util.isValueType(data, ["undefined", "null", "boolean"]);
     else if (fieldType === "number")
-      zodCursor = this.zod.optional(this.zod.number()).nullable();
+      isValid = this.util.isValueType(data, ["undefined", "null", "number"]);
     else if (fieldType === "bigint")
-      zodCursor = this.zod.optional(this.zod.bigint()).nullable();
+      isValid = this.util.isValueType(data, ["undefined", "null", "bigint"]);
     else if (fieldType === "string")
-      zodCursor = this.zod.optional(this.zod.string()).nullable();
+      isValid = this.util.isValueType(data, ["undefined", "null", "string"]);
     else if (fieldType === "string-RegExp")
-      zodCursor = this.zod.optional(this.zod.string()).nullable();
+      isValid = this.util.isValueType(data, ["undefined", "null", "string"]);
     else if (fieldType === "string-Date")
-      zodCursor = this.zod.optional(this.zod.string()).nullable();
+      isValid = this.util.isValueType(data, ["undefined", "null", "string"]);
     else if (fieldType === "timestamp")
-      zodCursor = this.zod.optional(this.zod.number()).nullable();
+      isValid = this.util.isValueType(data, ["undefined", "null", "number"]);
     else if (fieldType === "symbol")
-      zodCursor = this.zod.optional(this.zod.symbol()).nullable();
-    //else if(__fieldType === "undefined") zodCursor = this.zod.undefined();
-    //else if(__fieldType === "null") zodCursor = this.zod.null();
+      isValid = this.util.isValueType(data, ["undefined", "null", "symbol"]);
     else if (fieldType === "object")
-      zodCursor = this.zod.optional(this.zod.object({})).nullable();
+      isValid = this.util.isValueType(data, ["undefined", "null", "object"]);
     else if (fieldType === "structure")
-      zodCursor = this.zod.optional(this.zod.object({})).nullable();
+      isValid = this.util.isValueType(data, ["undefined", "null", "object"]);
+    // else if (fieldType === "function")
+    //   isValid = this.util.isValueType(data, ["undefined", "null", "function"]);
     else if (fieldType === "_system")
-      zodCursor = this.zod.any(); //❗Aqui es generico❗
-    else zodCursor = data === null ? this.zod.null() : this.zod.undefined(); //❗Por default solo aceptaria `undefined` y `null` rechazando todo lo demas ❗
-    let isValid = zodCursor.safeParse(data).success;
+      isValid = this.util.isNotUndefinedAndNotNull(data);
+    else isValid = this.util.isUndefinedOrNull(data); //❗Por default solo aceptaría `undefined` o `null`, rechazando todo lo demás ❗
     //finalizar, siguiente accion o reportar
     if (isValid === false) {
       res = rH.mutateResponse(res, {
@@ -488,21 +474,24 @@ export class FieldLogicValidation<
     }
     return res;
   }
-  public async isRequired(bag: StructureBag<any>): Promise<IStructureResponse> {
+  public async isRequired(
+    criteriaHandler: StructureCriteriaHandler<any>
+  ): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler: cH } = bag;
+    const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
-      this.getTupleActionConfigFromCriteriaHandler(cH, "isRequired");
-    const rH = this.buildReportHandler(bag, keyAction);
+      this.getTupleActionConfigFromCriteriaHandler(
+        criteriaHandler,
+        "isRequired"
+      );
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    //❗se verifica el vacion sin res❗
-    const isEmptyData = this.checkEmptyData(
+    //❗se verifica el vació sin res❗
+    const isEmpty = this.checkEmptyData(
       data,
       actionConfig as TisRequiredConfig
     );
-    //validacion personalizada con zod para requerido:
-    let zodCursor = this.zod.unknown().refine(() => !isEmptyData);
-    let isValid = zodCursor.safeParse(data).success;
+    let isValid = !isEmpty;
     //finalizar, siguiente accion o reportar
     if (isValid === false) {
       res = rH.mutateResponse(res, {
@@ -760,32 +749,52 @@ export class FieldLogicValidation<
   //   });
   //   return res;
   // }
-  public async isAnonimusObject(
-    bag: StructureBag<any>
+  public async isAnonymusObject(
+    criteriaHandler: StructureCriteriaHandler<any>
   ): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler: cH } = bag;
+    const { data, keyPath } = criteriaHandler;
     const [keyAction, actionConfig] =
-      this.getTupleActionConfigFromCriteriaHandler(cH, "isAnonimusObject");
-    const rH = this.buildReportHandler(bag, keyAction);
+      this.getTupleActionConfigFromCriteriaHandler(
+        criteriaHandler,
+        "isAnonymusObject"
+      );
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    let { anonimuSchemaForATupleAC, isAllowedExtraProp } = actionConfig;
-    const { keyPath } = cH;
+    let { schemaForATActionConfig, isAllowedExtraProp } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(rH, bag);
+    res = this.checkEmptyDataWithRes(rH, criteriaHandler);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
-    //determinar la fuente de las acciones de configuracion (embebido o anonimo)
-    if (!this.util.isObject(anonimuSchemaForATupleAC)) {
+    const mH = this.metadataHandler;
+    //bandera de tipo por seguridad (por si no se ejecutó isTypeOf)
+    const isObject = this.util.isObject(data);
+    //determinar si hay esquema de propiedades para validar cada una
+    if (!this.util.isObject(schemaForATActionConfig)) {
+      //al no haber esquema, solo se puede verificar el tipo general
+      if (isObject) {
+        res = rH.mutateResponse(res, {
+          status: ELogicResStatusCode.VALID_DATA,
+        });
+      } else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${schemaForATActionConfig} is not schema for action config valid`,
+        });
+      }
+      return res;
+    }
+    //si hay esquema de propiedades a validar, data debe ser objeto
+    if (!isObject) {
       res = rH.mutateResponse(res, {
-        status: ELogicResStatusCode.ERROR,
-        msn: `${anonimuSchemaForATupleAC} is not schema of array of tuples of action config configure valid`,
+        status: ELogicResStatusCode.INVALID_DATA,
       });
       return res;
     }
-    const keysPropSchema = Object.keys(anonimuSchemaForATupleAC);
-    //analisis de propiedades adicionales al esquema
+    const keysPropSchema = Object.keys(schemaForATActionConfig);
+    //análisis de propiedades adicionales al esquema
+    isAllowedExtraProp = this.util.convertToBoolean(isAllowedExtraProp);
     if (!isAllowedExtraProp) {
       const keysData = Object.keys(data);
       const keysDiff = this.util.getArrayDifference(
@@ -801,7 +810,7 @@ export class FieldLogicValidation<
     }
     //validar propiedades de esquema (las adicionales no se validan)
     for (const keyProp of keysPropSchema) {
-      const aTupleAC = anonimuSchemaForATupleAC[keyProp];
+      const aTupleAC = schemaForATActionConfig[keyProp];
       const subData = data[keyProp];
       const keyPseudoPath = this.util.buildPath([keyPath, keyProp]);
       let embResForProp = rH.mutateResponse(undefined, {
@@ -810,21 +819,27 @@ export class FieldLogicValidation<
         keyPath: keyPseudoPath,
         keyAction: EKeyActionGroupForRes.props,
       });
-      const subCriteriaHandler = cH.buildSubCriteriaHandler("structureAnonym", {
-        ...cH.getSubAnonymSchemaForGlobalActionConfig(
-          "fieldVal",
-          aTupleAC as any
-        ),
-        keyPath: keyPseudoPath,
-      });
-      const subBag = new StructureBag(this.keySrc, "fieldBag", {
-        data: subData,
-        criteriaHandler: subCriteriaHandler,
-      });
+      //si no es un array de tuplas, indica que permite cualquier valor
+      if (
+        !this.util.isArray(aTupleAC) ||
+        aTupleAC.some((tAC) => !this.util.isTuple(tAC, [2, 3]))
+      ) {
+        res.responses.push(embResForProp);
+        continue;
+      }
+      const subCriteriaHandler = new StructureCriteriaHandler(
+        mH,
+        "structureField",
+        {
+          keyPath: keyPseudoPath,
+          data: subData,
+          aTGlobalActionConfig: aTupleAC as any,
+        }
+      );
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];
         let actionFn = this.getActionFnByKey(keyAction as any);
-        const resForAction = await actionFn(subBag);
+        const resForAction = await actionFn(subCriteriaHandler);
         embResForProp.responses.push(resForAction);
         if (resForAction.status >= res.tolerance) break; //comprobar si se superó la tolerancia
       }
@@ -835,28 +850,49 @@ export class FieldLogicValidation<
     return res;
   }
   public async isAnonimusArray(
-    bag: StructureBag<any>
+    criteriaHandler: StructureCriteriaHandler<any>
   ): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler: cH } = bag;
+    const { data, keyPath } = criteriaHandler;
     const [keyAction, actionConfig] =
-      this.getTupleActionConfigFromCriteriaHandler(cH, "isAnonimusArray");
-    const rH = this.buildReportHandler(bag, keyAction);
+      this.getTupleActionConfigFromCriteriaHandler(
+        criteriaHandler,
+        "isAnonimusArray"
+      );
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     let { aTupleAC } = actionConfig;
-    const { keyPath } = cH;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(rH, bag);
+    res = this.checkEmptyDataWithRes(rH, criteriaHandler);
     if (res.status > ELogicResStatusCode.VALID_DATA) return res;
     //===============================================
-    if (!this.util.isArray(data, true)) {
+    const mH = this.metadataHandler;
+    //bandera de tipo por seguridad (por si no se ejecutó isTypeOf)
+    const isArray = this.util.isArray(data);
+    //determinar si hay esquema de propiedades para validar cada elemento del array
+    if (!this.util.isArray(aTupleAC)) {
+      //al no haber esquema, solo se puede verificar el tipo general
+      if (isArray) {
+        res = rH.mutateResponse(res, {
+          status: ELogicResStatusCode.VALID_DATA,
+        });
+      } else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${aTupleAC} is not tuple array for action config valid`,
+        });
+      }
+      return res;
+    }
+    //si hay esquema de propiedades a validar, data debe ser array
+    if (!isArray) {
       res = rH.mutateResponse(res, {
         status: ELogicResStatusCode.INVALID_DATA,
       });
       return res;
     }
-    //validar cada item del array de datos
+    //análisis de cada elemento del array
     for (let idx = 0; idx < (data as any[]).length; idx++) {
       const subData = data[idx];
       const keyIdx = `${idx}`;
@@ -867,21 +903,19 @@ export class FieldLogicValidation<
         keyPath: keyPseudoPath,
         keyAction: EKeyActionGroupForRes.items,
       });
-      const subCriteriaHandler = cH.buildSubCriteriaHandler("structureAnonym", {
-        ...cH.getSubAnonymSchemaForGlobalActionConfig(
-          "fieldVal",
-          aTupleAC as any
-        ),
-        keyPath: keyPseudoPath,
-      });
-      const subBag = new StructureBag(this.keySrc, "fieldBag", {
-        data: subData,
-        criteriaHandler: subCriteriaHandler,
-      });
+      const subCriteriaHandler = new StructureCriteriaHandler(
+        mH,
+        "structureField",
+        {
+          keyPath: keyPseudoPath,
+          data: subData,
+          aTGlobalActionConfig: aTupleAC as any,
+        }
+      );
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];
         let actionFn = this.getActionFnByKey(keyAction as any);
-        const resForAction = await actionFn(subBag);
+        const resForAction = await actionFn(subCriteriaHandler);
         embResForItem.responses.push(resForAction);
         if (resForAction.status >= res.tolerance) break; //comprobar si se superó la tolerancia
       }
@@ -889,81 +923,6 @@ export class FieldLogicValidation<
       res.responses.push(embResForItem);
     }
     res = rH.mutateResponse(res);
-    return res;
-  }
-  /**... */
-  public async isEmbModel(bag: StructureBag<any>): Promise<IStructureResponse> {
-    //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler: cH } = bag;
-    const [keyAction, actionConfig] =
-      this.getTupleActionConfigFromCriteriaHandler(cH, "isEmbModel");
-    const rH = this.buildReportHandler(bag, keyAction);
-    let res = rH.mutateResponse(undefined, { data });
-    const { keyPath } = cH;
-    let { embModelDiccAC } = actionConfig;
-    //===============================================
-    //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(rH, bag);
-    if (res.status > ELogicResStatusCode.VALID_DATA) return res;
-    //===============================================
-    embModelDiccAC = this.util.isObject(embModelDiccAC) ? embModelDiccAC : {};
-    const sub_cH = cH.buildSubCriteriaHandler("structureEmbedded", {
-      diccGlobalAC: {
-        modelVal: embModelDiccAC as any,
-      },
-      keyPath,
-    });
-    const subBag = new StructureBag(this.keySrc, "modelBag", {
-      data,
-      criteriaHandler: sub_cH,
-    });
-    const mH = this.metadataHandler;
-    const modelMetadata = mH.getExtractMetadataByStructureContext(
-      "structureEmbedded",
-      keyPath
-    );
-    const modelValInst = mH.diccModuleInstanceContext
-      .fieldVal as ModelLogicValidation;
-    //... falata
-    return res;
-  }
-  /**... */
-  public async isArrayEmbModel(
-    bag: StructureBag<any>
-  ): Promise<IStructureResponse> {
-    //Desempaquetar la accion e inicializar
-    const { data, criteriaHandler: cH } = bag;
-    const [keyAction, actionConfig] =
-      this.getTupleActionConfigFromCriteriaHandler(cH, "isEmbModel");
-    const rH = this.buildReportHandler(bag, keyAction);
-    let res = rH.mutateResponse(undefined, { data });
-    const { keyPath } = cH;
-    let { embModelDiccAC } = actionConfig;
-    //===============================================
-    //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(rH, bag);
-    if (res.status > ELogicResStatusCode.VALID_DATA) return res;
-    //===============================================
-    embModelDiccAC = this.util.isObject(embModelDiccAC) ? embModelDiccAC : {};
-    const sub_cH = cH.buildSubCriteriaHandler("structureEmbedded", {
-      diccGlobalAC: {
-        modelVal: embModelDiccAC as any,
-      },
-      keyPath,
-    });
-
-    const subBag = new StructureBag(this.keySrc, "modelBag", {
-      data,
-      criteriaHandler: sub_cH,
-    });
-    const mH = this.metadataHandler;
-    const modelMetadata = mH.getExtractMetadataByStructureContext(
-      "structureEmbedded",
-      keyPath
-    );
-    const modelValInst = mH.diccModuleInstanceContext
-      .fieldVal as ModelLogicValidation;
-    //... falata
     return res;
   }
 }
