@@ -1,19 +1,18 @@
 import pako from "pako";
-import { Util_Module } from "./util-module";
 import { LogicError, ELogicCodeError } from "../errors/logic-error";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *Singleton*
  * manejador de encriptacion y compresion de data
  */
 export class EncryptAndCompressDataHandler {
   /**... */
-  protected util = Util_Module.getInstance();
+  protected util = TwinBeeModule.util;
   /**  Almacena la instancia única de esta clase */
   private static encriptAndCompressDataHandler_instance: EncryptAndCompressDataHandler;
   /**... */
   constructor() {
-    this.util = Util_Module.getInstance();
+    this.util = TwinBeeModule.util;
   }
   /** @returns la instancia unica de la clase*/
   public static getInstance(): EncryptAndCompressDataHandler {
@@ -29,7 +28,7 @@ export class EncryptAndCompressDataHandler {
   /**convierte buffer de tipo `Uint8Array` a `string` en base 64 */
   private uint8ArrayToBase64(uint8Array: Uint8Array): string {
     const { envStandard, envGlobalLayout, envTest } =
-      Module._globalConfig_.environment;
+      TwinBeeModule._globalConfig_.environment;
     let base64: string;
     if (envGlobalLayout === "client") {
       if (envStandard === "dev") {
@@ -74,7 +73,7 @@ export class EncryptAndCompressDataHandler {
   /**convierte `string` en base 64 a buffer de tipo `Uint8Array` */
   private base64ToUint8Array(base64: string): Uint8Array {
     const { envStandard, envGlobalLayout, envTest } =
-      Module._globalConfig_.environment;
+      TwinBeeModule._globalConfig_.environment;
     let binaryString: string;
 
     if (envGlobalLayout === "client") {

@@ -1,8 +1,7 @@
 import { TStructureActionConfigFn } from "../criterias/shared-types";
 import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 import { IStructureResponse } from "../reports/shared-types";
-import { Util_Module } from "../util/util-module";
 import { StructureLogicMutater } from "./_structure-mutater";
 import { TModelMutateBaseConfig } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -64,13 +63,13 @@ export class ModelLogicMutater<
   protected static buildInstanceForMetadata<
     TModelMutateInstance extends ModelLogicMutater = ModelLogicMutater
   >(preInstance: TModelMutateInstance): TModelMutateInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TModelMutateInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;
     } else {
       const { structureModuleFactory } =
-        Module._globalConfig_.diccModuleFactory;
+        TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = structureModuleFactory.makeModuleInstance(
         "modelMutate",
         preInstance as any

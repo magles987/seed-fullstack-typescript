@@ -5,13 +5,12 @@ import {
 } from "../criterias/structure-criteria-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 import {
   IStructureResponse,
   TSelectorDataDriver,
 } from "../reports/shared-types";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { Util_Module } from "../util/util-module";
 import { Driver } from "./_drivers/_driver";
 import { LogicProvider } from "./_provider";
 import {
@@ -86,13 +85,13 @@ export class StructureLogicProvider<
   protected static buildInstanceForMetadata<
     TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider
   >(preInstance: TStructureProviderInstance): TStructureProviderInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TStructureProviderInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;
     } else {
       const { structureModuleFactory } =
-        Module._globalConfig_.diccModuleFactory;
+        TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = structureModuleFactory.makeModuleInstance(
         "structureProvider",
         preInstance as any

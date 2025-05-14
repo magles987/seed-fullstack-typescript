@@ -1,5 +1,5 @@
 import { CriteriaHandler } from "../criterias/_criteria-handler";
-import { ActionModule } from "../modules/module";
+import { ActionTwinBeeModule } from "../modules/module";
 import { TKeyLogicContext } from "../modules/shared-types";
 import { ELogicResStatusCode, IResponse } from "../reports/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -9,10 +9,12 @@ export type Trf_HookLib = LogicHook<any>;
 /** *abstracta*
  *
  */
-export abstract class LogicHook<TIDiccAC> extends ActionModule<TIDiccAC> {
+export abstract class LogicHook<
+  TIDiccAC
+> extends ActionTwinBeeModule<TIDiccAC> {
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
-    const superDf = ActionModule.getDefault();
+    const superDf = ActionTwinBeeModule.getDefault();
     return {
       ...superDf,
     };

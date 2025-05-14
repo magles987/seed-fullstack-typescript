@@ -1,4 +1,4 @@
-import { Module } from "../../../../../modules/module";
+import { TwinBeeModule } from "../../../../../modules/module";
 import { LocalRepositoryDriver } from "./_local-repository-driver";
 import {
   TPrimitiveLocalRepositoryCustomQueryDriverFn,
@@ -18,7 +18,7 @@ export abstract class PrimitiveLibraryLocalRepositoryQueryFn<
     TDriverInstance,
     TValue
   > = async (driver, literalBag, registers) => {
-    const util = Module.util;
+    const util = TwinBeeModule.util;
     const { diccQueryParam, expectedDataType } = literalBag.literalCriteria;
     let f_registers;
     if (expectedDataType !== "array") {
@@ -48,7 +48,7 @@ export abstract class StructureLibraryLocalRepositoryQueryFn<
     TDriverInstance,
     TModel
   > = async (driver, literalBag, registers) => {
-    const util = Module.util;
+    const util = TwinBeeModule.util;
     const keyId = driver.keyId;
     const { diccQueryParam } = literalBag.literalCriteria;
     const f_register = registers.find((reg) =>
@@ -61,7 +61,7 @@ export abstract class StructureLibraryLocalRepositoryQueryFn<
     TDriverInstance,
     TModel
   > = async (driver, literalBag, registers) => {
-    const util = Module.util;
+    const util = TwinBeeModule.util;
     const { diccQueryParam } = literalBag.literalCriteria;
     const f_registers = registers.find((reg) =>
       util.isEquivalentTo([diccQueryParam, reg], {})
@@ -77,7 +77,7 @@ export abstract class StructureLibraryLocalRepositoryQueryFn<
     TDriverInstance,
     TModel
   > = async (driver, literalBag, registers) => {
-    const util = Module.util;
+    const util = TwinBeeModule.util;
     const { diccQueryParam } = literalBag.literalCriteria;
     const f_registers = registers.filter((reg) =>
       util.isEquivalentTo([diccQueryParam, reg], {})
@@ -90,7 +90,7 @@ export abstract class StructureLibraryLocalRepositoryQueryFn<
     TDriverInstance,
     TModel
   > = async (driver, literalBag, registers) => {
-    const util = Module.util;
+    const util = TwinBeeModule.util;
     const { diccQueryParam, expectedDataType } = literalBag.literalCriteria;
     let f_registers;
     if (expectedDataType !== "array") {

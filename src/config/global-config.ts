@@ -8,6 +8,7 @@ import {
 } from "../logic/modules/module-factory";
 import { UtilExtension } from "../util/extension-util";
 import { TDeepPartial } from "../util/shared-types";
+import { UtilTwinBee } from "../logic/util/util-twinbee";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
 /** *selfconstructor and singleton*
@@ -18,8 +19,18 @@ export class GlobalConfig implements ReturnType<GlobalConfig["getDefault"]> {
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
     return {
-      /**valor que se asume como predefinido para toda la semilla */
-      globalDefaultValue: undefined as undefined | null,
+      /*--------------------------------*/
+      /*--------------------------------*/
+      /*---- <INICIO CONSTRUCCION> -----*/
+      /*
+      //valor que se asume como predefinido para toda la semilla
+      //globalDefaultValue: undefined as undefined | null,
+      */
+      /**instancia de utilidad global a usar */
+      globalUtil: UtilTwinBee.getInstance(undefined),
+      /*---- <FIN CONSTRUCCION> --------*/
+      /*--------------------------------*/
+      /*--------------------------------*/
       /**clave identificadora del campo que se tomará como identificador */
       keyId: "_id",
       /**estrategia para construcción interna de un  identificador estándar*/
@@ -51,6 +62,10 @@ export class GlobalConfig implements ReturnType<GlobalConfig["getDefault"]> {
       //..aquí las constantes
     };
   };
+  /*------------------------------------------------*/
+  /*------------------------------------------------*/
+  /*---- <INICIO CONSTRUCCION> ---------------------*/
+  /*
   private _globalDefaultValue: ReturnType<
     GlobalConfig["getDefault"]
   >["globalDefaultValue"];
@@ -65,6 +80,26 @@ export class GlobalConfig implements ReturnType<GlobalConfig["getDefault"]> {
     this._globalDefaultValue =
       v === undefined || v === null ? v : this._globalDefaultValue;
   }
+*/
+  private _globalUtil: ReturnType<GlobalConfig["getDefault"]>["globalUtil"];
+  public get globalUtil(): ReturnType<
+    GlobalConfig["getDefault"]
+  >["globalUtil"] {
+    return this._globalUtil;
+  }
+  public set globalUtil(
+    v: ReturnType<GlobalConfig["getDefault"]>["globalUtil"]
+  ) {
+    this._globalUtil = this.util.isInstance(v)
+      ? v
+      : this.util.isInstance(this._globalUtil)
+      ? this._globalUtil
+      : this.getDefault().globalUtil;
+  }
+
+  /*---- <FIN CONSTRUCCION> ------------------------*/
+  /*------------------------------------------------*/
+  /*------------------------------------------------*/
   private _keyId: ReturnType<GlobalConfig["getDefault"]>["keyId"];
   public get keyId(): ReturnType<GlobalConfig["getDefault"]>["keyId"] {
     return this._keyId;
@@ -157,7 +192,7 @@ export class GlobalConfig implements ReturnType<GlobalConfig["getDefault"]> {
       : df.environment;
   }
   /**utilidades (exclusivas) */
-  protected util = UtilExtension.getInstance(undefined); //el valor predefinido no importa porque es solo para esta clase
+  protected readonly util = UtilExtension.getInstance(undefined); //el valor predefinido no importa porque es solo para esta clase
   /**  Almacena la instancia única de esta clase */
   private static GlobalConfig_instance: GlobalConfig;
   /**
@@ -168,10 +203,11 @@ export class GlobalConfig implements ReturnType<GlobalConfig["getDefault"]> {
     base: TDeepPartial<ReturnType<GlobalConfig["getDefault"]>> = {},
     isInit = true
   ) {
-    this.util = UtilExtension.getInstance(undefined);
+    this.util = UtilExtension.getInstance(undefined); //asignación temporal
     if (isInit) this.initProps(base);
     //🐱‍👤la propiedad no es accesible por las buenas, toca a las malas 🐱‍👤
-    this.util["_dfValue" as any] = this.globalDefaultValue;
+    //this.util["_dfValue" as any] = this.globalDefaultValue;
+    this.util = this.globalUtil;
   }
   /** @returns la instancia única de la clase*/
   public static getInstance(

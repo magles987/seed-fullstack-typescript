@@ -1,16 +1,18 @@
 import { CriteriaHandler } from "../criterias/_criteria-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { ActionModule } from "../modules/module";
+import { ActionTwinBeeModule } from "../modules/module";
 import { TKeyLogicContext } from "../modules/shared-types";
 import { ELogicResStatusCode, IResponse } from "../reports/shared-types";
 import { Driver } from "./_drivers/_driver";
 import { TDriverList } from "./_drivers/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
-export abstract class LogicProvider<TIDiccAC> extends ActionModule<TIDiccAC> {
+export abstract class LogicProvider<
+  TIDiccAC
+> extends ActionTwinBeeModule<TIDiccAC> {
   /** configuración de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
-    const superDf = ActionModule.getDefault();
+    const superDf = ActionTwinBeeModule.getDefault();
     return {
       ...superDf,
       globalTolerance: ELogicResStatusCode.INVALID_DATA, //personalizada para provider

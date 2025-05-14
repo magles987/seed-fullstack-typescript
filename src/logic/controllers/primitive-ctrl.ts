@@ -11,7 +11,7 @@ import {
   PrimitiveLogicMetadataHandler,
   Trf_PrimitiveLogicMetadataHandler,
 } from "../meta/primitive-metadata-handler";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 import { PrimitiveLogicMutater } from "../mutaters/primitive-mutater";
 import { PrimitiveLogicProvider } from "../providers/primitive-provider";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
@@ -19,7 +19,6 @@ import {
   ELogicResStatusCode,
   IPrimitiveResponse,
 } from "../reports/shared-types";
-import { Util_Module } from "../util/util-module";
 import { PrimitiveLogicValidation } from "../validators/primitive-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
 import { IDiccCtrlActionConfig, LogicController } from "./_controller";
@@ -154,13 +153,13 @@ export class PrimitiveLogicController<
   protected static buildInstanceForMetadata<
     TPrimitiveHookInstance extends PrimitiveLogicController<any> = PrimitiveLogicController<any>
   >(preInstance: TPrimitiveHookInstance): TPrimitiveHookInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TPrimitiveHookInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;
     } else {
       const { primitiveModuleFactory } =
-        Module._globalConfig_.diccModuleFactory;
+        TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = primitiveModuleFactory.makeModuleInstance(
         "primitiveCtrl",
         preInstance as any

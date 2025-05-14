@@ -3,13 +3,13 @@ import { TKeyStructureHookModuleContext } from "../hooks/shared-types";
 import { StructureLogicHook } from "../hooks/structure-hook";
 import { TKeyStructureInternalACModuleContext } from "../meta/schema-shared-types";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
+import { TwinBeeModule } from "../modules/module";
 import { TKeyStructureContextFull } from "../modules/shared-types";
 import { FieldLogicMutater } from "../mutaters/field-mutater";
 import { ModelLogicMutater } from "../mutaters/model-mutater";
 import { TKeyStructureDeepMutateModuleContext } from "../mutaters/shared-types";
 import { TKeyStructureProviderModuleContext } from "../providers/shared-types";
 import { StructureLogicProvider } from "../providers/structure-provider";
-import { Util_Module } from "../util/util-module";
 import { FieldLogicValidation } from "../validators/field-validation";
 import { ModelLogicValidation } from "../validators/model-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
@@ -266,7 +266,7 @@ export class StructureCriteriaHandler<
     currentContextConfig: unknown,
     newContextConfig: unknown
   ): unknown {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let baseRebuildCriteria: unknown;
     if (keyStructureContext === "structureField") {
       const df = StructureCriteriaHandler.getDefault();
@@ -403,7 +403,7 @@ export class StructureCriteriaHandler<
     keyStructureContext: TKeyStructureContextFull,
     baseRebuildCriteria: TBaseRC
   ): TBaseRC {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     if (keyStructureContext === "structureField") {
       const bC = baseRebuildCriteria as IStructureFieldCriteria<any> &
         TStructureFieldBaseCriteria<any>;

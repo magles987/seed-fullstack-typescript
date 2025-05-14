@@ -18,8 +18,8 @@ import {
   TStructureReadLiteralCriteria,
 } from "../../../shared-types";
 import { WebDriver } from "../_web-driver";
-import { Module } from "../../../../../modules/module";
-import { Util_Module } from "../../../../../util/util-module";
+import { TwinBeeModule } from "../../../../../modules/module";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
@@ -30,7 +30,7 @@ export abstract class LocalRepositoryDriver
   implements ReturnType<LocalRepositoryDriver["getDefault"]>
 {
   public static readonly getNameLogicDriver = () => {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     const sp = util.charSeparatorLogicName;
     const prefixGroupName = WebDriver.getNameLogicDriver();
     let name = "localRepository";
@@ -42,7 +42,7 @@ export abstract class LocalRepositoryDriver
     return {
       ...superDf,
       /**nombre de la propiedad que contiene la clave identificadora */
-      keyId: Module._globalConfig_.keyId,
+      keyId: TwinBeeModule._globalConfig_.keyId,
     };
   };
   protected static override readonly getCONSTANTS = () => {

@@ -4,10 +4,9 @@ import {
 } from "../criterias/primitive-criteria-handler";
 import { TPrimitiveActionConfigFn } from "../criterias/shared-types";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import { IPrimitiveResponse } from "../reports/shared-types";
-import { Util_Module } from "../util/util-module";
 import { LogicMutater } from "./_mutater";
 import {
   TKeyPrimitiveMutateModuleContext,
@@ -203,13 +202,13 @@ export class PrimitiveLogicMutater<
   protected static buildInstanceForMetadata<
     TPrimitiveMutateInstance extends PrimitiveLogicMutater = PrimitiveLogicMutater
   >(preInstance: TPrimitiveMutateInstance): TPrimitiveMutateInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TPrimitiveMutateInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;
     } else {
       const { primitiveModuleFactory } =
-        Module._globalConfig_.diccModuleFactory;
+        TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = primitiveModuleFactory.makeModuleInstance(
         "primitiveMutate",
         preInstance as any

@@ -5,14 +5,13 @@ import {
 import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { TFieldType } from "../meta/shared-types";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 import {
   EKeyActionGroupForRes,
   ELogicResStatusCode,
   IStructureResponse,
 } from "../reports/shared-types";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { Util_Module } from "../util/util-module";
 import { StructureLogicValidation } from "./_structure-validation";
 import {
   TFieldValBaseConfig,
@@ -344,13 +343,13 @@ export class FieldLogicValidation<
   protected static buildInstanceForMetadata<
     TFieldValInstance extends FieldLogicValidation = FieldLogicValidation
   >(preInstance: TFieldValInstance): TFieldValInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TFieldValInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;
     } else {
       const { structureModuleFactory } =
-        Module._globalConfig_.diccModuleFactory;
+        TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = structureModuleFactory.makeModuleInstance(
         "fieldVal",
         preInstance as any

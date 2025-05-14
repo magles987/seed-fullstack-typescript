@@ -4,10 +4,9 @@ import {
 } from "../criterias/primitive-criteria-handler";
 import { TPrimitiveActionConfigFn } from "../criterias/shared-types";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import { IPrimitiveResponse } from "../reports/shared-types";
-import { Util_Module } from "../util/util-module";
 import { LogicHook } from "./_hook";
 import {
   TKeyPrimitiveHookModuleContext,
@@ -78,13 +77,13 @@ export class PrimitiveLogicHook<
   protected static buildInstanceForMetadata<
     TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook
   >(preInstance: TPrimitiveHookInstance): TPrimitiveHookInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TPrimitiveHookInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;
     } else {
       const { primitiveModuleFactory } =
-        Module._globalConfig_.diccModuleFactory;
+        TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = primitiveModuleFactory.makeModuleInstance(
         "primitiveHook",
         preInstance as any

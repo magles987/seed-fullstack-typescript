@@ -1,4 +1,4 @@
-import { LogicModule } from "../modules/module";
+import { LogicTwinBeeModule } from "../modules/module";
 import {
   TKeyLogicContext,
   TKeyModuleWithReport,
@@ -11,10 +11,10 @@ export type Trf_LogicMetadataHandler = LogicMetadataHandler;
 /** *abstract*
  *
  */
-export abstract class LogicMetadataHandler extends LogicModule {
+export abstract class LogicMetadataHandler extends LogicTwinBeeModule {
   /** configuración de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
-    const superDf = LogicModule.getDefault();
+    const superDf = LogicTwinBeeModule.getDefault();
     return {
       ...superDf,
       handlerConfig: {},

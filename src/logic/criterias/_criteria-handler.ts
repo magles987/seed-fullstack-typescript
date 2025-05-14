@@ -1,12 +1,11 @@
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { Trf_LogicMetadataHandler } from "../meta/_metadata-handler";
-import { HandlerModule } from "../modules/module";
+import { HandlerTwinBeeModule, TwinBeeModule } from "../modules/module";
 import {
   TKeyLogicContext,
   TKeyRequestModifyType,
   TKeyRequestType,
 } from "../modules/shared-types";
-import { Util_Module } from "../util/util-module";
 import {
   ICriteria,
   IModifyCriteria,
@@ -25,13 +24,13 @@ export type Trf_CriteriaCursor = CriteriaHandler;
 export abstract class CriteriaHandler<
     TKeyDiccActionRequest extends string = string
   >
-  extends HandlerModule
+  extends HandlerTwinBeeModule
   implements ReturnType<CriteriaHandler["getDefault"]>
 {
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
-    const util = Util_Module.getInstance();
-    const superDf = HandlerModule.getDefault();
+    const util = TwinBeeModule.util;
+    const superDf = HandlerTwinBeeModule.getDefault();
     return {
       ...superDf,
       data: util.dfValue,
@@ -413,7 +412,7 @@ export abstract class CriteriaHandler<
   public static toSlimLiteralCriteriaForSend(
     literalCriteria: IReadCriteria<any> & IModifyCriteria<any>
   ) {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     const keysNotSend =
       CriteriaHandler.getCONSTANTS().KEYPROPS_DO_NOT_SEND_AT_EXTERNAL;
     let slimLC = util.clone(literalCriteria, "lodash");

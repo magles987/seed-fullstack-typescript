@@ -4,7 +4,8 @@ import {
   TPrimitiveLiteralCriteriaUnion,
   TStructureLiteralCriteriaUnion,
 } from "../shared-types";
-import { Util_Module } from "../../../util/util-module";
+import { TwinBeeModule } from "../../../modules/module";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
 /** *selfcontructor*
@@ -16,7 +17,7 @@ export abstract class ClientDriver
   implements ReturnType<ClientDriver["getDefault"]>
 {
   public static readonly getNameLogicDriver = () => {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     const sp = util.charSeparatorLogicName;
     const prefixGroupName = Driver.getNameLogicDriver();
     let name = "client";

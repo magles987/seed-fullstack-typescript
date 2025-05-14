@@ -1,7 +1,7 @@
 import { GlobalConfig } from "../../config/global-config";
 import { TActionConfigFn } from "../criterias/shared-types";
 import { ELogicResStatusCode } from "../reports/shared-types";
-import { Util_Module } from "../util/util-module";
+import { UtilTwinBee } from "../util/util-twinbee";
 import {
   TKeyModule,
   TKeyLogicContext,
@@ -14,9 +14,9 @@ import {
  *
  * clase estructural para  representar un modulo genérico
  */
-export abstract class Module {
+export abstract class TwinBeeModule {
   /**configuración global */
-  protected readonly _globalConfig_ = Module._globalConfig_;
+  protected readonly _globalConfig_ = TwinBeeModule._globalConfig_;
   /**... */
   public static get _globalConfig_() {
     return GlobalConfig.getInstance();
@@ -41,22 +41,31 @@ export abstract class Module {
     this._keyModule = v;
   }
   /**utilidades de este modulo */
-  protected readonly util = Module.util;
+  protected readonly util = TwinBeeModule.util;
   /**.utilidades del modulo*/
-  public static get util(): Util_Module {
-    const dfValue = Module._globalConfig_.globalDefaultValue;
-    return Util_Module.getInstance(dfValue);
+  public static get util(): UtilTwinBee {
+    /*--------------------------------*/
+    /*--------------------------------*/
+    /*---- <INICIO CONSTRUCCION> -----*/
+    /*
+      const dfValue = Module._globalConfig_.globalDefaultValue;
+      return Util_Module.getInstance(dfValue);
+    */
+    return TwinBeeModule._globalConfig_.globalUtil;
+    /*---- <FIN CONSTRUCCION> --------*/
+    /*--------------------------------*/
+    /*--------------------------------*/
   }
   /**
    * @param _keyModule clave identificadora del modulo
    */
   constructor(private _keyModule: TKeyModule) {
-    this.util = Module.util;
-    this._globalConfig_ = Module._globalConfig_;
+    this.util = TwinBeeModule.util;
+    this._globalConfig_ = TwinBeeModule._globalConfig_;
   }
   /**@returns los valores de configuracion predefinidos */
   protected getDefault() {
-    return Module.getDefault();
+    return TwinBeeModule.getDefault();
   }
 }
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -64,9 +73,9 @@ export abstract class Module {
  *
  * clase estructural para un modulo de tipo lógico
  */
-export abstract class LogicModule extends Module {
+export abstract class LogicTwinBeeModule extends TwinBeeModule {
   public static override readonly getDefault = () => {
-    const superDf = Module.getDefault();
+    const superDf = TwinBeeModule.getDefault();
     return {
       ...superDf,
       keySrc: undefined as string,
@@ -105,7 +114,7 @@ export abstract class LogicModule extends Module {
     super(keyModule);
   }
   protected override getDefault() {
-    return LogicModule.getDefault();
+    return LogicTwinBeeModule.getDefault();
   }
 }
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -115,9 +124,9 @@ export abstract class LogicModule extends Module {
  * se base manejadores
  *
  */
-export abstract class HandlerModule extends LogicModule {
+export abstract class HandlerTwinBeeModule extends LogicTwinBeeModule {
   public static override readonly getDefault = () => {
-    const superDf = LogicModule.getDefault();
+    const superDf = LogicTwinBeeModule.getDefault();
     return {
       ...superDf,
     };
@@ -131,16 +140,16 @@ export abstract class HandlerModule extends LogicModule {
     super(keyModule, keyLogicContext);
   }
   protected override getDefault() {
-    return HandlerModule.getDefault();
+    return HandlerTwinBeeModule.getDefault();
   }
 }
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *abstract*
  *
  */
-export abstract class LogicModuleWithReport extends LogicModule {
+export abstract class LogicTwinBeeModuleWithReport extends LogicTwinBeeModule {
   public static override readonly getDefault = () => {
-    const superDf = LogicModule.getDefault();
+    const superDf = LogicTwinBeeModule.getDefault();
     return {
       ...superDf,
       /**tolerancia hacia la respuesta del modulo */
@@ -168,7 +177,7 @@ export abstract class LogicModuleWithReport extends LogicModule {
     super(keyModule, keyLogicContext);
   }
   protected override getDefault() {
-    return LogicModuleWithReport.getDefault();
+    return LogicTwinBeeModuleWithReport.getDefault();
   }
   /**instancia de manejador de metadatos de este recurso */
   public get metadataHandler(): unknown {
@@ -186,7 +195,7 @@ export abstract class LogicModuleWithReport extends LogicModule {
     )
       return; //❗garantiza solo 1 vez inicializar❗
     this._metadataHandler = metadataHandler;
-    this.keySrc = (metadataHandler as HandlerModule).keySrc; //❗Actualizacion obligatoria❗
+    this.keySrc = (metadataHandler as HandlerTwinBeeModule).keySrc; //❗Actualizacion obligatoria❗
   }
   /**construye un reporte de manejador de respuesta para este modulo
    *
@@ -206,9 +215,11 @@ export abstract class LogicModuleWithReport extends LogicModule {
  * clase estructural para modulos cuyo funcionamiento
  * se base acciones controladas por middlewares
  */
-export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
+export abstract class ActionTwinBeeModule<
+  TIDiccAC
+> extends LogicTwinBeeModuleWithReport {
   public static override readonly getDefault = () => {
-    const superDf = LogicModuleWithReport.getDefault();
+    const superDf = LogicTwinBeeModuleWithReport.getDefault();
     return {
       ...superDf,
       diccActionConfig: {} as unknown,
@@ -298,7 +309,7 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
     keyLogicContext: TKeyLogicContext,
     baseConfig?: Partial<
       Pick<
-        ReturnType<ActionModule<TIDiccAC>["getDefault"]>,
+        ReturnType<ActionTwinBeeModule<TIDiccAC>["getDefault"]>,
         "diccActionConfig" | "topMandatoryKeysAction" | "topPriorityKeysAction"
       >
     >
@@ -313,7 +324,7 @@ export abstract class ActionModule<TIDiccAC> extends LogicModuleWithReport {
     this.diccActionFn = undefined; //❗Internamente se procesa❗
   }
   protected override getDefault() {
-    return ActionModule.getDefault();
+    return ActionTwinBeeModule.getDefault();
   }
   /**obtiene una funcion de accion de acuerdo a su clave identificadora
    * preparada para ser inyectada en el middleware

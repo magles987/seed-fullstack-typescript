@@ -1,8 +1,7 @@
 import { ELogicCodeError, LogicError } from "../../errors/logic-error";
-import { Module } from "../../modules/module";
+import { TwinBeeModule } from "../../modules/module";
 import { TKeySrcSelector } from "../../modules/shared-types";
 import { IDriverResponse } from "../../reports/shared-types";
-import { Util_Module } from "../../util/util-module";
 import {
   TPrimitiveLiteralCriteriaUnion,
   TStructureLiteralCriteriaUnion,
@@ -13,12 +12,12 @@ import {
  * ...
  */
 export abstract class Driver
-  extends Module
+  extends TwinBeeModule
   implements ReturnType<Driver["getDefault"]>
 {
   /**@returns el nombre de identificación del driver (debe ser único entre grupos) */
   public static readonly getNameLogicDriver = () => {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     const sp = util.charSeparatorLogicName;
     const prefixGroupName = "driver";
     let name = "";
@@ -27,7 +26,7 @@ export abstract class Driver
   };
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
-    const superDf = Module.getDefault();
+    const superDf = TwinBeeModule.getDefault();
     return {
       ...superDf,
       /**determina que tipo de clave identificadora de recurso usar */

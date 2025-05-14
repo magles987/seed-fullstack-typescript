@@ -3,24 +3,24 @@ import {
   IStructureResponse,
   ELogicResStatusCode,
 } from "../../../../src/logic/reports/shared-types";
-import { Util_Module } from "../../../../src/logic/util/util-module";
 import { bd_valid, dataValid } from "./elemental-model-static-dummy-data-test";
 import {
   ElementalModelTest,
   getElementalModelTestCtrl,
 } from "./elemental-model-test";
 import { ScreenBrowserResponseUtil } from "../../../util/screen-browser-response-util";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-const util = Util_Module.getInstance();
-const screenBrowserLog = ScreenBrowserResponseUtil.getInstance();
-const ctrl = getElementalModelTestCtrl();
-const nameLogicDriver = CookieDriver.getNameLogicDriver();
-const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
-commonBaseCriteria.diccGlobalAC = {
-  structureProvider: { singleRunDriver: { nameLogicDriver } },
-};
 /**... */
 export async function runToLocalCookie() {
+  const ctrl = getElementalModelTestCtrl();
+  const util = ctrl.twinBeeUtil;
+  const screenBrowserLog = ScreenBrowserResponseUtil.getInstance();
+  const nameLogicDriver = CookieDriver.getNameLogicDriver();
+  const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
+  commonBaseCriteria.diccGlobalAC = {
+    structureProvider: { singleRunDriver: { nameLogicDriver } },
+  };
   await CookieDriver.emptyAllCookies();
   let res: IStructureResponse;
   //████ Creación y comprobación inicial ████████████████████████████████████████████████████████████

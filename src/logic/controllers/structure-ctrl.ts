@@ -17,7 +17,7 @@ import {
   StructureLogicMetadataHandler,
   Trf_StructureLogicMetadataHandler,
 } from "../meta/structure-metadata-handler";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 import { TKeyStructureContextFull } from "../modules/shared-types";
 import { FieldLogicMutater } from "../mutaters/field-mutater";
 import { ModelLogicMutater } from "../mutaters/model-mutater";
@@ -27,7 +27,6 @@ import {
   IStructureResponse,
 } from "../reports/shared-types";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { Util_Module } from "../util/util-module";
 import { FieldLogicValidation } from "../validators/field-validation";
 import { ModelLogicValidation } from "../validators/model-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
@@ -348,13 +347,13 @@ export class StructureLogicController<
   protected static buildInstanceForMetadata<
     TStructureCtrlInstance extends StructureLogicController<any> = StructureLogicController<any>
   >(preInstance: TStructureCtrlInstance): TStructureCtrlInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TStructureCtrlInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;
     } else {
       const { structureModuleFactory } =
-        Module._globalConfig_.diccModuleFactory;
+        TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = structureModuleFactory.makeModuleInstance(
         "structureCtrl",
         preInstance as any

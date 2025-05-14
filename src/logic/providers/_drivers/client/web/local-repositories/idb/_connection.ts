@@ -2,7 +2,8 @@
  * https://www.npmjs.com/package/idb?activeTab=versions
  */
 import { openDB, deleteDB, wrap, unwrap, DBSchema, IDBPDatabase } from "idb";
-import { Util_Module } from "../../../../../../util/util-module";
+import { TwinBeeModule } from "../../../../../../modules/module";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define tipo configuracion para un esquema de datos */
 export type TSchemaConfig = ReturnType<
@@ -62,12 +63,12 @@ export class IDBConnection {
   private static readonly mapSchemaConfig: Map<string, TSchemaConfig> =
     new Map();
   /** utilidades*/
-  protected readonly util = Util_Module.getInstance();
+  protected readonly util = TwinBeeModule.util;
   /**Almacena la instancia única de esta clase*/
   private static instance: IDBConnection;
   /** */
   constructor() {
-    this.util = Util_Module.getInstance();
+    this.util = TwinBeeModule.util;
   }
   /**devuelve la instancia única de esta clase
    * ya sea que la crea o la que ya a sido creada

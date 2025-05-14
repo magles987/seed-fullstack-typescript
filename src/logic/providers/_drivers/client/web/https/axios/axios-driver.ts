@@ -1,4 +1,4 @@
-import { Util_Module } from "../../../../../../util/util-module";
+import { TwinBeeModule } from "../../../../../../modules/module";
 import { HttpDriver } from "../_https-driver";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
@@ -10,7 +10,7 @@ export class AxiosDriver
   implements ReturnType<AxiosDriver["getDefault"]>
 {
   public static readonly getNameLogicDriver = () => {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     //const sp = util.charSeparatorLogicName;
     const prefixGroupName = HttpDriver.getNameLogicDriver();
     let name = "axios";

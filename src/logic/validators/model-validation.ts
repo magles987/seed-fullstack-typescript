@@ -1,12 +1,11 @@
 import { TStructureActionConfigFn } from "../criterias/shared-types";
 import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 import {
   ELogicResStatusCode,
   IStructureResponse,
 } from "../reports/shared-types";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { Util_Module } from "../util/util-module";
 import { StructureLogicValidation } from "./_structure-validation";
 import { TModelValBaseConfig } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -97,13 +96,13 @@ export class ModelLogicValidation<
   protected static buildInstanceForMetadata<
     TModelValInstance extends ModelLogicValidation = ModelLogicValidation
   >(preInstance: TModelValInstance): TModelValInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TModelValInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;
     } else {
       const { structureModuleFactory } =
-        Module._globalConfig_.diccModuleFactory;
+        TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = structureModuleFactory.makeModuleInstance(
         "modelVal",
         preInstance as any

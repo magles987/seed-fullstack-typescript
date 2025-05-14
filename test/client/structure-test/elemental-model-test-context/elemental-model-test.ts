@@ -1,4 +1,4 @@
-import { Module } from "../../../../src/logic/modules/module";
+import { TwinBeeModule } from "../../../../src/logic/modules/module";
 import { Model } from "../../../../src/logic/models/_model";
 import { IStructureModelReadCriteria } from "../../../../src/logic/criterias/shared-types";
 import {
@@ -58,10 +58,10 @@ export class ElementalModelTest extends Model {
   //...aquí las propiedades
 }
 //███ Constructor de Metadatos █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**utilidades de módulos */
-const util = Module.util;
+
 /**@returns un manejador de metadatos personalizado para este modelo*/
 function buildMetadataHandler() {
+  const util = TwinBeeModule.util;
   const baseModel = new ElementalModelTest();
   const keySrc = util.getClassName(baseModel);
   return new StructureLogicMetadataHandler<
@@ -86,9 +86,9 @@ function buildMetadataHandler() {
       // __hookInstance: {}, //configuración personalizada o instancia personalizada
       __providerInstance: {
         driverList: [
-          new CookieDriver(),
-          new StorageDriver(),
-          new IdbDriver(),
+          //new CookieDriver(),
+          //new StorageDriver(),
+          //new IdbDriver(),
           new FetchDriver({
             urlRoot: "http://www.mytest.com",
             srcSelector: "plural",
@@ -267,7 +267,7 @@ function buildMetadataHandler() {
               [
                 CookieDriver.getNameLogicDriver(),
                 (async (driver, literalCriteria, registers) => {
-                  const util = Module.util; //mejor usar una genérica
+                  const util = TwinBeeModule.util; //mejor usar una genérica
                   const { diccQueryParam } =
                     literalCriteria as IStructureModelReadCriteria<TModel>;
                   const regs = registers as TModel[];
@@ -374,6 +374,7 @@ let metadataHandlerInstance = undefined as unknown as ReturnType<
 >;
 /**@returns la instancia de manejador actual de metadatos para este modelo */
 export function getElementalModelTestMetadataHandler() {
+  const util = TwinBeeModule.util;
   if (!util.isInstance(metadataHandlerInstance))
     metadataHandlerInstance = buildMetadataHandler();
   return metadataHandlerInstance;

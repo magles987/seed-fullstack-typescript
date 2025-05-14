@@ -4,10 +4,9 @@ import {
   Trf_StructureCriteriaHandler,
 } from "../criterias/structure-criteria-handler";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 import { IStructureResponse } from "../reports/shared-types";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { Util_Module } from "../util/util-module";
 import { LogicHook } from "./_hook";
 import {
   TKeyStructureHookModuleContext,
@@ -76,13 +75,13 @@ export class StructureLogicHook<
   protected static buildInstanceForMetadata<
     TStructureHookInstance extends StructureLogicHook = StructureLogicHook
   >(preInstance: TStructureHookInstance): TStructureHookInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TStructureHookInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;
     } else {
       const { structureModuleFactory } =
-        Module._globalConfig_.diccModuleFactory;
+        TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = structureModuleFactory.makeModuleInstance(
         "structureHook",
         preInstance as any

@@ -5,13 +5,13 @@ import {
 import { TPrimitiveActionConfigFn } from "../criterias/shared-types";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import { TPrimitiveType } from "../meta/shared-types";
+import { TwinBeeModule } from "../modules/module";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import {
   EKeyActionGroupForRes,
   ELogicResStatusCode,
   IPrimitiveResponse,
 } from "../reports/shared-types";
-import { Util_Module } from "../util/util-module";
 import { LogicValidation } from "./_validation";
 import {
   TKeyPrimitiveValModuleContext,
@@ -354,7 +354,7 @@ export class PrimitiveLogicValidation<
   protected static buildInstanceForMetadata<
     TPrimitiveValInstance extends PrimitiveLogicValidation = PrimitiveLogicValidation
   >(preInstance: TPrimitiveValInstance): TPrimitiveValInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TPrimitiveValInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;

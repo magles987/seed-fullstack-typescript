@@ -2,8 +2,7 @@ import { CriteriaHandler } from "../criterias/_criteria-handler";
 import { LogicError, ELogicCodeError } from "../errors/logic-error";
 import { TKeyLogicContext } from "../modules/shared-types";
 import { IResponse, ELogicResStatusCode } from "../reports/shared-types";
-import { ActionModule } from "../modules/module";
-import { Util_Module } from "../util/util-module";
+import { ActionTwinBeeModule, TwinBeeModule } from "../modules/module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**calves identificadoras del los
  * drivers (librerias) a usar
@@ -16,10 +15,12 @@ export type Trf_LogicMutater = LogicMutater<any>;
  *
  * ...
  */
-export abstract class LogicMutater<TIDiccAC> extends ActionModule<TIDiccAC> {
+export abstract class LogicMutater<
+  TIDiccAC
+> extends ActionTwinBeeModule<TIDiccAC> {
   /** configuracion de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
-    const superDf = ActionModule.getDefault();
+    const superDf = ActionTwinBeeModule.getDefault();
     return {
       ...superDf,
     };
@@ -55,7 +56,7 @@ export abstract class LogicMutater<TIDiccAC> extends ActionModule<TIDiccAC> {
   public static getDiccGenericMutate(
     dfKeyDriver: TKeyGenericMutateDrivers = "Util"
   ) {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     return {
       /**formate con trim
        * @param v el dato a formatear

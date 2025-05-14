@@ -7,9 +7,9 @@ import { Model } from "../models/_model";
  * descrip...
  *
  */
-export class Util_Module extends UtilExtension {
+export class UtilTwinBee extends UtilExtension {
   /**  Almacena la instancia única de esta clase */
-  private static Util_Module_instance: Util_Module;
+  private static UtilTwinBee_instance: UtilTwinBee;
   /**
    * Array de expresiones regulares de prefijos
    * que identifican propiedades especiales
@@ -49,7 +49,7 @@ export class Util_Module extends UtilExtension {
     HH_mm_ss: /^([0-1][0-9]|2[0-3])(:)([0-5][0-9])(:)([0-5][0-9])$/,
   };
   /**diccionario de expresiones regulares para validadores */
-  public readonly diccValRE = Util_Module.diccValRE;
+  public readonly diccValRE = UtilTwinBee.diccValRE;
   /**... */
   public readonly charSeparatorLogicName = "-";
   /** */
@@ -59,13 +59,13 @@ export class Util_Module extends UtilExtension {
   /** devuelve la instancia única de esta clase
    * ya sea que la crea o la que ya a sido creada
    */
-  public static getInstance(dfValue?: null | undefined): Util_Module {
-    Util_Module.Util_Module_instance =
-      Util_Module.Util_Module_instance === undefined ||
-      Util_Module.Util_Module_instance === null
-        ? new Util_Module(dfValue)
-        : Util_Module.Util_Module_instance;
-    return Util_Module.Util_Module_instance;
+  public static getInstance(dfValue?: null | undefined): UtilTwinBee {
+    UtilTwinBee.UtilTwinBee_instance =
+      UtilTwinBee.UtilTwinBee_instance === undefined ||
+      UtilTwinBee.UtilTwinBee_instance === null
+        ? new UtilTwinBee(dfValue)
+        : UtilTwinBee.UtilTwinBee_instance;
+    return UtilTwinBee.UtilTwinBee_instance;
   }
   /**
    * @returns el nombre del campo con que

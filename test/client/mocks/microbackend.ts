@@ -28,8 +28,7 @@ import {
   TStructureModifyLiteralCriteria,
   TStructureReadLiteralCriteria,
 } from "../../../src/logic/providers/_drivers/shared-types";
-import { Module } from "../../../src/logic/modules/module";
-import { Util_Module } from "../../../src/logic/util/util-module";
+import { TwinBeeModule } from "../../../src/logic/modules/module";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type Trf_MicroBackend = MicroBackend;
@@ -39,13 +38,13 @@ export type Trf_MicroBackend = MicroBackend;
  * ...
  */
 export class MicroBackend
-  extends Module
+  extends TwinBeeModule
   implements ReturnType<MicroBackend["getDefault"]>
 {
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
-    const superDf = Module.getDefault();
-    const util = Util_Module.getInstance();
+    const superDf = TwinBeeModule.getDefault();
+    const util = TwinBeeModule.util;
     return {
       ...superDf,
       /**base de datos dummy */
@@ -53,7 +52,7 @@ export class MicroBackend
       /**determina que tipo de clave identificadora de recurso usar */
       srcSelector: "plural" as TKeySrcSelector,
       /**clave identificadora del campo de identificación del registro */
-      keyId: Module._globalConfig_.keyId,
+      keyId: TwinBeeModule._globalConfig_.keyId,
       /**función de consulta personalizada */
       customQueryFn: undefined as unknown as
         | TPrimitiveMockCustomQueryDriverFn

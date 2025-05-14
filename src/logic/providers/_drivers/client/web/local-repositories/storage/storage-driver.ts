@@ -2,7 +2,7 @@ import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../errors/logic-error";
-import { Util_Module } from "../../../../../../util/util-module";
+import { TwinBeeModule } from "../../../../../../modules/module";
 import {
   TPrimitiveModifyLiteralCriteria,
   TPrimitiveReadLiteralCriteria,
@@ -29,7 +29,7 @@ export class StorageDriver
   implements ReturnType<StorageDriver["getDefault"]>
 {
   public static readonly getNameLogicDriver = () => {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     //const sp = util.charSeparatorLogicName;
     const prefixGroupName = LocalRepositoryDriver.getNameLogicDriver();
     let name = "storage";
@@ -167,7 +167,7 @@ export class StorageDriver
   public static setPrimitiveLibraryQueryFn<
     TCustomLibrary extends PrimitiveLibraryStorageQueryFn<any>
   >(v: TCustomLibrary): void {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     if (!util.isInstance(v)) return;
     StorageDriver.primitiveLibraryQueryFn = v;
   }
@@ -190,7 +190,7 @@ export class StorageDriver
   public static setStructureLibraryQueryFn<
     TCustomLibrary extends StructureLibraryStorageQueryFn<any>
   >(v: TCustomLibrary): void {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     if (!util.isInstance(v)) return;
     StorageDriver.structureLibraryQueryFn = v;
   }

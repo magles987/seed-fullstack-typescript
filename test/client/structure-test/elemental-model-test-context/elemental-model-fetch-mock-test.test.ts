@@ -1,13 +1,13 @@
 //❗❗Imports que deben iniciar❗❗
 import { describe, expect, it } from "vitest";
 import startTwinBee from "../../../../src/start-twinbee";
+
 //imports secundarios
 import { FetchDriver } from "../../../../src/logic/providers/_drivers/client/web/https/fetch/fetch-driver";
 import {
   ELogicResStatusCode,
   IStructureResponse,
 } from "../../../../src/logic/reports/shared-types";
-import { Util_Module } from "../../../../src/logic/util/util-module";
 import { StructureLibraryMockQueryFn } from "../../mocks/library-mock-query-fn";
 import { MockServerHandler } from "../../mocks/mock-server";
 import { bd_valid, dataValid } from "./elemental-model-static-dummy-data-test";
@@ -15,7 +15,6 @@ import {
   ElementalModelTest,
   getElementalModelTestCtrl,
 } from "./elemental-model-test";
-
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const GC = startTwinBee({
   environment: {
@@ -24,14 +23,14 @@ const GC = startTwinBee({
     envStandard: "dev",
   },
 });
-const util = Util_Module.getInstance();
-const ctrl = getElementalModelTestCtrl();
-const nameLogicDriver = FetchDriver.getNameLogicDriver();
-const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
-commonBaseCriteria.diccGlobalAC = {
-  structureProvider: { singleRunDriver: { nameLogicDriver } },
-};
 describe("GLobal test (modelTest)", async () => {
+  const ctrl = getElementalModelTestCtrl();
+  const util = ctrl.twinBeeUtil;
+  const nameLogicDriver = FetchDriver.getNameLogicDriver();
+  const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
+  commonBaseCriteria.diccGlobalAC = {
+    structureProvider: { singleRunDriver: { nameLogicDriver } },
+  };
   describe("base: data valid", async () => {
     const mSH = new MockServerHandler<ElementalModelTest>(ctrl as any, {
       srcSelector: "plural",

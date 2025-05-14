@@ -15,8 +15,7 @@ import {
   TStructureReadLiteralCriteria,
 } from "../../../src/logic/providers/_drivers/shared-types";
 import { EncryptAndCompressDataHandler } from "../../../src/logic/util/encripter-handler";
-import { Util_Module } from "../../../src/logic/util/util-module";
-import { Module } from "../../../src/logic/modules/module";
+import { TwinBeeModule } from "../../../src/logic/modules/module";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
@@ -147,13 +146,13 @@ export class MockServerHandler<TData> {
     this._microBackend = v;
   }
   /**utilidades */
-  protected util = Util_Module.getInstance();
+  protected util = TwinBeeModule.util;
   /**... */
   constructor(
     protected ctrl: LogicController<any>,
     protected option: IMockServerOption
   ) {
-    this.util = Util_Module.getInstance();
+    this.util = TwinBeeModule.util;
     this.initConfig();
     this.selectRunServer();
   }
@@ -220,7 +219,7 @@ export class MockServerHandler<TData> {
   }
   /**... */
   protected selectRunServer(): void {
-    const { envTest } = Module._globalConfig_.environment;
+    const { envTest } = TwinBeeModule._globalConfig_.environment;
     if (envTest === "test-node") this.runMockServerByVitestNode();
     else if (envTest === "test-browser") this.runMockServerByBrowser();
     else {

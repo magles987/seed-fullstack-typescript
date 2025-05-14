@@ -2,7 +2,7 @@ import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../errors/logic-error";
-import { Util_Module } from "../../../../../../util/util-module";
+import { TwinBeeModule } from "../../../../../../modules/module";
 import {
   TPrimitiveModifyLiteralCriteria,
   TPrimitiveReadLiteralCriteria,
@@ -28,7 +28,7 @@ export class CookieDriver
   implements ReturnType<CookieDriver["getDefault"]>
 {
   public static readonly getNameLogicDriver = () => {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     //const sp = util.charSeparatorLogicName;
     const prefixGroupName = LocalRepositoryDriver.getNameLogicDriver();
     let name = "cookie";
@@ -176,7 +176,7 @@ export class CookieDriver
   public static setPrimitiveLibraryQueryFn<
     TCustomLibrary extends PrimitiveLibraryCookieQueryFn<any>
   >(v: TCustomLibrary): void {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     if (!util.isInstance(v)) return;
     CookieDriver.primitiveLibraryQueryFn = v;
   }
@@ -199,7 +199,7 @@ export class CookieDriver
   public static setStructureLibraryQueryFn<
     TCustomLibrary extends StructureLibraryCookieQueryFn<any>
   >(v: TCustomLibrary): void {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     if (!util.isInstance(v)) return;
     CookieDriver.structureLibraryQueryFn = v;
   }

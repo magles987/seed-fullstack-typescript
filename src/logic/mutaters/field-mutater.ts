@@ -1,11 +1,10 @@
 import { TStructureActionConfigFn } from "../criterias/shared-types";
 import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 import {
   ELogicResStatusCode,
   IStructureResponse,
 } from "../reports/shared-types";
-import { Util_Module } from "../util/util-module";
 import { StructureLogicMutater } from "./_structure-mutater";
 import { TFieldMutateBaseConfig } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -189,13 +188,13 @@ export class FieldLogicMutater<
   protected static buildInstanceForMetadata<
     TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater
   >(preInstance: TFieldMutateInstance): TFieldMutateInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TFieldMutateInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;
     } else {
       const { structureModuleFactory } =
-        Module._globalConfig_.diccModuleFactory;
+        TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = structureModuleFactory.makeModuleInstance(
         "fieldMutate",
         preInstance as any

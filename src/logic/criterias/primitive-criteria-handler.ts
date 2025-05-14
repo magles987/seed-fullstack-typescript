@@ -3,11 +3,11 @@ import { PrimitiveLogicHook } from "../hooks/primitive-hook";
 import { TKeyPrimitiveHookModuleContext } from "../hooks/shared-types";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import { TKeyPrimitiveInternalACModuleContext } from "../meta/schema-shared-types";
+import { TwinBeeModule } from "../modules/module";
 import { PrimitiveLogicMutater } from "../mutaters/primitive-mutater";
 import { TKeyPrimitiveMutateModuleContext } from "../mutaters/shared-types";
 import { PrimitiveLogicProvider } from "../providers/primitive-provider";
 import { TKeyPrimitiveProviderModuleContext } from "../providers/shared-types";
-import { Util_Module } from "../util/util-module";
 import { PrimitiveLogicValidation } from "../validators/primitive-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
 import { TKeyPrimitiveValModuleContext } from "../validators/shared-types";
@@ -162,7 +162,7 @@ export class PrimitiveCriteriaHandler<
     newContextConfig: IPrimitiveReadCriteria<any> &
       IPrimitiveModifyCriteria<any>
   ): IPrimitiveReadCriteria<any> & IPrimitiveModifyCriteria<any> {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let baseRebuildCriteria: IPrimitiveReadCriteria<any> &
       IPrimitiveModifyCriteria<any>;
     const dfCC = PrimitiveCriteriaHandler.getDefault();
@@ -229,7 +229,7 @@ export class PrimitiveCriteriaHandler<
   protected static mergeDiccGACToATGAC<TBaseRC>(
     baseRebuildCriteria: TBaseRC
   ): TBaseRC {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     const bC = baseRebuildCriteria as IPrimitiveReadCriteria &
       IPrimitiveModifyCriteria &
       TPrimitiveBaseCriteria;

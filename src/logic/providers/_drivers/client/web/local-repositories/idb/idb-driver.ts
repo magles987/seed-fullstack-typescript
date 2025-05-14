@@ -2,7 +2,7 @@ import {
   ELogicCodeError,
   LogicError,
 } from "../../../../../../errors/logic-error";
-import { Util_Module } from "../../../../../../util/util-module";
+import { TwinBeeModule } from "../../../../../../modules/module";
 import {
   TPrimitiveModifyLiteralCriteria,
   TPrimitiveReadLiteralCriteria,
@@ -30,7 +30,7 @@ export class IdbDriver
   implements ReturnType<IdbDriver["getDefault"]>
 {
   public static readonly getNameLogicDriver = () => {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     //const sp = util.charSeparatorLogicName;
     const prefixGroupName = LocalRepositoryDriver.getNameLogicDriver();
     let name = "idb";
@@ -150,7 +150,7 @@ export class IdbDriver
   public static setPrimitiveLibraryQueryFn<
     TCustomLibrary extends PrimitiveLibraryIdbQueryFn<any>
   >(v: TCustomLibrary): void {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     if (!util.isInstance(v)) return;
     IdbDriver.primitiveLibraryQueryFn = v;
   }
@@ -173,7 +173,7 @@ export class IdbDriver
   public static setStructureLibraryQueryFn<
     TCustomLibrary extends StructureLibraryIdbQueryFn<any>
   >(v: TCustomLibrary): void {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     if (!util.isInstance(v)) return;
     IdbDriver.structureLibraryQueryFn = v;
   }

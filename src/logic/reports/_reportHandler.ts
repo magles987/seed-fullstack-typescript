@@ -1,5 +1,5 @@
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { HandlerModule } from "../modules/module";
+import { HandlerTwinBeeModule } from "../modules/module";
 import {
   TKeyActionModule,
   TKeyLogicContext,
@@ -24,12 +24,12 @@ export type Trf_ReportHandler = ReportHandler;
  * ...
  */
 export abstract class ReportHandler
-  extends HandlerModule
+  extends HandlerTwinBeeModule
   implements ReturnType<ReportHandler["getDefault"]>
 {
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
-    const superDf = HandlerModule.getDefault();
+    const superDf = HandlerTwinBeeModule.getDefault();
     return {
       ...superDf,
       data: undefined,

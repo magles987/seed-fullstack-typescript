@@ -35,7 +35,6 @@ import {
   TStructureProviderBaseConfig,
 } from "../providers/shared-types";
 import { StructureLogicProvider } from "../providers/structure-provider";
-import { Util_Module } from "../util/util-module";
 import { FieldLogicValidation } from "../validators/field-validation";
 import { ModelLogicValidation } from "../validators/model-validation";
 import { PrimitiveLogicValidation } from "../validators/primitive-validation";
@@ -47,6 +46,7 @@ import {
   TModelValBaseConfig,
   TFieldValBaseConfig,
 } from "../validators/shared-types";
+import { TwinBeeModule } from "./module";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
@@ -55,6 +55,17 @@ import {
  * ...
  */
 export abstract class ModuleFactory {
+  /**array con los nombres de drivers predefinidos */
+  private get dfNameDriverList() {
+    //❗Debe ser en get virtual OBLIGATORIO❗
+    return [
+      CookieDriver.getNameLogicDriver(),
+      StorageDriver.getNameLogicDriver(),
+      IdbDriver.getNameLogicDriver(),
+      FetchDriver.getNameLogicDriver(),
+      AxiosDriver.getNameLogicDriver(),
+    ];
+  }
   /**... */
   constructor() {}
   /**... */
@@ -64,7 +75,7 @@ export abstract class ModuleFactory {
   ): unknown;
   /**... */
   public makeDriverInstance(nameDriver: string, baseConfig?: unknown): Driver {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let driver: Driver;
     const isBaseConfig = util.isObject(baseConfig);
     if (nameDriver === CookieDriver.getNameLogicDriver()) {
@@ -86,6 +97,46 @@ export abstract class ModuleFactory {
       });
     }
     return driver;
+  }
+
+  /**... */
+  protected makeDriversFromList(
+    driverList: Driver[] | Array<[string, object]> | string[]
+  ): Driver[] {
+    const util = TwinBeeModule.util;
+    const dfNameList = this.dfNameDriverList;
+    const dfDriverList = dfNameList.map((nameDriver) =>
+      this.makeDriverInstance(nameDriver)
+    );
+    let mergedDriverList: Driver[] = [];
+    if (!util.isArray(driverList)) {
+      mergedDriverList = dfDriverList;
+    } else {
+      mergedDriverList = driverList.map((dr) => {
+        if (util.isInstance(dr)) {
+          return dr;
+        } else if (util.isTuple(dr, [1, 2])) {
+          const [nameDriver, baseConfig] = dr;
+          return this.makeDriverInstance(nameDriver, baseConfig);
+        } else if (util.isString(dr)) {
+          return this.makeDriverInstance(dr);
+        } else {
+          throw new LogicError({
+            code: ELogicCodeError.MODULE_ERROR,
+            msn: `${dr} is not driver or driver name valid`,
+          });
+        }
+      });
+      //eliminar duplicados comparados con los default
+      const dfDriver_f = dfDriverList.filter(
+        (dfDr) =>
+          !mergedDriverList.some(
+            (mDr) => mDr.nameLogicDriver === dfDr.nameLogicDriver
+          )
+      );
+      mergedDriverList = [...mergedDriverList, ...dfDriver_f];
+    }
+    return mergedDriverList;
   }
 }
 /** *Singleton*
@@ -165,7 +216,7 @@ export class PrimitiveModuleFactory extends ModuleFactory {
       | TKeyRequestValModuleContext,
     baseConfig?: unknown
   ): unknown {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let moduleInstance: unknown;
     const isBaseConfig = util.isObject(baseConfig, true);
     if (keyModuleContext === "primitiveMutate") {
@@ -185,22 +236,13 @@ export class PrimitiveModuleFactory extends ModuleFactory {
         ? new PrimitiveLogicHook(baseConfig)
         : new PrimitiveLogicHook();
     } else if (keyModuleContext === "primitiveProvider") {
-      const dfDriverList: Driver[] = [
-        CookieDriver.getNameLogicDriver(),
-        StorageDriver.getNameLogicDriver(),
-        IdbDriver.getNameLogicDriver(),
-        FetchDriver.getNameLogicDriver(),
-        AxiosDriver.getNameLogicDriver(),
-      ].map((nameDriver) => this.makeDriverInstance(nameDriver));
       moduleInstance = isBaseConfig
         ? new PrimitiveLogicProvider({
             ...(baseConfig as any),
-            driverList: util.isArray(baseConfig["driverList"])
-              ? baseConfig["driverList"]
-              : dfDriverList,
+            driverList: this.makeDriversFromList(baseConfig["driverList"]),
           })
         : new PrimitiveLogicProvider({
-            driverList: dfDriverList,
+            driverList: this.makeDriversFromList(undefined),
           });
     } else if (keyModuleContext === "primitiveCtrl") {
       moduleInstance = isBaseConfig
@@ -236,7 +278,6 @@ export class StructureModuleFactory extends ModuleFactory {
         : new StructureModuleFactory();
     return StructureModuleFactory.StructureModuleFactory_instance;
   }
-
   public override makeModuleInstance(
     keyModuleContext: "fieldMutate",
     baseConfig?: TFieldMutateBaseConfig
@@ -306,7 +347,7 @@ export class StructureModuleFactory extends ModuleFactory {
       | TKeyRequestValModuleContext,
     baseConfig?: unknown
   ): unknown {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let moduleInstance: unknown;
     const isBaseConfig = util.isObject(baseConfig, true);
     if (keyModuleContext === "fieldMutate") {
@@ -334,22 +375,13 @@ export class StructureModuleFactory extends ModuleFactory {
         ? new StructureLogicHook(baseConfig)
         : new StructureLogicHook();
     } else if (keyModuleContext === "structureProvider") {
-      const dfDriverList: Driver[] = [
-        CookieDriver.getNameLogicDriver(),
-        StorageDriver.getNameLogicDriver(),
-        IdbDriver.getNameLogicDriver(),
-        FetchDriver.getNameLogicDriver(),
-        AxiosDriver.getNameLogicDriver(),
-      ].map((nameDriver) => this.makeDriverInstance(nameDriver));
       moduleInstance = isBaseConfig
         ? new StructureLogicProvider({
             ...(baseConfig as any),
-            driverList: util.isArray(baseConfig["driverList"])
-              ? baseConfig["driverList"]
-              : dfDriverList,
+            driverList: this.makeDriversFromList(baseConfig["driverList"]),
           })
         : new StructureLogicProvider({
-            driverList: dfDriverList,
+            driverList: this.makeDriversFromList(undefined),
           });
     } else if (keyModuleContext === "structureCtrl") {
       moduleInstance = isBaseConfig

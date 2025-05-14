@@ -13,7 +13,7 @@ import {
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 import { TKeyLogicContext } from "../modules/shared-types";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import {
@@ -21,7 +21,6 @@ import {
   IStructureResponse,
 } from "../reports/shared-types";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { Util_Module } from "../util/util-module";
 import { LogicValidation } from "./_validation";
 import {
   TKeyPrimitiveValModuleContext,
@@ -119,13 +118,13 @@ export class RequestLogicValidation<
     keyLogicContext: TKeyLogicContext,
     preInstance: TFieldValInstance
   ): TFieldValInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TFieldValInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;
     } else {
       const { structureModuleFactory, primitiveModuleFactory } =
-        Module._globalConfig_.diccModuleFactory;
+        TwinBeeModule._globalConfig_.diccModuleFactory;
       if (keyLogicContext === "primitive") {
         inst = primitiveModuleFactory.makeModuleInstance(
           "requestVal",

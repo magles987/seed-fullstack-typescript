@@ -5,13 +5,12 @@ import {
 import { TPrimitiveActionConfigFn } from "../criterias/shared-types";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
-import { Module } from "../modules/module";
+import { TwinBeeModule } from "../modules/module";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import {
   IPrimitiveResponse,
   TSelectorDataDriver,
 } from "../reports/shared-types";
-import { Util_Module } from "../util/util-module";
 import { Driver } from "./_drivers/_driver";
 import { LogicProvider } from "./_provider";
 import {
@@ -86,13 +85,13 @@ export class PrimitiveLogicProvider<
   protected static buildInstanceForMetadata<
     TPrimitivePrimitiveInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider
   >(preInstance: TPrimitivePrimitiveInstance): TPrimitivePrimitiveInstance {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     let inst: TPrimitivePrimitiveInstance;
     if (util.isInstance(preInstance)) {
       inst = preInstance;
     } else {
       const { primitiveModuleFactory } =
-        Module._globalConfig_.diccModuleFactory;
+        TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = primitiveModuleFactory.makeModuleInstance(
         "primitiveProvider",
         preInstance as any

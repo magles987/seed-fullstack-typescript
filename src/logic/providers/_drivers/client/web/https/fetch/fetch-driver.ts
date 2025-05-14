@@ -14,7 +14,7 @@ import {
 } from "../shared-types";
 import { IFetchOption, TFetchCustomQueryFnReturn } from "./shared-types";
 //❗❗❗Importacion Fuertemente acoplada, debe estar al final❗❗❗
-import { Module } from "../../../../../../modules/module";
+import { TwinBeeModule } from "../../../../../../modules/module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
@@ -25,7 +25,7 @@ export class FetchDriver
   implements ReturnType<FetchDriver["getDefault"]>
 {
   public static readonly getNameLogicDriver = () => {
-    const util = Module.util;
+    const util = TwinBeeModule.util;
     //const sp = util.charSeparatorLogicName;
     const prefixGroupName = HttpDriver.getNameLogicDriver();
     let name = "fetch";

@@ -4,7 +4,7 @@ import {
   TPrimitiveLiteralCriteriaUnion,
   TStructureLiteralCriteriaUnion,
 } from "../../shared-types";
-import { Util_Module } from "../../../../util/util-module";
+import { TwinBeeModule } from "../../../../modules/module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
@@ -15,7 +15,7 @@ export abstract class WebDriver
   implements ReturnType<WebDriver["getDefault"]>
 {
   public static readonly getNameLogicDriver = () => {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     const sp = util.charSeparatorLogicName;
     const prefixGroupName = ClientDriver.getNameLogicDriver();
     let name = "web";

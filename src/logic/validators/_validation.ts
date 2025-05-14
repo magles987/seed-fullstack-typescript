@@ -1,5 +1,5 @@
 import { CriteriaHandler } from "../criterias/_criteria-handler";
-import { ActionModule } from "../modules/module";
+import { ActionTwinBeeModule } from "../modules/module";
 import { TKeyLogicContext } from "../modules/shared-types";
 import { ELogicResStatusCode, IResponse } from "../reports/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -10,10 +10,12 @@ export type Trf_LogicValidation = LogicValidation<any>;
  *
  * clase para el modulo de validación
  */
-export abstract class LogicValidation<TIDiccAC> extends ActionModule<TIDiccAC> {
+export abstract class LogicValidation<
+  TIDiccAC
+> extends ActionTwinBeeModule<TIDiccAC> {
   /** configuración de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
-    const superDf = ActionModule.getDefault();
+    const superDf = ActionTwinBeeModule.getDefault();
     return {
       ...superDf,
       status: ELogicResStatusCode.VALID_DATA, //personalizada para validación

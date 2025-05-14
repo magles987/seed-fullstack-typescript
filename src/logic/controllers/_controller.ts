@@ -1,5 +1,5 @@
 import { TTGlobalActionConfig } from "../criterias/shared-types";
-import { ActionModule } from "../modules/module";
+import { ActionTwinBeeModule } from "../modules/module";
 import { TKeyLogicContext } from "../modules/shared-types";
 import { ELogicResStatusCode } from "../reports/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -20,9 +20,11 @@ export type Trf_LogicController = LogicController<any>;
 /**
  * base controller
  */
-export abstract class LogicController<TIDiccAC> extends ActionModule<TIDiccAC> {
+export abstract class LogicController<
+  TIDiccAC
+> extends ActionTwinBeeModule<TIDiccAC> {
   public static getDefault = () => {
-    const superDf = ActionModule.getDefault();
+    const superDf = ActionTwinBeeModule.getDefault();
     return {
       ...superDf,
       status: ELogicResStatusCode.VALID_DATA, //personalizada para validación
@@ -36,6 +38,10 @@ export abstract class LogicController<TIDiccAC> extends ActionModule<TIDiccAC> {
   };
   /**clave identificadora del contexto */
   public abstract get keyModuleContext(): unknown;
+  /**acceso externo a las utilidades de twinbee */
+  public get twinBeeUtil() {
+    return this.util;
+  }
   /**
    * @param keyLogicContext configuración de
    * inicialización

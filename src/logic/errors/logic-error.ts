@@ -1,4 +1,4 @@
-import { Util_Module } from "../util/util-module";
+import { TwinBeeModule } from "../modules/module";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TLogicBuildParam = {
@@ -33,11 +33,11 @@ export class LogicError extends Error {
   /**clave identificadora de la accion */
   public readonly keyAction: string;
   /**utilidades de este modulo */
-  protected readonly util = Util_Module.getInstance();
+  protected readonly util = TwinBeeModule.util;
   /** */
   constructor({ keyAction, msn, code, preError }: TLogicBuildParam) {
     super();
-    this.util = Util_Module.getInstance();
+    this.util = TwinBeeModule.util;
     this.name = this.constructor.name; //se obtiene el nombre de la clase
     this.message = msn;
     this.code = code;

@@ -12,7 +12,8 @@ import {
   IStructureModelReadCriteria,
   TAConds,
 } from "../criterias/shared-types";
-import { Util_Module } from "./util-module";
+import { TwinBeeModule } from "../modules/module";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *Singleton*
  *
@@ -25,7 +26,7 @@ export class QueryTool {
     ELogicOperatorForCondition,
     (value: any, vCond: any) => boolean
   > {
-    const util = Util_Module.getInstance();
+    const util = TwinBeeModule.util;
     return {
       eq: (value, vCond) => util.isEquivalentTo([value, vCond], {}),
       gt: (value, vCond) =>
@@ -56,7 +57,7 @@ export class QueryTool {
     };
   }
   /**utilidades */
-  protected util = Util_Module.getInstance();
+  protected util = TwinBeeModule.util;
   /**... */
   constructor() {}
   /** devuelve la instancia única de esta clase

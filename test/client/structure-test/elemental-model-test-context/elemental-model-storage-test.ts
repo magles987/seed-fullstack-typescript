@@ -8,19 +8,19 @@ import {
   IStructureResponse,
 } from "../../../../src/logic/reports/shared-types";
 import { bd_valid, dataValid } from "./elemental-model-static-dummy-data-test";
-import { Util_Module } from "../../../../src/logic/util/util-module";
 import { ScreenBrowserResponseUtil } from "../../../util/screen-browser-response-util";
+import { TwinBeeModule } from "../../../../src/logic/modules/module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-const util = Util_Module.getInstance();
-const screenBrowserLog = ScreenBrowserResponseUtil.getInstance();
-const ctrl = getElementalModelTestCtrl();
-const nameLogicDriver = StorageDriver.getNameLogicDriver();
-const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
-commonBaseCriteria.diccGlobalAC = {
-  structureProvider: { singleRunDriver: { nameLogicDriver } },
-};
 /**... */
 export async function runToLocalStorage() {
+  const screenBrowserLog = ScreenBrowserResponseUtil.getInstance();
+  const ctrl = getElementalModelTestCtrl();
+  const util = ctrl.twinBeeUtil;
+  const nameLogicDriver = StorageDriver.getNameLogicDriver();
+  const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
+  commonBaseCriteria.diccGlobalAC = {
+    structureProvider: { singleRunDriver: { nameLogicDriver } },
+  };
   await StorageDriver.emptyAllStorage();
   let res: IStructureResponse;
   //████ Creación y comprobación inicial ████████████████████████████████████████████████████████████

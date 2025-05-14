@@ -8,6 +8,7 @@ import { StructureLogicController } from "../controllers/structure-ctrl";
 import { LogicError, ELogicCodeError } from "../errors/logic-error";
 import { IStructureHookContextInstance } from "../hooks/shared-types";
 import { StructureLogicHook } from "../hooks/structure-hook";
+import { TwinBeeModule } from "../modules/module";
 import {
   TKeyStructureContextFull,
   TKeyActionModule,
@@ -21,8 +22,7 @@ import {
 } from "../mutaters/shared-types";
 import { IStructureProviderContextInstance } from "../providers/shared-types";
 import { StructureLogicProvider } from "../providers/structure-provider";
-import { TSchemaNotFunction } from "../util/util-interface";
-import { Util_Module } from "../util/util-module";
+import { TSchemaNotFunction } from "../util/util-twinbee-interface";
 import { FieldLogicValidation } from "../validators/field-validation";
 import { ModelLogicValidation } from "../validators/model-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
@@ -125,8 +125,8 @@ export class StructureLogicMetadataHandler<
 > extends LogicMetadataHandler {
   /** configuración de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
-    const util = Util_Module.getInstance();
     const superDf = LogicMetadataHandler.getDefault();
+    const util = TwinBeeModule.util;
     return {
       ...superDf,
       handlerConfig: {

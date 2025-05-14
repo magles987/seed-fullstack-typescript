@@ -1,21 +1,22 @@
+import { TwinBeeModule } from "../../src/logic/modules/module";
 import {
   IPrimitiveResponse,
   IResponse,
   IStructureResponse,
 } from "../../src/logic/reports/shared-types";
-import { Util_Module } from "../../src/logic/util/util-module";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *Singleton*
  *
  * ...
  */
 export class ScreenBrowserResponseUtil {
-  protected util = Util_Module.getInstance();
+  protected util = TwinBeeModule.util;
   /**  Almacena la instancia única de esta clase */
   private static ScreenBrowserResponseUtil_instance: ScreenBrowserResponseUtil;
   /**... */
   protected constructor() {
-    this.util = Util_Module.getInstance();
+    this.util = TwinBeeModule.util;
   }
   /** @returns la instancia única de la clase*/
   public static getInstance(): ScreenBrowserResponseUtil {
