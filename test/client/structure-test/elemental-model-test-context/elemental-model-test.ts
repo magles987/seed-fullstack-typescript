@@ -1,25 +1,24 @@
-import { IStructureModelReadCriteria } from "../../../../src/seed/logic/criterias/index-barrel";
+import { Module } from "../../../../src/logic/modules/module";
+import { Model } from "../../../../src/logic/models/_model";
+import { IStructureModelReadCriteria } from "../../../../src/logic/criterias/shared-types";
 import {
-  StructureLogicMetadataHandler,
   TFieldMutateInstance,
-  TFieldValInstance,
-  TKeyStructureDiccActionRequest,
   TModelMutateInstance,
+  TFieldValInstance,
   TModelValInstance,
   TRequestValInstance,
-  TStructureCtrlInstance,
   TStructureHookInstance,
   TStructureProviderInstance,
-} from "../../../../src/seed/logic/meta/index-barrel";
-import { Model } from "../../../../src/seed/logic/models/index-barrel";
-import { Module } from "../../../../src/seed/logic/modules/index-barrel";
-import {
-  CookieDriver,
-  FetchDriver,
-  IdbDriver,
-  StorageDriver,
-  TStructureCookieCustomQueryDriverFn,
-} from "../../../../src/seed/logic/providers/_drivers/index-barrel";
+  TKeyStructureDiccActionRequest,
+  TStructureCtrlInstance,
+} from "../../../../src/logic/meta/base-shared-types";
+import { StructureLogicMetadataHandler } from "../../../../src/logic/meta/structure-metadata-handler";
+import { FetchDriver } from "../../../../src/logic/providers/_drivers/client/web/https/fetch/fetch-driver";
+import { CookieDriver } from "../../../../src/logic/providers/_drivers/client/web/local-repositories/cookie/cookie-driver";
+import { TStructureCookieCustomQueryDriverFn } from "../../../../src/logic/providers/_drivers/client/web/local-repositories/cookie/shared-types";
+import { IdbDriver } from "../../../../src/logic/providers/_drivers/client/web/local-repositories/idb/idb-driver";
+import { StorageDriver } from "../../../../src/logic/providers/_drivers/client/web/local-repositories/storage/storage-driver";
+
 //████ Tipos personalizados ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 type TModel = ElementalModelTest;
 type TFMI = TFieldMutateInstance;
@@ -61,8 +60,6 @@ export class ElementalModelTest extends Model {
 //███ Constructor de Metadatos █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**utilidades de módulos */
 const util = Module.util;
-/**instancia actual del manejador de metadatos */
-let metadataHandlerInstance: ReturnType<typeof buildMetadataHandler>;
 /**@returns un manejador de metadatos personalizado para este modelo*/
 function buildMetadataHandler() {
   const baseModel = new ElementalModelTest();
@@ -371,14 +368,17 @@ function buildMetadataHandler() {
     },
   });
 }
+/**instancia actual del manejador de metadatos */
+let metadataHandlerInstance = undefined as unknown as ReturnType<
+  typeof buildMetadataHandler
+>;
 /**@returns la instancia de manejador actual de metadatos para este modelo */
 export function getElementalModelTestMetadataHandler() {
-  return util.isInstance(metadataHandlerInstance)
-    ? metadataHandlerInstance
-    : buildMetadataHandler();
+  if (!util.isInstance(metadataHandlerInstance))
+    metadataHandlerInstance = buildMetadataHandler();
+  return metadataHandlerInstance;
 }
 /**@returns la instancia del controlador asociado a este modelo */
 export function getElementalModelTestCtrl() {
-  let mH = getElementalModelTestMetadataHandler();
-  return mH.getRootCtrlInstance();
+  return getElementalModelTestMetadataHandler().getRootCtrlInstance();
 }

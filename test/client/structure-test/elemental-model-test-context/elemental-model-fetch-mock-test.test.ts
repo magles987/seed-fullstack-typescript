@@ -1,11 +1,13 @@
+//❗❗Imports que deben iniciar❗❗
 import { describe, expect, it } from "vitest";
-import { reconfigure } from "../../../../src/seed/start-seed";
-import { FetchDriver } from "../../../../src/seed/logic/providers/_drivers/index-barrel";
+import startTwinBee from "../../../../src/start-twinbee";
+//imports secundarios
+import { FetchDriver } from "../../../../src/logic/providers/_drivers/client/web/https/fetch/fetch-driver";
 import {
   ELogicResStatusCode,
   IStructureResponse,
-} from "../../../../src/seed/logic/reports/index-barrel";
-import { Util_Test } from "../../../util-test";
+} from "../../../../src/logic/reports/shared-types";
+import { Util_Module } from "../../../../src/logic/util/util-module";
 import { StructureLibraryMockQueryFn } from "../../mocks/library-mock-query-fn";
 import { MockServerHandler } from "../../mocks/mock-server";
 import { bd_valid, dataValid } from "./elemental-model-static-dummy-data-test";
@@ -13,13 +15,16 @@ import {
   ElementalModelTest,
   getElementalModelTestCtrl,
 } from "./elemental-model-test";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-reconfigure({
-  envSeed: {
+const GC = startTwinBee({
+  environment: {
     envTest: "test-node",
+    envGlobalLayout: "client",
+    envStandard: "dev",
   },
 });
-const util = Util_Test.getInstance();
+const util = Util_Module.getInstance();
 const ctrl = getElementalModelTestCtrl();
 const nameLogicDriver = FetchDriver.getNameLogicDriver();
 const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
@@ -28,7 +33,7 @@ commonBaseCriteria.diccGlobalAC = {
 };
 describe("GLobal test (modelTest)", async () => {
   describe("base: data valid", async () => {
-    const mSH = new MockServerHandler<ElementalModelTest>(ctrl, {
+    const mSH = new MockServerHandler<ElementalModelTest>(ctrl as any, {
       srcSelector: "plural",
       db_collection: bd_valid,
       nameLogicDriver,

@@ -1,23 +1,21 @@
-import { getGlobalConfig } from "../../../src/seed/logic/config/global-config";
 import {
   TKeyLogicContext,
   TKeySrcSelector,
-} from "../../../src/seed/logic/modules/shared-types";
+} from "../../../src/logic/modules/shared-types";
 import {
   ELogicResStatusCode,
   IDriverResponse,
-} from "../../../src/seed/logic/reports/shared-types";
-import { Util_Test } from "../../util-test";
-import { QueryTool } from "../../../src/seed/logic/util/query-tool";
+} from "../../../src/logic/reports/shared-types";
+import { QueryTool } from "../../../src/logic/util/query-tool";
 import {
   ELogicCodeError,
   LogicError,
-} from "../../../src/seed/logic/errors/logic-error";
+} from "../../../src/logic/errors/logic-error";
 import {
   buildIdByStrategy,
   isIdValid,
   TOptionForAutoincrement,
-} from "../../../src/seed/logic/util/default-generators-id-fn";
+} from "../../../src/logic/util/default-generators-id-fn";
 import {
   TPrimitiveMockCustomQueryDriverFn,
   TStructureMockCustomQueryDriverFn,
@@ -29,7 +27,10 @@ import {
   TStructureLiteralCriteriaUnion,
   TStructureModifyLiteralCriteria,
   TStructureReadLiteralCriteria,
-} from "../../../src/seed/logic/providers/_drivers/shared-types";
+} from "../../../src/logic/providers/_drivers/shared-types";
+import { Module } from "../../../src/logic/modules/module";
+import { Util_Module } from "../../../src/logic/util/util-module";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type Trf_MicroBackend = MicroBackend;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -37,18 +38,22 @@ export type Trf_MicroBackend = MicroBackend;
  *
  * ...
  */
-export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
-  /**configuración global */
-  protected readonly _globalConfig_ = getGlobalConfig();
+export class MicroBackend
+  extends Module
+  implements ReturnType<MicroBackend["getDefault"]>
+{
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
+    const superDf = Module.getDefault();
+    const util = Util_Module.getInstance();
     return {
+      ...superDf,
       /**base de datos dummy */
       db_collection: [] as any[],
       /**determina que tipo de clave identificadora de recurso usar */
       srcSelector: "plural" as TKeySrcSelector,
       /**clave identificadora del campo de identificación del registro */
-      keyId: getGlobalConfig().keyId,
+      keyId: Module._globalConfig_.keyId,
       /**función de consulta personalizada */
       customQueryFn: undefined as unknown as
         | TPrimitiveMockCustomQueryDriverFn
@@ -113,8 +118,6 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
   protected get keyLogicContext(): TKeyLogicContext {
     return this._keyLogicContext;
   }
-  /**utilidades */
-  protected util = Util_Test.getInstance();
   /**
    * @param _keyLogicContext clave identificadora del contexto lógico de esta clase
    * @param base objeto literal con valores personalizados para inicializar las propiedades
@@ -125,7 +128,7 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     base: Partial<ReturnType<MicroBackend["getDefault"]>> = {},
     isInit = true
   ) {
-    this.util = Util_Test.getInstance();
+    super("test");
     this.queryTool = QueryTool.getInstance();
     if (isInit) this.initProps(base);
   }
@@ -166,7 +169,7 @@ export class MicroBackend implements ReturnType<MicroBackend["getDefault"]> {
     key: keyof ReturnType<MicroBackend["getDefault"]>
   ): void {
     const df = this.getDefault();
-    this[key] = df[key] as any;
+    this[key as any] = df[key] as any;
     return;
   }
   /**muta masivamente propiedades de manera dinámica

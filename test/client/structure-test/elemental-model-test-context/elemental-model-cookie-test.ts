@@ -1,16 +1,18 @@
+import { CookieDriver } from "../../../../src/logic/providers/_drivers/client/web/local-repositories/cookie/cookie-driver";
 import {
-  ELogicResStatusCode,
   IStructureResponse,
-} from "../../../../src/seed/logic/reports/index-barrel";
-import { CookieDriver } from "../../../../src/seed/logic/providers/_drivers/index-barrel";
-import { Util_Test } from "../../../util-test";
+  ELogicResStatusCode,
+} from "../../../../src/logic/reports/shared-types";
+import { Util_Module } from "../../../../src/logic/util/util-module";
 import { bd_valid, dataValid } from "./elemental-model-static-dummy-data-test";
 import {
   ElementalModelTest,
   getElementalModelTestCtrl,
 } from "./elemental-model-test";
+import { ScreenBrowserResponseUtil } from "../../../util/screen-browser-response-util";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-const util = Util_Test.getInstance();
+const util = Util_Module.getInstance();
+const screenBrowserLog = ScreenBrowserResponseUtil.getInstance();
 const ctrl = getElementalModelTestCtrl();
 const nameLogicDriver = CookieDriver.getNameLogicDriver();
 const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
@@ -30,7 +32,7 @@ export async function runToLocalCookie() {
       data,
       keyActionRequest: "create",
     });
-    util.showStructureResponseTest(
+    screenBrowserLog.showStructureResponseTest(
       {
         data: res.data,
         status: res.status,
@@ -51,7 +53,7 @@ export async function runToLocalCookie() {
     ...commonBaseCriteria,
     keyActionRequest: "readAll",
   });
-  util.showStructureResponseTest(
+  screenBrowserLog.showStructureResponseTest(
     {
       data: res.data,
       status: res.status,
@@ -73,7 +75,7 @@ export async function runToLocalCookie() {
     keyActionRequest: "readAll",
     limit: 2, //solo 2
   });
-  util.showStructureResponseTest(
+  screenBrowserLog.showStructureResponseTest(
     {
       data: res.data,
       status: res.status,
@@ -96,7 +98,7 @@ export async function runToLocalCookie() {
     targetPageLogic: 1, //lógica de inicio de paginación en 1
     targetPage: 2, //pagina 2 (serian los _id === '3' y _id === '4')
   });
-  util.showStructureResponseTest(
+  screenBrowserLog.showStructureResponseTest(
     {
       data: res.data,
       status: res.status,
@@ -117,7 +119,7 @@ export async function runToLocalCookie() {
     keyActionRequest: "exist",
     diccQueryParam: { _pathDoc: "/1/" }, //buscar si existe este path
   });
-  util.showStructureResponseTest(
+  screenBrowserLog.showStructureResponseTest(
     {
       data: res.data,
       status: res.status,
@@ -138,7 +140,7 @@ export async function runToLocalCookie() {
     keyActionRequest: "count",
     diccQueryParam: { _pathDoc: "/1/" }, //buscar si existe este path?
   });
-  util.showStructureResponseTest(
+  screenBrowserLog.showStructureResponseTest(
     {
       data: res.data,
       status: res.status,
@@ -158,7 +160,7 @@ export async function runToLocalCookie() {
     keyActionRequest: "readById",
     diccQueryParam: { _id: "1" }, //buscar si existe este id?
   });
-  util.showStructureResponseTest(
+  screenBrowserLog.showStructureResponseTest(
     {
       data: res.data,
       status: res.status,
@@ -180,7 +182,7 @@ export async function runToLocalCookie() {
     keyActionRequest: "create",
     data: dt,
   });
-  util.showStructureResponseTest(
+  screenBrowserLog.showStructureResponseTest(
     {
       data: res.data,
       status: res.status,
@@ -200,7 +202,7 @@ export async function runToLocalCookie() {
     keyActionRequest: "update",
     data: { ...dt, _pathDoc: "      /100/       " }, //modificación con espacios para probar el modulo de mutación
   });
-  util.showStructureResponseTest(
+  screenBrowserLog.showStructureResponseTest(
     {
       data: res.data,
       status: res.status,
@@ -220,7 +222,7 @@ export async function runToLocalCookie() {
     keyActionRequest: "delete",
     data: { _id: dt._id, _pathDoc: undefined as any },
   });
-  util.showStructureResponseTest(
+  screenBrowserLog.showStructureResponseTest(
     {
       data: res.data,
       status: res.status,

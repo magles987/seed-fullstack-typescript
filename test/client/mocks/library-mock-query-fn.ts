@@ -1,4 +1,4 @@
-import { Util_Test } from "../../util-test";
+import { Util_Module } from "../../../src/logic/util/util-module";
 import {
   TPrimitiveMockCustomQueryDriverFn,
   TStructureMockCustomQueryDriverFn,
@@ -14,7 +14,7 @@ export class PrimitiveLibraryMockQueryFn {
     literalCriteria,
     registers
   ) => {
-    const util = Util_Test.getInstance();
+    const util = Util_Module.getInstance();
     const { diccQueryParam, expectedDataType } = literalCriteria;
     let f_registers;
     if (expectedDataType !== "array") {
@@ -54,7 +54,7 @@ export class StructureLibraryMockQueryFn {
     literalCriteria,
     registers
   ) => {
-    const util = Util_Test.getInstance();
+    const util = Util_Module.getInstance();
     const keyId = microbackend.keyId;
     const { diccQueryParam } = literalCriteria;
     const f_register = registers.find((reg) =>
@@ -68,7 +68,7 @@ export class StructureLibraryMockQueryFn {
     literalCriteria,
     registers
   ) => {
-    const util = Util_Test.getInstance();
+    const util = Util_Module.getInstance();
     const { diccQueryParam } = literalCriteria;
     const f_registers = registers.find((reg) =>
       util.isEquivalentTo([diccQueryParam, reg], {})
@@ -85,7 +85,7 @@ export class StructureLibraryMockQueryFn {
     literalCriteria,
     registers
   ) => {
-    const util = Util_Test.getInstance();
+    const util = Util_Module.getInstance();
     const { diccQueryParam } = literalCriteria;
     const f_registers = registers.filter((reg) =>
       util.isEquivalentTo([diccQueryParam, reg], {})
@@ -99,7 +99,7 @@ export class StructureLibraryMockQueryFn {
     literalCriteria,
     registers
   ) => {
-    const util = Util_Test.getInstance();
+    const util = Util_Module.getInstance();
     const { diccQueryParam, expectedDataType } = literalCriteria;
     let f_registers;
     if (expectedDataType !== "array") {

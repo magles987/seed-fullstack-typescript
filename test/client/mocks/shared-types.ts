@@ -1,9 +1,9 @@
 import {
-  IPrimitiveModifyCriteria,
   IPrimitiveReadCriteria,
-  IStructureModelModifyCriteria,
+  IPrimitiveModifyCriteria,
   IStructureModelReadCriteria,
-} from "../../../src/seed/logic/criterias/index-barrel";
+  IStructureModelModifyCriteria,
+} from "../../../src/logic/criterias/shared-types";
 import { MicroBackend } from "./microbackend";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type TPrimitiveMockCustomQueryDriverFn = (

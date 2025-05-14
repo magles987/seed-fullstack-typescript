@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 //import { reconfigure } from "../../../../src/seed/start-seed";
-import { GlobalConfig } from "../../../../src/seed/logic/config/index-barrel";
 
-//import { FetchDriver } from "../../../../src/seed/logic/providers/_drivers/index-barrel";
-// import {
-//   ELogicResStatusCode,
-//   IStructureResponse,
-// } from "../../../../src/seed/logic/reports/index-barrel";
-// import { Util_Test } from "../../../util-test";
+import { FetchDriver } from "../../../../src/logic/providers/_drivers/client/web/https/fetch/fetch-driver";
+import {
+  ELogicResStatusCode,
+  IStructureResponse,
+} from "../../../../src/logic/reports/shared-types";
+import { Util_Test } from "../../../util-test";
+import { GlobalConfig } from "../../../../src/config/global-config";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 // reconfigure({

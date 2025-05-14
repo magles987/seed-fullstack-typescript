@@ -1,24 +1,22 @@
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll } from "vitest";
-import { getSeedEnvironment } from "../../../src/seed/logic/config/index-barrel";
-import { LogicController } from "../../../src/seed/logic/controllers/_controller";
+import { LogicController } from "../../../src/logic/controllers/_controller";
+import { MicroBackend } from "./microbackend";
+import { PrimitiveLogicController } from "../../../src/logic/controllers/primitive-ctrl";
+import { StructureLogicController } from "../../../src/logic/controllers/structure-ctrl";
 import {
-  PrimitiveLogicController,
-  StructureLogicController,
-} from "../../../src/seed/logic/controllers/index-barrel";
-import {
-  TKeyLogicContext,
   TKeySrcSelector,
-} from "../../../src/seed/logic/modules/index-barrel";
+  TKeyLogicContext,
+} from "../../../src/logic/modules/shared-types";
+import { HttpDriver } from "../../../src/logic/providers/_drivers/client/web/https/_https-driver";
 import {
-  HttpDriver,
   TPrimitiveLiteralCriteriaUnion,
   TStructureReadLiteralCriteria,
-} from "../../../src/seed/logic/providers/_drivers/index-barrel";
-import { EncryptAndCompressDataHandler } from "../../../src/seed/logic/util/index-barrel";
-import { Util_Test } from "../../util-test";
-import { MicroBackend } from "./microbackend";
+} from "../../../src/logic/providers/_drivers/shared-types";
+import { EncryptAndCompressDataHandler } from "../../../src/logic/util/encripter-handler";
+import { Util_Module } from "../../../src/logic/util/util-module";
+import { Module } from "../../../src/logic/modules/module";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
@@ -149,13 +147,13 @@ export class MockServerHandler<TData> {
     this._microBackend = v;
   }
   /**utilidades */
-  protected util = Util_Test.getInstance();
+  protected util = Util_Module.getInstance();
   /**... */
   constructor(
-    protected ctrl: LogicController,
+    protected ctrl: LogicController<any>,
     protected option: IMockServerOption
   ) {
-    this.util = Util_Test.getInstance();
+    this.util = Util_Module.getInstance();
     this.initConfig();
     this.selectRunServer();
   }
@@ -222,7 +220,7 @@ export class MockServerHandler<TData> {
   }
   /**... */
   protected selectRunServer(): void {
-    const { envTest } = getSeedEnvironment();
+    const { envTest } = Module._globalConfig_.environment;
     if (envTest === "test-node") this.runMockServerByVitestNode();
     else if (envTest === "test-browser") this.runMockServerByBrowser();
     else {
