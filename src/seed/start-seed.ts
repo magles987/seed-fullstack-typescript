@@ -5,7 +5,7 @@ import {
   ISeedEnvironment,
   getSeedEnvironment,
 } from "./logic/config/index-barrel";
-import { UtilNative } from "./util/native-util";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export interface IStartConfig {
@@ -39,6 +39,6 @@ export function reconfigure(config?: Partial<IStartConfig>): void {
 function setCommon(config?: Partial<IStartConfig>) {
   setSeedEnvironment(config.envSeed);
   setGlobalConfig(config.globalConfig);
-  UtilNative["_dfValue"] = getGlobalConfig().globalDefaultValue; //actualización forzada para la utilidad global
+  //UtilNative["_dfValue"] = getGlobalConfig().globalDefaultValue; //actualización forzada para la utilidad global
 }
 if (!isStarted) start(CONFIG); //inicializa

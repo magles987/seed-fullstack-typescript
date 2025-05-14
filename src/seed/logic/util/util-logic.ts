@@ -1,5 +1,4 @@
 import { UtilExtension } from "../../util/extension-util";
-import { getGlobalConfig } from "../config/index-barrel";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** @info <hr>
@@ -15,19 +14,19 @@ export class Util_Logic extends UtilExtension {
    */
   private static Util_Logic_instance: Util_Logic;
   /** */
-  constructor() {
-    super(getGlobalConfig().globalDefaultValue);
+  protected constructor(dfValue: null | undefined) {
+    super(dfValue);
   }
   /**
    * devuelve la instancia única de esta clase
    * ya sea que la crea o la que ya a sido creada
    * ____
    */
-  public static getInstance(): Util_Logic {
+  public static getInstance(dfValue: null | undefined): Util_Logic {
     Util_Logic.Util_Logic_instance =
       Util_Logic.Util_Logic_instance === undefined ||
       Util_Logic.Util_Logic_instance === null
-        ? new Util_Logic()
+        ? new Util_Logic(dfValue)
         : Util_Logic.Util_Logic_instance;
     return Util_Logic.Util_Logic_instance;
   }

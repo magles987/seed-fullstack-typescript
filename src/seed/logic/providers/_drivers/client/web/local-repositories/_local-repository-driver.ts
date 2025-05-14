@@ -1,4 +1,3 @@
-import { getGlobalConfig } from "../../../../../config/index-barrel";
 import { Module } from "../../../../../modules/module";
 import { ELogicCodeError, LogicError } from "../../../../../errors/logic-error";
 import {
@@ -43,7 +42,7 @@ export abstract class LocalRepositoryDriver
     return {
       ...superDf,
       /**nombre de la propiedad que contiene la clave identificadora */
-      keyId: getGlobalConfig().keyId,
+      keyId: Module._globalConfig_.keyId,
     };
   };
   protected static override readonly getCONSTANTS = () => {

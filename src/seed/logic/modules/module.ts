@@ -1,36 +1,14 @@
 import { ELogicResStatusCode } from "../reports/shared-types";
-import { Util_Module } from "../util/util-module";
+import { Util_Module } from "../util/index-barrel";
 import {
   TKeyActionModule,
   TKeyModule,
   TKeyLogicContext,
   TKeyHandlerModule,
 } from "./shared-types";
-import { getGlobalConfig } from "../config/index-barrel";
 import { TActionConfigFn } from "../criterias/shared-types";
-//████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-/**interfaz especial para las opciones de
- * contruccion de una accion de configuracion */
-export interface IBuildACOption {
-  /**modo de fusion de las acciones de configuracion*/
-  mergeMode?: "soft" | "hard";
-  /**ruta del recurso solicitado
-   *
-   * **⚠** necesario y obligatorio si el recurso es estructurado
-   * (los primitivos no lo requieren).
-   *
-   * **⚠** si no se asigna una ruta correcta simplemente se asume
-   * que cualquier tipo de consulta o fusion se hará
-   */
-  keyPath?: string;
-  /**la fuente para obtiene diccionario de configuracion de acciones
-   *
-   * - `"default"` el diccionario predefinido para este modulo y sus variantes
-   * - `"metadata"` el diccionario definido en los metadatos especificamente
-   * para cada contexto (primitivo o estructurado).
-   */
-  sourceDiccBase?: "default" | "metadata";
-}
+import { GlobalConfig } from "../config/index-barrel";
+
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *abstract*
  *
@@ -39,10 +17,9 @@ export interface IBuildACOption {
 export abstract class Module {
   /**configuración global */
   protected readonly _globalConfig_ = Module._globalConfig_;
-  /** */
   /**... */
   public static get _globalConfig_() {
-    return getGlobalConfig();
+    return GlobalConfig.getInstance();
   }
   /** configuración de valores predefinidos para el modulo*/
   public static readonly getDefault = () => {
@@ -67,7 +44,8 @@ export abstract class Module {
   protected readonly util = Module.util;
   /**.utilidades del modulo*/
   public static get util(): Util_Module {
-    return Util_Module.getInstance();
+    const dfValue = Module._globalConfig_.globalDefaultValue;
+    return Util_Module.getInstance(dfValue);
   }
   /**
    * @param _keyModule clave identificadora del modulo
@@ -100,11 +78,7 @@ export abstract class LogicModule extends Module {
     return this._keyLogicContext;
   }
   protected set keyLogicContext(v: TKeyLogicContext) {
-    if (
-      (this._keyLogicContext !== undefined && this._keyLogicContext !== null) ||
-      typeof v !== "string"
-    )
-      return; //🚫 modificaciones posteriores
+    if (!this.util.isString(v)) return; //🚫 modificaciones posteriores
     this._keyLogicContext = v;
     return;
   }
@@ -115,11 +89,7 @@ export abstract class LogicModule extends Module {
   }
   /**clave identificadora del recurso asociado a modulo*/
   public set keySrc(v: string) {
-    if (
-      (this._keySrc !== undefined && this._keySrc !== null) ||
-      typeof v !== "string"
-    )
-      return; //🚫 modificaciones posteriores
+    if (!this.util.isString(v)) return; //🚫 modificaciones posteriores
     this._keySrc = v;
     return;
   }
@@ -210,10 +180,9 @@ export abstract class LogicModuleWithReport extends LogicModule {
    * asignado una instancia
    */
   public set metadataHandler(metadataHandler: unknown) {
-    const util = Util_Module.getInstance();
     if (
-      !util.isInstance(metadataHandler) ||
-      util.isInstance(this._metadataHandler)
+      !this.util.isInstance(metadataHandler) ||
+      this.util.isInstance(this._metadataHandler)
     )
       return; //❗garantiza solo 1 vez inicializar❗
     this._metadataHandler = metadataHandler;

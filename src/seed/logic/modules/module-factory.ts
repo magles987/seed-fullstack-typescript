@@ -1,10 +1,10 @@
+import { ELogicCodeError, LogicError } from "../errors/index-barrel";
 import {
   PrimitiveLogicController,
   StructureLogicController,
   TPrimitiveCtrlBaseConfig,
   TStructureCtrlBaseConfig,
 } from "../controllers/index-barrel";
-import { ELogicCodeError, LogicError } from "../errors/index-barrel";
 import {
   PrimitiveLogicHook,
   StructureLogicHook,
@@ -37,7 +37,6 @@ import {
   TPrimitiveProviderBaseConfig,
   TStructureProviderBaseConfig,
 } from "../providers/index-barrel";
-import { Util_Module } from "../util/index-barrel";
 import {
   FieldLogicValidation,
   ModelLogicValidation,
@@ -49,13 +48,15 @@ import {
   TPrimitiveValBaseConfig,
   TRequestValBaseConfig,
 } from "../validators/index-barrel";
+//❗❗❗Import Fuertemente acoplado debe ir al final❗❗❗
+//import { Module } from "../modules/index-barrel";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *abstract*
  *
  * ...
  */
-export abstract class Modulefactory {
+export abstract class ModuleFactory {
   /**... */
   constructor() {}
   /**... */
@@ -65,7 +66,7 @@ export abstract class Modulefactory {
   ): unknown;
   /**... */
   public makeDriverInstance(nameDriver: string, baseConfig?: unknown): Driver {
-    const util = Util_Module.getInstance(); //❗Debe ser inicializado aquí OBLIGATORIAMENTE❗
+    const util = Module.util; //❗Debe ser inicializado aquí OBLIGATORIAMENTE❗
     let driver: Driver;
     const isBaseConfig = util.isObject(baseConfig);
     if (nameDriver === CookieDriver.getNameLogicDriver()) {
@@ -93,7 +94,7 @@ export abstract class Modulefactory {
  *
  * ...
  */
-export class PrimitiveModuleFactory extends Modulefactory {
+export class PrimitiveModuleFactory extends ModuleFactory {
   /**  Almacena la instancia única de esta clase */
   private static PrimitiveModuleFactory_instance: PrimitiveModuleFactory;
   /**
@@ -166,7 +167,7 @@ export class PrimitiveModuleFactory extends Modulefactory {
       | TKeyRequestValModuleContext,
     baseConfig?: unknown
   ): unknown {
-    const util = Util_Module.getInstance(); //❗Debe ser inicializado aquí OBLIGATORIAMENTE❗
+    const util = Module.util; //❗Debe ser inicializado aquí OBLIGATORIAMENTE❗
     let moduleInstance: unknown;
     const isBaseConfig = util.isObject(baseConfig, true);
     if (keyModuleContext === "primitiveMutate") {
@@ -220,7 +221,7 @@ export class PrimitiveModuleFactory extends Modulefactory {
  *
  * ...
  */
-export class StructureModuleFactory extends Modulefactory {
+export class StructureModuleFactory extends ModuleFactory {
   /**  Almacena la instancia única de esta clase */
   private static StructureModuleFactory_instance: StructureModuleFactory;
   /**... */
@@ -307,7 +308,7 @@ export class StructureModuleFactory extends Modulefactory {
       | TKeyRequestValModuleContext,
     baseConfig?: unknown
   ): unknown {
-    const util = Util_Module.getInstance(); //❗Debe ser inicializado aquí OBLIGATORIAMENTE❗
+    const util = Module.util; //❗Debe ser inicializado aquí OBLIGATORIAMENTE❗
     let moduleInstance: unknown;
     const isBaseConfig = util.isObject(baseConfig, true);
     if (keyModuleContext === "fieldMutate") {

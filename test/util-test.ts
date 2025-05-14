@@ -1,9 +1,10 @@
+import { Module } from "../src/seed/logic/modules/index-barrel";
 import {
   IPrimitiveResponse,
   IResponse,
   IStructureResponse,
-} from "../src/seed/logic/reports/shared-types";
-import { Util_Module } from "../src/seed/logic/util/util-module";
+} from "../src/seed/logic/reports/index-barrel";
+import { Util_Module } from "../src/seed/logic/util/index-barrel";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**
  * *Singleton*
@@ -16,7 +17,7 @@ export class Util_Test extends Util_Module {
   private static Util_Test_instance: Util_Test;
   /** */
   constructor() {
-    super();
+    super(Module.util.dfValue);
   }
   /** devuelve la instancia única de esta clase
    * ya sea que la crea o la que ya a sido creada

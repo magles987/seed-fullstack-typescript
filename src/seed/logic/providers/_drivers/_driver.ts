@@ -1,7 +1,6 @@
-import { Module } from "../../modules/module";
-import { TKeySrcSelector } from "../../modules/shared-types";
+import { TKeySrcSelector, Module } from "../../modules/index-barrel";
 import { ELogicCodeError, LogicError } from "../../errors/logic-error";
-import { IDriverResponse } from "../../reports/shared-types";
+import { IDriverResponse } from "../../reports/index-barrel";
 import {
   TPrimitiveLiteralCriteriaUnion,
   TStructureLiteralCriteriaUnion,

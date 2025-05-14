@@ -1,6 +1,6 @@
 import { ClientDriver } from "../_client-driver";
 import { IDriverResponse } from "../../../../reports/shared-types";
-import { Module } from "../../../../modules/module";
+import { Module } from "../../../../modules/index-barrel";
 import {
   TPrimitiveLiteralCriteriaUnion,
   TStructureLiteralCriteriaUnion,

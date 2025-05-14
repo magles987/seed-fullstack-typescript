@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { reconfigure } from "../../../../src/seed/start-seed";
 import { FetchDriver } from "../../../../src/seed/logic/providers/_drivers/index-barrel";
 import {
   ELogicResStatusCode,
   IStructureResponse,
 } from "../../../../src/seed/logic/reports/index-barrel";
-import { reconfigure } from "../../../../src/seed/start-seed";
 import { Util_Test } from "../../../util-test";
 import { StructureLibraryMockQueryFn } from "../../mocks/library-mock-query-fn";
 import { MockServerHandler } from "../../mocks/mock-server";

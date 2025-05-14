@@ -1,5 +1,5 @@
-import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { Model } from "../models/_model";
+import { ELogicCodeError, LogicError } from "../errors/index-barrel";
+import { Model } from "../models/index-barrel";
 import { Util_Logic } from "./util-logic";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *Singleton*
@@ -53,17 +53,17 @@ export class Util_Module extends Util_Logic {
   /**... */
   public readonly charSeparatorLogicName = "-";
   /** */
-  constructor() {
-    super();
+  constructor(dfValue: null | undefined) {
+    super(dfValue);
   }
   /** devuelve la instancia única de esta clase
    * ya sea que la crea o la que ya a sido creada
    */
-  public static getInstance(): Util_Module {
+  public static getInstance(dfValue: null | undefined): Util_Module {
     Util_Module.Util_Module_instance =
       Util_Module.Util_Module_instance === undefined ||
       Util_Module.Util_Module_instance === null
-        ? new Util_Module()
+        ? new Util_Module(dfValue)
         : Util_Module.Util_Module_instance;
     return Util_Module.Util_Module_instance;
   }
