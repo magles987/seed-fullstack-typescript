@@ -1,4 +1,4 @@
-import { StorageDriver } from "../../../../src/logic/providers/_drivers/client/web/local-repositories/storage/storage-driver";
+import { StorageDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/storage/storage-driver";
 import {
   ElementalModelTest,
   getElementalModelTestCtrl,

@@ -27,7 +27,7 @@ import {
   TStructureLiteralCriteriaUnion,
   TStructureModifyLiteralCriteria,
   TStructureReadLiteralCriteria,
-} from "../../../src/logic/providers/_drivers/shared-types";
+} from "../../../src/logic/providers/drivers/shared-types";
 import { TwinBeeModule } from "../../../src/logic/modules/module";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████

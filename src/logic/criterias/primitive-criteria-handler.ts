@@ -196,12 +196,9 @@ export class PrimitiveCriteriaHandler<
           [cCC.diccQueryParam, nCC.diccQueryParam],
           { mode: "soft", isNullAsUndefined: true }
         ),
-        aTCustomQueryDriverFunctions: util.isArray(
-          nCC.aTCustomQueryDriverFunctions,
-          true
-        )
-          ? nCC.aTCustomQueryDriverFunctions
-          : cCC.aTCustomQueryDriverFunctions,
+        aTCustomQueryDriverFn: util.isArray(nCC.aTCustomQueryDriverFn, true)
+          ? nCC.aTCustomQueryDriverFn
+          : cCC.aTCustomQueryDriverFn,
         isCreateOrUpdate: util.isBoolean(nCC.isCreateOrUpdate)
           ? nCC.isCreateOrUpdate
           : cCC.isCreateOrUpdate,

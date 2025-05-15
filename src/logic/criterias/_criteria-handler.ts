@@ -49,7 +49,7 @@ export abstract class CriteriaHandler<
       diccGlobalAC: {},
       aTGlobalActionConfig: [],
       diccQueryParam: {},
-      aTCustomQueryDriverFunctions: [],
+      aTCustomQueryDriverFn: [],
     } as typeof superDf & IModifyCriteria<any> & IReadCriteria<any>;
   };
   /**@returns todas las constantes a usar en instancias de esta clase*/
@@ -251,18 +251,18 @@ export abstract class CriteriaHandler<
       : this.getDefault().diccQueryParam;
   }
   /**... */
-  private _aTCustomQueryDriverFunctions: ICriteria<any>["aTCustomQueryDriverFunctions"];
-  public get aTCustomQueryDriverFunctions(): ICriteria<any>["aTCustomQueryDriverFunctions"] {
+  private _aTCustomQueryDriverFunctions: ICriteria<any>["aTCustomQueryDriverFn"];
+  public get aTCustomQueryDriverFunctions(): ICriteria<any>["aTCustomQueryDriverFn"] {
     return this._aTCustomQueryDriverFunctions;
   }
   public set aTCustomQueryDriverFunctions(
-    v: ICriteria<any>["aTCustomQueryDriverFunctions"]
+    v: ICriteria<any>["aTCustomQueryDriverFn"]
   ) {
     this._aTCustomQueryDriverFunctions = this.util.isArrayTuple(v, 2)
       ? v
       : this._aTCustomQueryDriverFunctions !== undefined
       ? this._aTCustomQueryDriverFunctions
-      : this.getDefault().aTCustomQueryDriverFunctions;
+      : this.getDefault().aTCustomQueryDriverFn;
   }
   /**
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades

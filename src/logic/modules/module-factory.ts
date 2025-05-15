@@ -23,12 +23,12 @@ import {
   TPrimitiveMutateBaseConfig,
   TFieldMutateBaseConfig,
 } from "../mutaters/shared-types";
-import { Driver } from "../providers/_drivers/_driver";
-import { AxiosDriver } from "../providers/_drivers/client/web/https/axios/axios-driver";
-import { FetchDriver } from "../providers/_drivers/client/web/https/fetch/fetch-driver";
-import { CookieDriver } from "../providers/_drivers/client/web/local-repositories/cookie/cookie-driver";
-import { IdbDriver } from "../providers/_drivers/client/web/local-repositories/idb/idb-driver";
-import { StorageDriver } from "../providers/_drivers/client/web/local-repositories/storage/storage-driver";
+import { Driver } from "../providers/drivers/_driver";
+import { AxiosDriver } from "../providers/drivers/client/web/https/axios/axios-driver";
+import { FetchDriver } from "../providers/drivers/client/web/https/fetch/fetch-driver";
+import { CookieDriver } from "../providers/drivers/client/web/local-repositories/cookie/cookie-driver";
+import { IdbDriver } from "../providers/drivers/client/web/local-repositories/idb/idb-driver";
+import { StorageDriver } from "../providers/drivers/client/web/local-repositories/storage/storage-driver";
 import { PrimitiveLogicProvider } from "../providers/primitive-provider";
 import {
   TPrimitiveProviderBaseConfig,

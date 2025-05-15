@@ -1,4 +1,4 @@
-import { CookieDriver } from "../../../../src/logic/providers/_drivers/client/web/local-repositories/cookie/cookie-driver";
+import { CookieDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/cookie/cookie-driver";
 import {
   IStructureResponse,
   ELogicResStatusCode,

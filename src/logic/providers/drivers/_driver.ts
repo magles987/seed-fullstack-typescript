@@ -188,8 +188,8 @@ export abstract class Driver
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
   ) {
-    const { aTCustomQueryDriverFunctions } = literalCriteria;
-    const tCustomQueryFn = aTCustomQueryDriverFunctions.find((tCQDFn) => {
+    const { aTCustomQueryDriverFn } = literalCriteria;
+    const tCustomQueryFn = aTCustomQueryDriverFn.find((tCQDFn) => {
       const [nameLogicDriver] = tCQDFn;
       const r = nameLogicDriver === this.nameLogicDriver;
       return r;

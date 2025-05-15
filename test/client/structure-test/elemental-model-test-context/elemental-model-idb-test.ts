@@ -1,4 +1,4 @@
-import { IdbDriver } from "../../../../src/logic/providers/_drivers/client/web/local-repositories/idb/idb-driver";
+import { IdbDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/idb/idb-driver";
 import {
   ELogicResStatusCode,
   IStructureResponse,

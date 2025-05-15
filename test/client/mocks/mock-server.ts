@@ -9,11 +9,11 @@ import {
   TKeySrcSelector,
   TKeyLogicContext,
 } from "../../../src/logic/modules/shared-types";
-import { HttpDriver } from "../../../src/logic/providers/_drivers/client/web/https/_https-driver";
+import { HttpDriver } from "../../../src/logic/providers/drivers/client/web/https/_https-driver";
 import {
   TPrimitiveLiteralCriteriaUnion,
   TStructureReadLiteralCriteria,
-} from "../../../src/logic/providers/_drivers/shared-types";
+} from "../../../src/logic/providers/drivers/shared-types";
 import { EncryptAndCompressDataHandler } from "../../../src/logic/util/encripter-handler";
 import { TwinBeeModule } from "../../../src/logic/modules/module";
 

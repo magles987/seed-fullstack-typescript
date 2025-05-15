@@ -13,11 +13,11 @@ import {
   TStructureCtrlInstance,
 } from "../../../../src/logic/meta/base-shared-types";
 import { StructureLogicMetadataHandler } from "../../../../src/logic/meta/structure-metadata-handler";
-import { FetchDriver } from "../../../../src/logic/providers/_drivers/client/web/https/fetch/fetch-driver";
-import { CookieDriver } from "../../../../src/logic/providers/_drivers/client/web/local-repositories/cookie/cookie-driver";
-import { TStructureCookieCustomQueryDriverFn } from "../../../../src/logic/providers/_drivers/client/web/local-repositories/cookie/shared-types";
-import { IdbDriver } from "../../../../src/logic/providers/_drivers/client/web/local-repositories/idb/idb-driver";
-import { StorageDriver } from "../../../../src/logic/providers/_drivers/client/web/local-repositories/storage/storage-driver";
+import { FetchDriver } from "../../../../src/logic/providers/drivers/client/web/https/fetch/fetch-driver";
+import { CookieDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/cookie/cookie-driver";
+import { TStructureCookieCustomQueryDriverFn } from "../../../../src/logic/providers/drivers/client/web/local-repositories/cookie/shared-types";
+import { IdbDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/idb/idb-driver";
+import { StorageDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/storage/storage-driver";
 
 //████ Tipos personalizados ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 type TModel = ElementalModelTest;
@@ -128,7 +128,7 @@ function buildMetadataHandler() {
                 { nameLogicDriver: CookieDriver.getNameLogicDriver() },
               ],
             ],
-            aTCustomQueryDriverFunctions: [
+            aTCustomQueryDriverFn: [
               [
                 CookieDriver.getNameLogicDriver(),
                 CookieDriver.getStructureLibraryQueryFn<TModel>()
@@ -156,7 +156,7 @@ function buildMetadataHandler() {
                 { nameLogicDriver: CookieDriver.getNameLogicDriver() },
               ],
             ],
-            aTCustomQueryDriverFunctions: [
+            aTCustomQueryDriverFn: [
               [
                 CookieDriver.getNameLogicDriver(),
                 CookieDriver.getStructureLibraryQueryFn<TModel>()
@@ -183,7 +183,7 @@ function buildMetadataHandler() {
                 { nameLogicDriver: CookieDriver.getNameLogicDriver() },
               ],
             ],
-            aTCustomQueryDriverFunctions: [
+            aTCustomQueryDriverFn: [
               [
                 CookieDriver.getNameLogicDriver(),
                 CookieDriver.getStructureLibraryQueryFn<TModel>().readById,
@@ -209,7 +209,7 @@ function buildMetadataHandler() {
                 { nameLogicDriver: CookieDriver.getNameLogicDriver() },
               ],
             ],
-            aTCustomQueryDriverFunctions: [
+            aTCustomQueryDriverFn: [
               [
                 CookieDriver.getNameLogicDriver(),
                 CookieDriver.getStructureLibraryQueryFn<TModel>()
@@ -236,7 +236,7 @@ function buildMetadataHandler() {
                 { nameLogicDriver: CookieDriver.getNameLogicDriver() },
               ],
             ],
-            aTCustomQueryDriverFunctions: [
+            aTCustomQueryDriverFn: [
               [
                 CookieDriver.getNameLogicDriver(),
                 CookieDriver.getStructureLibraryQueryFn<TModel>()
@@ -263,7 +263,7 @@ function buildMetadataHandler() {
                 { nameLogicDriver: CookieDriver.getNameLogicDriver() },
               ],
             ],
-            aTCustomQueryDriverFunctions: [
+            aTCustomQueryDriverFn: [
               [
                 CookieDriver.getNameLogicDriver(),
                 (async (driver, literalCriteria, registers) => {

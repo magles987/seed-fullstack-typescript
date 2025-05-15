@@ -11,7 +11,7 @@ import {
   TSelectorDataDriver,
 } from "../reports/shared-types";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { Driver } from "./_drivers/_driver";
+import { Driver } from "./drivers/_driver";
 import { LogicProvider } from "./_provider";
 import {
   TKeyStructureProviderModuleContext,

@@ -181,7 +181,7 @@ export interface ICriteria<
   diccQueryParam: any;
   /**array de tuplas con las funciones personalizadas diseñadas
    * específicamente para la consulta de un driver especifico */
-  aTCustomQueryDriverFunctions: Array<[string, Function]>;
+  aTCustomQueryDriverFn: Array<[string, Function]>;
   /**adiciones de url **ordenadas**.
    *
    * ejemplo basico:

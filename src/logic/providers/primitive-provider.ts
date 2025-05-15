@@ -11,7 +11,7 @@ import {
   IPrimitiveResponse,
   TSelectorDataDriver,
 } from "../reports/shared-types";
-import { Driver } from "./_drivers/_driver";
+import { Driver } from "./drivers/_driver";
 import { LogicProvider } from "./_provider";
 import {
   TKeyPrimitiveProviderModuleContext,

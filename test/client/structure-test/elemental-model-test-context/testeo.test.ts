@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 //import { reconfigure } from "../../../../src/seed/start-seed";
 
-import { FetchDriver } from "../../../../src/logic/providers/_drivers/client/web/https/fetch/fetch-driver";
+import { FetchDriver } from "../../../../src/logic/providers/drivers/client/web/https/fetch/fetch-driver";
 import {
   ELogicResStatusCode,
   IStructureResponse,

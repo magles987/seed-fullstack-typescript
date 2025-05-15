@@ -3,8 +3,8 @@ import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { ActionTwinBeeModule } from "../modules/module";
 import { TKeyLogicContext } from "../modules/shared-types";
 import { ELogicResStatusCode, IResponse } from "../reports/shared-types";
-import { Driver } from "./_drivers/_driver";
-import { TDriverList } from "./_drivers/shared-types";
+import { Driver } from "./drivers/_driver";
+import { TDriverList } from "./drivers/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export abstract class LogicProvider<
