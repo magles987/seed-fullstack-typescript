@@ -117,7 +117,9 @@ export class PrimitiveLogicMetadataHandler<
       TPrimitiveValInstance,
       TRequestValInstance,
       TPrimitiveHookInstance,
-      TPrimitiveProviderInstance
+      TPrimitiveProviderInstance,
+      TKeyDiccActionRequest,
+      TPrimitiveCtrlInstance
     >;
   }) {
     super("primitive", baseConfig.keySrc);

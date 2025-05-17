@@ -34,6 +34,7 @@ import { LogicMetadataHandler } from "./_metadata-handler";
 import {
   TStructureBaseMetadataForField,
   TStructureBaseMetadata,
+  TKeyStructureDiccActionRequest,
 } from "./base-shared-types";
 import {
   TStructureFull,
@@ -100,7 +101,7 @@ export class StructureLogicMetadataHandler<
   TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
   TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
   TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
-  TKeyDiccActionRequest extends string = string,
+  TKeyDiccActionRequest extends string = string, //string = string,
   TStructureCtrlInstance extends StructureLogicController<
     TModel,
     TFieldMutateInstance,
@@ -207,7 +208,9 @@ export class StructureLogicMetadataHandler<
       TModelValInstance,
       TRequestValInstance,
       TStructureHookInstance,
-      TStructureProviderInstance
+      TStructureProviderInstance,
+      TKeyDiccActionRequest,
+      TStructureCtrlInstance
     >;
   }) {
     super("structure", baseConfig.keySrc);
