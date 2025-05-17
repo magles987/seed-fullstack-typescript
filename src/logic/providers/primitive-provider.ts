@@ -7,16 +7,14 @@ import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
 import { TwinBeeModule } from "../modules/module";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
-import {
-  IPrimitiveResponse,
-  TSelectorDataDriver,
-} from "../reports/shared-types";
+import { IPrimitiveResponse } from "../reports/shared-types";
 import { Driver } from "./drivers/_driver";
 import { LogicProvider } from "./_provider";
 import {
   TKeyPrimitiveProviderModuleContext,
   TPrimitiveProviderBaseConfig,
 } from "./shared-types";
+import { TSelectorDataDriver } from "./drivers/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del provider */
 export interface IDiccPrimitiveProviderActionConfig {
@@ -194,7 +192,7 @@ export class PrimitiveLogicProvider<
     if (this.util.isObject(opDriver)) driver.mutateProps(opDriver);
     const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    let driverResponse = await driver.sendRequestFromService(
+    let driverResponse = await driver.sendRequestByCriteriaModule(
       criteriaHandler.getLiteral()
     );
     res = rH.mutateResponse(res, {

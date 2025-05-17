@@ -4,21 +4,30 @@ import {
 } from "../../../../../../errors/logic-error";
 import { TwinBeeModule } from "../../../../../../modules/module";
 import {
+  IGenericDriverCriteria,
+  TPrimitiveLiteralCriteriaUnion,
   TPrimitiveModifyLiteralCriteria,
   TPrimitiveReadLiteralCriteria,
+  TStructureLiteralCriteriaUnion,
   TStructureModifyLiteralCriteria,
   TStructureReadLiteralCriteria,
-} from "../../../../shared-types";
+} from "../../../../../../criterias/shared-types";
 import { LocalRepositoryDriver } from "../_local-repository-driver";
-import {
-  TPrimitiveLocalRepositoryCustomQueryDriverFn,
-  TStructureLocalRepositoryCustomQueryDriverFn,
-} from "../shared-types"; //❗Desde el padre❗
+import { TLocalRepositoryCustomQueryDriverFn } from "../shared-types"; //❗Desde el padre❗
 import {
   PrimitiveLibraryStorageQueryFn,
   StructureLibraryStorageQueryFn,
 } from "./library-storage-query-fn";
-import { TStorageType } from "./shared-types";
+import {
+  TGenericLocalStorageCustomQueryDriverFn,
+  TPrimitiveLocalStorageCustomQueryDriverFn,
+  TStorageType,
+  TStructureLocalStorageCustomQueryDriverFn,
+} from "./shared-types";
+import {
+  IGenericDriverResponse,
+  IDriverResponse,
+} from "../../../../../../reports/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
  *
@@ -147,6 +156,32 @@ export class StorageDriver
   }
   public override getLiteral(): ReturnType<StorageDriver["getDefault"]> {
     return super.getLiteral() as any;
+  }
+  protected override preRequestByCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): void {
+    super.preRequestByCriteria(literalCriteria);
+    return;
+  }
+  protected override postRequestByResponse(
+    driverRes: IGenericDriverResponse
+  ): void {
+    super.postRequestByResponse(driverRes);
+    return;
+  }
+  protected override preRequestByCriteriaModule(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+  ): void {
+    super.preRequestByCriteriaModule(literalCriteria);
+    return;
+  }
+  protected override postRequestByResponseModule(
+    driverRes: IDriverResponse
+  ): void {
+    super.postRequestByResponseModule(driverRes);
+    return;
   }
   /**obtienen la librería de funciones de consultas
    *
@@ -326,12 +361,149 @@ export class StorageDriver
     }
     return;
   }
-  //████ CRUD by Bag ████████████████████████████████████████████████████████████
-  protected override async primitiveReadByLiteralCriteria(
+  //████ CRUD ██████████████████████████████████████████████████████████████████████
+  protected override async readByLiteralCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ) {
+    let { data, keySrc: keySrcContext } = literalCriteria;
+    let registers = await this.getData(keySrcContext);
+    registers = this.util.isNotUndefinedAndNotNull(registers)
+      ? Array.isArray(registers)
+        ? registers
+        : [registers]
+      : [];
+    //❓Desempaquetar data❓
+    //registers = (registers as any[]).map((data) => data[keySrcContext]);
+    //selecciona el tipo de lectura:
+    const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
+    if (this.util.isFunction(customQueryDriverFn)) {
+      //personalizada
+      const fn =
+        customQueryDriverFn as TGenericLocalStorageCustomQueryDriverFn<any>;
+      registers = await fn(this, literalCriteria, registers);
+    } else {
+      //estándar
+    }
+    //verificación para ordenamiento y paginado
+    if (this.util.isArray(registers)) {
+      registers = await this.queryTool.orderByCriteria(
+        registers,
+        literalCriteria
+      );
+      registers = await this.queryTool.pageByCriteria(
+        registers,
+        literalCriteria
+      );
+    }
+    data = registers;
+    return data;
+  }
+  protected override async createByLiteralCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ) {
+    let { data, keySrc: keySrcContext } = literalCriteria;
+    let registers = (await this.getData(keySrcContext)) as any[];
+    registers = Array.isArray(registers) ? registers : [registers];
+    const idxCData = registers.findIndex((dt) =>
+      this.util.isEquivalentTo([dt, data], {})
+    );
+    //verificar si ya esta creado
+    const isExist = idxCData > -1;
+    if (isExist) {
+      const { isCreateOrUpdate } = literalCriteria;
+      if (!isCreateOrUpdate) {
+        //ya esta creado y no se permite su actualización
+        throw new LogicError({
+          code: ELogicCodeError.EXIST,
+          msn: `document with data : ${LogicError.valueToString(
+            data
+          )} id has not created because exist`,
+        });
+      }
+      return await this.updateByLiteralCriteria(literalCriteria);
+    }
+    //selecciona el tipo de creación:
+    const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
+    if (this.util.isFunction(customQueryDriverFn)) {
+      //personalizada
+      const fn =
+        customQueryDriverFn as TGenericLocalStorageCustomQueryDriverFn<any>;
+      registers = await fn(this, literalCriteria, registers);
+    } else {
+      //estándar
+      registers.push(data);
+    }
+    await this.setData(registers, keySrcContext);
+    return data;
+  }
+  protected override async updateByLiteralCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ) {
+    let { data, keySrc: keySrcContext } = literalCriteria;
+    let registers = await this.getData(keySrcContext);
+    const idxCData = registers.findIndex((dt) =>
+      this.util.isEquivalentTo([dt, data], {})
+    );
+    //verificar si no esta creado
+    const isExist = idxCData > -1;
+    if (!isExist) {
+      const { isCreateOrUpdate } = literalCriteria;
+      if (!isCreateOrUpdate) {
+        //no esta creado y no se permite su creación
+        throw new LogicError({
+          code: ELogicCodeError.NOT_EXIST,
+          msn: `document with data : ${LogicError.valueToString(
+            data
+          )} id has not updated because not exist`,
+        });
+      }
+      return await this.createByLiteralCriteria(literalCriteria);
+    }
+    //selecciona el tipo de actualización:
+    const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
+    if (this.util.isFunction(customQueryDriverFn)) {
+      //personalizada
+      const fn =
+        customQueryDriverFn as TGenericLocalStorageCustomQueryDriverFn<any>;
+      registers = await fn(this, literalCriteria, registers);
+    } else {
+      //estándar
+      registers[idxCData] = data;
+    }
+    await this.setData(registers, keySrcContext);
+    return data;
+  }
+  protected override async deleteByLiteralCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ) {
+    let { data, keySrc: keySrcContext } = literalCriteria;
+    let registers = (await this.getData(keySrcContext)) as any[];
+    registers = Array.isArray(registers) ? registers : [registers];
+    const fIdx = registers.findIndex((dt) =>
+      this.util.isEquivalentTo([dt, data], {})
+    );
+    const isExist = fIdx >= 0;
+    if (!isExist) return data;
+    //selecciona el tipo de eliminación:
+    const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
+    if (this.util.isFunction(customQueryDriverFn)) {
+      //personalizada
+      const fn =
+        customQueryDriverFn as TGenericLocalStorageCustomQueryDriverFn<any>;
+      registers = await fn(this, literalCriteria, registers);
+    } else {
+      //estándar
+      registers.splice(fIdx, 1); //Eliminación
+    }
+    await this.setData(registers, keySrcContext);
+    return data;
+  }
+  //████ CRUD BY MODULE ████████████████████████████████████████████████████████████
+  protected override async primitiveReadByLiteralCriteriaModule(
     literalCriteria: TPrimitiveReadLiteralCriteria
   ) {
     let { data } = literalCriteria;
-    const keySrcContext = this.getKeySrcContext(
+    const keySrcContext = this.getKeySrcContextFromModule(
       this.srcSelector,
       literalCriteria
     );
@@ -344,14 +516,11 @@ export class StorageDriver
     //desempaquetar primitive data
     registers = (registers as any[]).map((data) => data[keySrcContext]);
     //selecciona el tipo de lectura:
-    const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
+    const customQueryDriverFn = this.getCustomQueryFnModule(literalCriteria);
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalización
       const fn =
-        customQueryDriverFn as TPrimitiveLocalRepositoryCustomQueryDriverFn<
-          this,
-          any
-        >;
+        customQueryDriverFn as TPrimitiveLocalStorageCustomQueryDriverFn<any>;
       registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
@@ -361,11 +530,11 @@ export class StorageDriver
       this.util.isArray(registers) &&
       literalCriteria.expectedDataType === "array"
     ) {
-      registers = await this.queryTool.primitiveOrderByBagCriteria(
+      registers = await this.queryTool.primitiveOrderByCriteriaModule(
         registers,
         literalCriteria
       );
-      registers = await this.queryTool.primitivePageByBagCriteria(
+      registers = await this.queryTool.primitivePageByCriteriaModule(
         registers,
         literalCriteria
       );
@@ -373,11 +542,11 @@ export class StorageDriver
     data = registers;
     return data;
   }
-  protected override async primitiveCreateByLiteralCriteria(
+  protected override async primitiveCreateByLiteralCriteriaModule(
     literalCriteria: TPrimitiveModifyLiteralCriteria
   ) {
     let { data } = literalCriteria;
-    const keySrcContext = this.getKeySrcContext(
+    const keySrcContext = this.getKeySrcContextFromModule(
       this.srcSelector,
       literalCriteria
     );
@@ -399,17 +568,14 @@ export class StorageDriver
           )} id has not created because exist`,
         });
       }
-      return await this.primitiveUpdateByLiteralCriteria(literalCriteria);
+      return await this.primitiveUpdateByLiteralCriteriaModule(literalCriteria);
     }
     //selecciona el tipo de creación:
-    const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
+    const customQueryDriverFn = this.getCustomQueryFnModule(literalCriteria);
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TPrimitiveLocalRepositoryCustomQueryDriverFn<
-          this,
-          any
-        >;
+        customQueryDriverFn as TPrimitiveLocalStorageCustomQueryDriverFn<any>;
       registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
@@ -418,11 +584,11 @@ export class StorageDriver
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async primitiveUpdateByLiteralCriteria(
+  protected override async primitiveUpdateByLiteralCriteriaModule(
     literalCriteria: TPrimitiveModifyLiteralCriteria
   ) {
     let { data } = literalCriteria;
-    const keySrcContext = this.getKeySrcContext(
+    const keySrcContext = this.getKeySrcContextFromModule(
       this.srcSelector,
       literalCriteria
     );
@@ -443,17 +609,14 @@ export class StorageDriver
           )} id has not updated because not exist`,
         });
       }
-      return await this.primitiveCreateByLiteralCriteria(literalCriteria);
+      return await this.primitiveCreateByLiteralCriteriaModule(literalCriteria);
     }
     //selecciona el tipo de actualización:
-    const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
+    const customQueryDriverFn = this.getCustomQueryFnModule(literalCriteria);
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TPrimitiveLocalRepositoryCustomQueryDriverFn<
-          this,
-          any
-        >;
+        customQueryDriverFn as TPrimitiveLocalStorageCustomQueryDriverFn<any>;
       registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
@@ -462,11 +625,11 @@ export class StorageDriver
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async primitiveDeleteByLiteralCriteria(
+  protected override async primitiveDeleteByLiteralCriteriaModule(
     literalCriteria: TPrimitiveModifyLiteralCriteria
   ) {
     let { data } = literalCriteria;
-    const keySrcContext = this.getKeySrcContext(
+    const keySrcContext = this.getKeySrcContextFromModule(
       this.srcSelector,
       literalCriteria
     );
@@ -478,14 +641,11 @@ export class StorageDriver
     const isExist = fIdx >= 0;
     if (!isExist) return data;
     //selecciona el tipo de eliminación:
-    const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
+    const customQueryDriverFn = this.getCustomQueryFnModule(literalCriteria);
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TPrimitiveLocalRepositoryCustomQueryDriverFn<
-          this,
-          any
-        >;
+        customQueryDriverFn as TPrimitiveLocalStorageCustomQueryDriverFn<any>;
       registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
@@ -494,11 +654,11 @@ export class StorageDriver
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async structureReadByLiteralCriteria(
+  protected override async structureReadByLiteralCriteriaModule(
     literalCriteria: TStructureReadLiteralCriteria<any>
   ) {
     let { data } = literalCriteria;
-    const keySrcContext = this.getKeySrcContext(
+    const keySrcContext = this.getKeySrcContextFromModule(
       this.srcSelector,
       literalCriteria
     );
@@ -509,14 +669,11 @@ export class StorageDriver
         : [registers]
       : [];
     //selecciona el tipo de lectura:
-    const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
+    const customQueryDriverFn = this.getCustomQueryFnModule(literalCriteria);
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TStructureLocalRepositoryCustomQueryDriverFn<
-          this,
-          any
-        >;
+        customQueryDriverFn as TStructureLocalStorageCustomQueryDriverFn<any>;
       registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
@@ -526,11 +683,11 @@ export class StorageDriver
       this.util.isArray(registers) &&
       literalCriteria.expectedDataType === "array"
     ) {
-      registers = await this.queryTool.structureOrderByBagCriteria(
+      registers = await this.queryTool.structureOrderByCriteriaModule(
         registers,
         literalCriteria
       );
-      registers = await this.queryTool.structurePageByBagCriteria(
+      registers = await this.queryTool.structurePageByCriteriaModule(
         registers,
         literalCriteria
       );
@@ -538,12 +695,12 @@ export class StorageDriver
     data = registers;
     return data;
   }
-  protected override async structureCreateByLiteralCriteria(
+  protected override async structureCreateByLiteralCriteriaModule(
     literalCriteria: TStructureModifyLiteralCriteria<any>
   ) {
     let { data } = literalCriteria;
     const kId = this.keyId;
-    const keySrcContext = this.getKeySrcContext(
+    const keySrcContext = this.getKeySrcContextFromModule(
       this.srcSelector,
       literalCriteria
     );
@@ -575,17 +732,14 @@ export class StorageDriver
           )} id has not created because exist`,
         });
       }
-      return await this.structureUpdateByLiteralCriteria(literalCriteria);
+      return await this.structureUpdateByLiteralCriteriaModule(literalCriteria);
     }
     //selecciona el tipo de actualización:
-    const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
+    const customQueryDriverFn = this.getCustomQueryFnModule(literalCriteria);
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TStructureLocalRepositoryCustomQueryDriverFn<
-          this,
-          any
-        >;
+        customQueryDriverFn as TStructureLocalStorageCustomQueryDriverFn<any>;
       registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
@@ -596,12 +750,12 @@ export class StorageDriver
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async structureUpdateByLiteralCriteria(
+  protected override async structureUpdateByLiteralCriteriaModule(
     literalCriteria: TStructureModifyLiteralCriteria<any>
   ) {
     let { data } = literalCriteria;
     const kId = this.keyId;
-    const keySrcContext = this.getKeySrcContext(
+    const keySrcContext = this.getKeySrcContextFromModule(
       this.srcSelector,
       literalCriteria
     );
@@ -633,17 +787,14 @@ export class StorageDriver
           )} id has not updated because not exist`,
         });
       }
-      return await this.structureCreateByLiteralCriteria(literalCriteria);
+      return await this.structureCreateByLiteralCriteriaModule(literalCriteria);
     }
     //selecciona el tipo de actualización:
-    const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
+    const customQueryDriverFn = this.getCustomQueryFnModule(literalCriteria);
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TStructureLocalRepositoryCustomQueryDriverFn<
-          this,
-          any
-        >;
+        customQueryDriverFn as TStructureLocalStorageCustomQueryDriverFn<any>;
       registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar
@@ -652,12 +803,12 @@ export class StorageDriver
     await this.setData(registers, keySrcContext);
     return data;
   }
-  protected override async structureDeleteByLiteralCriteria(
+  protected override async structureDeleteByLiteralCriteriaModule(
     literalCriteria: TStructureModifyLiteralCriteria<any>
   ) {
     let { data } = literalCriteria;
     const kId = this.keyId;
-    const keySrcContext = this.getKeySrcContext(
+    const keySrcContext = this.getKeySrcContextFromModule(
       this.srcSelector,
       literalCriteria
     );
@@ -681,14 +832,11 @@ export class StorageDriver
     dData[kId] = data[kId]; //solo envía id
     if (!isExist) return dData; //ya está eliminado
     //selecciona el tipo de eliminación:
-    const customQueryDriverFn = this.getCustomQueryFn(literalCriteria);
+    const customQueryDriverFn = this.getCustomQueryFnModule(literalCriteria);
     if (this.util.isFunction(customQueryDriverFn)) {
       //personalizada
       const fn =
-        customQueryDriverFn as TStructureLocalRepositoryCustomQueryDriverFn<
-          this,
-          any
-        >;
+        customQueryDriverFn as TStructureLocalStorageCustomQueryDriverFn<any>;
       registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar

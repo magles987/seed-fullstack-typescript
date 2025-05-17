@@ -1,5 +1,5 @@
 //❗❗Imports que deben iniciar❗❗
-import startTwinBee from "./src/seed/start-twinbee";
+import startTwinBee from "./src/start-twinbee";
 import { runTestClient } from "./test/client/index-client";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const GC = startTwinBee({
@@ -8,7 +8,6 @@ const GC = startTwinBee({
     envStandard: "dev",
     envTest: "test-browser",
   },
-  globalDefaultValue: undefined,
 });
 const { envGlobalLayout } = GC.environment;
 if (envGlobalLayout === "client") {

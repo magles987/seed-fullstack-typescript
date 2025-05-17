@@ -3,6 +3,7 @@ import { TKeyLogicContext } from "../modules/shared-types";
 import {
   ELogicOperatorForCondition,
   ELogicOperatorForGroup,
+  IGenericDriverCriteria,
   IModifyCriteria,
   IPrimitiveModifyCriteria,
   IPrimitiveReadCriteria,
@@ -196,7 +197,24 @@ export class QueryTool {
    * @param literalCriteria el bag con los datos y configuracion a procesar
    * @returns los datos ya ordenados
    */
-  public async primitiveOrderByBagCriteria(
+  public async orderByCriteria(
+    registers: any[],
+    literalCriteria: IGenericDriverCriteria
+  ): Promise<any[]> {
+    if (!this.util.isArray(registers)) return registers;
+    const { sort } = literalCriteria;
+    registers = this.util.sortMixedArray(registers, { direction: sort });
+    //registers = lodash.orderBy(registers, keysField, aSorts); //como se hace con lodash???
+    return registers;
+  }
+  /**
+   * ordenamiento de datos
+   * ____
+   * @param registers registers recibida del repositorio ❗distinta a la recibida en *bag repository*❗
+   * @param literalCriteria el bag con los datos y configuracion a procesar
+   * @returns los datos ya ordenados
+   */
+  public async primitiveOrderByCriteriaModule(
     registers: any[],
     literalCriteria: IPrimitiveReadCriteria | IPrimitiveModifyCriteria
   ): Promise<any[]> {
@@ -213,7 +231,7 @@ export class QueryTool {
    * @param literalCriteria el bag con los datos y configuracion a procesar
    * @returns los datos ya ordenados
    */
-  public async structureOrderByBagCriteria(
+  public async structureOrderByCriteriaModule(
     registers: any[],
     literalCriteria:
       | IStructureModelReadCriteria<any>
@@ -242,11 +260,11 @@ export class QueryTool {
    * @returns los datos segmentados
    * por pagina
    */
-  public async primitivePageByBagCriteria(
+  public async pageByCriteria(
     registers: any[],
-    literalCriteria: IPrimitiveReadCriteria | IPrimitiveModifyCriteria
+    literalCriteria: IGenericDriverCriteria
   ): Promise<any[]> {
-    return await this.pageByBagCriteria(registers, literalCriteria);
+    return await this.pageByCriteriaModule(registers, literalCriteria);
   }
   /**
    * @facade
@@ -259,13 +277,30 @@ export class QueryTool {
    * @returns los datos segmentados
    * por pagina
    */
-  public async structurePageByBagCriteria(
+  public async primitivePageByCriteriaModule(
+    registers: any[],
+    literalCriteria: IPrimitiveReadCriteria | IPrimitiveModifyCriteria
+  ): Promise<any[]> {
+    return await this.pageByCriteriaModule(registers, literalCriteria);
+  }
+  /**
+   * @facade
+   *
+   * paginado básico de datos
+   * ____
+   * @param registers registers recibida del repositorio ❗distinta a la recibida en *bag repository*❗
+   * @param literalCriteria el bag con los datos y configuracion a procesar
+   * ____
+   * @returns los datos segmentados
+   * por pagina
+   */
+  public async structurePageByCriteriaModule(
     registers: any[],
     literalCriteria:
       | IStructureModelReadCriteria<any>
       | IStructureModelModifyCriteria<any>
   ): Promise<any[]> {
-    return await this.pageByBagCriteria(registers, literalCriteria);
+    return await this.pageByCriteriaModule(registers, literalCriteria);
   }
   /**
    * @real
@@ -278,9 +313,12 @@ export class QueryTool {
    * por pagina
    *
    */
-  private async pageByBagCriteria(
+  private async pageByCriteriaModule(
     registers: any[],
-    literalCriteria: IReadCriteria<any> | IModifyCriteria<any>
+    literalCriteria:
+      | IReadCriteria<any>
+      | IModifyCriteria<any>
+      | IGenericDriverCriteria
   ): Promise<any[]> {
     if (!this.util.isArray(registers)) return registers;
     const {

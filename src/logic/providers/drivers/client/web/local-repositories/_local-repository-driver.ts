@@ -2,6 +2,7 @@ import { ELogicCodeError, LogicError } from "../../../../../errors/logic-error";
 import {
   ELogicResStatusCode,
   IDriverResponse,
+  IGenericDriverResponse,
 } from "../../../../../reports/shared-types";
 import {
   buildIdByStrategy,
@@ -10,13 +11,14 @@ import {
 } from "../../../../../util/default-generators-id-fn";
 import { QueryTool } from "../../../../../util/query-tool";
 import {
+  IGenericDriverCriteria,
   TPrimitiveLiteralCriteriaUnion,
   TPrimitiveModifyLiteralCriteria,
   TPrimitiveReadLiteralCriteria,
   TStructureLiteralCriteriaUnion,
   TStructureModifyLiteralCriteria,
   TStructureReadLiteralCriteria,
-} from "../../../shared-types";
+} from "../../../../../criterias/shared-types";
 import { WebDriver } from "../_web-driver";
 import { TwinBeeModule } from "../../../../../modules/module";
 
@@ -113,53 +115,72 @@ export abstract class LocalRepositoryDriver
   > {
     return super.getLiteral() as any;
   }
-  /**verifica si la data recibida corresponde la expectativa esperada*/
-  protected checkRxData(
-    rxData: any,
-    expectDataType: (
-      | TPrimitiveLiteralCriteriaUnion
-      | TStructureLiteralCriteriaUnion<any>
-    )["expectedDataType"]
-  ): boolean {
-    if (expectDataType === "boolean" && !this.util.isBoolean(rxData))
-      return false;
-    else if (expectDataType === "number" && !this.util.isNumber(rxData))
-      return false;
-    else if (expectDataType === "string" && !this.util.isString(rxData, true))
-      return false;
-    else if (expectDataType === "object" && !this.util.isObject(rxData, true))
-      return false;
-    else if (expectDataType === "array" && !this.util.isArray(rxData, true))
-      return false;
-    else return true;
-  }
   protected override buildDriverResponse(
+    literalCriteria: IGenericDriverCriteria,
+    anyResponse: {
+      /**data recibida */
+      rxData: any;
+      /**objeto literal de posible error */
+      error?: any;
+    }
+  ): IGenericDriverResponse {
+    const { rxData, error } = anyResponse;
+    const dfValue = this.util.dfValue;
+    let driverRes = {} as IGenericDriverResponse;
+    if (this.util.isUndefinedOrNull(error)) {
+      driverRes = {
+        data: rxData,
+        details: {
+          status: ELogicResStatusCode.SUCCESS,
+        },
+      };
+    } else {
+      driverRes = {
+        data: dfValue,
+        details: {
+          status: ELogicResStatusCode.ERROR,
+        },
+        error,
+      };
+    }
+    return driverRes;
+  }
+  protected override buildDriverResponseModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>,
-    rxData: any,
-    error?: any
+    anyResponse: {
+      /**data recibida */
+      rxData: any;
+      /**objeto literal de posible error */
+      error?: any;
+    }
   ): IDriverResponse {
-    let driverRes = {
-      data: rxData,
-      status: ELogicResStatusCode.SUCCESS,
-      msn: ``,
-      error,
-    } as IDriverResponse;
     const { expectedDataType } = literalCriteria;
+    const { rxData, error } = anyResponse;
     const dfValue = this.util.dfValue;
+    let driverRes = {} as IDriverResponse;
     //verificar si hubo error interno en el driver o en su servicio interno
     if (this.util.isUndefinedOrNull(error)) {
       //verificar integrida de datos recibidos
-      const isCheckData = this.checkRxData(rxData, expectedDataType);
+      const isCheckData = this.checkRxDataByCriteriaModule(
+        rxData,
+        expectedDataType
+      );
       if (isCheckData) {
-        driverRes.data = rxData;
-        driverRes.status = ELogicResStatusCode.SUCCESS;
-        driverRes.msn = `ok`;
+        driverRes = {
+          data: rxData,
+          status: ELogicResStatusCode.SUCCESS,
+          msn: `ok`,
+        };
       } else {
-        driverRes.data = dfValue;
-        driverRes.status = ELogicResStatusCode.BAD;
-        driverRes.msn = `data has not been as expected`;
+        driverRes = {
+          data: dfValue,
+          status: ELogicResStatusCode.BAD,
+          msn: `data has not been as expected`,
+          details: { rxData, detail: `data has not been as expected` },
+          error,
+        };
       }
     } else {
       driverRes.data = dfValue;
@@ -170,39 +191,91 @@ export abstract class LocalRepositoryDriver
         : this.util.isString(error)
         ? error
         : `internal error in local driver`;
+      driverRes = {
+        data: dfValue,
+        status: ELogicResStatusCode.ERROR,
+        msn: this.util.isObject(error)
+          ? (error as Error).message ?? `internal error in local driver`
+          : this.util.isString(error)
+          ? error
+          : `internal error in local driver`,
+        details: {
+          rxData: dfValue,
+          detail: `data has not been as expected`,
+        },
+        error,
+      };
     }
     return driverRes;
   }
-  public override async sendRequestFromService(
+  public override async sendRequestByCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): Promise<IGenericDriverResponse> {
+    let driverRes: IGenericDriverResponse;
+    this.preRequestByCriteria(literalCriteria);
+    try {
+      let rxData = await this.selectCRUDRunByLiteralCriteria(literalCriteria);
+      driverRes = this.buildDriverResponse(literalCriteria, {
+        rxData,
+      });
+    } catch (error) {
+      driverRes = this.buildDriverResponse(literalCriteria, {
+        rxData: this.util.dfValue,
+        error,
+      });
+    } finally {
+      this.postRequestByResponse(driverRes);
+    }
+    return driverRes;
+  }
+  public override async sendRequestByCriteriaModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
   ): Promise<IDriverResponse> {
     let driverRes: IDriverResponse;
+    this.preRequestByCriteriaModule(literalCriteria);
     try {
-      this.preRequestFromService(literalCriteria);
-      let rxData = await this.selectCRUDRunByLiteralCriteria(literalCriteria);
-      driverRes = this.buildDriverResponse(literalCriteria, rxData);
-    } catch (error) {
-      driverRes = this.buildDriverResponse(
-        literalCriteria,
-        this.util.dfValue,
-        error
+      let rxData = await this.selectCRUDRunByLiteralCriteriaModule(
+        literalCriteria
       );
+      driverRes = this.buildDriverResponseModule(literalCriteria, {
+        rxData,
+      });
+    } catch (error) {
+      driverRes = this.buildDriverResponseModule(literalCriteria, {
+        rxData: this.util.dfValue,
+        error,
+      });
+    } finally {
+      this.postRequestByResponseModule(driverRes);
     }
-    this.postRequestFromService(driverRes);
     return driverRes;
   }
-  protected override preRequestFromService(
+  protected override preRequestByCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): void {
+    super.preRequestByCriteria(literalCriteria);
+    return;
+  }
+  protected override postRequestByResponse(
+    driverRes: IGenericDriverResponse
+  ): void {
+    super.postRequestByResponse(driverRes);
+    return;
+  }
+  protected override preRequestByCriteriaModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
   ): void {
-    super.preRequestFromService(literalCriteria);
+    super.preRequestByCriteriaModule(literalCriteria);
     return;
   }
-  protected override postRequestFromService(driverRes: IDriverResponse): void {
-    super.postRequestFromService(driverRes);
+  protected override postRequestByResponseModule(
+    driverRes: IDriverResponse
+  ): void {
+    super.postRequestByResponseModule(driverRes);
     return;
   }
   /**construir id si es necesario */
@@ -230,9 +303,93 @@ export abstract class LocalRepositoryDriver
     }
     return possibleId;
   }
-  //████ CRUD by Bag ████████████████████████████████████████████████████████████
+  //████ CRUD ██████████████████████████████████████████████████████████████████████
   /**... */
   protected async selectCRUDRunByLiteralCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): Promise<any> {
+    const { type } = literalCriteria;
+    let rxData: any;
+    if (type === "read") {
+      const {} = literalCriteria as TPrimitiveReadLiteralCriteria;
+      rxData = await this.readByLiteralCriteria(
+        literalCriteria as TPrimitiveReadLiteralCriteria
+      );
+    } else if (type === "modify") {
+      const { modifyType } = literalCriteria as TPrimitiveModifyLiteralCriteria;
+      if (modifyType === "create") {
+        rxData = await this.createByLiteralCriteria(
+          literalCriteria as TPrimitiveModifyLiteralCriteria
+        );
+      } else if (modifyType === "update") {
+        rxData = await this.updateByLiteralCriteria(
+          literalCriteria as TPrimitiveModifyLiteralCriteria
+        );
+      } else if (modifyType === "delete") {
+        rxData = await this.deleteByLiteralCriteria(
+          literalCriteria as TPrimitiveModifyLiteralCriteria
+        );
+      } else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${modifyType} is not modify type request valid`,
+        });
+      }
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${type} is not type request valid`,
+      });
+    }
+    return rxData;
+  }
+  /**
+   * descrip...
+   * ____
+   * @param
+   * ____
+   * @returns ``
+   *
+   */
+  protected abstract readByLiteralCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): Promise<any>;
+  /**
+   * descrip...
+   * ____
+   * @param
+   * ____
+   * @returns ``
+   *
+   */
+  protected abstract createByLiteralCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): Promise<any>;
+  /**
+   * descrip...
+   * ____
+   * @param
+   * ____
+   * @returns ``
+   *
+   */
+  protected abstract updateByLiteralCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): Promise<any>;
+  /**
+   * descrip...
+   * ____
+   * @param
+   * ____
+   * @returns ``
+   *
+   */
+  protected abstract deleteByLiteralCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): Promise<any>;
+  //████ CRUD BY MODULE ████████████████████████████████████████████████████████████
+  /**... */
+  protected async selectCRUDRunByLiteralCriteriaModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
@@ -242,22 +399,22 @@ export abstract class LocalRepositoryDriver
     if (keyLogicContext === "primitive") {
       if (type === "read") {
         const {} = literalCriteria as TPrimitiveReadLiteralCriteria;
-        rxData = await this.primitiveReadByLiteralCriteria(
+        rxData = await this.primitiveReadByLiteralCriteriaModule(
           literalCriteria as TPrimitiveReadLiteralCriteria
         );
       } else if (type === "modify") {
         const { modifyType } =
           literalCriteria as TPrimitiveModifyLiteralCriteria;
         if (modifyType === "create") {
-          rxData = await this.primitiveCreateByLiteralCriteria(
+          rxData = await this.primitiveCreateByLiteralCriteriaModule(
             literalCriteria as TPrimitiveModifyLiteralCriteria
           );
         } else if (modifyType === "update") {
-          rxData = await this.primitiveUpdateByLiteralCriteria(
+          rxData = await this.primitiveUpdateByLiteralCriteriaModule(
             literalCriteria as TPrimitiveModifyLiteralCriteria
           );
         } else if (modifyType === "delete") {
-          rxData = await this.primitiveDeleteByLiteralCriteria(
+          rxData = await this.primitiveDeleteByLiteralCriteriaModule(
             literalCriteria as TPrimitiveModifyLiteralCriteria
           );
         } else {
@@ -275,22 +432,22 @@ export abstract class LocalRepositoryDriver
     } else if (keyLogicContext === "structure") {
       if (type === "read") {
         const {} = literalCriteria as TStructureReadLiteralCriteria<any>;
-        rxData = await this.structureReadByLiteralCriteria(
+        rxData = await this.structureReadByLiteralCriteriaModule(
           literalCriteria as TStructureModifyLiteralCriteria<any>
         );
       } else if (type === "modify") {
         const { modifyType } =
           literalCriteria as TStructureModifyLiteralCriteria<any>;
         if (modifyType === "create") {
-          rxData = await this.structureCreateByLiteralCriteria(
+          rxData = await this.structureCreateByLiteralCriteriaModule(
             literalCriteria as TStructureModifyLiteralCriteria<any>
           );
         } else if (modifyType === "update") {
-          rxData = await this.structureUpdateByLiteralCriteria(
+          rxData = await this.structureUpdateByLiteralCriteriaModule(
             literalCriteria as TStructureModifyLiteralCriteria<any>
           );
         } else if (modifyType === "delete") {
-          rxData = await this.structureDeleteByLiteralCriteria(
+          rxData = await this.structureDeleteByLiteralCriteriaModule(
             literalCriteria as TStructureModifyLiteralCriteria<any>
           );
         } else {
@@ -321,7 +478,7 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract primitiveReadByLiteralCriteria(
+  protected abstract primitiveReadByLiteralCriteriaModule(
     literalCriteria: TPrimitiveReadLiteralCriteria
   ): Promise<any>;
   /**
@@ -332,7 +489,7 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract primitiveCreateByLiteralCriteria(
+  protected abstract primitiveCreateByLiteralCriteriaModule(
     literalCriteria: TPrimitiveModifyLiteralCriteria
   ): Promise<any>;
   /**
@@ -343,7 +500,7 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract primitiveUpdateByLiteralCriteria(
+  protected abstract primitiveUpdateByLiteralCriteriaModule(
     literalCriteria: TPrimitiveModifyLiteralCriteria
   ): Promise<any>;
   /**
@@ -354,7 +511,7 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract primitiveDeleteByLiteralCriteria(
+  protected abstract primitiveDeleteByLiteralCriteriaModule(
     literalCriteria: TPrimitiveModifyLiteralCriteria
   ): Promise<any>;
   /**
@@ -365,7 +522,7 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract structureReadByLiteralCriteria(
+  protected abstract structureReadByLiteralCriteriaModule(
     literalCriteria: TStructureModifyLiteralCriteria<any>
   ): Promise<any>;
   /**
@@ -376,7 +533,7 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract structureCreateByLiteralCriteria(
+  protected abstract structureCreateByLiteralCriteriaModule(
     literalCriteria: TStructureModifyLiteralCriteria<any>
   ): Promise<any>;
   /**
@@ -387,7 +544,7 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract structureUpdateByLiteralCriteria(
+  protected abstract structureUpdateByLiteralCriteriaModule(
     literalCriteria: TStructureModifyLiteralCriteria<any>
   ): Promise<any>;
   /**
@@ -398,7 +555,7 @@ export abstract class LocalRepositoryDriver
    * @returns ``
    *
    */
-  protected abstract structureDeleteByLiteralCriteria(
+  protected abstract structureDeleteByLiteralCriteriaModule(
     literalCriteria: TStructureModifyLiteralCriteria<any>
   ): Promise<any>;
 }

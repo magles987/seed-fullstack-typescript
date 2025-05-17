@@ -5,18 +5,20 @@ import { ELogicCodeError, LogicError } from "../../../../../errors/logic-error";
 import {
   ELogicResStatusCode,
   IDriverResponse,
+  IGenericDriverResponse,
 } from "../../../../../reports/shared-types";
-import { TUrlActionType } from "./shared-types";
+import { TTypeResponseContainer, TUrlActionType } from "./shared-types";
 import {
   EHttpRangeStatusCode,
   EHttpStatusCode,
   TKeyHttpMethod,
 } from "../../../../../util/http-tool";
 import {
+  IGenericDriverCriteria,
   TPrimitiveLiteralCriteriaUnion,
   TStructureLiteralCriteriaUnion,
   TStructureModifyLiteralCriteria,
-} from "../../../shared-types";
+} from "../../../../../criterias/shared-types";
 import { TwinBeeModule } from "../../../../../modules/module";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -68,6 +70,8 @@ export abstract class HttpDriver
       urlActionType: "basic" as TUrlActionType,
       /**palabra para encriptado y desencriptado con JWT */
       urlSecretKeyJWT: "#d3f4ult*",
+      /**tipo de contenedor en que la api externa retorna los datos de respuesta*/
+      typeResponseContainer: "twinBee" as TTypeResponseContainer,
     };
   };
   protected static override readonly getCONSTANTS = () => {
@@ -134,6 +138,23 @@ export abstract class HttpDriver
       ? this._urlSecretKeyJWT
       : this.getDefault().urlSecretKeyJWT;
   }
+  private _typeResponseContainer: ReturnType<
+    HttpDriver["getDefault"]
+  >["typeResponseContainer"];
+  public get typeResponseContainer(): ReturnType<
+    HttpDriver["getDefault"]
+  >["typeResponseContainer"] {
+    return this._typeResponseContainer;
+  }
+  protected set typeResponseContainer(
+    v: ReturnType<HttpDriver["getDefault"]>["typeResponseContainer"]
+  ) {
+    this._typeResponseContainer = this.util.isString(v)
+      ? v
+      : this.util.isString(this._typeResponseContainer)
+      ? this._typeResponseContainer
+      : this.getDefault().typeResponseContainer;
+  }
   /**
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades
    * @param isInit `= true` ❕Solo para herencia❕, indica si esta clase debe iniciar las propiedaes
@@ -180,23 +201,171 @@ export abstract class HttpDriver
   public override getLiteral(): ReturnType<HttpDriver["getDefault"]> {
     return super.getLiteral() as any;
   }
-  protected override preRequestFromService(
+  protected override preRequestByCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): void {
+    super.preRequestByCriteria(literalCriteria);
+    return;
+  }
+  protected override postRequestByResponse(
+    driverRes: IGenericDriverResponse
+  ): void {
+    super.postRequestByResponse(driverRes);
+    return;
+  }
+  protected override preRequestByCriteriaModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
   ): void {
-    super.preRequestFromService(literalCriteria);
+    super.preRequestByCriteriaModule(literalCriteria);
     return;
   }
-  protected override postRequestFromService(driverRes: IDriverResponse): void {
-    super.postRequestFromService(driverRes);
+  protected override postRequestByResponseModule(
+    driverRes: IDriverResponse
+  ): void {
+    super.postRequestByResponseModule(driverRes);
     return;
   }
-  /**obtiene un string con la accion CRUD generica que se añadirá a la url
+  protected override buildDriverResponse(
+    literalCriteria: IGenericDriverCriteria,
+    anyResponse: {
+      /**data recibida */
+      rxData: any;
+      /**estado de la petición */
+      status: any;
+      /** mensaje descriptivo corto de la respuesta a la petición*/
+      msn?: string;
+      /** mensaje descriptivo corto*/
+      detail?: any;
+      /**objeto literal de posible error */
+      error?: any;
+    }
+  ): IGenericDriverResponse {
+    const { rxData, status, msn, detail, error } = anyResponse;
+    const dfValue = this.util.dfValue;
+    let driverRes = {} as IGenericDriverResponse;
+    if (this.util.isUndefinedOrNull(error)) {
+      driverRes = {
+        data: rxData,
+        details: {
+          status,
+          msn,
+          detail,
+        },
+      };
+    } else {
+      driverRes = {
+        data: dfValue,
+        details: {
+          status,
+          msn,
+          detail,
+        },
+        error,
+      };
+    }
+    return driverRes;
+  }
+  protected override buildDriverResponseModule(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>,
+    anyResponse: {
+      /**data recibida */
+      rxData: any;
+      /**estado de la petición */
+      status: any;
+      /** mensaje descriptivo corto de la respuesta a la petición*/
+      msn?: string;
+      /** mensaje descriptivo corto*/
+      detail?: any;
+      /**objeto literal de posible error */
+      error?: any;
+    },
+    isVerificableData = true //normalmente se recibe JSON asi que se puede verificar
+  ): IDriverResponse {
+    const { expectedDataType } = literalCriteria;
+    const { rxData, status, msn, detail, error } = anyResponse;
+    const dfValue = this.util.dfValue;
+    let driverRes = {} as IDriverResponse;
+    //verificar si hubo error interno en el driver o en su servicio interno
+    if (this.util.isUndefinedOrNull(error)) {
+      if (isVerificableData) {
+        //verificar integridad de datos recibidos
+        const isCheckData =
+          !isVerificableData || //negado, si no es verificable asuma que fue "checkeado"
+          this.checkRxDataByCriteriaModule(rxData, expectedDataType);
+        if (isCheckData) {
+          driverRes = {
+            data: rxData,
+            status,
+            msn,
+            details: {
+              rxData,
+              detail,
+            },
+            error: undefined,
+          };
+        } else {
+          driverRes = {
+            data: dfValue,
+            status: ELogicResStatusCode.BAD,
+            msn: `${rxData} has not been as expected`,
+            details: {
+              rxData,
+              detail,
+            },
+            error: undefined,
+          };
+        }
+      } else {
+        //acepta lso datos sin verificar expectativa❗❗
+        driverRes = {
+          data: rxData,
+          status,
+          msn,
+          details: {
+            rxData,
+            detail,
+          },
+          error: undefined,
+        };
+      }
+    } else {
+      driverRes.data = dfValue;
+      driverRes.status = ELogicResStatusCode.ERROR;
+      driverRes.error = error;
+      driverRes.msn = this.util.isObject(error)
+        ? (error as Error).message ?? `internal error in local driver`
+        : this.util.isString(error)
+        ? error
+        : `internal error in local driver`;
+      driverRes = {
+        data: dfValue,
+        status: status ?? ELogicResStatusCode.ERROR,
+        msn: this.util.isString(msn)
+          ? msn
+          : this.util.isObject(error)
+          ? (error as Error).message ?? `internal error in local driver`
+          : this.util.isString(error)
+          ? error
+          : `internal error in local driver`,
+        details: {
+          rxData: dfValue,
+          detail,
+        },
+        error,
+      };
+    }
+    return driverRes;
+  }
+  /**
+   * obtiene un string con la acción CRUD genérica que se añadirá a la url
    * @param literalCriteria el objeto literal con los criterios de la solicutud
    * @returns string de la accion
    */
-  private getUrlActionFromLiteralCriteria(
+  private getUrlActionFromLiteralCriteriaModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
@@ -233,7 +402,7 @@ export abstract class HttpDriver
     return urlAction;
   }
   /**... */
-  private getUrlSrcFromLiteralCriteria(
+  private getUrlSrcFromLiteralCriteriaModule(
     criteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
@@ -251,7 +420,7 @@ export abstract class HttpDriver
     return urlSrc;
   }
   /**... */
-  private getUrlCriteriaFromLiteralCriteria(
+  private getUrlCriteriaFromLiteralCriteriaModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
@@ -264,21 +433,23 @@ export abstract class HttpDriver
     return urlCriteria;
   }
   /**... */
-  protected getUrlBodyPartsFromLiteralCriteria(
+  protected getUrlBodyPartsFromLiteralCriteriaModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
   ): string[] {
-    const urlSrc = this.getUrlSrcFromLiteralCriteria(literalCriteria);
-    const urlAction = this.getUrlActionFromLiteralCriteria(literalCriteria);
-    const urlCriteria = this.getUrlCriteriaFromLiteralCriteria(literalCriteria);
+    const urlSrc = this.getUrlSrcFromLiteralCriteriaModule(literalCriteria);
+    const urlAction =
+      this.getUrlActionFromLiteralCriteriaModule(literalCriteria);
+    const urlCriteria =
+      this.getUrlCriteriaFromLiteralCriteriaModule(literalCriteria);
     let urlBodyParts: string[] = [urlSrc, urlAction, urlCriteria];
     return urlBodyParts;
   }
   /**
    * @param urlBodyParts  el array con todas las partes del body
    */
-  protected buildUrl(urlBodyParts: string[]): string {
+  protected buildUrl(urlBodyParts: string[] = []): string {
     /**
      * - `urlParts[0]`: la url raíz
      * - `urlParts[1]`: el prefijo inmediatamente después de la url raiz
@@ -308,10 +479,10 @@ export abstract class HttpDriver
    * @param txData
    */
   protected dataToBody(txData: any): string {
-    let body: string = undefined;
+    let body: string = undefined; //❗❗debe ser undefined si no existe datos para el body❗❗
     if (
-      typeof txData !== "undefined" &&
-      typeof txData !== "function" &&
+      !this.util.isFunction(txData) &&
+      !this.util.isUndefined(txData) &&
       typeof txData !== "symbol"
     ) {
       body = JSON.stringify(txData);
@@ -319,8 +490,18 @@ export abstract class HttpDriver
     return body;
   }
   /**... */
-  protected abstract adaptHttpResponseToIDriveResponse(
-    responseToAdapt: unknown
+  protected abstract adaptHttpResponseToIDriveResponseByCriteria(
+    literalCriteria: IGenericDriverCriteria,
+    responseToAdapt: unknown,
+    error?: any
+  ): Promise<IGenericDriverResponse>;
+  /**... */
+  protected abstract adaptHttpResponseToIDriveResponseByCriteriaModule(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>,
+    responseToAdapt: unknown,
+    error?: any
   ): Promise<IDriverResponse>;
   /**convierte código de estado http a código de esta api
    * @param httpStatusCode el código http a convertir
@@ -385,6 +566,36 @@ export abstract class HttpDriver
    * @returns el método http correspondiente a la solicitud
    */
   protected getHttpMethodFromLiteralCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): TKeyHttpMethod {
+    let httpMethod: TKeyHttpMethod;
+    const { type } = literalCriteria;
+    if (type === "read") {
+      httpMethod = "GET";
+    } else if (type === "modify") {
+      const { modifyType } = literalCriteria;
+      if (modifyType === "create") httpMethod = "POST";
+      else if (modifyType === "update") httpMethod = "PUT";
+      else if (modifyType === "delete") httpMethod = "DELETE";
+      else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${modifyType} is not modify type request valid`,
+        });
+      }
+    } else {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${type} is not type request valid`,
+      });
+    }
+    return httpMethod;
+  }
+  /**obtiene el método http correspondiente a la solicitud
+   * @param literalCriteria el objeto literal con los criterios de la solicitud
+   * @returns el método http correspondiente a la solicitud
+   */
+  protected getHttpMethodFromLiteralCriteriaModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>

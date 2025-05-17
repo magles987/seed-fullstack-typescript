@@ -1,19 +1,21 @@
-//❗❗Imports que deben iniciar❗❗
-import { describe, expect, it } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  beforeAll,
+  afterAll,
+} from "vitest";
 import startTwinBee from "../../../../src/start-twinbee";
-//imports secundarios
-import { FetchDriver } from "../../../../src/logic/providers/drivers/client/web/https/fetch/fetch-driver";
+import { getElementalModelTestCtrl } from "./elemental-model-test";
+import { bd_valid, dataValid } from "./elemental-model-static-dummy-data-test";
 import {
   ELogicResStatusCode,
   IStructureResponse,
 } from "../../../../src/logic/reports/shared-types";
-import { StructureLibraryMockQueryFn } from "../../mocks/library-mock-query-fn";
-import { MockServerHandler } from "../../mocks/mock-server";
-import { bd_valid, dataValid } from "./elemental-model-static-dummy-data-test";
-import {
-  ElementalModelTest,
-  getElementalModelTestCtrl,
-} from "./elemental-model-test";
+import { StorageDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/storage/storage-driver";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const GC = startTwinBee({
   environment: {
@@ -23,35 +25,90 @@ const GC = startTwinBee({
   },
 });
 describe("Model: elemental-model-test", async () => {
+  // Creador de Mocks compartidos (para local y session)
+  const createStorageMock = () => {
+    const store: Record<string, string> = {};
+    return {
+      _store: store,
+      getItem(key: string) {
+        return this._store[key] || null;
+      },
+      setItem(key: string, value: string) {
+        this._store[key] = value.toString();
+      },
+      removeItem(key: string) {
+        delete this._store[key];
+      },
+      clear() {
+        this._store = {};
+      },
+      get length() {
+        return Object.keys(this._store).length;
+      },
+      key(index: number) {
+        return Object.keys(this._store)[index] || null;
+      },
+    };
+  };
+  //hook que se ejecuta antes de todas las pruebas de este archivo
+  beforeAll(() => {
+    // Mock localStorage
+    vi.stubGlobal("localStorage", createStorageMock());
+    // Mock sessionStorage
+    vi.stubGlobal("sessionStorage", createStorageMock());
+    // Mock adicional para navegadores antiguos (opcional)
+    vi.stubGlobal("window", {
+      localStorage: global.localStorage,
+      sessionStorage: global.sessionStorage,
+    });
+  });
+  //hook que se ejecuta después de todas las pruebas de este archivo
+  afterAll(() => {
+    //desmockear
+    vi.unstubAllGlobals();
+  });
+  //inicial test
   const ctrl = getElementalModelTestCtrl();
   const util = ctrl.twinBeeUtil;
-  const nameLogicDriver = FetchDriver.getNameLogicDriver();
+  const nameLogicDriver = StorageDriver.getNameLogicDriver();
   const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
   commonBaseCriteria.diccGlobalAC = {
     structureProvider: { singleRunDriver: { nameLogicDriver } },
   };
   describe("base: data valid", async () => {
-    const mSH = new MockServerHandler<ElementalModelTest>(ctrl as any, {
-      srcSelector: "plural",
-      db_collection: bd_valid,
-      nameLogicDriver,
-    });
-    const db = mSH.getDBCollection();
+    const db = bd_valid;
+    //████ Creación y comprobación inicial ████████████████████████████████████████████████████████████
+    //====Crear todos los registros===========================
+    //debe ser for clásico para que haga las esperas correspondientes a cada creación
+    for (let idx = 0; idx < db.length; idx++) {
+      const data = db[idx];
+      it(`action request: create (register[${idx}])`, async () => {
+        const vExp = {
+          data: { ...data },
+          status: ELogicResStatusCode.VALID_DATA,
+        } as IStructureResponse;
+        let res = await ctrl.modifyRequest({
+          ...commonBaseCriteria,
+          data,
+          keyActionRequest: "create",
+        });
+        expect(res).toMatchObject(vExp);
+      });
+    }
+    //====Leer todos los registros (para verificar) ===========================
     it("action request: readAll", async () => {
-      mSH.microBackend.customQueryFn = undefined as any;
-      const txData = undefined;
+      //const txData = { ...dataValid };
       const vExp = {
-        data: db,
+        data: [...db],
         status: ELogicResStatusCode.VALID_DATA,
       } as IStructureResponse;
-      const res = await ctrl.readRequest({
+      let res = await ctrl.readRequest({
         ...commonBaseCriteria,
         keyActionRequest: "readAll",
       });
       expect(res).toMatchObject(vExp);
     });
     it("action request: readAll (paged ang limited)", async () => {
-      mSH.microBackend.customQueryFn = undefined as any;
       const txData = undefined;
       const vExp = {
         data: [db[2], db[3]], //pagina 2 (el tercer y cuarto registro)
@@ -67,8 +124,6 @@ describe("Model: elemental-model-test", async () => {
       expect(res).toMatchObject(vExp);
     });
     it("action request: exists ", async () => {
-      mSH.microBackend.customQueryFn =
-        StructureLibraryMockQueryFn.getInstance().existByQueryParam;
       const txData = undefined;
       const vExp = {
         data: true,
@@ -82,8 +137,6 @@ describe("Model: elemental-model-test", async () => {
       expect(res).toMatchObject(vExp);
     });
     it("action request: count ", async () => {
-      mSH.microBackend.customQueryFn =
-        StructureLibraryMockQueryFn.getInstance().countByQueryParam;
       const txData = undefined;
       const vExp = {
         data: 1, //pagina 2 (el tercer y cuarto registro)
@@ -97,7 +150,6 @@ describe("Model: elemental-model-test", async () => {
       expect(res).toMatchObject(vExp);
     });
     it("action request: create ", async () => {
-      mSH.microBackend.customQueryFn = undefined as any;
       const txData = { ...dataValid };
       const vExp = {
         data: { ...txData },
@@ -111,7 +163,6 @@ describe("Model: elemental-model-test", async () => {
       expect(res).toMatchObject(vExp);
     });
     it("action request: update ", async () => {
-      mSH.microBackend.customQueryFn = undefined as any;
       const txData = { ...dataValid, _pathDoc: "     /100/       " }; //espacios para comprobar mutación
       const vExp = {
         data: { ...txData, _pathDoc: "/100/" }, //sin espacios (se mutó)
@@ -125,7 +176,6 @@ describe("Model: elemental-model-test", async () => {
       expect(res).toMatchObject(vExp);
     });
     it("action request: delete ", async () => {
-      mSH.microBackend.customQueryFn = undefined as any;
       const txData = { _id: dataValid._id };
       const vExp = {
         data: { ...txData },

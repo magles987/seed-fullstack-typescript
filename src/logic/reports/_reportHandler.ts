@@ -7,13 +7,15 @@ import {
   TKeyRequestType,
 } from "../modules/shared-types";
 import {
+  TSelectorDataDriver,
+  TSelectorDataDriverFn,
+} from "../providers/drivers/shared-types";
+import {
   EKeyActionGroupForRes,
   ELogicResStatusCode,
   IDriverResponse,
   IResponse,
   TResponseForMutate,
-  TSelectorDataDriver,
-  TSelectorDataDriverFn,
 } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */

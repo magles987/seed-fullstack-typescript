@@ -1,4 +1,5 @@
 import {
+  GenericLibraryLocalRepositoryQueryFn,
   PrimitiveLibraryLocalRepositoryQueryFn,
   StructureLibraryLocalRepositoryQueryFn,
 } from "../library-local-repository-query-fn";
@@ -8,9 +9,38 @@ import { IdbDriver } from "./idb-driver";
  *
  * ...
  */
+export class GenericLibraryIdbQueryFn<
+  TModelOrValue
+> extends GenericLibraryLocalRepositoryQueryFn<TModelOrValue, IdbDriver> {
+  /**  Almacena la instancia única de esta clase */
+  private static GenericLibraryIdbQueryFn_instance: GenericLibraryIdbQueryFn<any>;
+  /**
+   * descrip...
+   *
+   */
+  protected constructor() {
+    super();
+  }
+  /** @returns la instancia única de la clase*/
+  public static getInstance<
+    TModelOrValue
+  >(): GenericLibraryIdbQueryFn<TModelOrValue> {
+    GenericLibraryIdbQueryFn.GenericLibraryIdbQueryFn_instance =
+      typeof GenericLibraryIdbQueryFn.GenericLibraryIdbQueryFn_instance ===
+        "object" &&
+      GenericLibraryIdbQueryFn.GenericLibraryIdbQueryFn_instance !== null
+        ? GenericLibraryIdbQueryFn.GenericLibraryIdbQueryFn_instance
+        : new GenericLibraryIdbQueryFn();
+    return GenericLibraryIdbQueryFn.GenericLibraryIdbQueryFn_instance;
+  }
+}
+/** *Singleton*
+ *
+ * ...
+ */
 export class PrimitiveLibraryIdbQueryFn<
   TValue
-> extends PrimitiveLibraryLocalRepositoryQueryFn<IdbDriver, TValue> {
+> extends PrimitiveLibraryLocalRepositoryQueryFn<TValue, IdbDriver> {
   /**  Almacena la instancia única de esta clase */
   private static PrimitiveLibraryIdbQueryFn_instance: PrimitiveLibraryIdbQueryFn<any>;
   /**
@@ -37,7 +67,7 @@ export class PrimitiveLibraryIdbQueryFn<
  */
 export class StructureLibraryIdbQueryFn<
   TModel
-> extends StructureLibraryLocalRepositoryQueryFn<IdbDriver, TModel> {
+> extends StructureLibraryLocalRepositoryQueryFn<TModel, IdbDriver> {
   /**  Almacena la instancia única de esta clase */
   private static StructureLibraryIdbQueryFn_instance: StructureLibraryIdbQueryFn<any>;
   /**

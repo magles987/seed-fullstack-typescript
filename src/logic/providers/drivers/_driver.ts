@@ -1,11 +1,15 @@
 import { ELogicCodeError, LogicError } from "../../errors/logic-error";
 import { TwinBeeModule } from "../../modules/module";
 import { TKeySrcSelector } from "../../modules/shared-types";
-import { IDriverResponse } from "../../reports/shared-types";
 import {
+  IGenericDriverResponse,
+  IDriverResponse,
+} from "../../reports/shared-types";
+import {
+  IGenericDriverCriteria,
   TPrimitiveLiteralCriteriaUnion,
   TStructureLiteralCriteriaUnion,
-} from "./shared-types";
+} from "../../criterias/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfconstructor*
  *
@@ -119,17 +123,42 @@ export abstract class Driver
     }
     return literal as any;
   }
-  /**... */
-  protected abstract buildDriverResponse(
-    literalCriteria:
-      | TPrimitiveLiteralCriteriaUnion
-      | TStructureLiteralCriteriaUnion<any>,
+  /**verifica si la data recibida corresponde la expectativa esperada*/
+  protected checkRxDataByCriteriaModule(
     rxData: any,
-    error?: any
-  ): IDriverResponse;
+    expectDataType: (
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+    )["expectedDataType"]
+  ): boolean {
+    if (expectDataType === "boolean" && !this.util.isBoolean(rxData))
+      return false;
+    else if (expectDataType === "number" && !this.util.isNumber(rxData))
+      return false;
+    else if (expectDataType === "string" && !this.util.isString(rxData, true))
+      return false;
+    else if (expectDataType === "object" && !this.util.isObject(rxData, true))
+      return false;
+    else if (expectDataType === "array" && !this.util.isArray(rxData, true))
+      return false;
+    else return true;
+  }
   /**verifica que el bag recibido este optimo para el
    * driver, de lo contrario lanza error */
   protected checkLiteralCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): void {
+    if (!this.util.isObject(literalCriteria)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${literalCriteria} is not criteria dictionary valid`,
+      });
+    }
+    return;
+  }
+  /**verifica que el bag recibido este optimo para el
+   * driver, de lo contrario lanza error */
+  protected checkLiteralCriteriaModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
@@ -148,10 +177,27 @@ export abstract class Driver
     }
     return;
   }
+  /**... */
+  protected abstract buildDriverResponse(
+    literalCriteria: IGenericDriverCriteria,
+    anyResponse: unknown
+  ): IGenericDriverResponse;
+  /**
+   *
+   * @param literalCriteria objeto literal de criterios de petición
+   * @param anyResponse objeto literal con estructura genérica
+   * de cualquier respuesta de cualquier driver
+   */
+  protected abstract buildDriverResponseModule(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>,
+    anyResponse: unknown
+  ): IDriverResponse;
   /* obtiene la clave identificadora del recurso según 
   el requerimiento (plural o singular)
   */
-  protected getKeySrcContext(
+  protected getKeySrcContextFromModule(
     srcSelector: TKeySrcSelector,
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
@@ -165,25 +211,41 @@ export abstract class Driver
     return keySrcContext;
   }
   /**... */
-  public abstract sendRequestFromService(
+  public abstract sendRequestByCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): Promise<IGenericDriverResponse>;
+  /**... */
+  public abstract sendRequestByCriteriaModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
   ): Promise<IDriverResponse>;
   /**... */
-  protected preRequestFromService(
-    literalCriteria:
-      | TPrimitiveLiteralCriteriaUnion
-      | TStructureLiteralCriteriaUnion<any>
+  protected preRequestByCriteria(
+    literalCriteria: IGenericDriverCriteria
   ): void {
     this.checkLiteralCriteria(literalCriteria);
   }
   /**... */
-  protected postRequestFromService(driverRes: IDriverResponse): void {}
+  protected postRequestByResponse(driverRes: IGenericDriverResponse): void {}
   /**... */
-  public abstract sendRequest(): Promise<any>;
+  protected preRequestByCriteriaModule(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+  ): void {
+    this.checkLiteralCriteriaModule(literalCriteria);
+  }
   /**... */
-  protected getCustomQueryFn(
+  protected postRequestByResponseModule(driverRes: IDriverResponse): void {}
+  /**... */
+  protected getCustomQueryFn(literalCriteria: IGenericDriverCriteria) {
+    const { customQueryDriverFn } = literalCriteria;
+    if (!this.util.isFunction(customQueryDriverFn)) return undefined;
+    return customQueryDriverFn;
+  }
+  /**... */
+  protected getCustomQueryFnModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>

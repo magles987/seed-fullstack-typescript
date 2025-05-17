@@ -1,9 +1,13 @@
 import { Driver } from "../_driver";
-import { IDriverResponse } from "../../../reports/shared-types";
 import {
+  IDriverResponse,
+  IGenericDriverResponse,
+} from "../../../reports/shared-types";
+import {
+  IGenericDriverCriteria,
   TPrimitiveLiteralCriteriaUnion,
   TStructureLiteralCriteriaUnion,
-} from "../shared-types";
+} from "../../../criterias/shared-types";
 import { TwinBeeModule } from "../../../modules/module";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -65,16 +69,30 @@ export abstract class ClientDriver
   public override getLiteral(): ReturnType<ClientDriver["getDefault"]> {
     return super.getLiteral() as any;
   }
-  protected override preRequestFromService(
+  protected override preRequestByCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): void {
+    super.preRequestByCriteria(literalCriteria);
+    return;
+  }
+  protected override postRequestByResponse(
+    driverRes: IGenericDriverResponse
+  ): void {
+    super.postRequestByResponse(driverRes);
+    return;
+  }
+  protected override preRequestByCriteriaModule(
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
   ): void {
-    super.preRequestFromService(literalCriteria);
+    super.preRequestByCriteriaModule(literalCriteria);
     return;
   }
-  protected override postRequestFromService(driverRes: IDriverResponse): void {
-    super.postRequestFromService(driverRes);
+  protected override postRequestByResponseModule(
+    driverRes: IDriverResponse
+  ): void {
+    super.postRequestByResponseModule(driverRes);
     return;
   }
 }

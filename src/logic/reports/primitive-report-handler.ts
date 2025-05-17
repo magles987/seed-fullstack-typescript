@@ -2,6 +2,7 @@ import { LogicController } from "../controllers/_controller";
 import { LogicHook } from "../hooks/_hook";
 import { LogicMutater } from "../mutaters/_mutater";
 import { LogicProvider } from "../providers/_provider";
+import { TSelectorDataDriver } from "../providers/drivers/shared-types";
 import { LogicValidation } from "../validators/_validation";
 import { ReportHandler } from "./_reportHandler";
 import {
@@ -11,7 +12,6 @@ import {
   Trf_IPrimitiveResponse,
   ELogicResStatusCode,
   IDriverResponse,
-  TSelectorDataDriver,
 } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */

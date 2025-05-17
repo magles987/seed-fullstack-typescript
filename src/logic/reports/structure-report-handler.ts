@@ -15,6 +15,7 @@ import {
 } from "../modules/shared-types";
 import { LogicMutater } from "../mutaters/_mutater";
 import { LogicProvider } from "../providers/_provider";
+import { TSelectorDataDriver } from "../providers/drivers/shared-types";
 import {
   TKeyStructureDeepProviderModuleContext,
   TKeyStructureProviderModuleContext,
@@ -28,7 +29,6 @@ import {
   Trf_IStructureResponse,
   ELogicResStatusCode,
   IDriverResponse,
-  TSelectorDataDriver,
 } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */

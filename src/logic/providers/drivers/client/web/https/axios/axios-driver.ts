@@ -1,4 +1,13 @@
+import {
+  IGenericDriverCriteria,
+  TPrimitiveLiteralCriteriaUnion,
+  TStructureLiteralCriteriaUnion,
+} from "../../../../../../criterias/shared-types";
 import { TwinBeeModule } from "../../../../../../modules/module";
+import {
+  IDriverResponse,
+  IGenericDriverResponse,
+} from "../../../../../../reports/shared-types";
 import { HttpDriver } from "../_https-driver";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *selfcontructor*
@@ -79,5 +88,31 @@ export class AxiosDriver
   }
   public override getLiteral(): ReturnType<AxiosDriver["getDefault"]> {
     return super.getLiteral() as any;
+  }
+  protected override preRequestByCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): void {
+    super.preRequestByCriteria(literalCriteria);
+    return;
+  }
+  protected override postRequestByResponse(
+    driverRes: IGenericDriverResponse
+  ): void {
+    super.postRequestByResponse(driverRes);
+    return;
+  }
+  protected override preRequestByCriteriaModule(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+  ): void {
+    super.preRequestByCriteriaModule(literalCriteria);
+    return;
+  }
+  protected override postRequestByResponseModule(
+    driverRes: IDriverResponse
+  ): void {
+    super.postRequestByResponseModule(driverRes);
+    return;
   }
 }

@@ -1,6 +1,6 @@
-import { runToLocalCookie } from "./elemental-model-cookie-test";
-import { runToLocalStorage } from "./elemental-model-storage-test";
-import { runToLocalIdb } from "./elemental-model-idb-test";
+import { runToLocalCookie } from "./elemental-model-cookie-web-test";
+import { runToLocalStorage } from "./elemental-model-storage-web-test";
+import { runToLocalIdb } from "./elemental-model-idb-web-test";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
 export async function runModelTestBrowserContext() {

@@ -1,10 +1,41 @@
 import {
+  GenericLibraryLocalRepositoryQueryFn,
   PrimitiveLibraryLocalRepositoryQueryFn,
   StructureLibraryLocalRepositoryQueryFn,
 } from "../library-local-repository-query-fn";
 import { StorageDriver } from "./storage-driver";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/** *Singleton*
+ *
+ * ...
+ */
+export class GenericLibraryStorageQueryFn<
+  TModelOrValue
+> extends GenericLibraryLocalRepositoryQueryFn<TModelOrValue, StorageDriver> {
+  /**  Almacena la instancia única de esta clase */
+  private static GenericLibraryStorageQueryFn_instance: GenericLibraryStorageQueryFn<any>;
+  /**
+   * descrip...
+   *
+   */
+  protected constructor() {
+    super();
+  }
+  /** @returns la instancia única de la clase*/
+  public static getInstance<
+    TModelOrValue
+  >(): GenericLibraryStorageQueryFn<TModelOrValue> {
+    GenericLibraryStorageQueryFn.GenericLibraryStorageQueryFn_instance =
+      typeof GenericLibraryStorageQueryFn.GenericLibraryStorageQueryFn_instance ===
+        "object" &&
+      GenericLibraryStorageQueryFn.GenericLibraryStorageQueryFn_instance !==
+        null
+        ? GenericLibraryStorageQueryFn.GenericLibraryStorageQueryFn_instance
+        : new GenericLibraryStorageQueryFn();
+    return GenericLibraryStorageQueryFn.GenericLibraryStorageQueryFn_instance;
+  }
+}
 /** *Singleton*
  *
  * ...

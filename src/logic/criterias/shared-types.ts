@@ -138,25 +138,30 @@ export type TTGlobalActionConfig<TDiccGlobalAC> = {
     [K2 in keyof TDiccGlobalAC[K1]]: [K1, K2, TDiccGlobalAC[K1][K2]];
   }[keyof TDiccGlobalAC[K1]];
 }[keyof TDiccGlobalAC];
+/**definición de esquema de criterios genérico (la base) */
+interface IGenericCriteria {
+  /**datos para la petición */
+  data: any;
+  /**clave identificadora del recurso */
+  keySrc: string;
+  /**tipo de criteria */
+  type: TKeyRequestType;
+  /**diccionario con parámetros para construir la query */
+  diccQueryParam: any;
+}
 /** */
 export interface ICriteria<
   TDiccGlobalAC,
   TKeyDiccActionRequest extends string = string
-> {
-  /**datos para la petición */
-  data: any;
+> extends IGenericCriteria {
   /**clave identificadora del contexto lógico */
   keyLogicContext: TKeyLogicContext;
-  /**clave identificadora del recurso */
-  keySrc: string;
   /**clave identificadora del recurso
    * para el proveedor (en singular)*/
   s_Key?: string;
   /**clave identificadora del recurso
    * para el proveedor (en plural)*/
   p_Key?: string;
-  /**tipo de criteria */
-  type: TKeyRequestType;
   /**clave identificadora del requerimiento
    * asociado a este criterio */
   keyActionRequest: TKeyDiccActionRequest;
@@ -177,8 +182,6 @@ export interface ICriteria<
    * `[2]` :  la acción de configuración
    */
   aTGlobalActionConfig: TTGlobalActionConfig<TDiccGlobalAC>[];
-  /**diccionario con parámetros para construir la query */
-  diccQueryParam: any;
   /**array de tuplas con las funciones personalizadas diseñadas
    * específicamente para la consulta de un driver especifico */
   aTCustomQueryDriverFn: Array<[string, Function]>;
@@ -235,6 +238,21 @@ export interface IModifyCriteria<
 export type TActionConfigFn = (
   criteriaHandler: CriteriaHandler<any>
 ) => Promise<IResponse>;
+
+//==== Para drivers ============================================================
+/**... */
+export interface IGenericDriverCriteria
+  extends IGenericCriteria,
+    Partial<
+      Pick<
+        IReadCriteria<any>,
+        "limit" | "sort" | "targetPage" | "targetPageLogic"
+      >
+    >,
+    Partial<Pick<IModifyCriteria<any>, "modifyType" | "isCreateOrUpdate">> {
+  /**función personalizada diseñada específicamente para la consulta de un driver especifico */
+  customQueryDriverFn?: Function;
+}
 
 //====Primitive===================================================================================================================
 /**esquema de propósito general con los contextos primitivos del modulo*/
@@ -479,6 +497,15 @@ export type TPrimitiveBaseModifyCriteria<
 export type TPrimitiveActionConfigFn<TValue> = (
   criteriaHandler: PrimitiveCriteriaHandler<TValue>
 ) => Promise<IPrimitiveResponse>;
+
+//==== Primitive para drivers ============================================================
+
+export type TPrimitiveReadLiteralCriteria = IPrimitiveReadCriteria;
+export type TPrimitiveModifyLiteralCriteria = IPrimitiveModifyCriteria;
+/**union de tipos de diccionario de criterios */
+export type TPrimitiveLiteralCriteriaUnion =
+  | TPrimitiveReadLiteralCriteria
+  | TPrimitiveModifyLiteralCriteria;
 
 //====Strcuture====================================================================================================================
 /**esquema de proposito general con los contextos estructurales del modulo*/
@@ -914,3 +941,14 @@ export type TStructureFieldBaseCriteria<
 export type TStructureActionConfigFn<TModel> = (
   criteriaHandler: StructureCriteriaHandler<TModel>
 ) => Promise<IStructureResponse>;
+
+//==== Structure para drivers ============================================================
+
+export type TStructureReadLiteralCriteria<TModel> =
+  IStructureModelReadCriteria<TModel>;
+export type TStructureModifyLiteralCriteria<TModel> =
+  IStructureModelModifyCriteria<TModel>;
+/**union de tipos de diccionario de criterios */
+export type TStructureLiteralCriteriaUnion<TModel> =
+  | TStructureReadLiteralCriteria<TModel>
+  | TStructureModifyLiteralCriteria<TModel>;

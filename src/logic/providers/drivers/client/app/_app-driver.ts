@@ -1,6 +1,15 @@
 import { ClientDriver } from "../_client-driver";
 import { TKeyGroupDriver as TKeyDriver } from "./shared-types";
 import { TKeyDriverPrefix as TSuperKeyPrefix } from "../shared-types"; //❗Desde el padre❗
+import {
+  IGenericDriverCriteria,
+  TPrimitiveLiteralCriteriaUnion,
+  TStructureLiteralCriteriaUnion,
+} from "../../../../criterias/shared-types";
+import {
+  IDriverResponse,
+  IGenericDriverResponse,
+} from "../../../../reports/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
 /** *selfcontructor*
@@ -73,5 +82,31 @@ export abstract class AppDriver
   }
   public override getLiteral(): ReturnType<AppDriver["getDefault"]> {
     return super.getLiteral() as any;
+  }
+  protected override preRequestByCriteria(
+    literalCriteria: IGenericDriverCriteria
+  ): void {
+    super.preRequestByCriteria(literalCriteria);
+    return;
+  }
+  protected override postRequestByResponse(
+    driverRes: IGenericDriverResponse
+  ): void {
+    super.postRequestByResponse(driverRes);
+    return;
+  }
+  protected override preRequestByCriteriaModule(
+    literalCriteria:
+      | TPrimitiveLiteralCriteriaUnion
+      | TStructureLiteralCriteriaUnion<any>
+  ): void {
+    super.preRequestByCriteriaModule(literalCriteria);
+    return;
+  }
+  protected override postRequestByResponseModule(
+    driverRes: IDriverResponse
+  ): void {
+    super.postRequestByResponseModule(driverRes);
+    return;
   }
 }

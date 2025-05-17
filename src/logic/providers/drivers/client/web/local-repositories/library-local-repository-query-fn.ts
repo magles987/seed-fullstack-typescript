@@ -1,25 +1,55 @@
+import {
+  IGenericDriverCriteria,
+  TPrimitiveLiteralCriteriaUnion,
+  TStructureLiteralCriteriaUnion,
+} from "../../../../../criterias/shared-types";
 import { TwinBeeModule } from "../../../../../modules/module";
 import { LocalRepositoryDriver } from "./_local-repository-driver";
-import {
-  TPrimitiveLocalRepositoryCustomQueryDriverFn,
-  TStructureLocalRepositoryCustomQueryDriverFn,
-} from "./shared-types";
+import { TLocalRepositoryCustomQueryDriverFn } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *abstract*
  *
  * ...
  */
-export abstract class PrimitiveLibraryLocalRepositoryQueryFn<
+export abstract class GenericLibraryLocalRepositoryQueryFn<
+  TModelOrValue,
   TDriverInstance extends LocalRepositoryDriver,
-  TValue
+  TLiteralCriteria extends IGenericDriverCriteria = IGenericDriverCriteria
 > {
   /**... */
-  public readonly readByQueryParam: TPrimitiveLocalRepositoryCustomQueryDriverFn<
+  public readonly readByQueryParam: TLocalRepositoryCustomQueryDriverFn<
+    TModelOrValue,
     TDriverInstance,
-    TValue
-  > = async (driver, literalBag, registers) => {
+    TLiteralCriteria
+  > = async (driver, literalCriteria, registers) => {
     const util = TwinBeeModule.util;
-    const { diccQueryParam, expectedDataType } = literalBag.literalCriteria;
+    const { diccQueryParam } = literalCriteria;
+    let f_registers;
+    f_registers = registers.filter((reg) =>
+      util.isEquivalentTo([diccQueryParam, reg], {})
+    ); //todas las coincidencias
+    return f_registers;
+  };
+  /**... */
+  constructor() {}
+}
+/** *abstract*
+ *
+ * ...
+ */
+export abstract class PrimitiveLibraryLocalRepositoryQueryFn<
+  TValue,
+  TDriverInstance extends LocalRepositoryDriver,
+  TLiteralCriteria extends TPrimitiveLiteralCriteriaUnion = TPrimitiveLiteralCriteriaUnion
+> {
+  /**... */
+  public readonly readByQueryParam: TLocalRepositoryCustomQueryDriverFn<
+    TValue,
+    TDriverInstance,
+    TLiteralCriteria
+  > = async (driver, literalCriteria, registers) => {
+    const util = TwinBeeModule.util;
+    const { diccQueryParam, expectedDataType } = literalCriteria;
     let f_registers;
     if (expectedDataType !== "array") {
       f_registers = registers.find((reg) =>
@@ -40,29 +70,32 @@ export abstract class PrimitiveLibraryLocalRepositoryQueryFn<
  * ...
  */
 export abstract class StructureLibraryLocalRepositoryQueryFn<
+  TModel,
   TDriverInstance extends LocalRepositoryDriver,
-  TModel
+  TLiteralCriteria extends TStructureLiteralCriteriaUnion<TModel> = TStructureLiteralCriteriaUnion<TModel>
 > {
   /**... */
-  public readonly readById: TStructureLocalRepositoryCustomQueryDriverFn<
+  public readonly readById: TLocalRepositoryCustomQueryDriverFn<
+    TModel,
     TDriverInstance,
-    TModel
-  > = async (driver, literalBag, registers) => {
+    TLiteralCriteria
+  > = async (driver, literalCriteria, registers) => {
     const util = TwinBeeModule.util;
     const keyId = driver.keyId;
-    const { diccQueryParam } = literalBag.literalCriteria;
+    const { diccQueryParam } = literalCriteria;
     const f_register = registers.find((reg) =>
       util.isEquivalentTo([diccQueryParam[keyId], reg[keyId]], {})
     ); //SOLO 1
     return f_register;
   };
   /**... */
-  public readonly existByQueryParam: TStructureLocalRepositoryCustomQueryDriverFn<
+  public readonly existByQueryParam: TLocalRepositoryCustomQueryDriverFn<
+    TModel,
     TDriverInstance,
-    TModel
-  > = async (driver, literalBag, registers) => {
+    TLiteralCriteria
+  > = async (driver, literalCriteria, registers) => {
     const util = TwinBeeModule.util;
-    const { diccQueryParam } = literalBag.literalCriteria;
+    const { diccQueryParam } = literalCriteria;
     const f_registers = registers.find((reg) =>
       util.isEquivalentTo([diccQueryParam, reg], {})
     ); //todas las coincidencias
@@ -73,12 +106,13 @@ export abstract class StructureLibraryLocalRepositoryQueryFn<
     return f_exist;
   };
   /**... */
-  public readonly countByQueryParam: TStructureLocalRepositoryCustomQueryDriverFn<
+  public readonly countByQueryParam: TLocalRepositoryCustomQueryDriverFn<
+    TModel,
     TDriverInstance,
-    TModel
-  > = async (driver, literalBag, registers) => {
+    TLiteralCriteria
+  > = async (driver, literalCriteria, registers) => {
     const util = TwinBeeModule.util;
-    const { diccQueryParam } = literalBag.literalCriteria;
+    const { diccQueryParam } = literalCriteria;
     const f_registers = registers.filter((reg) =>
       util.isEquivalentTo([diccQueryParam, reg], {})
     ); //todas las coincidencias
@@ -86,12 +120,13 @@ export abstract class StructureLibraryLocalRepositoryQueryFn<
     return f_count;
   };
   /**... */
-  public readonly readByQueryParam: TStructureLocalRepositoryCustomQueryDriverFn<
+  public readonly readByQueryParam: TLocalRepositoryCustomQueryDriverFn<
+    TModel,
     TDriverInstance,
-    TModel
-  > = async (driver, literalBag, registers) => {
+    TLiteralCriteria
+  > = async (driver, literalCriteria, registers) => {
     const util = TwinBeeModule.util;
-    const { diccQueryParam, expectedDataType } = literalBag.literalCriteria;
+    const { diccQueryParam, expectedDataType } = literalCriteria;
     let f_registers;
     if (expectedDataType !== "array") {
       f_registers = registers.find((reg) =>

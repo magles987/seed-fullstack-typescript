@@ -404,11 +404,11 @@ export class MicroBackend
       this.util.isArray(registers) &&
       literalCriteria.expectedDataType === "array"
     ) {
-      registers = await this.queryTool.primitiveOrderByBagCriteria(
+      registers = await this.queryTool.primitiveOrderByCriteriaModule(
         registers,
         literalCriteria
       );
-      registers = await this.queryTool.primitivePageByBagCriteria(
+      registers = await this.queryTool.primitivePageByCriteriaModule(
         registers,
         literalCriteria
       );
@@ -534,11 +534,11 @@ export class MicroBackend
       this.util.isArray(registers) &&
       literalCriteria.expectedDataType === "array"
     ) {
-      registers = await this.queryTool.structureOrderByBagCriteria(
+      registers = await this.queryTool.structureOrderByCriteriaModule(
         registers,
         literalCriteria
       );
-      registers = await this.queryTool.structurePageByBagCriteria(
+      registers = await this.queryTool.structurePageByCriteriaModule(
         registers,
         literalCriteria
       );

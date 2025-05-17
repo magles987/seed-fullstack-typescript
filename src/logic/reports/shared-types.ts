@@ -172,10 +172,15 @@ export enum EKeyActionGroupForRes {
   /**indica grupo de sub acciones realizadas desde drivers */
   driver = "#DRIVER#",
 }
-/** */
-export interface IResponse {
+/**definición de respuesta genérica */
+interface IGenericResponse {
   /**datos recibidos */
   data: any; //❗Puede ser cualquier dato❗
+  /**mensaje auxiliar (Lógico) */
+  msn?: string;
+}
+/** */
+export interface IResponse extends IGenericResponse {
   /**clave identificadora del modulo */
   keyRepModule: TKeyActionModule;
   /**clave identificadora del contexto lógico que se usó para la petición */
@@ -203,8 +208,6 @@ export interface IResponse {
   firstCtrlData?: any;
   /**estado despues de la ejecucion del middleware */
   status: ELogicResStatusCode;
-  /**mensaje auxiliar (Lógico) */
-  msn: string;
   /**contiene un reporte producido por
    * libreria o mudulo externo a la logica */
   extResponse?: object;
@@ -227,30 +230,22 @@ export type TResponseForMutate = Partial<
     | "firstCtrlData"
   >
 >;
-/**esquema de respuesta proveída por driver*/
-export interface IDriverResponse
-  extends Pick<IResponse, "data" | "status" | "msn"> {
+/**... */
+export interface IGenericDriverResponse extends Pick<IGenericResponse, "data"> {
+  /**esquema específicos del error */
+  error?: any;
   /**detalles adicionales de la respuesta (normalmente entregados por la api externa) */
   details?: any;
-  /**detalles específicos del error */
-  error?: any;
 }
-/**Tipo de función para el selector de datos del driver
- * @param driverResponses array con las respuestas de los drivers ejecutados
- * @returns el dato que se desea mantener
- */
-export type TSelectorDataDriverFn = (driverResponses: IDriverResponse[]) => any;
-/**Tipos de selectores para los datos de los drivers
- * (comúnmente cuando hay varios drivers ejecutados
- * en una misma petición)*/
-export type TSelectorDataDriver =
-  | "first"
-  | "last"
-  | "first-success"
-  | "last-success"
-  | "merge-success"
-  | number
-  | TSelectorDataDriverFn;
+/**esquema de respuesta proveída por driver*/
+export interface IDriverResponse
+  extends IGenericDriverResponse,
+    Pick<IResponse, "data" | "status" | "msn"> {}
+
+/**definición de contenedor exclusivo para respuestas de
+ * api en http (solo apis que estén construidas con twinbee) */
+export type TGenericContainerHttpApiResponse = Omit<IDriverResponse, "details">;
+
 //====Primitive============================================================================================================================
 /**clave identificadora de este modulo según su contexto */
 export type TKeyPrimitiveResponseModuleContext = "primitiveResponse";

@@ -6,10 +6,7 @@ import {
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-handler";
 import { TwinBeeModule } from "../modules/module";
-import {
-  IStructureResponse,
-  TSelectorDataDriver,
-} from "../reports/shared-types";
+import { IStructureResponse } from "../reports/shared-types";
 import { StructureReportHandler } from "../reports/structure-report-handler";
 import { Driver } from "./drivers/_driver";
 import { LogicProvider } from "./_provider";
@@ -17,6 +14,7 @@ import {
   TKeyStructureProviderModuleContext,
   TStructureProviderBaseConfig,
 } from "./shared-types";
+import { TSelectorDataDriver } from "./drivers/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del provider */
 export interface IDiccStructureProviderActionConfig {
@@ -208,7 +206,7 @@ export class StructureLogicProvider<
     if (this.util.isObject(opDriver)) driver.mutateProps(opDriver);
     const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    let driverResponse = await driver.sendRequestFromService(
+    let driverResponse = await driver.sendRequestByCriteriaModule(
       criteriaHandler.getLiteral()
     );
     res = rH.mutateResponse(res, {
