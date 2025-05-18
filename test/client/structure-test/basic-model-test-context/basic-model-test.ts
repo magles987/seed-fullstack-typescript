@@ -1,35 +1,80 @@
 import { TwinBeeModule } from "../../../../src/logic/modules/module";
 import { Model } from "../../../../src/logic/models/_model";
+import { IStructureModelReadCriteria } from "../../../../src/logic/criterias/shared-types";
+import {
+  TFieldMutateInstance,
+  TModelMutateInstance,
+  TFieldValInstance,
+  TModelValInstance,
+  TRequestValInstance,
+  TStructureHookInstance,
+  TStructureProviderInstance,
+  TKeyStructureDiccActionRequest,
+  TStructureCtrlInstance,
+} from "../../../../src/logic/meta/base-shared-types";
 import { StructureLogicMetadataHandler } from "../../../../src/logic/meta/structure-metadata-handler";
 import { FetchDriver } from "../../../../src/logic/providers/drivers/client/web/https/fetch/fetch-driver";
 import { CookieDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/cookie/cookie-driver";
+import { TStructureCookieCustomQueryDriverFn } from "../../../../src/logic/providers/drivers/client/web/local-repositories/cookie/shared-types";
 import { IdbDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/idb/idb-driver";
 import { StorageDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/storage/storage-driver";
 
 //████ Tipos personalizados ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-type TModel = ElementalModelTest;
+type TModel = BasicModelTest;
+type TFMI = TFieldMutateInstance;
+type TMMI = TModelMutateInstance;
+type TFVI = TFieldValInstance;
+type TMVI = TModelValInstance;
+type TRVI = TRequestValInstance;
+type TSHI = TStructureHookInstance;
+type TSPI = TStructureProviderInstance;
+type TKeyDAR = TKeyStructureDiccActionRequest<
+  "inform", //aquí los tipo read personalizados (reemplazar `never`)
+  never //aquí los tipo modify personalizados (reemplazar `never`)
+>;
+type TSCI = TStructureCtrlInstance<
+  TModel,
+  TFMI,
+  TMMI,
+  TFVI,
+  TMVI,
+  TRVI,
+  TSHI,
+  TSPI,
+  TKeyDAR
+>;
 /** interfaz de este modelo para propósitos generales*/
 //⚠ la interfaz debe permanecer **vacía**
-export interface IElementalModelTest<TExtend>
-  extends Partial<Record<keyof ElementalModelTest, TExtend>> {}
+export interface IBasicModelTest<TExtend>
+  extends Partial<Record<keyof BasicModelTest, TExtend>> {}
 /**Tipado de las claves identificadoras de cada campo del modelo */
-export type TKeyFieldElementalModelTest = keyof IElementalModelTest<any>;
-
+export type TKeyFieldBasicModelTest = keyof IBasicModelTest<any>;
 //███ Modelo █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** Define las propiedades del modelo
  * ❗esta clase está pensada para definición de
  * campos, no para ejecución de métodos❗
  */
-export class ElementalModelTest extends Model {
+export class BasicModelTest extends Model {
   //...aquí las propiedades
 }
 //███ Constructor de Metadatos █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-const baseModel = new ElementalModelTest();
+const baseModel = new BasicModelTest();
 const keySrc = StructureLogicMetadataHandler.checkKeySrc(baseModel);
 /**@returns un manejador de metadatos personalizado para este modelo*/
 const defineMetadataHandler = () => {
   const util = TwinBeeModule.util;
-  return new StructureLogicMetadataHandler<TModel>({
+  return new StructureLogicMetadataHandler<
+    TModel,
+    TFMI,
+    TMMI,
+    TFVI,
+    TMVI,
+    TRVI,
+    TSHI,
+    TSPI,
+    TKeyDAR,
+    TSCI
+  >({
     keySrc,
     baseMeta: {
       __dfData: baseModel,
@@ -206,6 +251,34 @@ const defineMetadataHandler = () => {
               ],
             ],
           },
+          inform: {
+            type: "read",
+            keyActionRequest: "inform",
+            expectedDataType: "string",
+            aTGlobalActionConfig: [
+              [
+                "structureProvider",
+                "singleRunDriver",
+                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+              ],
+            ],
+            aTCustomQueryDriverFn: [
+              [
+                CookieDriver.getNameLogicDriver(),
+                (async (driver, literalCriteria, registers) => {
+                  const util = TwinBeeModule.util; //mejor usar una genérica
+                  const { diccQueryParam } =
+                    literalCriteria as IStructureModelReadCriteria<TModel>;
+                  const regs = registers as TModel[];
+                  const f_regs = regs.filter((reg) =>
+                    util.isEquivalentTo([reg, diccQueryParam])
+                  );
+                  const counter = f_regs.length;
+                  return counter;
+                }) as TStructureCookieCustomQueryDriverFn<TModel>,
+              ],
+            ],
+          },
           create: {
             type: "modify",
             modifyType: "create",
@@ -295,13 +368,13 @@ const defineMetadataHandler = () => {
   });
 };
 /**@returns la instancia de manejador actual de metadatos para este modelo */
-export function getElementalModelTestMetadataHandler() {
+export function getBasicModelTestMetadataHandler() {
   return StructureLogicMetadataHandler.buildMetadataHandlerAndSetRegister(
     keySrc,
     defineMetadataHandler
   );
 }
 /**@returns la instancia del controlador asociado a este modelo */
-export function getElementalModelTestCtrl() {
-  return getElementalModelTestMetadataHandler().getRootCtrlInstance();
+export function getBasicModelTestCtrl() {
+  return getBasicModelTestMetadataHandler().getRootCtrlInstance();
 }

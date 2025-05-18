@@ -5,10 +5,9 @@ import {
   IGenericDriverResponse,
 } from "../../../../../reports/shared-types";
 import {
-  buildIdByStrategy,
-  isIdValid,
   TOptionForAutoincrement,
-} from "../../../../../util/default-generators-id-fn";
+  UtilGeneratorId,
+} from "../../../../../util/util-generator-id";
 import { QueryTool } from "../../../../../util/query-tool";
 import {
   IGenericDriverCriteria,
@@ -284,8 +283,9 @@ export abstract class LocalRepositoryDriver
     possibleId: any,
     customValidFn?: Function
   ): any {
+    const genratorId = UtilGeneratorId.getInstance();
     const { strategyForIdBuild } = this._globalConfig_;
-    const isId = isIdValid(possibleId, customValidFn as any);
+    const isId = genratorId.isIdValid(possibleId, customValidFn as any);
     if (!isId) {
       let id;
       if (strategyForIdBuild === "df_autoincrement") {
@@ -295,9 +295,9 @@ export abstract class LocalRepositoryDriver
         const option = {
           lastId: this.util.getArrayItem(ids, -1),
         } as TOptionForAutoincrement;
-        id = buildIdByStrategy(strategyForIdBuild, option);
+        id = genratorId.buildIdByStrategy(strategyForIdBuild, option);
       } else {
-        id = buildIdByStrategy(strategyForIdBuild);
+        id = genratorId.buildIdByStrategy(strategyForIdBuild);
       }
       return id;
     }

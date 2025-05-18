@@ -1,7 +1,7 @@
 import {
   TKeyDiccStrategyGeneratorsIdFn,
   TCustomGenerateIdFn,
-} from "../logic/util/default-generators-id-fn";
+} from "../logic/util/util-generator-id";
 import {
   PrimitiveModuleFactory,
   StructureModuleFactory,

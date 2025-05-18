@@ -1,9 +1,11 @@
-import { runBasicModelTestBrowserContext } from "./basic-model-test-context/basic-model-local-repo-test";
-import { runElementalModelTestBrowserContext } from "./elemental-model-test-context/elemental-model-local-repo-test";
+import { runToLocalCookie } from "./basic-model-cookie-web-test";
+import { runToLocalStorage } from "./basic-model-storage-web-test";
+import { runToLocalIdb } from "./basic-model-idb-web-test";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
-export async function runStructureTestClient() {
-  await runElementalModelTestBrowserContext();
-  await runBasicModelTestBrowserContext();
+export async function runBasicModelTestBrowserContext() {
+  await runToLocalCookie();
+  await runToLocalStorage();
+  await runToLocalIdb();
   return;
 }

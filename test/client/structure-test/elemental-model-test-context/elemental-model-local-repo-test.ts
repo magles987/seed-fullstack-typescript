@@ -3,7 +3,7 @@ import { runToLocalStorage } from "./elemental-model-storage-web-test";
 import { runToLocalIdb } from "./elemental-model-idb-web-test";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
-export async function runModelTestBrowserContext() {
+export async function runElementalModelTestBrowserContext() {
   await runToLocalCookie();
   await runToLocalStorage();
   await runToLocalIdb();

@@ -101,7 +101,10 @@ export class StructureLogicMetadataHandler<
   TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
   TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
   TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
-  TKeyDiccActionRequest extends string = string, //string = string,
+  TKeyDiccActionRequest extends TKeyStructureDiccActionRequest<
+    string,
+    string
+  > = TKeyStructureDiccActionRequest<never, never>,
   TStructureCtrlInstance extends StructureLogicController<
     TModel,
     TFieldMutateInstance,
@@ -190,7 +193,7 @@ export class StructureLogicMetadataHandler<
     return [...this._aKeysPath]; //clonacion sencilla
   }
   /**buffer que almacena parcialmente la base de metadatos*/
-  private bf_baseFieldMetadata: TStructureBaseMetadataForField<any> = undefined;
+  private bf_baseFieldMetadata: TStructureBaseMetadataForField<any> = undefined; //no es verdad, SI SE ESTÁ USANDO
   private bf_baseEmbModelMetadata: TStructureBaseMetadata<any> = undefined;
   private bf_baseModelMetadata: TStructureBaseMetadata<any> = undefined;
   /**
@@ -218,6 +221,34 @@ export class StructureLogicMetadataHandler<
   }
   protected override getDefault() {
     return StructureLogicMetadataHandler.getDefault();
+  }
+  public static override checkKeySrc<TModel>(
+    baseKeySrc: string | TModel
+  ): string {
+    const util = TwinBeeModule.util;
+    const isString = util.isString(baseKeySrc);
+    const isInstance = util.isInstance(baseKeySrc);
+    if (!isString && !isInstance) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${baseKeySrc} is not resource base key valid`,
+      });
+    }
+    if (isInstance) {
+      baseKeySrc = util.getClassName(baseKeySrc as object);
+    }
+    return LogicMetadataHandler.checkKeySrc(baseKeySrc as string);
+  }
+  public static override buildMetadataHandlerAndSetRegister<
+    TStructureLogicMetadataHandler
+  >(
+    keySrc: string,
+    builderMetadataHandlerFn: () => TStructureLogicMetadataHandler
+  ): TStructureLogicMetadataHandler {
+    return LogicMetadataHandler.buildMetadataHandlerAndSetRegister<TStructureLogicMetadataHandler>(
+      keySrc,
+      builderMetadataHandlerFn
+    );
   }
   protected override buildMetadata(
     newMetadata: TStructureBaseMetadata<TModel>

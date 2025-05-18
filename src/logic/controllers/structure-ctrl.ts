@@ -34,8 +34,7 @@ import { IDiccCtrlActionConfig, LogicController } from "./_controller";
 import {
   TFieldCtrlBaseConfig,
   TKeyStructureCtrlModuleContext,
-  TKeyStructureModifyRequestCtrl,
-  TKeyStructureReadRequestCtrl,
+  TKeyStructureUnionActionRequestCtrl,
   TModelCtrlBaseConfig,
   TStructureCtrlBaseConfig,
 } from "./shared-types";
@@ -89,9 +88,7 @@ export class StructureLogicController<
   TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
   TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
   TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
-  TKeyDiccActionRequest extends string =
-    | TKeyStructureReadRequestCtrl
-    | TKeyStructureModifyRequestCtrl
+  TKeyDiccActionRequest extends string = TKeyStructureUnionActionRequestCtrl
 > extends LogicController<
   IDiccStructureCtrlActionConfig<
     TModel,

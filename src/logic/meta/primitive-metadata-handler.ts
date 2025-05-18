@@ -3,6 +3,7 @@ import { IPrimitiveCtrlContextInstance } from "../controllers/shared-types";
 import { LogicError, ELogicCodeError } from "../errors/logic-error";
 import { PrimitiveLogicHook } from "../hooks/primitive-hook";
 import { IPrimitiveHookContextInstance } from "../hooks/shared-types";
+import { TwinBeeModule } from "../modules/module";
 import { TKeyActionModule, TKeyHandlerModule } from "../modules/shared-types";
 import { PrimitiveLogicMutater } from "../mutaters/primitive-mutater";
 import { IPrimitiveMutateContextInstance } from "../mutaters/shared-types";
@@ -15,7 +16,10 @@ import {
   TKeyPrimitiveValModuleContext,
 } from "../validators/shared-types";
 import { LogicMetadataHandler } from "./_metadata-handler";
-import { TPrimitiveBaseMetadata } from "./base-shared-types";
+import {
+  TKeyPrimitiveDiccActionRequest,
+  TPrimitiveBaseMetadata,
+} from "./base-shared-types";
 import {
   TPrimitiveFull,
   TPrimitiveMeta,
@@ -48,7 +52,10 @@ export class PrimitiveLogicMetadataHandler<
   TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
   TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook,
   TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider,
-  TKeyDiccActionRequest extends string = string,
+  TKeyDiccActionRequest extends TKeyPrimitiveDiccActionRequest<
+    string,
+    string
+  > = TKeyPrimitiveDiccActionRequest<never, never>,
   TPrimitiveCtrlInstance extends PrimitiveLogicController<
     TValue,
     TPrimitiveMutateInstance,
@@ -67,7 +74,7 @@ export class PrimitiveLogicMetadataHandler<
     TKeyDiccActionRequest
   >
 > extends LogicMetadataHandler {
-  /** configuracion de valores predefinidos para el modulo*/
+  /** configuración de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = LogicMetadataHandler.getDefault();
     return {
@@ -127,6 +134,28 @@ export class PrimitiveLogicMetadataHandler<
   }
   protected override getDefault() {
     return PrimitiveLogicMetadataHandler.getDefault();
+  }
+  public static override checkKeySrc(baseKeySrc: string): string {
+    const util = TwinBeeModule.util;
+    const isString = util.isString(baseKeySrc);
+    if (!isString) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${baseKeySrc} is not resource base key valid`,
+      });
+    }
+    return LogicMetadataHandler.checkKeySrc(baseKeySrc as string);
+  }
+  public static override buildMetadataHandlerAndSetRegister<
+    TPrimitiveLogicMetadataHandler
+  >(
+    keySrc: string,
+    builderMetadataHandlerFn: () => TPrimitiveLogicMetadataHandler
+  ): TPrimitiveLogicMetadataHandler {
+    return LogicMetadataHandler.buildMetadataHandlerAndSetRegister<TPrimitiveLogicMetadataHandler>(
+      keySrc,
+      builderMetadataHandlerFn
+    );
   }
   protected override buildMetadata(
     newMetadata: TPrimitiveBaseMetadata<TValue>

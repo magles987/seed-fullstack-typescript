@@ -22,14 +22,14 @@ import { StructureLogicController } from "./structure-ctrl";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**claves identificadoras de acciones de petición para lectura de datos */
-export type TKeyReadRequestCtrl =
+export type TKeyReadActionRequestCtrl =
   | "readAll"
   | "readOne"
   | "readMany"
   | "exist"
   | "count";
 /**claves identificadoras de acciones de petición para modificación de datos */
-export type TKeyModifyRequestCtrl = "create" | "update" | "delete";
+export type TKeyModifyActionRequestCtrl = "create" | "update" | "delete";
 //| "createMany"
 //| "updateMany"
 //| "deleteMany"
@@ -107,9 +107,13 @@ export type TPrimitiveCtrlDiccACForCriteria<TIDiccPrimitiveCtrlAC> =
     >
   >;
 /**claves identificadoras de acciones de petición para lectura de datos en contexto primitivo */
-export type TKeyPrimitiveReadRequestCtrl = TKeyReadRequestCtrl; //opción ampliable
+export type TKeyPrimitiveReadActionRequestCtrl = TKeyReadActionRequestCtrl; //opción ampliable
 /**claves identificadoras de acciones de petición para lectura de datos en contexto primitivo */
-export type TKeyPrimitiveModifyRequestCtrl = TKeyModifyRequestCtrl; //opción ampliable
+export type TKeyPrimitiveModifyActionRequestCtrl = TKeyModifyActionRequestCtrl; //opción ampliable
+/**union de calves identificadoras de acciones de petición */
+export type TKeyPrimitiveUnionActionRequestCtrl =
+  | TKeyPrimitiveReadActionRequestCtrl
+  | TKeyPrimitiveModifyActionRequestCtrl;
 
 //====Strcuture====================================================================================================================
 
@@ -272,6 +276,12 @@ export type TStructureCtrlDiccACForCriteria<TIDiccStructureCtrlAC> =
     >
   >;
 /**claves identificadoras de acciones de petición para lectura de datos en contexto estructurado */
-export type TKeyStructureReadRequestCtrl = "readById" | TKeyReadRequestCtrl; //opción ampliable y personalizable a este contexto
+export type TKeyStructureReadActionRequestCtrl =
+  | "readById"
+  | TKeyReadActionRequestCtrl; //opción ampliable y personalizable a este contexto
 /**claves identificadoras de acciones de petición para lectura de datos en contexto estructurado */
-export type TKeyStructureModifyRequestCtrl = TKeyModifyRequestCtrl; //opción ampliable y personalizable a este contexto
+export type TKeyStructureModifyActionRequestCtrl = TKeyModifyActionRequestCtrl; //opción ampliable y personalizable a este contexto
+/**union de calves identificadoras de acciones de petición */
+export type TKeyStructureUnionActionRequestCtrl =
+  | TKeyStructureReadActionRequestCtrl
+  | TKeyStructureModifyActionRequestCtrl;

@@ -1,15 +1,13 @@
 import { PrimitiveLogicController } from "../controllers/primitive-ctrl";
 import {
-  TKeyPrimitiveReadRequestCtrl,
-  TKeyPrimitiveModifyRequestCtrl,
   IPrimitiveCtrlContext,
   TPrimitiveCtrlBaseConfig,
-  TKeyStructureReadRequestCtrl,
-  TKeyStructureModifyRequestCtrl,
   IStructureCtrlContext,
   TFieldCtrlBaseConfig,
   TModelCtrlBaseConfig,
   IStructureCtrlContextInstance,
+  TKeyStructureUnionActionRequestCtrl,
+  TKeyPrimitiveUnionActionRequestCtrl,
 } from "../controllers/shared-types";
 import { StructureLogicController } from "../controllers/structure-ctrl";
 import { PrimitiveLogicHook } from "../hooks/primitive-hook";
@@ -113,8 +111,7 @@ export type TKeyPrimitiveDiccActionRequest<
   TKeyCustomReadRequestCtrl,
   TKeyCustomModifyRequestCtrl
 > =
-  | TKeyPrimitiveReadRequestCtrl
-  | TKeyPrimitiveModifyRequestCtrl
+  | TKeyPrimitiveUnionActionRequestCtrl
   | TKeyCustomReadRequestCtrl
   | TKeyCustomModifyRequestCtrl;
 /** */
@@ -277,8 +274,7 @@ export type TKeyStructureDiccActionRequest<
   TKeyCustomReadRequestCtrl,
   TKeyCustomModifyRequestCtrl
 > =
-  | TKeyStructureReadRequestCtrl
-  | TKeyStructureModifyRequestCtrl
+  | TKeyStructureUnionActionRequestCtrl
   | TKeyCustomReadRequestCtrl
   | TKeyCustomModifyRequestCtrl;
 export type TStructureCtrlInstance<

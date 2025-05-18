@@ -12,14 +12,15 @@ import {
   LogicError,
 } from "../../../src/logic/errors/logic-error";
 import {
-  buildIdByStrategy,
-  isIdValid,
   TOptionForAutoincrement,
-} from "../../../src/logic/util/default-generators-id-fn";
+  UtilGeneratorId,
+} from "../../../src/logic/util/util-generator-id";
 import {
   TPrimitiveMockCustomQueryDriverFn,
   TStructureMockCustomQueryDriverFn,
 } from "./shared-types";
+import {} from "../../../src/logic/providers/drivers/shared-types";
+import { TwinBeeModule } from "../../../src/logic/modules/module";
 import {
   TPrimitiveLiteralCriteriaUnion,
   TPrimitiveModifyLiteralCriteria,
@@ -27,8 +28,7 @@ import {
   TStructureLiteralCriteriaUnion,
   TStructureModifyLiteralCriteria,
   TStructureReadLiteralCriteria,
-} from "../../../src/logic/providers/drivers/shared-types";
-import { TwinBeeModule } from "../../../src/logic/modules/module";
+} from "../../../src/logic/criterias/shared-types";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 export type Trf_MicroBackend = MicroBackend;
@@ -240,8 +240,9 @@ export class MicroBackend
     possibleId: any,
     customValidFn?: Function
   ): any {
+    const genratorId = UtilGeneratorId.getInstance();
     const { strategyForIdBuild } = this._globalConfig_;
-    const isId = isIdValid(possibleId, customValidFn as any);
+    const isId = genratorId.isIdValid(possibleId, customValidFn as any);
     if (!isId) {
       let id;
       if (strategyForIdBuild === "df_autoincrement") {
@@ -251,9 +252,9 @@ export class MicroBackend
         const option = {
           lastId: this.util.getArrayItem(ids, -1),
         } as TOptionForAutoincrement;
-        id = buildIdByStrategy(strategyForIdBuild, option);
+        id = genratorId.buildIdByStrategy(strategyForIdBuild, option);
       } else {
-        id = buildIdByStrategy(strategyForIdBuild);
+        id = genratorId.buildIdByStrategy(strategyForIdBuild);
       }
       return id;
     }

@@ -24,8 +24,7 @@ import { RequestLogicValidation } from "../validators/request-validation";
 import { IDiccCtrlActionConfig, LogicController } from "./_controller";
 import {
   TKeyPrimitiveCtrlModuleContext,
-  TKeyPrimitiveModifyRequestCtrl,
-  TKeyPrimitiveReadRequestCtrl,
+  TKeyPrimitiveUnionActionRequestCtrl,
   TPrimitiveCtrlBaseConfig,
 } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -48,9 +47,7 @@ export class PrimitiveLogicController<
   TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
   TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook,
   TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider,
-  TKeyDiccActionRequest extends string =
-    | TKeyPrimitiveReadRequestCtrl
-    | TKeyPrimitiveModifyRequestCtrl
+  TKeyDiccActionRequest extends string = TKeyPrimitiveUnionActionRequestCtrl
 > extends LogicController<IDiccPrimitiveCtrlActionConfig> {
   public static override getDefault = () => {
     const superDf = LogicController.getDefault();
