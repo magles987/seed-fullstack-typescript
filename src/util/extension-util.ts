@@ -2,9 +2,14 @@
  * @author MAG
  */
 import lodash from "lodash";
-import { UtilNative } from "./native-util";
+import {
+  UtilNative,
+  TUtilBaseConfig as TSuperUtilBaseConfig,
+} from "./native-util";
 import { TStrCase } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/**esquema opcional para la configuración de la utilidad */
+export type TUtilBaseConfig = TSuperUtilBaseConfig;
 /** @info <hr>
  *
  * *Singleton*
@@ -19,9 +24,14 @@ export class UtilExtension extends UtilNative {
    * ____
    */
   private static UtilExtension_instance: UtilExtension;
-  /** */
-  constructor(dfValue: null | undefined) {
-    super(dfValue);
+  /**
+   * @param baseConfig configuraciones personalizadas para la utilidad
+   */
+  constructor(baseConfig?: TUtilBaseConfig) {
+    super(baseConfig);
+    if (this.isObject(baseConfig)) {
+      //...aqui propiedades de configuración
+    }
   }
   /**
    * devuelve la instancia única de esta clase
@@ -29,11 +39,11 @@ export class UtilExtension extends UtilNative {
    * @param dfValue es el valor que se va a asumir como valor
    * predefinido cuando haya ausencia de valor
    */
-  public static getInstance(dfValue: null | undefined): UtilExtension {
+  public static getInstance(baseConfig?: TUtilBaseConfig): UtilExtension {
     UtilExtension.UtilExtension_instance =
       UtilExtension.UtilExtension_instance === undefined ||
       UtilExtension.UtilExtension_instance === null
-        ? new UtilExtension(dfValue)
+        ? new UtilExtension(baseConfig)
         : UtilExtension.UtilExtension_instance;
     return UtilExtension.UtilExtension_instance;
   }
@@ -75,10 +85,12 @@ export class UtilExtension extends UtilNative {
   /**
    * Realiza la clonación de objetos JSON o Arrays de JSONs a diferentes niveles de profundidad.
    *
+   * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    * ⚠ **SOLO** se puede clonar instancias de clase con "lodash" ⚠
+   * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    *
    * @param {T} objOrArray El objeto a clonar. El tipo `T` se asume implícitamente al enviar el parámetro.
-   * @param {"stringify" | "structuredClone" | "lodash"} repository `= "lodash"` el repository o libreria para hacer clonación.
+   * @param {"stringify" | "structuredClone" | "lodash"} driver `= "lodash"` el driver o libreria para hacer clonación.
    * @returns {T} Retorna el objeto (o array) clonado. Si no es un objeto (o array), el retorno es el mismo valor.
    *
    * @example
@@ -90,7 +102,7 @@ export class UtilExtension extends UtilNative {
    */
   public override clone<T>(
     objOrArray: T,
-    repository: "stringify" | "structuredClone" | "lodash" = "lodash"
+    driver: "stringify" | "structuredClone" | "lodash" = "lodash"
   ): T {
     if (
       typeof objOrArray != "object" || //❗solo clona los objetos (incluye array)❗
@@ -99,10 +111,10 @@ export class UtilExtension extends UtilNative {
       return objOrArray;
     }
     let dataCopia: T;
-    if (repository === "lodash") {
+    if (driver === "lodash") {
       dataCopia = this.lodash.cloneDeep(objOrArray);
     } else {
-      dataCopia = super.clone(objOrArray, repository);
+      dataCopia = super.clone(objOrArray, driver);
     }
     return dataCopia;
   }

@@ -806,11 +806,7 @@ export class CookieRepository
     if (this.util.isFunction(customQueryRepositoryFn)) {
       //personalizada
       const fn =
-        customQueryRepositoryFn as TStructureCookieCustomQueryRepositoryFn<
-          any,
-          this,
-          TStructureLiteralCriteriaUnion<any>
-        >;
+        customQueryRepositoryFn as TStructureCookieCustomQueryRepositoryFn<any>;
       registers = await fn(this, literalCriteria, registers);
     } else {
       //estándar

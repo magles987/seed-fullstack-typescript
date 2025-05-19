@@ -1,15 +1,25 @@
-import { UtilExtension } from "../../util/extension-util";
+import {
+  UtilExtension,
+  TUtilBaseConfig as TSuperUtilBaseConfig,
+} from "../../util/extension-util";
 import { LogicError, ELogicCodeError } from "../errors/logic-error";
-import { Model } from "../models/_model";
+import { diccMutateRE } from "../mutaters/dictionary-mutater-re";
+import { diccValRE } from "../validators/dictionary-validation-re";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+/**esquema opcional para la configuración de la utilidad */
+export type TUtilBaseConfig = TSuperUtilBaseConfig &
+  Partial<
+    Pick<
+      UtilTwinBee,
+      "keyId" | "diccMutateRE" | "diccValRE" | "charSeparatorLogicName"
+    >
+  >;
 /** *Singleton*
  *
  * descrip...
  *
  */
 export class UtilTwinBee extends UtilExtension {
-  /**  Almacena la instancia única de esta clase */
-  private static UtilTwinBee_instance: UtilTwinBee;
   /**
    * Array de expresiones regulares de prefijos
    * que identifican propiedades especiales
@@ -24,37 +34,62 @@ export class UtilTwinBee extends UtilExtension {
    * }
    *````
    */
-  public readonly rePrefixesPropsConfig: RegExp[] = [/^__/];
-  /**diccionario de expresiones regulares para validadores */
-  public static readonly diccValRE = {
-    /**permite todos los caracteres y acentos de los lenguajes
-     * (ingles, español, portugues, Frances, italiano, alemán)
-     * ademas se signos de puntuación */
-    alphaNumFull: /^[0-9A-zÀ-Ÿ\d- ,.:;()$@%*#\'\"+-/=!¡¿?]+$/, //new RegExp("^[0-9A-zÀ-Ÿ\d- ,.:;()$@%*#\'\"+-/=!¡¿?]+$"),
-    alphaNumWithSpace: /^[0-9A-zÀ-Ÿ\d- ]+$/,
-    alphaNumWithOutSpace: /^[0-9A-zÀ-Ÿ\d-]+$/,
-    alpha: /^[A-zÀ-Ÿ\\d-]+$/,
-    textNumeric: /^[0-9 ]+$/,
-    genericPhone: /^[()0-9 ]+$/,
-    genericEmail:
-      /^[\w-\.áéíóúÁÉÍÓÚüÜ]{3,}@([\w-áéíóúÁÉÍÓÚüÜ]{2,}\.)*([\w-áéíóúÁÉÍÓÚüÜ]{2,}\.)[\w-áéíóúÁÉÍÓÚüÜ]{2,6}$/,
-    /**conmtraseña con Mayuscula miniscula numero y Caracter especial */
-    hardPassword:
-      /^(?=.*[a-zñáéíóúü])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&])([A-Za-z\d$@$!%*?&]|[^ ])+$/,
-    softPassword: /^[0-9A-zÀ-Ÿ]+$/,
-    /** */
-    dd_mm_yyyy:
-      /^([0-2][0-9]|3[0-1])(\/|\-|\\#|\_|\.)(0[1-9]|1[0-2])\2(\d{4})$/,
-    /**formato de hora */
-    HH_mm_ss: /^([0-1][0-9]|2[0-3])(:)([0-5][0-9])(:)([0-5][0-9])$/,
-  };
-  /**diccionario de expresiones regulares para validadores */
-  public readonly diccValRE = UtilTwinBee.diccValRE;
+  public get rePrefixesPropsConfig() {
+    return [/^__/];
+  }
   /**... */
-  public readonly charSeparatorLogicName = "-";
-  /** */
-  constructor(dfValue: null | undefined) {
-    super(dfValue);
+  private _charSeparatorLogicName = "-";
+  public get charSeparatorLogicName() {
+    return this._charSeparatorLogicName;
+  }
+  /**diccionario de expresiones regulares para validadores */
+  private _diccMutateRE = diccMutateRE;
+  /**diccionario de expresiones regulares para validadores */
+  public get diccMutateRE() {
+    return this._diccMutateRE;
+  }
+  /**diccionario de expresiones regulares para validadores */
+  private _diccValRE = diccValRE;
+  /**diccionario de expresiones regulares para validadores */
+  public get diccValRE() {
+    return this._diccValRE;
+  }
+  private _keyId = "_id";
+  /**
+   * @returns el nombre del campo con que
+   * normalmente se identificará cualquier
+   * modelo
+   * ____
+   */
+  public get keyId() {
+    return this._keyId;
+  }
+  /**  Almacena la instancia única de esta clase */
+  private static UtilTwinBee_instance: UtilTwinBee;
+  /**
+   * @param baseConfig configuraciones personalizadas para la utilidad
+   */
+  constructor(baseConfig: TUtilBaseConfig) {
+    super(baseConfig);
+    if (this.isObject(baseConfig)) {
+      const bC = baseConfig;
+      this._keyId = this.isString(bC.keyId) ? bC.keyId : this._keyId;
+      this._charSeparatorLogicName = this.isString(bC.charSeparatorLogicName)
+        ? bC.charSeparatorLogicName
+        : this._charSeparatorLogicName;
+      this._diccValRE = this.isObject(bC.diccValRE)
+        ? {
+            ...diccValRE, //fusion directa con el default
+            ...bC.diccValRE,
+          }
+        : this._diccValRE;
+      this._diccMutateRE = this.isObject(bC.diccMutateRE)
+        ? {
+            ...diccMutateRE, //fusion directa con el default
+            ...bC.diccMutateRE,
+          }
+        : this._diccMutateRE;
+    }
   }
   /** devuelve la instancia única de esta clase
    * ya sea que la crea o la que ya a sido creada
@@ -66,16 +101,6 @@ export class UtilTwinBee extends UtilExtension {
         ? new UtilTwinBee(dfValue)
         : UtilTwinBee.UtilTwinBee_instance;
     return UtilTwinBee.UtilTwinBee_instance;
-  }
-  /**
-   * @returns el nombre del campo con que
-   * normalmente se identificará cualquier
-   * modelo
-   * ____
-   */
-  public getKeyId(): string {
-    const m: keyof Model = "_id";
-    return m;
   }
   /**
    * Obtiene un diccionario a partir de otro, solo

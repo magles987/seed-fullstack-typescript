@@ -111,7 +111,7 @@ describe("Model: basic-model-test", async () => {
       const res = await ctrl.readRequest({
         ...commonBaseCriteria,
         keyActionRequest: "exist",
-        diccQueryParam: { _pathDoc: "/1/" }, //buscar si existe este path
+        diccQueryParam: { pathDoc: "/1/" }, //buscar si existe este path
       });
       expect(res).toMatchObject(vExp);
     });
@@ -124,7 +124,7 @@ describe("Model: basic-model-test", async () => {
       const res = await ctrl.readRequest({
         ...commonBaseCriteria,
         keyActionRequest: "count",
-        diccQueryParam: { _pathDoc: "/1/" }, //buscar si existe este path
+        diccQueryParam: { pathDoc: "/1/" }, //buscar si existe este path
       });
       expect(res).toMatchObject(vExp);
     });
@@ -142,9 +142,9 @@ describe("Model: basic-model-test", async () => {
       expect(res).toMatchObject(vExp);
     });
     it("action request: update ", async () => {
-      const txData = { ...dataValid, _pathDoc: "     /100/       " }; //espacios para comprobar mutación
+      const txData = { ...dataValid, pathDoc: "     /100/       " }; //espacios para comprobar mutación
       const vExp = {
-        data: { ...txData, _pathDoc: "/100/" }, //sin espacios (se mutó)
+        data: { ...txData, pathDoc: "/100/" }, //sin espacios (se mutó)
         status: ELogicResStatusCode.VALID_DATA,
       } as IStructureResponse;
       const res = await ctrl.modifyRequest({

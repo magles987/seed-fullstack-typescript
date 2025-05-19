@@ -20,6 +20,7 @@ export type Trf_IDBConnection = IDBConnection;
 */
 export class IDBConnection {
   public static readonly getDefault = () => {
+    const util = TwinBeeModule.util;
     return {
       schemaConfig: {
         /**determina si la llave primaria es
@@ -38,7 +39,7 @@ export class IDBConnection {
         /**la llave primaria de la coleccion
          * o tabla
          */
-        keyPrimary: "_id",
+        keyPrimary: util.keyId,
         /**los identificadores de los campos
          * que serán a configurar como indexables
          * (que se usan para consultas)

@@ -56,6 +56,8 @@ export type TKeyFieldBasicModelTest = keyof IBasicModelTest<any>;
  */
 export class BasicModelTest extends Model {
   //...aquí las propiedades
+  /**ruta de acceso al doc*/
+  pathDoc: string = "";
 }
 //███ Constructor de Metadatos █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const baseModel = new BasicModelTest();
@@ -381,8 +383,8 @@ const defineMetadataHandler = () => {
           },
         },
       },
-      _pathDoc: {
-        __dfData: baseModel._pathDoc,
+      pathDoc: {
+        __dfData: baseModel.pathDoc,
         __fieldType: "string",
         __emb: undefined,
         __isArray: false,

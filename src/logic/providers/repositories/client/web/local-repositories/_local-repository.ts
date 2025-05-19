@@ -39,11 +39,12 @@ export abstract class LocalRepository
     return name;
   };
   public static override readonly getDefault = () => {
+    const util = TwinBeeModule.util;
     const superDf = WebRepository.getDefault();
     return {
       ...superDf,
       /**nombre de la propiedad que contiene la clave identificadora */
-      keyId: TwinBeeModule._globalConfig_.keyId,
+      keyId: util.keyId,
     };
   };
   protected static override readonly getCONSTANTS = () => {

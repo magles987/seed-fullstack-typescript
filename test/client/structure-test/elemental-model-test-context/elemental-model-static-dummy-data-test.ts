@@ -16,23 +16,23 @@ function getBkAData_valid() {
   return [
     {
       _id: "1",
-      _pathDoc: "/1/",
+      pathDoc: "/1/",
     },
     {
       _id: "2",
-      _pathDoc: "/2/",
+      pathDoc: "/2/",
     },
     {
       _id: "3",
-      _pathDoc: "/3/",
+      pathDoc: "/3/",
     },
     {
       _id: "4",
-      _pathDoc: "/4/",
+      pathDoc: "/4/",
     },
     {
       _id: "5",
-      _pathDoc: "/5/",
+      pathDoc: "/5/",
     },
   ] as Array<ElementalModelTest>;
 }
@@ -40,7 +40,7 @@ function getBkAData_valid() {
 function getSingleDataValid() {
   return {
     _id: "10",
-    _pathDoc: "/10/",
+    pathDoc: "/10/",
   } as ElementalModelTest;
 }
 /**obtener el backup de los datos inválidos */
@@ -48,23 +48,23 @@ function getBkAData_invalid() {
   return [
     {
       _id: "1",
-      _pathDoc: null,
+      pathDoc: null,
     },
     {
       _id: "2",
-      _pathDoc: undefined,
+      pathDoc: undefined,
     },
     {
       _id: "3",
-      _pathDoc: 3,
+      pathDoc: 3,
     },
     {
       _id: "4",
-      _pathDoc: "alguna cosa",
+      pathDoc: "alguna cosa",
     },
     {
       _id: "5",
-      _pathDoc: {},
+      pathDoc: {} as any,
     },
   ] as Array<ElementalModelTest>;
 }
@@ -73,31 +73,31 @@ function getDiccDataForModify() {
   return {
     _undefined_: {
       _id: undefined as any,
-      _pathDoc: undefined as any,
+      pathDoc: undefined as any,
     },
     _null_: {
       _id: undefined as any,
-      _pathDoc: undefined as any,
+      pathDoc: undefined as any,
     },
     _boolean_: {
       _id: false as any,
-      _pathDoc: true as any,
+      pathDoc: true as any,
     },
     _number_: {
       _id: 1 as any,
-      _pathDoc: 0 as any,
+      pathDoc: 0 as any,
     },
     _string_: {
       _id: "lo que sea",
-      _pathDoc: "lo que sea",
+      pathDoc: "lo que sea",
     },
     _object_: {
       _id: { a: 1, b: "2", c: true } as any,
-      _pathDoc: { a: 1, b: "2", c: true } as any,
+      pathDoc: { a: 1, b: "2", c: true } as any,
     },
     _array_: {
       _id: [1, 2, 3] as any,
-      _pathDoc: ["1", "2", "3"] as any,
+      pathDoc: ["1", "2", "3"] as any,
     },
   } as IDiccDataInvalidForModify;
 }

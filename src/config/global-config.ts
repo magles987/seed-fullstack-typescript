@@ -19,20 +19,10 @@ export class GlobalConfig implements ReturnType<GlobalConfig["getDefault"]> {
   /**@returns todos los campos con sus valores predefinidos para instancias de esta clase*/
   public static readonly getDefault = () => {
     return {
-      /*--------------------------------*/
-      /*--------------------------------*/
-      /*---- <INICIO CONSTRUCCION> -----*/
-      /*
-      //valor que se asume como predefinido para toda la semilla
-      //globalDefaultValue: undefined as undefined | null,
-      */
       /**instancia de utilidad global a usar */
-      globalUtil: UtilTwinBee.getInstance(undefined),
-      /*---- <FIN CONSTRUCCION> --------*/
-      /*--------------------------------*/
-      /*--------------------------------*/
-      /**clave identificadora del campo que se tomará como identificador */
-      keyId: "_id",
+      globalUtil: UtilTwinBee.getInstance(),
+      // /**clave identificadora del campo que se tomará como identificador */
+      // keyId: "_id",
       /**estrategia para construcción interna de un  identificador estándar*/
       strategyForIdBuild: "df_uuid" as
         | TKeyDiccStrategyGeneratorsIdFn
@@ -62,25 +52,6 @@ export class GlobalConfig implements ReturnType<GlobalConfig["getDefault"]> {
       //..aquí las constantes
     };
   };
-  /*------------------------------------------------*/
-  /*------------------------------------------------*/
-  /*---- <INICIO CONSTRUCCION> ---------------------*/
-  /*
-  private _globalDefaultValue: ReturnType<
-    GlobalConfig["getDefault"]
-  >["globalDefaultValue"];
-  public get globalDefaultValue(): ReturnType<
-    GlobalConfig["getDefault"]
-  >["globalDefaultValue"] {
-    return this._globalDefaultValue;
-  }
-  public set globalDefaultValue(
-    v: ReturnType<GlobalConfig["getDefault"]>["globalDefaultValue"]
-  ) {
-    this._globalDefaultValue =
-      v === undefined || v === null ? v : this._globalDefaultValue;
-  }
-*/
   private _globalUtil: ReturnType<GlobalConfig["getDefault"]>["globalUtil"];
   public get globalUtil(): ReturnType<
     GlobalConfig["getDefault"]
@@ -95,21 +66,6 @@ export class GlobalConfig implements ReturnType<GlobalConfig["getDefault"]> {
       : this.util.isInstance(this._globalUtil)
       ? this._globalUtil
       : this.getDefault().globalUtil;
-  }
-
-  /*---- <FIN CONSTRUCCION> ------------------------*/
-  /*------------------------------------------------*/
-  /*------------------------------------------------*/
-  private _keyId: ReturnType<GlobalConfig["getDefault"]>["keyId"];
-  public get keyId(): ReturnType<GlobalConfig["getDefault"]>["keyId"] {
-    return this._keyId;
-  }
-  public set keyId(v: ReturnType<GlobalConfig["getDefault"]>["keyId"]) {
-    this._keyId = this.util.isString(v)
-      ? v
-      : this._keyId !== undefined
-      ? this._keyId
-      : this.getDefault().keyId;
   }
   private _strategyForIdBuild: ReturnType<
     GlobalConfig["getDefault"]

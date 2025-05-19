@@ -22,6 +22,8 @@ export type TKeyFieldElementalModelTest = keyof IElementalModelTest<any>;
  */
 export class ElementalModelTest extends Model {
   //...aquí las propiedades
+  /**ruta de acceso*/
+  pathDoc: string = "";
 }
 //███ Constructor de Metadatos █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const baseModel = new ElementalModelTest();
@@ -305,8 +307,8 @@ const defineMetadataHandler = () => {
           },
         },
       },
-      _pathDoc: {
-        __dfData: baseModel._pathDoc,
+      pathDoc: {
+        __dfData: baseModel.pathDoc,
         __fieldType: "string",
         __emb: undefined,
         __isArray: false,
@@ -325,13 +327,12 @@ const defineMetadataHandler = () => {
   });
 };
 /**@returns la instancia de manejador actual de metadatos para este modelo */
-export function getElementalModelTestMetadataHandler() {
-  return StructureLogicMetadataHandler.buildMetadataHandlerAndSetRegister(
+export const getElementalModelTestMetadataHandler = () =>
+  StructureLogicMetadataHandler.buildMetadataHandlerAndSetRegister(
     keySrc,
     defineMetadataHandler
   );
-}
+
 /**@returns la instancia del controlador asociado a este modelo */
-export function getElementalModelTestCtrl() {
-  return getElementalModelTestMetadataHandler().getRootCtrlInstance();
-}
+export const getElementalModelTestCtrl = () =>
+  getElementalModelTestMetadataHandler().getRootCtrlInstance();

@@ -113,7 +113,7 @@ export async function runToLocalIdb() {
   res = await ctrl.readRequest({
     ...commonBaseCriteria,
     keyActionRequest: "exist",
-    diccQueryParam: { _pathDoc: "/1/" }, //buscar si existe este path?
+    diccQueryParam: { pathDoc: "/1/" }, //buscar si existe este path?
   });
   screenBrowserLog.showStructureResponseTest(
     {
@@ -127,14 +127,14 @@ export async function runToLocalIdb() {
     },
     {
       keyAction: `exist`,
-      detail: `exists for the search by _pathDoc`,
+      detail: `exists for the search by pathDoc`,
     }
   );
   //====verificar conteo de registro (según diccionario de parámetros de consulta) ==============
   res = await ctrl.readRequest({
     ...commonBaseCriteria,
     keyActionRequest: "count",
-    diccQueryParam: { _pathDoc: "/1/" }, //buscar si existe este path?
+    diccQueryParam: { pathDoc: "/1/" }, //buscar si existe este path?
   });
   screenBrowserLog.showStructureResponseTest(
     {
@@ -148,7 +148,7 @@ export async function runToLocalIdb() {
     },
     {
       keyAction: `count`,
-      detail: `count the search by _pathDoc`,
+      detail: `count the search by pathDoc`,
     }
   );
   res = await ctrl.readRequest({
@@ -168,7 +168,7 @@ export async function runToLocalIdb() {
     },
     {
       keyAction: `exist`,
-      detail: `exists for the search by _pathDoc`,
+      detail: `exists for the search by pathDoc`,
     }
   );
   //████ Modificaciones generales ████████████████████████████████████████████████████████████
@@ -190,13 +190,13 @@ export async function runToLocalIdb() {
     },
     {
       keyAction: `exist`,
-      detail: `exists for the search by _pathDoc`,
+      detail: `exists for the search by pathDoc`,
     }
   );
   res = await ctrl.modifyRequest({
     ...commonBaseCriteria,
     keyActionRequest: "update",
-    data: { ...dt, _pathDoc: "      /100/       " }, //modificación con espacios para probar el modulo de mutación
+    data: { ...dt, pathDoc: "      /100/       " }, //modificación con espacios para probar el modulo de mutación
   });
   screenBrowserLog.showStructureResponseTest(
     {
@@ -205,18 +205,18 @@ export async function runToLocalIdb() {
       responses: res.responses,
     },
     {
-      data: { ...dt, _pathDoc: "/100/" } as BasicModelTest,
+      data: { ...dt, pathDoc: "/100/" } as BasicModelTest,
       status: ELogicResStatusCode.SUCCESS,
     },
     {
       keyAction: `exist`,
-      detail: `exists for the search by _pathDoc`,
+      detail: `exists for the search by pathDoc`,
     }
   );
   res = await ctrl.modifyRequest({
     ...commonBaseCriteria,
     keyActionRequest: "delete",
-    data: { _id: dt._id, _pathDoc: undefined as any },
+    data: { _id: dt._id, pathDoc: undefined as any },
   });
   screenBrowserLog.showStructureResponseTest(
     {
@@ -230,7 +230,7 @@ export async function runToLocalIdb() {
     },
     {
       keyAction: `exist`,
-      detail: `exists for the search by _pathDoc`,
+      detail: `exists for the search by pathDoc`,
     }
   );
   //████ Modificaciones invalidas ████████████████████████████████████████████████████████████

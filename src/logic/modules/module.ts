@@ -44,17 +44,7 @@ export abstract class TwinBeeModule {
   protected readonly util = TwinBeeModule.util;
   /**.utilidades del modulo*/
   public static get util(): UtilTwinBee {
-    /*--------------------------------*/
-    /*--------------------------------*/
-    /*---- <INICIO CONSTRUCCION> -----*/
-    /*
-      const dfValue = Module._globalConfig_.globalDefaultValue;
-      return Util_Module.getInstance(dfValue);
-    */
     return TwinBeeModule._globalConfig_.globalUtil;
-    /*---- <FIN CONSTRUCCION> --------*/
-    /*--------------------------------*/
-    /*--------------------------------*/
   }
   /**
    * @param _keyModule clave identificadora del modulo
