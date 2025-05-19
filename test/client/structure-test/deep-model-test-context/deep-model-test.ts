@@ -1,7 +1,7 @@
 import { StructureLogicController } from "../../../../src/seed/logic/controllers/structure-ctrl";
 import {
   TStructureBaseDiccModuleInstance,
-  TStructureBaseDriversList,
+  TStructureBaseRepositoriesList,
   TStructureBaseMetadata,
 } from "../../../../src/seed/logic/controllers/builder-ctrl-shared";
 import { StructureCriteriaHandler } from "../../../../src/seed/logic/criterias/structure-criteria-handler";
@@ -17,16 +17,16 @@ import {
   TKeyStructureModifyRequestCtrl,
   TKeyStructureReadRequestCtrl,
 } from "../../../../src/seed/logic/controllers/shared";
-import { CookieDriver } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/cookie/cookie-driver";
-import { TStructureCookieCustomQueryDriverFn } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/cookie/shared";
+import { CookieRepository } from "../../../../src/seed/logic/providers/_repositories/client/web/local-repositories/cookie/cookie-repository";
+import { TStructureCookieCustomQueryRepositoryFn } from "../../../../src/seed/logic/providers/_repositories/client/web/local-repositories/cookie/shared";
 import {
   IStructureModelReadCriteria,
   TStructureModelDiccGlobalAC,
 } from "../../../../src/seed/logic/criterias/shared";
 import { Module } from "../../../../src/seed/logic/config/module";
-import { IdbDriver } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/idb/_idb-driver";
-import { StorageDriver } from "../../../../src/seed/logic/providers/_drivers/client/web/local-repositories/storage/storage-driver";
-import { FetchDriver } from "../../../../src/seed/logic/providers/_drivers/client/web/https/fetch/fetch-driver";
+import { IdbRepository } from "../../../../src/seed/logic/providers/_repositories/client/web/local-repositories/idb/_idb-repository";
+import { StorageRepository } from "../../../../src/seed/logic/providers/_repositories/client/web/local-repositories/storage/storage-repository";
+import { FetchRepository } from "../../../../src/seed/logic/providers/_repositories/client/web/https/fetch/fetch-repository";
 import { Model } from "../../../../src/seed/logic/models/_model";
 import { buildIdByStrategy } from "../../../../src/seed/logic/util/default-generators-id-fn";
 import { IStructureDeepMutateContext } from "../../../../src/seed/logic/mutaters/shared";
@@ -113,11 +113,11 @@ const util = Module.util;
  */
 function buildCtrlInstance() {
   const baseModel = new DeepModelTest();
-  const driversList: TStructureBaseDriversList = [
-    new CookieDriver(),
-    new StorageDriver(),
-    new IdbDriver(),
-    new FetchDriver({
+  const repositoriesList: TStructureBaseRepositoriesList = [
+    new CookieRepository(),
+    new StorageRepository(),
+    new IdbRepository(),
+    new FetchRepository({
       urlRoot: "http://www.mytest.com",
       srcSelector: "plural",
     }),
@@ -131,7 +131,7 @@ function buildCtrlInstance() {
     TStructureHookInstance,
     TStructureProviderInstance
   > = {
-    driversList,
+    repositoriesList,
     //...aquí instancias de módulos personalizados si se requieren
   };
   const customBaseMetadata: TStructureBaseMetadata<
@@ -159,8 +159,8 @@ function buildCtrlInstance() {
     __providerConfig: {
       structureProvider: {
         diccActionsConfig: {
-          singleRunDriver: {
-            nameLogicDriver: CookieDriver.getNameLogicDriver(),
+          singleRunRepository: {
+            nameLogicRepository: CookieRepository.getNameLogicRepository(),
           },
         },
       },
@@ -174,7 +174,7 @@ function buildCtrlInstance() {
             expectedDataType: "array",
             limit: 5,
             aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+              ["structureProvider", "singleRunRepository"],
             ],
           },
           readOne: {
@@ -183,27 +183,28 @@ function buildCtrlInstance() {
             expectedDataType: "object", //solo puede ser 1
             diccGlobalAC: {
               structureProvider: {
-                singleRunDriver: {
-                  nameLogicDriver: CookieDriver.getNameLogicDriver(),
+                singleRunRepository: {
+                  nameLogicRepository:
+                    CookieRepository.getNameLogicRepository(),
                 },
               },
             },
             aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+              ["structureProvider", "singleRunRepository"],
             ],
-            aTCustomQueryDriverFunctions: [
+            aTCustomQueryRepositoryFunctions: [
               [
-                CookieDriver.getNameLogicDriver(),
-                CookieDriver.getStructureLibraryQueryFn<TModel>()
+                CookieRepository.getNameLogicRepository(),
+                CookieRepository.getStructureLibraryQueryFn<TModel>()
                   .readByQueryParam,
               ],
               [
-                StorageDriver.getNameLogicDriver(),
-                StorageDriver.getStructureLibraryQueryFn().readByQueryParam,
+                StorageRepository.getNameLogicRepository(),
+                StorageRepository.getStructureLibraryQueryFn().readByQueryParam,
               ],
               [
-                IdbDriver.getNameLogicDriver(),
-                IdbDriver.getStructureLibraryQueryFn().readByQueryParam,
+                IdbRepository.getNameLogicRepository(),
+                IdbRepository.getStructureLibraryQueryFn().readByQueryParam,
               ],
             ],
           },
@@ -213,21 +214,21 @@ function buildCtrlInstance() {
             expectedDataType: "array",
             limit: 5,
             aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+              ["structureProvider", "singleRunRepository"],
             ],
-            aTCustomQueryDriverFunctions: [
+            aTCustomQueryRepositoryFunctions: [
               [
-                CookieDriver.getNameLogicDriver(),
-                CookieDriver.getStructureLibraryQueryFn<TModel>()
+                CookieRepository.getNameLogicRepository(),
+                CookieRepository.getStructureLibraryQueryFn<TModel>()
                   .readByQueryParam,
               ],
               [
-                StorageDriver.getNameLogicDriver(),
-                StorageDriver.getStructureLibraryQueryFn().readByQueryParam,
+                StorageRepository.getNameLogicRepository(),
+                StorageRepository.getStructureLibraryQueryFn().readByQueryParam,
               ],
               [
-                IdbDriver.getNameLogicDriver(),
-                IdbDriver.getStructureLibraryQueryFn().readByQueryParam,
+                IdbRepository.getNameLogicRepository(),
+                IdbRepository.getStructureLibraryQueryFn().readByQueryParam,
               ],
             ],
           },
@@ -236,20 +237,20 @@ function buildCtrlInstance() {
             keyActionRequest: "readById",
             expectedDataType: "object", //solo puede ser 1
             aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+              ["structureProvider", "singleRunRepository"],
             ],
-            aTCustomQueryDriverFunctions: [
+            aTCustomQueryRepositoryFunctions: [
               [
-                CookieDriver.getNameLogicDriver(),
-                CookieDriver.getStructureLibraryQueryFn<TModel>().readById,
+                CookieRepository.getNameLogicRepository(),
+                CookieRepository.getStructureLibraryQueryFn<TModel>().readById,
               ],
               [
-                StorageDriver.getNameLogicDriver(),
-                StorageDriver.getStructureLibraryQueryFn().readById,
+                StorageRepository.getNameLogicRepository(),
+                StorageRepository.getStructureLibraryQueryFn().readById,
               ],
               [
-                IdbDriver.getNameLogicDriver(),
-                IdbDriver.getStructureLibraryQueryFn().readById,
+                IdbRepository.getNameLogicRepository(),
+                IdbRepository.getStructureLibraryQueryFn().readById,
               ],
             ],
           },
@@ -258,21 +259,22 @@ function buildCtrlInstance() {
             keyActionRequest: "exist",
             expectedDataType: "boolean",
             aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+              ["structureProvider", "singleRunRepository"],
             ],
-            aTCustomQueryDriverFunctions: [
+            aTCustomQueryRepositoryFunctions: [
               [
-                CookieDriver.getNameLogicDriver(),
-                CookieDriver.getStructureLibraryQueryFn<TModel>()
+                CookieRepository.getNameLogicRepository(),
+                CookieRepository.getStructureLibraryQueryFn<TModel>()
                   .existByQueryParam,
               ],
               [
-                StorageDriver.getNameLogicDriver(),
-                StorageDriver.getStructureLibraryQueryFn().existByQueryParam,
+                StorageRepository.getNameLogicRepository(),
+                StorageRepository.getStructureLibraryQueryFn()
+                  .existByQueryParam,
               ],
               [
-                IdbDriver.getNameLogicDriver(),
-                IdbDriver.getStructureLibraryQueryFn().existByQueryParam,
+                IdbRepository.getNameLogicRepository(),
+                IdbRepository.getStructureLibraryQueryFn().existByQueryParam,
               ],
             ],
           },
@@ -281,21 +283,22 @@ function buildCtrlInstance() {
             keyActionRequest: "count",
             expectedDataType: "number",
             aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+              ["structureProvider", "singleRunRepository"],
             ],
-            aTCustomQueryDriverFunctions: [
+            aTCustomQueryRepositoryFunctions: [
               [
-                CookieDriver.getNameLogicDriver(),
-                CookieDriver.getStructureLibraryQueryFn<TModel>()
+                CookieRepository.getNameLogicRepository(),
+                CookieRepository.getStructureLibraryQueryFn<TModel>()
                   .countByQueryParam,
               ],
               [
-                StorageDriver.getNameLogicDriver(),
-                StorageDriver.getStructureLibraryQueryFn().countByQueryParam,
+                StorageRepository.getNameLogicRepository(),
+                StorageRepository.getStructureLibraryQueryFn()
+                  .countByQueryParam,
               ],
               [
-                IdbDriver.getNameLogicDriver(),
-                IdbDriver.getStructureLibraryQueryFn().countByQueryParam,
+                IdbRepository.getNameLogicRepository(),
+                IdbRepository.getStructureLibraryQueryFn().countByQueryParam,
               ],
             ],
           },
@@ -304,12 +307,12 @@ function buildCtrlInstance() {
             keyActionRequest: "inform",
             expectedDataType: "string",
             aTKeysGlobalActionConfig: [
-              ["structureProvider", "singleRunDriver"],
+              ["structureProvider", "singleRunRepository"],
             ],
-            aTCustomQueryDriverFunctions: [
+            aTCustomQueryRepositoryFunctions: [
               [
-                CookieDriver.getNameLogicDriver(),
-                (async (driver, literalBag, registers) => {
+                CookieRepository.getNameLogicRepository(),
+                (async (repository, literalBag, registers) => {
                   const util = Module.util; //mejor usar una genérica
                   const { literalCriteria } = literalBag;
                   const { diccQueryParam } =
@@ -320,7 +323,7 @@ function buildCtrlInstance() {
                   );
                   const counter = f_regs.length;
                   return counter;
-                }) as TStructureCookieCustomQueryDriverFn<TModel>,
+                }) as TStructureCookieCustomQueryRepositoryFn<TModel>,
               ],
             ],
           },
@@ -334,7 +337,7 @@ function buildCtrlInstance() {
               ["modelMutate", "mutateModel"],
               ["modelVal", "isTypeOfModel"],
               ["modelVal", "isModel"],
-              ["structureProvider", "singleRunDriver"],
+              ["structureProvider", "singleRunRepository"],
             ],
           },
           update: {
@@ -347,7 +350,7 @@ function buildCtrlInstance() {
               ["modelMutate", "mutateModel"],
               ["modelVal", "isTypeOfModel"],
               ["modelVal", "isModel"],
-              ["structureProvider", "singleRunDriver"],
+              ["structureProvider", "singleRunRepository"],
             ],
           },
           delete: {
@@ -360,7 +363,7 @@ function buildCtrlInstance() {
               //["modelMutate", "mutateModel"],
               //["modelVal", "isTypeOfModel"],
               //["modelVal", "isModel"],
-              ["structureProvider", "singleRunDriver"],
+              ["structureProvider", "singleRunRepository"],
             ],
           },
         },

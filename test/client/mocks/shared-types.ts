@@ -6,14 +6,14 @@ import {
 } from "../../../src/logic/criterias/shared-types";
 import { MicroBackend } from "./microbackend";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-export type TPrimitiveMockCustomQueryDriverFn = (
+export type TPrimitiveMockCustomQueryRepositoryFn = (
   microBE: MicroBackend,
   literalCriteria: IPrimitiveReadCriteria | IPrimitiveModifyCriteria,
   //| IStructureModelReadCriteria<any>
   //| IStructureModelModifyCriteria<any>,
   registers: any[]
 ) => Promise<any>;
-export type TStructureMockCustomQueryDriverFn = (
+export type TStructureMockCustomQueryRepositoryFn = (
   microBE: MicroBackend,
   literalCriteria:
     | IStructureModelReadCriteria<any>

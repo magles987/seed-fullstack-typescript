@@ -7,13 +7,13 @@ import {
   TKeyRequestType,
 } from "../modules/shared-types";
 import {
-  TSelectorDataDriver,
-  TSelectorDataDriverFn,
-} from "../providers/drivers/shared-types";
+  TSelectorDataRepository,
+  TSelectorDataRepositoryFn,
+} from "../providers/repositories/shared-types";
 import {
   EKeyActionGroupForRes,
   ELogicResStatusCode,
-  IDriverResponse,
+  IRepositoryResponse,
   IResponse,
   TResponseForMutate,
 } from "./shared-types";
@@ -361,18 +361,21 @@ export abstract class ReportHandler
   /**... */
   protected abstract reduceResponses(response: IResponse): IResponse;
   /**... */
-  public adaptDriverResponseToResponse(
-    driverResponses: IDriverResponse | IDriverResponse[],
+  public adaptRepositoryResponseToResponse(
+    repositoryResponses: IRepositoryResponse | IRepositoryResponse[],
     response: IResponse,
-    selectorDataDriver: TSelectorDataDriver
+    selectorDataRepository: TSelectorDataRepository
   ): IResponse {
-    driverResponses = Array.isArray(driverResponses)
-      ? driverResponses
-      : [driverResponses];
+    repositoryResponses = Array.isArray(repositoryResponses)
+      ? repositoryResponses
+      : [repositoryResponses];
     response = {
       ...response,
-      data: this.reduceDataDriver(driverResponses, selectorDataDriver),
-      responses: driverResponses.map((dR) => {
+      data: this.reduceDataRepository(
+        repositoryResponses,
+        selectorDataRepository
+      ),
+      responses: repositoryResponses.map((dR) => {
         const { data, msn, status, details, error } = dR;
         return {
           ...response,
@@ -380,7 +383,7 @@ export abstract class ReportHandler
           msn,
           status,
           extResponse: { details, error },
-          keyAction: EKeyActionGroupForRes.driver,
+          keyAction: EKeyActionGroupForRes.repository,
         } as IResponse;
       }),
     } as IResponse;
@@ -388,57 +391,60 @@ export abstract class ReportHandler
     return response;
   }
   /**... */
-  protected reduceDataDriver(
-    driverResponses: IDriverResponse[],
-    selectorDataDriver: TSelectorDataDriver
+  protected reduceDataRepository(
+    repositoryResponses: IRepositoryResponse[],
+    selectorDataRepository: TSelectorDataRepository
   ): any {
     let data: any = this.util.dfValue;
-    if (this.util.isNumber(selectorDataDriver, false)) {
-      const idx = selectorDataDriver as number;
-      data = driverResponses[idx].data;
-    } else if (this.util.isString(selectorDataDriver)) {
-      if (selectorDataDriver === "first") {
+    if (this.util.isNumber(selectorDataRepository, false)) {
+      const idx = selectorDataRepository as number;
+      data = repositoryResponses[idx].data;
+    } else if (this.util.isString(selectorDataRepository)) {
+      if (selectorDataRepository === "first") {
         const idx = 0;
-        data = driverResponses[idx].data;
-      } else if (selectorDataDriver === "last") {
-        const idx = driverResponses.length - 1;
-        data = driverResponses[idx].data;
-      } else if (selectorDataDriver === "first-success") {
-        const idxF = driverResponses.findIndex(
+        data = repositoryResponses[idx].data;
+      } else if (selectorDataRepository === "last") {
+        const idx = repositoryResponses.length - 1;
+        data = repositoryResponses[idx].data;
+      } else if (selectorDataRepository === "first-success") {
+        const idxF = repositoryResponses.findIndex(
           (dR) => dR.status < ELogicResStatusCode.BAD
         );
-        data = driverResponses[idxF].data;
-      } else if (selectorDataDriver === "last-success") {
-        const idxF = driverResponses.findLastIndex(
+        data = repositoryResponses[idxF].data;
+      } else if (selectorDataRepository === "last-success") {
+        const idxF = repositoryResponses.findLastIndex(
           (dR) => dR.status < ELogicResStatusCode.BAD
         );
-        data = driverResponses[idxF].data;
-      } else if (selectorDataDriver === "merge-success") {
-        for (const driverRes of driverResponses) {
+        data = repositoryResponses[idxF].data;
+      } else if (selectorDataRepository === "merge-success") {
+        for (const repositoryRes of repositoryResponses) {
           //omite los errores
-          if (driverRes.status >= ELogicResStatusCode.BAD) continue;
-          //verifica si la data del driver es objeto fusionar (admite arrays)
-          if (typeof driverRes.data === "object" && driverRes.data !== null) {
-            data = this.util.deepMergeObjects([data, driverRes.data], {
+          if (repositoryRes.status >= ELogicResStatusCode.BAD) continue;
+          //verifica si la data del repository es objeto fusionar (admite arrays)
+          if (
+            typeof repositoryRes.data === "object" &&
+            repositoryRes.data !== null
+          ) {
+            data = this.util.deepMergeObjects([data, repositoryRes.data], {
               mode: "soft",
             });
           } else {
-            data = driverRes.data;
+            data = repositoryRes.data;
           }
         }
       } else {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
-          msn: `${selectorDataDriver} is not selector data driver valid`,
+          msn: `${selectorDataRepository} is not selector data repository valid`,
         });
       }
-    } else if (this.util.isFunction(selectorDataDriver)) {
-      const fn = selectorDataDriver as TSelectorDataDriverFn;
-      data = fn(driverResponses);
+    } else if (this.util.isFunction(selectorDataRepository)) {
+      const fn = selectorDataRepository as TSelectorDataRepositoryFn;
+      data = fn(repositoryResponses);
     } else {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${selectorDataDriver} is not selector data driver valid`,
+        msn: `${selectorDataRepository} is not selector data repository valid`,
       });
     }
     return data;

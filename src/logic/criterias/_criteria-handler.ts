@@ -49,7 +49,7 @@ export abstract class CriteriaHandler<
       diccGlobalAC: {},
       aTGlobalActionConfig: [],
       diccQueryParam: {},
-      aTCustomQueryDriverFn: [],
+      aTCustomQueryRepositoryFn: [],
     } as typeof superDf & IModifyCriteria<any> & IReadCriteria<any>;
   };
   /**@returns todas las constantes a usar en instancias de esta clase*/
@@ -67,7 +67,7 @@ export abstract class CriteriaHandler<
       KEYPROPS_DO_NOT_SEND_AT_EXTERNAL: [
         "diccGlobalAC",
         "aTKeysGlobalActionConfig",
-        "aTCustomQueryDriverFunctions",
+        "aTCustomQueryRepositoryFunctions",
         "data",
         "firstData",
       ] as Array<keyof (IReadCriteria<any> & IModifyCriteria<any>)>,
@@ -251,18 +251,18 @@ export abstract class CriteriaHandler<
       : this.getDefault().diccQueryParam;
   }
   /**... */
-  private _aTCustomQueryDriverFunctions: ICriteria<any>["aTCustomQueryDriverFn"];
-  public get aTCustomQueryDriverFunctions(): ICriteria<any>["aTCustomQueryDriverFn"] {
-    return this._aTCustomQueryDriverFunctions;
+  private _aTCustomQueryRepositoryFn: ICriteria<any>["aTCustomQueryRepositoryFn"];
+  public get aTCustomQueryRepositoryFn(): ICriteria<any>["aTCustomQueryRepositoryFn"] {
+    return this._aTCustomQueryRepositoryFn;
   }
-  public set aTCustomQueryDriverFunctions(
-    v: ICriteria<any>["aTCustomQueryDriverFn"]
+  public set aTCustomQueryRepositoryFn(
+    v: ICriteria<any>["aTCustomQueryRepositoryFn"]
   ) {
-    this._aTCustomQueryDriverFunctions = this.util.isArrayTuple(v, 2)
+    this._aTCustomQueryRepositoryFn = this.util.isArrayTuple(v, 2)
       ? v
-      : this._aTCustomQueryDriverFunctions !== undefined
-      ? this._aTCustomQueryDriverFunctions
-      : this.getDefault().aTCustomQueryDriverFn;
+      : this._aTCustomQueryRepositoryFn !== undefined
+      ? this._aTCustomQueryRepositoryFn
+      : this.getDefault().aTCustomQueryRepositoryFn;
   }
   /**
    * @param base objeto literal con valores personalizados para iniicalizar las propiedades

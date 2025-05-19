@@ -78,7 +78,7 @@ export class UtilExtension extends UtilNative {
    * ⚠ **SOLO** se puede clonar instancias de clase con "lodash" ⚠
    *
    * @param {T} objOrArray El objeto a clonar. El tipo `T` se asume implícitamente al enviar el parámetro.
-   * @param {"stringify" | "structuredClone" | "lodash"} driver `= "lodash"` el driver o libreria para hacer clonación.
+   * @param {"stringify" | "structuredClone" | "lodash"} repository `= "lodash"` el repository o libreria para hacer clonación.
    * @returns {T} Retorna el objeto (o array) clonado. Si no es un objeto (o array), el retorno es el mismo valor.
    *
    * @example
@@ -90,7 +90,7 @@ export class UtilExtension extends UtilNative {
    */
   public override clone<T>(
     objOrArray: T,
-    driver: "stringify" | "structuredClone" | "lodash" = "lodash"
+    repository: "stringify" | "structuredClone" | "lodash" = "lodash"
   ): T {
     if (
       typeof objOrArray != "object" || //❗solo clona los objetos (incluye array)❗
@@ -99,10 +99,10 @@ export class UtilExtension extends UtilNative {
       return objOrArray;
     }
     let dataCopia: T;
-    if (driver === "lodash") {
+    if (repository === "lodash") {
       dataCopia = this.lodash.cloneDeep(objOrArray);
     } else {
-      dataCopia = super.clone(objOrArray, driver);
+      dataCopia = super.clone(objOrArray, repository);
     }
     return dataCopia;
   }

@@ -1,4 +1,4 @@
-import { IdbDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/idb/idb-driver";
+import { IdbRepository } from "../../../../src/logic/providers/repositories/client/web/local-repositories/idb/idb-repository";
 import {
   ELogicResStatusCode,
   IStructureResponse,
@@ -12,12 +12,12 @@ export async function runToLocalIdb() {
   const ctrl = getBasicModelTestCtrl();
   const util = ctrl.twinBeeUtil;
   const screenBrowserLog = ScreenBrowserResponseUtil.getInstance();
-  const nameLogicDriver = IdbDriver.getNameLogicDriver();
+  const nameLogicRepository = IdbRepository.getNameLogicRepository();
   const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
   commonBaseCriteria.diccGlobalAC = {
-    structureProvider: { singleRunDriver: { nameLogicDriver } },
+    structureProvider: { singleRunRepository: { nameLogicRepository } },
   };
-  await IdbDriver.deleteCurrentDataBase();
+  await IdbRepository.deleteCurrentDataBase();
   let res: IStructureResponse;
   //████ Creación y comprobación inicial ████████████████████████████████████████████████████████████
   //====Crear todos los registros===========================

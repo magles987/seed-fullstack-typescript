@@ -9,13 +9,14 @@ import {
   TKeySrcSelector,
   TKeyLogicContext,
 } from "../../../src/logic/modules/shared-types";
-import { HttpDriver } from "../../../src/logic/providers/drivers/client/web/https/_https-driver";
-import {
-  TPrimitiveLiteralCriteriaUnion,
-  TStructureReadLiteralCriteria,
-} from "../../../src/logic/providers/drivers/shared-types";
+import { HttpRepository } from "../../../src/logic/providers/repositories/client/web/https/_https-repository";
+
 import { EncryptAndCompressDataHandler } from "../../../src/logic/util/encripter-handler";
 import { TwinBeeModule } from "../../../src/logic/modules/module";
+import {
+  TPrimitiveReadLiteralCriteria,
+  TStructureReadLiteralCriteria,
+} from "../../../src/logic/criterias/shared-types";
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**... */
@@ -23,7 +24,7 @@ export interface IMockServerOption {
   /**selección de nombre de la fuente (singular o plural) */
   srcSelector: TKeySrcSelector;
   db_collection: any[];
-  nameLogicDriver: string;
+  nameLogicRepository: string;
 }
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *abstract*
@@ -35,7 +36,7 @@ export class MockServerHandler<TData> {
   /**tabla, documento o array que representa los datos almacenados */
   protected db_collection: Array<TData>;
   protected urlConfig = {} as Pick<
-    ReturnType<HttpDriver["getDefault"]>,
+    ReturnType<HttpRepository["getDefault"]>,
     "urlActionType" | "urlPostfix" | "urlPrefix" | "urlRoot" | "urlSecretKeyJWT"
   >;
   protected keyUrlSrc: string;
@@ -74,14 +75,14 @@ export class MockServerHandler<TData> {
           let literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
             params[idxCriteriaParam] as string
           ) as
-            | TPrimitiveLiteralCriteriaUnion
+            | TPrimitiveReadLiteralCriteria
             | TStructureReadLiteralCriteria<any>;
           //fusionar la data a los criterios
           //literalCriteria = { ...literalCriteria, data };
-          const driverResponse = await mBackend.receiveMockRequest(
+          const repositoryResponse = await mBackend.receiveMockRequest(
             literalCriteria
           );
-          return HttpResponse.json(driverResponse);
+          return HttpResponse.json(repositoryResponse);
         }
       ),
       http.post(
@@ -91,14 +92,14 @@ export class MockServerHandler<TData> {
           let literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
             params[idxCriteriaParam] as string
           ) as
-            | TPrimitiveLiteralCriteriaUnion
+            | TPrimitiveReadLiteralCriteria
             | TStructureReadLiteralCriteria<any>;
           //fusionar la data a los criterios
           literalCriteria = { ...literalCriteria, data };
-          const driverResponse = await mBackend.receiveMockRequest(
+          const repositoryResponse = await mBackend.receiveMockRequest(
             literalCriteria
           );
-          return HttpResponse.json(driverResponse);
+          return HttpResponse.json(repositoryResponse);
         }
       ),
       http.put(
@@ -108,14 +109,14 @@ export class MockServerHandler<TData> {
           let literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
             params[idxCriteriaParam] as string
           ) as
-            | TPrimitiveLiteralCriteriaUnion
+            | TPrimitiveReadLiteralCriteria
             | TStructureReadLiteralCriteria<any>;
           //fusionar la data a los criterios
           literalCriteria = { ...literalCriteria, data };
-          const driverResponse = await mBackend.receiveMockRequest(
+          const repositoryResponse = await mBackend.receiveMockRequest(
             literalCriteria
           );
-          return HttpResponse.json(driverResponse);
+          return HttpResponse.json(repositoryResponse);
         }
       ),
       http.delete(
@@ -125,14 +126,14 @@ export class MockServerHandler<TData> {
           let literalCriteria = eH.unencryptAndUncompressUrlBase64ToObject(
             params[idxCriteriaParam] as string
           ) as
-            | TPrimitiveLiteralCriteriaUnion
+            | TPrimitiveReadLiteralCriteria
             | TStructureReadLiteralCriteria<any>;
           //fusionar la data a los criterios
           literalCriteria = { ...literalCriteria, data };
-          const driverResponse = await mBackend.receiveMockRequest(
+          const repositoryResponse = await mBackend.receiveMockRequest(
             literalCriteria
           );
-          return HttpResponse.json(driverResponse);
+          return HttpResponse.json(repositoryResponse);
         }
       ),
     ];
@@ -158,22 +159,22 @@ export class MockServerHandler<TData> {
   }
   /**... */
   protected initConfig(): void {
-    const { srcSelector, db_collection, nameLogicDriver } = this.option;
+    const { srcSelector, db_collection, nameLogicRepository } = this.option;
     this.keyLogicContext = this.ctrl.keyLogicContext;
     this.db_collection = db_collection;
     if (this.keyLogicContext === "primitive") {
       const ctrl = this.ctrl as unknown as PrimitiveLogicController<any>;
       const mH = ctrl.metadataHandler;
       const pH = mH.getInstanceModuleByModuleContext("provider");
-      const driver = pH.getDriverByNameLogicDriver(
-        nameLogicDriver
-      ) as HttpDriver;
+      const repository = pH.getRepositoryByNameLogicRepository(
+        nameLogicRepository
+      ) as HttpRepository;
       this.urlConfig = {
-        urlActionType: driver.urlActionType,
-        urlPrefix: driver.urlPrefix,
-        urlPostfix: driver.urlPostfix,
-        urlRoot: driver.urlRoot,
-        urlSecretKeyJWT: driver.urlSecretKeyJWT,
+        urlActionType: repository.urlActionType,
+        urlPrefix: repository.urlPrefix,
+        urlPostfix: repository.urlPostfix,
+        urlRoot: repository.urlRoot,
+        urlSecretKeyJWT: repository.urlSecretKeyJWT,
       };
       const metadata = mH.getExtractMetadataByModuleContext("metadata");
       this.keyUrlSrc =
@@ -189,15 +190,15 @@ export class MockServerHandler<TData> {
         "structureModel",
         "provider"
       );
-      const driver = pH.getDriverByNameLogicDriver(
-        nameLogicDriver
-      ) as HttpDriver;
+      const repository = pH.getRepositoryByNameLogicRepository(
+        nameLogicRepository
+      ) as HttpRepository;
       this.urlConfig = {
-        urlActionType: driver.urlActionType,
-        urlPrefix: driver.urlPrefix,
-        urlPostfix: driver.urlPostfix,
-        urlRoot: driver.urlRoot,
-        urlSecretKeyJWT: driver.urlSecretKeyJWT,
+        urlActionType: repository.urlActionType,
+        urlPrefix: repository.urlPrefix,
+        urlPostfix: repository.urlPostfix,
+        urlRoot: repository.urlRoot,
+        urlSecretKeyJWT: repository.urlSecretKeyJWT,
       };
       const metadata = mH.getExtractMetadataByModuleContext(
         "structureModel",

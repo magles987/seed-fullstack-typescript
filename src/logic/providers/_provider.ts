@@ -3,8 +3,8 @@ import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { ActionTwinBeeModule } from "../modules/module";
 import { TKeyLogicContext } from "../modules/shared-types";
 import { ELogicResStatusCode, IResponse } from "../reports/shared-types";
-import { Driver } from "./drivers/_driver";
-import { TDriverList } from "./drivers/shared-types";
+import { Repository } from "./repositories/_repository";
+import { TRepositoryList } from "./repositories/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export abstract class LogicProvider<
@@ -16,21 +16,21 @@ export abstract class LogicProvider<
     return {
       ...superDf,
       globalTolerance: ELogicResStatusCode.INVALID_DATA, //personalizada para provider
-      driverList: [] as Array<Driver | [string, object?]>, //tipado de array especial que indica NO se permite inicializar con vacíos
+      repositoryList: [] as Array<Repository | [string, object?]>, //tipado de array especial que indica NO se permite inicializar con vacíos
     };
   };
   /**... */
-  private _driverList: TDriverList; //tipado de array especial que indica NO se permite inicializar con vacíos
-  public get driverList(): typeof this._driverList {
-    return this._driverList;
+  private _repositoryList: TRepositoryList; //tipado de array especial que indica NO se permite inicializar con vacíos
+  public get repositoryList(): typeof this._repositoryList {
+    return this._repositoryList;
   }
   /**... */
-  protected set driverList(v: typeof this._driverList) {
-    this._driverList = this.util.isArray(v)
+  protected set repositoryList(v: typeof this._repositoryList) {
+    this._repositoryList = this.util.isArray(v)
       ? v
-      : this._driverList !== undefined
-      ? this._driverList
-      : (this.getDefault().driverList as any);
+      : this._repositoryList !== undefined
+      ? this._repositoryList
+      : (this.getDefault().repositoryList as any);
     return;
   }
   /**
@@ -44,14 +44,14 @@ export abstract class LogicProvider<
         | "diccActionConfig"
         | "topMandatoryKeysAction"
         | "topPriorityKeysAction"
-        | "driverList"
+        | "repositoryList"
       >
     >
   ) {
     super("provider", keyLogicContext, baseConfig);
     baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
-    //construcción de driverlist
-    this.driverList = this.buildDriverList(baseConfig.driverList);
+    //construcción de repositorylist
+    this.repositoryList = this.buildRepositoryList(baseConfig.repositoryList);
   }
   protected override getDefault() {
     return LogicProvider.getDefault();
@@ -70,22 +70,24 @@ export abstract class LogicProvider<
     criteriaHandler.data = res.data;
     return;
   }
-  /**crear un nuevo driver a partir de una tupla `[nameDriver, baseConfig]` */
-  protected buildDriverByTupleBase(tBaseConfig: [string, object]): Driver {
+  /**crear un nuevo repository a partir de una tupla `[nameRepository, baseConfig]` */
+  protected buildRepositoryByTupleBase(
+    tBaseConfig: [string, object]
+  ): Repository {
     const GC = this._globalConfig_;
     const { diccModuleFactory } = GC;
     const { primitiveModuleFactory, structureModuleFactory } =
       diccModuleFactory;
-    const [nameDriver, baseConfig] = tBaseConfig;
-    let newDriver: Driver;
+    const [nameRepository, baseConfig] = tBaseConfig;
+    let newRepository: Repository;
     if (this.keyLogicContext === "primitive") {
-      newDriver = primitiveModuleFactory.makeDriverInstance(
-        nameDriver,
+      newRepository = primitiveModuleFactory.makeRepositoryInstance(
+        nameRepository,
         baseConfig
       );
     } else if (this.keyLogicContext === "structure") {
-      newDriver = structureModuleFactory.makeDriverInstance(
-        nameDriver,
+      newRepository = structureModuleFactory.makeRepositoryInstance(
+        nameRepository,
         baseConfig
       );
     } else {
@@ -94,77 +96,80 @@ export abstract class LogicProvider<
         msn: `${this.keyLogicContext} is not logic context key valid`,
       });
     }
-    return newDriver;
+    return newRepository;
   }
   /**... */
-  private buildDriverList(
-    preList: Array<Driver | [string, object?]>
-  ): typeof this._driverList {
+  private buildRepositoryList(
+    preList: Array<Repository | [string, object?]>
+  ): typeof this._repositoryList {
     if (!this.util.isArray(preList, true)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${preList} is not array list of drivers valid`,
+        msn: `${preList} is not array list of repositories valid`,
       });
     }
-    let rDriverList = [] as unknown as typeof this._driverList;
-    preList.forEach((driverOrTBase) => {
-      if (this.util.isInstance(driverOrTBase)) {
-        rDriverList.push(driverOrTBase as Driver);
-      } else if (this.util.isTuple(driverOrTBase, [1, 2])) {
-        const newDriver = this.buildDriverByTupleBase(
-          driverOrTBase as [string, object]
+    let rRepositoryList = [] as unknown as typeof this._repositoryList;
+    preList.forEach((repositoryOrTBase) => {
+      if (this.util.isInstance(repositoryOrTBase)) {
+        rRepositoryList.push(repositoryOrTBase as Repository);
+      } else if (this.util.isTuple(repositoryOrTBase, [1, 2])) {
+        const newRepository = this.buildRepositoryByTupleBase(
+          repositoryOrTBase as [string, object]
         );
-        rDriverList.push(newDriver);
+        rRepositoryList.push(newRepository);
       } else {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
-          msn: `${driverOrTBase} is not driver valid`,
+          msn: `${repositoryOrTBase} is not repository valid`,
         });
       }
     });
-    return rDriverList;
+    return rRepositoryList;
   }
   /**... */
-  public getDriverList(): typeof this._driverList {
-    let drList = [] as any as typeof this._driverList;
-    //clonación especial para garantizar no modificar la lista de drivers original
-    this._driverList.forEach((driver) => drList.push(driver));
+  public getRepositoryList(): typeof this._repositoryList {
+    let drList = [] as any as typeof this._repositoryList;
+    //clonación especial para garantizar no modificar la lista de repositories original
+    this._repositoryList.forEach((repository) => drList.push(repository));
     return drList;
   }
-  /**obtiene la lista de drivers seleccionados
-   * @param namesLogicDriverToFind array de nombres de
-   * Drivers para usar
-   * @returns listado de drivers seleccionados
+  /**obtiene la lista de repositories seleccionados
+   * @param namesLogicRepositoryToFind array de nombres de
+   * Repositories para usar
+   * @returns listado de repositories seleccionados
    */
-  public getDriverByNameLogicDriver(
-    namesLogicDriverToFind: string[]
-  ): typeof this._driverList;
-  /**obtiene la lista de drivers seleccionados
-   * @param nameLogicDriverToFind array de nombres de
-   * Drivers para usar
-   * @returns el driver seleccionado
+  public getRepositoryByNameLogicRepository(
+    namesLogicRepositoryToFind: string[]
+  ): typeof this._repositoryList;
+  /**obtiene la lista de repositories seleccionados
+   * @param nameLogicRepositoryToFind array de nombres de
+   * Repositories para usar
+   * @returns el repository seleccionado
    */
-  public getDriverByNameLogicDriver(nameLogicDriverToFind: string): Driver;
-  public getDriverByNameLogicDriver(
-    namesLogicDriverToFind: string | string[]
+  public getRepositoryByNameLogicRepository(
+    nameLogicRepositoryToFind: string
+  ): Repository;
+  public getRepositoryByNameLogicRepository(
+    namesLogicRepositoryToFind: string | string[]
   ): unknown {
-    namesLogicDriverToFind = Array.isArray(namesLogicDriverToFind)
-      ? namesLogicDriverToFind
-      : [namesLogicDriverToFind];
-    let driversListFound: Driver | typeof this._driverList = [] as any;
-    if (namesLogicDriverToFind.length === 1) {
-      driversListFound = this._driverList.find((d) =>
-        namesLogicDriverToFind.includes(d.nameLogicDriver)
+    namesLogicRepositoryToFind = Array.isArray(namesLogicRepositoryToFind)
+      ? namesLogicRepositoryToFind
+      : [namesLogicRepositoryToFind];
+    let repositoriesListFound: Repository | typeof this._repositoryList =
+      [] as any;
+    if (namesLogicRepositoryToFind.length === 1) {
+      repositoriesListFound = this._repositoryList.find((d) =>
+        namesLogicRepositoryToFind.includes(d.nameLogicRepository)
       ) as any;
     } else {
-      driversListFound = this._driverList.filter((d) =>
-        namesLogicDriverToFind.includes(d.nameLogicDriver)
+      repositoriesListFound = this._repositoryList.filter((d) =>
+        namesLogicRepositoryToFind.includes(d.nameLogicRepository)
       ) as any;
     }
-    return driversListFound;
+    return repositoriesListFound;
   }
   /**... */
-  public static getControlReduceStatusDriverResponse(
+  public static getControlReduceStatusRepositoryResponse(
     cStt: ELogicResStatusCode,
     nStt: ELogicResStatusCode
   ): ELogicResStatusCode {

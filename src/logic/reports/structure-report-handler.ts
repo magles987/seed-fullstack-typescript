@@ -15,7 +15,7 @@ import {
 } from "../modules/shared-types";
 import { LogicMutater } from "../mutaters/_mutater";
 import { LogicProvider } from "../providers/_provider";
-import { TSelectorDataDriver } from "../providers/drivers/shared-types";
+import { TSelectorDataRepository } from "../providers/repositories/shared-types";
 import {
   TKeyStructureDeepProviderModuleContext,
   TKeyStructureProviderModuleContext,
@@ -28,7 +28,7 @@ import {
   TStructureResponseForMutate,
   Trf_IStructureResponse,
   ELogicResStatusCode,
-  IDriverResponse,
+  IRepositoryResponse,
 } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**refactorizacion de la clase */
@@ -229,15 +229,15 @@ export class StructureReportHandler
     rootRes.data = newData;
     return rootRes;
   }
-  public override adaptDriverResponseToResponse(
-    driverResponses: IDriverResponse | IDriverResponse[],
+  public override adaptRepositoryResponseToResponse(
+    repositoryResponses: IRepositoryResponse | IRepositoryResponse[],
     response: IStructureResponse,
-    selectorDataDriver: TSelectorDataDriver
+    selectorDataRepository: TSelectorDataRepository
   ): IStructureResponse {
-    return super.adaptDriverResponseToResponse(
-      driverResponses,
+    return super.adaptRepositoryResponseToResponse(
+      repositoryResponses,
       response,
-      selectorDataDriver
+      selectorDataRepository
     ) as IStructureResponse;
   }
   /**... */

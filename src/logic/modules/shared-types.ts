@@ -8,7 +8,7 @@ export type TKeyActionModule =
 /**clave identificadora de modulos de alto perfil en base a funcion de cursor*/
 export type TKeyHandlerModule = "criteria" | "metadata" | "error" | "report";
 /**clave identificadora de modulos de alto perfil en base personalizado*/
-export type TKeyExclusiveModule = "middleware" | "driver" | "test";
+export type TKeyExclusiveModule = "middleware" | "repository" | "test";
 /**clave identificadora de modulos con reportes de respuesta asignados */
 export type TKeyModuleWithReport = TKeyActionModule;
 /**Tipos de modulos para la logica de negocio*/
@@ -62,5 +62,5 @@ export type TDataType =
   | "any" //⚠ Representa cualquier valor **Usar con precaucion**
   | "_system"; //❗ representa un tipo reservado par ael sistema (id, path o cualquier otro)
 /**seleccion de nombre del recurso (singular o plural) para
- * la comunicacion con los drivers de gestio de peticion */
+ * la comunicacion con los repositories de gestio de peticion */
 export type TKeySrcSelector = "singular" | "plural";

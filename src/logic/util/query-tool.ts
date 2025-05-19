@@ -3,7 +3,7 @@ import { TKeyLogicContext } from "../modules/shared-types";
 import {
   ELogicOperatorForCondition,
   ELogicOperatorForGroup,
-  IGenericDriverCriteria,
+  IGenericRepositoryCriteria,
   IModifyCriteria,
   IPrimitiveModifyCriteria,
   IPrimitiveReadCriteria,
@@ -199,7 +199,7 @@ export class QueryTool {
    */
   public async orderByCriteria(
     registers: any[],
-    literalCriteria: IGenericDriverCriteria
+    literalCriteria: IGenericRepositoryCriteria
   ): Promise<any[]> {
     if (!this.util.isArray(registers)) return registers;
     const { sort } = literalCriteria;
@@ -262,7 +262,7 @@ export class QueryTool {
    */
   public async pageByCriteria(
     registers: any[],
-    literalCriteria: IGenericDriverCriteria
+    literalCriteria: IGenericRepositoryCriteria
   ): Promise<any[]> {
     return await this.pageByCriteriaModule(registers, literalCriteria);
   }
@@ -318,7 +318,7 @@ export class QueryTool {
     literalCriteria:
       | IReadCriteria<any>
       | IModifyCriteria<any>
-      | IGenericDriverCriteria
+      | IGenericRepositoryCriteria
   ): Promise<any[]> {
     if (!this.util.isArray(registers)) return registers;
     const {
@@ -350,7 +350,7 @@ export class QueryTool {
   /**... */
   // public async primitiveFilterByBagCriteria(
   //   registers: any[],
-  //   literalCriteria: IBagForDriver["literalCriteria"]
+  //   literalCriteria: IBagForRepository["literalCriteria"]
   // ): Promise<any[]> {
   //   const { query, keyLogicContext } =
   //     literalCriteria as IPrimitiveReadCriteria;
@@ -361,7 +361,7 @@ export class QueryTool {
   /**... */
   // public async primitiveFindByBagCriteria(
   //   registers: any[],
-  //   literalCriteria: IBagForDriver["literalCriteria"]
+  //   literalCriteria: IBagForRepository["literalCriteria"]
   // ): Promise<any> {
   //   const { query, keyLogicContext } =
   //     literalCriteria as IPrimitiveReadCriteria;
@@ -373,7 +373,7 @@ export class QueryTool {
   /**... */
   // public async structureFilterByBagCriteria(
   //   registers: any[],
-  //   literalCriteria: IBagForDriver["literalCriteria"]
+  //   literalCriteria: IBagForRepository["literalCriteria"]
   // ): Promise<any[]> {
   //   const { query, keyLogicContext } =
   //     literalCriteria as IStructureModelReadCriteria<any>;
@@ -384,7 +384,7 @@ export class QueryTool {
   // /**... */
   // public async structureFindByBagCriteria(
   //   registers: any[],
-  //   literalCriteria: IBagForDriver["literalCriteria"]
+  //   literalCriteria: IBagForRepository["literalCriteria"]
   // ): Promise<any> {
   //   const { query, keyLogicContext } =
   //     literalCriteria as IStructureModelReadCriteria<any>;

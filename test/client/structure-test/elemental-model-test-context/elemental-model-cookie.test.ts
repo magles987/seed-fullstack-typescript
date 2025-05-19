@@ -15,7 +15,7 @@ import {
   ELogicResStatusCode,
   IStructureResponse,
 } from "../../../../src/logic/reports/shared-types";
-import { CookieDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/cookie/cookie-driver";
+import { CookieRepository } from "../../../../src/logic/providers/repositories/client/web/local-repositories/cookie/cookie-repository";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const GC = startTwinBee({
   environment: {
@@ -49,10 +49,10 @@ describe("Model: elemental-model-test", async () => {
   //inicial test
   const ctrl = getElementalModelTestCtrl();
   const util = ctrl.twinBeeUtil;
-  const nameLogicDriver = CookieDriver.getNameLogicDriver();
+  const nameLogicRepository = CookieRepository.getNameLogicRepository();
   const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
   commonBaseCriteria.diccGlobalAC = {
-    structureProvider: { singleRunDriver: { nameLogicDriver } },
+    structureProvider: { singleRunRepository: { nameLogicRepository } },
   };
   describe("base: data valid", async () => {
     const db = bd_valid;

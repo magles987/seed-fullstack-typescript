@@ -30,12 +30,12 @@ import {
   TModelMutateBaseConfig,
   IStructureMutateContextInstance,
 } from "../mutaters/shared-types";
-import { AxiosDriver } from "../providers/drivers/client/web/https/axios/axios-driver";
-import { FetchDriver } from "../providers/drivers/client/web/https/fetch/fetch-driver";
-import { CookieDriver } from "../providers/drivers/client/web/local-repositories/cookie/cookie-driver";
-import { IdbDriver } from "../providers/drivers/client/web/local-repositories/idb/idb-driver";
-import { StorageDriver } from "../providers/drivers/client/web/local-repositories/storage/storage-driver";
-import { TDriverList } from "../providers/drivers/shared-types";
+import { AxiosRepository } from "../providers/repositories/client/web/https/axios/axios-repository";
+import { FetchRepository } from "../providers/repositories/client/web/https/fetch/fetch-repository";
+import { CookieRepository } from "../providers/repositories/client/web/local-repositories/cookie/cookie-repository";
+import { IdbRepository } from "../providers/repositories/client/web/local-repositories/idb/idb-repository";
+import { StorageRepository } from "../providers/repositories/client/web/local-repositories/storage/storage-repository";
+import { TRepositoryList } from "../providers/repositories/shared-types";
 import { PrimitiveLogicProvider } from "../providers/primitive-provider";
 import {
   IPrimitiveProviderContext,
@@ -76,22 +76,23 @@ export type TKeyFullDiccRequestAction<
 export type TRequestValInstance<
   TRequestVal extends RequestLogicValidation = RequestLogicValidation
 > = TRequestVal;
-export type TCookieDriverInstance<
-  TCookieDriver extends CookieDriver = CookieDriver
-> = TCookieDriver;
-export type TStorageDriverInstance<
-  TStorageDriver extends StorageDriver = StorageDriver
-> = TStorageDriver;
-export type TIdbDriverInstance<TIdbDriver extends IdbDriver = IdbDriver> =
-  TIdbDriver;
-export type TFetchDriverInstance<
-  TFetchDriver extends FetchDriver = FetchDriver
-> = TFetchDriver;
-export type TAxiosDriverInstance<
-  TAxiosDriver extends AxiosDriver = AxiosDriver
-> = TAxiosDriver;
-/**tipado para la lista de instancias de drivers a usar en el controller */
-export type TBaseDriversList = TDriverList;
+export type TCookieRepositoryInstance<
+  TCookieRepository extends CookieRepository = CookieRepository
+> = TCookieRepository;
+export type TStorageRepositoryInstance<
+  TStorageRepository extends StorageRepository = StorageRepository
+> = TStorageRepository;
+export type TIdbRepositoryInstance<
+  TIdbRepository extends IdbRepository = IdbRepository
+> = TIdbRepository;
+export type TFetchRepositoryInstance<
+  TFetchRepository extends FetchRepository = FetchRepository
+> = TFetchRepository;
+export type TAxiosRepositoryInstance<
+  TAxiosRepository extends AxiosRepository = AxiosRepository
+> = TAxiosRepository;
+/**tipado para la lista de instancias de repositories a usar en el controller */
+export type TBaseRepositoriesList = TRepositoryList;
 //████ PRIMITIVE ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
 export type TPrimitiveMutateInstance<

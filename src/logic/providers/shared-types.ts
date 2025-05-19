@@ -28,7 +28,7 @@ export type TPrimitiveProviderBaseConfig = Partial<
 > &
   Pick<
     ReturnType<PrimitiveLogicProvider["getDefault"]>,
-    "driverList" //❗obligatorio❗
+    "repositoryList" //❗obligatorio❗
   >;
 /** */
 export type TPrimitiveProviderDiccACForCriteria<TIDiccPrimitiveProviderAC> =
@@ -70,7 +70,7 @@ export type TStructureProviderBaseConfig = Partial<
 > &
   Pick<
     ReturnType<StructureLogicProvider["getDefault"]>,
-    "driverList" //❗obligatorio❗
+    "repositoryList" //❗obligatorio❗
   >;
 /** */
 export type TStructureModelProviderDiccACForCriteria<

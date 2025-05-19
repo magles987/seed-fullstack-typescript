@@ -8,19 +8,19 @@ import { Trf_StructureLogicMetadataHandler } from "../meta/structure-metadata-ha
 import { TwinBeeModule } from "../modules/module";
 import { IStructureResponse } from "../reports/shared-types";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { Driver } from "./drivers/_driver";
+import { Repository } from "./repositories/_repository";
 import { LogicProvider } from "./_provider";
 import {
   TKeyStructureProviderModuleContext,
   TStructureProviderBaseConfig,
 } from "./shared-types";
-import { TSelectorDataDriver } from "./drivers/shared-types";
+import { TSelectorDataRepository } from "./repositories/shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**define el diccionario de configuraciones de acciones del provider */
 export interface IDiccStructureProviderActionConfig {
-  singleRunDriver: {
-    nameLogicDriver: string;
-    opDriver?: Partial<Driver["getDefault"]>;
+  singleRunRepository: {
+    nameLogicRepository: string;
+    opRepository?: Partial<Repository["getDefault"]>;
   };
 }
 /**claves identificadoras del diccionario
@@ -46,12 +46,12 @@ export class StructureLogicProvider<
     const superDf = LogicProvider.getDefault();
     return {
       ...superDf,
-      driverList: [...superDf.driverList], //as [Driver, ...Driver[]], //tipado de array especial que indica NO se permite inicializar con vacíos,
+      repositoryList: [...superDf.repositoryList], //as [Repository, ...Repository[]], //tipado de array especial que indica NO se permite inicializar con vacíos,
       diccActionConfig: {
         ...(superDf.diccActionConfig as any),
-        singleRunDriver: {
-          nameLogicDriver: "",
-          opDriver: {},
+        singleRunRepository: {
+          nameLogicRepository: "",
+          opRepository: {},
         },
       } as IDiccStructureProviderActionConfig,
       topPriorityKeysAction: [
@@ -185,35 +185,36 @@ export class StructureLogicProvider<
     return;
   }
   //================================================================
-  public async singleRunDriver(
+  public async singleRunRepository(
     criteriaHandler: StructureCriteriaHandler<any>
   ): Promise<IStructureResponse> {
     const { data } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
-        "singleRunDriver"
+        "singleRunRepository"
       );
-    let { nameLogicDriver, opDriver } = actionConfig;
-    const selectorDataDriver: TSelectorDataDriver = "first";
-    const driver = this.getDriverByNameLogicDriver(nameLogicDriver);
-    if (!this.util.isInstance(driver)) {
+    let { nameLogicRepository, opRepository } = actionConfig;
+    const selectorDataRepository: TSelectorDataRepository = "first";
+    const repository =
+      this.getRepositoryByNameLogicRepository(nameLogicRepository);
+    if (!this.util.isInstance(repository)) {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${driver} is not driver valid`,
+        msn: `${repository} is not repository valid`,
       });
     }
-    if (this.util.isObject(opDriver)) driver.mutateProps(opDriver);
+    if (this.util.isObject(opRepository)) repository.mutateProps(opRepository);
     const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    let driverResponse = await driver.sendRequestByCriteriaModule(
+    let repositoryResponse = await repository.sendRequestByCriteriaModule(
       criteriaHandler.getLiteral()
     );
     res = rH.mutateResponse(res, {
-      ...rH.adaptDriverResponseToResponse(
-        driverResponse,
+      ...rH.adaptRepositoryResponseToResponse(
+        repositoryResponse,
         res,
-        selectorDataDriver
+        selectorDataRepository
       ),
     });
     return res;

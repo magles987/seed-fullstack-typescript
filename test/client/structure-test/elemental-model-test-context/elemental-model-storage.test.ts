@@ -15,7 +15,7 @@ import {
   ELogicResStatusCode,
   IStructureResponse,
 } from "../../../../src/logic/reports/shared-types";
-import { StorageDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/storage/storage-driver";
+import { StorageRepository } from "../../../../src/logic/providers/repositories/client/web/local-repositories/storage/storage-repository";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const GC = startTwinBee({
   environment: {
@@ -70,10 +70,10 @@ describe("Model: elemental-model-test", async () => {
   //inicial test
   const ctrl = getElementalModelTestCtrl();
   const util = ctrl.twinBeeUtil;
-  const nameLogicDriver = StorageDriver.getNameLogicDriver();
+  const nameLogicRepository = StorageRepository.getNameLogicRepository();
   const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
   commonBaseCriteria.diccGlobalAC = {
-    structureProvider: { singleRunDriver: { nameLogicDriver } },
+    structureProvider: { singleRunRepository: { nameLogicRepository } },
   };
   describe("base: data valid", async () => {
     const db = bd_valid;

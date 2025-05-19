@@ -1,4 +1,4 @@
-import { StorageDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/storage/storage-driver";
+import { StorageRepository } from "../../../../src/logic/providers/repositories/client/web/local-repositories/storage/storage-repository";
 import { BasicModelTest, getBasicModelTestCtrl } from "./basic-model-test";
 import {
   ELogicResStatusCode,
@@ -13,12 +13,12 @@ export async function runToLocalStorage() {
   const screenBrowserLog = ScreenBrowserResponseUtil.getInstance();
   const ctrl = getBasicModelTestCtrl();
   const util = ctrl.twinBeeUtil;
-  const nameLogicDriver = StorageDriver.getNameLogicDriver();
+  const nameLogicRepository = StorageRepository.getNameLogicRepository();
   const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
   commonBaseCriteria.diccGlobalAC = {
-    structureProvider: { singleRunDriver: { nameLogicDriver } },
+    structureProvider: { singleRunRepository: { nameLogicRepository } },
   };
-  await StorageDriver.emptyAllStorage();
+  await StorageRepository.emptyAllStorage();
   let res: IStructureResponse;
   //████ Creación y comprobación inicial ████████████████████████████████████████████████████████████
   //====Crear todos los registros===========================

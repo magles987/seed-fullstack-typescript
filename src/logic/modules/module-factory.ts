@@ -23,12 +23,12 @@ import {
   TPrimitiveMutateBaseConfig,
   TFieldMutateBaseConfig,
 } from "../mutaters/shared-types";
-import { Driver } from "../providers/drivers/_driver";
-import { AxiosDriver } from "../providers/drivers/client/web/https/axios/axios-driver";
-import { FetchDriver } from "../providers/drivers/client/web/https/fetch/fetch-driver";
-import { CookieDriver } from "../providers/drivers/client/web/local-repositories/cookie/cookie-driver";
-import { IdbDriver } from "../providers/drivers/client/web/local-repositories/idb/idb-driver";
-import { StorageDriver } from "../providers/drivers/client/web/local-repositories/storage/storage-driver";
+import { Repository } from "../providers/repositories/_repository";
+import { AxiosRepository } from "../providers/repositories/client/web/https/axios/axios-repository";
+import { FetchRepository } from "../providers/repositories/client/web/https/fetch/fetch-repository";
+import { CookieRepository } from "../providers/repositories/client/web/local-repositories/cookie/cookie-repository";
+import { IdbRepository } from "../providers/repositories/client/web/local-repositories/idb/idb-repository";
+import { StorageRepository } from "../providers/repositories/client/web/local-repositories/storage/storage-repository";
 import { PrimitiveLogicProvider } from "../providers/primitive-provider";
 import {
   TPrimitiveProviderBaseConfig,
@@ -55,15 +55,15 @@ import { TwinBeeModule } from "./module";
  * ...
  */
 export abstract class ModuleFactory {
-  /**array con los nombres de drivers predefinidos */
-  private get dfNameDriverList() {
+  /**array con los nombres de repositories predefinidos */
+  private get dfNameRepositoryList() {
     //❗Debe ser en get virtual OBLIGATORIO❗
     return [
-      CookieDriver.getNameLogicDriver(),
-      StorageDriver.getNameLogicDriver(),
-      IdbDriver.getNameLogicDriver(),
-      FetchDriver.getNameLogicDriver(),
-      AxiosDriver.getNameLogicDriver(),
+      CookieRepository.getNameLogicRepository(),
+      StorageRepository.getNameLogicRepository(),
+      IdbRepository.getNameLogicRepository(),
+      FetchRepository.getNameLogicRepository(),
+      AxiosRepository.getNameLogicRepository(),
     ];
   }
   /**... */
@@ -74,69 +74,80 @@ export abstract class ModuleFactory {
     baseConfig: unknown
   ): unknown;
   /**... */
-  public makeDriverInstance(nameDriver: string, baseConfig?: unknown): Driver {
+  public makeRepositoryInstance(
+    nameRepository: string,
+    baseConfig?: unknown
+  ): Repository {
     const util = TwinBeeModule.util;
-    let driver: Driver;
+    let repository: Repository;
     const isBaseConfig = util.isObject(baseConfig);
-    if (nameDriver === CookieDriver.getNameLogicDriver()) {
-      driver = isBaseConfig ? new CookieDriver(baseConfig) : new CookieDriver();
-    } else if (nameDriver === StorageDriver.getNameLogicDriver()) {
-      driver = isBaseConfig
-        ? new StorageDriver()
-        : new StorageDriver(baseConfig);
-    } else if (nameDriver === IdbDriver.getNameLogicDriver()) {
-      driver = isBaseConfig ? new IdbDriver(baseConfig) : new IdbDriver();
-    } else if (nameDriver === FetchDriver.getNameLogicDriver()) {
-      driver = isBaseConfig ? new FetchDriver(baseConfig) : new FetchDriver();
-    } else if (nameDriver === AxiosDriver.getNameLogicDriver()) {
-      driver = isBaseConfig ? new AxiosDriver(baseConfig) : new AxiosDriver();
+    if (nameRepository === CookieRepository.getNameLogicRepository()) {
+      repository = isBaseConfig
+        ? new CookieRepository(baseConfig)
+        : new CookieRepository();
+    } else if (nameRepository === StorageRepository.getNameLogicRepository()) {
+      repository = isBaseConfig
+        ? new StorageRepository()
+        : new StorageRepository(baseConfig);
+    } else if (nameRepository === IdbRepository.getNameLogicRepository()) {
+      repository = isBaseConfig
+        ? new IdbRepository(baseConfig)
+        : new IdbRepository();
+    } else if (nameRepository === FetchRepository.getNameLogicRepository()) {
+      repository = isBaseConfig
+        ? new FetchRepository(baseConfig)
+        : new FetchRepository();
+    } else if (nameRepository === AxiosRepository.getNameLogicRepository()) {
+      repository = isBaseConfig
+        ? new AxiosRepository(baseConfig)
+        : new AxiosRepository();
     } else {
       throw new LogicError({
         code: ELogicCodeError.MODULE_ERROR,
-        msn: `${nameDriver} is not driver name valid`,
+        msn: `${nameRepository} is not repository name valid`,
       });
     }
-    return driver;
+    return repository;
   }
 
   /**... */
-  protected makeDriversFromList(
-    driverList: Driver[] | Array<[string, object]> | string[]
-  ): Driver[] {
+  protected makeRepositoriesFromList(
+    repositoryList: Repository[] | Array<[string, object]> | string[]
+  ): Repository[] {
     const util = TwinBeeModule.util;
-    const dfNameList = this.dfNameDriverList;
-    const dfDriverList = dfNameList.map((nameDriver) =>
-      this.makeDriverInstance(nameDriver)
+    const dfNameList = this.dfNameRepositoryList;
+    const dfRepositoryList = dfNameList.map((nameRepository) =>
+      this.makeRepositoryInstance(nameRepository)
     );
-    let mergedDriverList: Driver[] = [];
-    if (!util.isArray(driverList)) {
-      mergedDriverList = dfDriverList;
+    let mergedRepositoryList: Repository[] = [];
+    if (!util.isArray(repositoryList)) {
+      mergedRepositoryList = dfRepositoryList;
     } else {
-      mergedDriverList = driverList.map((dr) => {
+      mergedRepositoryList = repositoryList.map((dr) => {
         if (util.isInstance(dr)) {
           return dr;
         } else if (util.isTuple(dr, [1, 2])) {
-          const [nameDriver, baseConfig] = dr;
-          return this.makeDriverInstance(nameDriver, baseConfig);
+          const [nameRepository, baseConfig] = dr;
+          return this.makeRepositoryInstance(nameRepository, baseConfig);
         } else if (util.isString(dr)) {
-          return this.makeDriverInstance(dr);
+          return this.makeRepositoryInstance(dr);
         } else {
           throw new LogicError({
             code: ELogicCodeError.MODULE_ERROR,
-            msn: `${dr} is not driver or driver name valid`,
+            msn: `${dr} is not repository or repository name valid`,
           });
         }
       });
       //eliminar duplicados comparados con los default
-      const dfDriver_f = dfDriverList.filter(
+      const dfRepository_f = dfRepositoryList.filter(
         (dfDr) =>
-          !mergedDriverList.some(
-            (mDr) => mDr.nameLogicDriver === dfDr.nameLogicDriver
+          !mergedRepositoryList.some(
+            (mDr) => mDr.nameLogicRepository === dfDr.nameLogicRepository
           )
       );
-      mergedDriverList = [...mergedDriverList, ...dfDriver_f];
+      mergedRepositoryList = [...mergedRepositoryList, ...dfRepository_f];
     }
-    return mergedDriverList;
+    return mergedRepositoryList;
   }
 }
 /** *Singleton*
@@ -239,10 +250,12 @@ export class PrimitiveModuleFactory extends ModuleFactory {
       moduleInstance = isBaseConfig
         ? new PrimitiveLogicProvider({
             ...(baseConfig as any),
-            driverList: this.makeDriversFromList(baseConfig["driverList"]),
+            repositoryList: this.makeRepositoriesFromList(
+              baseConfig["repositoryList"]
+            ),
           })
         : new PrimitiveLogicProvider({
-            driverList: this.makeDriversFromList(undefined),
+            repositoryList: this.makeRepositoriesFromList(undefined),
           });
     } else if (keyModuleContext === "primitiveCtrl") {
       moduleInstance = isBaseConfig
@@ -378,10 +391,12 @@ export class StructureModuleFactory extends ModuleFactory {
       moduleInstance = isBaseConfig
         ? new StructureLogicProvider({
             ...(baseConfig as any),
-            driverList: this.makeDriversFromList(baseConfig["driverList"]),
+            repositoryList: this.makeRepositoriesFromList(
+              baseConfig["repositoryList"]
+            ),
           })
         : new StructureLogicProvider({
-            driverList: this.makeDriversFromList(undefined),
+            repositoryList: this.makeRepositoriesFromList(undefined),
           });
     } else if (keyModuleContext === "structureCtrl") {
       moduleInstance = isBaseConfig

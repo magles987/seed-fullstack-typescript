@@ -183,8 +183,8 @@ export interface ICriteria<
    */
   aTGlobalActionConfig: TTGlobalActionConfig<TDiccGlobalAC>[];
   /**array de tuplas con las funciones personalizadas diseñadas
-   * específicamente para la consulta de un driver especifico */
-  aTCustomQueryDriverFn: Array<[string, Function]>;
+   * específicamente para la consulta de un repository especifico */
+  aTCustomQueryRepositoryFn: Array<[string, Function]>;
   /**adiciones de url **ordenadas**.
    *
    * ejemplo basico:
@@ -239,9 +239,9 @@ export type TActionConfigFn = (
   criteriaHandler: CriteriaHandler<any>
 ) => Promise<IResponse>;
 
-//==== Para drivers ============================================================
+//==== Para repositories ============================================================
 /**... */
-export interface IGenericDriverCriteria
+export interface IGenericRepositoryCriteria
   extends IGenericCriteria,
     Partial<
       Pick<
@@ -250,8 +250,8 @@ export interface IGenericDriverCriteria
       >
     >,
     Partial<Pick<IModifyCriteria<any>, "modifyType" | "isCreateOrUpdate">> {
-  /**función personalizada diseñada específicamente para la consulta de un driver especifico */
-  customQueryDriverFn?: Function;
+  /**función personalizada diseñada específicamente para la consulta de un repository especifico */
+  customQueryRepositoryFn?: Function;
 }
 
 //====Primitive===================================================================================================================
@@ -498,7 +498,7 @@ export type TPrimitiveActionConfigFn<TValue> = (
   criteriaHandler: PrimitiveCriteriaHandler<TValue>
 ) => Promise<IPrimitiveResponse>;
 
-//==== Primitive para drivers ============================================================
+//==== Primitive para repositories ============================================================
 
 export type TPrimitiveReadLiteralCriteria = IPrimitiveReadCriteria;
 export type TPrimitiveModifyLiteralCriteria = IPrimitiveModifyCriteria;
@@ -942,7 +942,7 @@ export type TStructureActionConfigFn<TModel> = (
   criteriaHandler: StructureCriteriaHandler<TModel>
 ) => Promise<IStructureResponse>;
 
-//==== Structure para drivers ============================================================
+//==== Structure para repositories ============================================================
 
 export type TStructureReadLiteralCriteria<TModel> =
   IStructureModelReadCriteria<TModel>;

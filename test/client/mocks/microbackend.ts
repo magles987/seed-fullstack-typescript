@@ -4,7 +4,7 @@ import {
 } from "../../../src/logic/modules/shared-types";
 import {
   ELogicResStatusCode,
-  IDriverResponse,
+  IRepositoryResponse,
 } from "../../../src/logic/reports/shared-types";
 import { QueryTool } from "../../../src/logic/util/query-tool";
 import {
@@ -16,10 +16,10 @@ import {
   UtilGeneratorId,
 } from "../../../src/logic/util/util-generator-id";
 import {
-  TPrimitiveMockCustomQueryDriverFn,
-  TStructureMockCustomQueryDriverFn,
+  TPrimitiveMockCustomQueryRepositoryFn,
+  TStructureMockCustomQueryRepositoryFn,
 } from "./shared-types";
-import {} from "../../../src/logic/providers/drivers/shared-types";
+import {} from "../../../src/logic/providers/repositories/shared-types";
 import { TwinBeeModule } from "../../../src/logic/modules/module";
 import {
   TPrimitiveLiteralCriteriaUnion,
@@ -55,8 +55,8 @@ export class MicroBackend
       keyId: TwinBeeModule._globalConfig_.keyId,
       /**función de consulta personalizada */
       customQueryFn: undefined as unknown as
-        | TPrimitiveMockCustomQueryDriverFn
-        | TStructureMockCustomQueryDriverFn,
+        | TPrimitiveMockCustomQueryRepositoryFn
+        | TStructureMockCustomQueryRepositoryFn,
     };
   };
   /**@returns todas las constantes a usar en instancias de esta clase*/
@@ -78,7 +78,7 @@ export class MicroBackend
       ? this._db_collection
       : this.getDefault().db_collection;
   }
-  /** el nombre de identificación del driver (debe ser único entre grupos) */
+  /** el nombre de identificación del repository (debe ser único entre grupos) */
   private _srcSelector: TKeySrcSelector;
   public get srcSelector(): TKeySrcSelector {
     return this._srcSelector;
@@ -220,19 +220,19 @@ export class MicroBackend
     literalCriteria:
       | TPrimitiveLiteralCriteriaUnion
       | TStructureLiteralCriteriaUnion<any>
-  ): Promise<IDriverResponse> {
-    let driverRes: IDriverResponse;
+  ): Promise<IRepositoryResponse> {
+    let repositoryRes: IRepositoryResponse;
     try {
       let rxData = await this.selectCRUDRun(literalCriteria);
-      driverRes = this.buildMicrobackendResponse(literalCriteria, rxData);
+      repositoryRes = this.buildMicrobackendResponse(literalCriteria, rxData);
     } catch (error) {
-      driverRes = this.buildMicrobackendResponse(
+      repositoryRes = this.buildMicrobackendResponse(
         literalCriteria,
         this.util.dfValue,
         error
       );
     }
-    return driverRes;
+    return repositoryRes;
   }
   /**construir id si es necesario */
   protected buildStructureMockId(
@@ -267,37 +267,37 @@ export class MicroBackend
       | TStructureLiteralCriteriaUnion<any>,
     rxData: any,
     error?: any
-  ): IDriverResponse {
-    let driverRes = {
+  ): IRepositoryResponse {
+    let repositoryRes = {
       data: rxData,
       status: ELogicResStatusCode.SUCCESS,
       msn: ``,
       error,
-    } as IDriverResponse;
+    } as IRepositoryResponse;
     const { expectedDataType } = literalCriteria;
     const dfValue = this.util.dfValue;
     if (this.util.isUndefinedOrNull(error)) {
       //verificación de data recibida
       if (this.checkRxData(rxData, expectedDataType)) {
-        driverRes.data = rxData;
-        driverRes.status = ELogicResStatusCode.SUCCESS;
-        driverRes.msn = `ok`;
+        repositoryRes.data = rxData;
+        repositoryRes.status = ELogicResStatusCode.SUCCESS;
+        repositoryRes.msn = `ok`;
       } else {
-        driverRes.data = dfValue;
-        driverRes.status = ELogicResStatusCode.BAD;
-        driverRes.msn = `data has not been as expected`;
+        repositoryRes.data = dfValue;
+        repositoryRes.status = ELogicResStatusCode.BAD;
+        repositoryRes.msn = `data has not been as expected`;
       }
     } else {
-      driverRes.data = dfValue;
-      driverRes.status = ELogicResStatusCode.ERROR;
-      driverRes.error = error;
-      driverRes.msn = this.util.isObject(error)
-        ? (error as Error).message ?? `internal error in local driver`
+      repositoryRes.data = dfValue;
+      repositoryRes.status = ELogicResStatusCode.ERROR;
+      repositoryRes.error = error;
+      repositoryRes.msn = this.util.isObject(error)
+        ? (error as Error).message ?? `internal error in local repository`
         : this.util.isString(error)
         ? error
-        : `internal error in local driver`;
+        : `internal error in local repository`;
     }
-    return driverRes;
+    return repositoryRes;
   }
   //████ CRUD by Bag ████████████████████████████████████████████████████████████
   /**... */

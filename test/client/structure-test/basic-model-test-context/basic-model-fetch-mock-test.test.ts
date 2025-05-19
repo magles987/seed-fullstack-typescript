@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import startTwinBee from "../../../../src/start-twinbee";
 //imports secundarios
-import { FetchDriver } from "../../../../src/logic/providers/drivers/client/web/https/fetch/fetch-driver";
+import { FetchRepository } from "../../../../src/logic/providers/repositories/client/web/https/fetch/fetch-repository";
 import {
   ELogicResStatusCode,
   IStructureResponse,
@@ -22,16 +22,16 @@ const GC = startTwinBee({
 describe("Model: basic-model-test", async () => {
   const ctrl = getBasicModelTestCtrl();
   const util = ctrl.twinBeeUtil;
-  const nameLogicDriver = FetchDriver.getNameLogicDriver();
+  const nameLogicRepository = FetchRepository.getNameLogicRepository();
   const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
   commonBaseCriteria.diccGlobalAC = {
-    structureProvider: { singleRunDriver: { nameLogicDriver } },
+    structureProvider: { singleRunRepository: { nameLogicRepository } },
   };
   describe("base: data valid", async () => {
     const mSH = new MockServerHandler<BasicModelTest>(ctrl as any, {
       srcSelector: "plural",
       db_collection: bd_valid,
-      nameLogicDriver,
+      nameLogicRepository,
     });
     const db = mSH.getDBCollection();
     it("action request: readAll", async () => {

@@ -5,9 +5,9 @@ import { IResponse, ELogicResStatusCode } from "../reports/shared-types";
 import { ActionTwinBeeModule, TwinBeeModule } from "../modules/module";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /**calves identificadoras del los
- * drivers (librerias) a usar
+ * repositories (librerias) a usar
  * para validaciones genericas */
-type TKeyGenericMutateDrivers = "Util" | "Lodash";
+type TKeyGenericMutateRepositories = "Util" | "Lodash";
 /**refactorizacion de la clase */
 export type Trf_LogicMutater = LogicMutater<any>;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -54,30 +54,30 @@ export abstract class LogicMutater<
    * @returns el diccionario con las funciones
    */
   public static getDiccGenericMutate(
-    dfKeyDriver: TKeyGenericMutateDrivers = "Util"
+    dfKeyRepository: TKeyGenericMutateRepositories = "Util"
   ) {
     const util = TwinBeeModule.util;
     return {
       /**formate con trim
        * @param v el dato a formatear
-       * @param keyDriver la clave identificadora de
+       * @param keyRepository la clave identificadora de
        * la libreria a usar para validar
        * @returns el dato formateado
        */
       stringTrim: <TData>(
         v: TData,
-        keyDriver: TKeyGenericMutateDrivers = dfKeyDriver
+        keyRepository: TKeyGenericMutateRepositories = dfKeyRepository
       ) => {
         let r = v as string;
         if (!util.isString(v, true)) return r;
-        if (keyDriver === "Util") {
+        if (keyRepository === "Util") {
           r = r.trim();
-        } else if (keyDriver === "Lodash") {
+        } else if (keyRepository === "Lodash") {
           r = r.trim();
         } else {
           throw new LogicError({
             code: ELogicCodeError.MODULE_ERROR,
-            msn: `${keyDriver} is not key driver valid`,
+            msn: `${keyRepository} is not key repository valid`,
           });
         }
         return r;

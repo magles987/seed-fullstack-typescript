@@ -1,4 +1,4 @@
-import { CookieDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/cookie/cookie-driver";
+import { CookieRepository } from "../../../../src/logic/providers/repositories/client/web/local-repositories/cookie/cookie-repository";
 import {
   IStructureResponse,
   ELogicResStatusCode,
@@ -16,12 +16,12 @@ export async function runToLocalCookie() {
   const ctrl = getElementalModelTestCtrl();
   const util = ctrl.twinBeeUtil;
   const screenBrowserLog = ScreenBrowserResponseUtil.getInstance();
-  const nameLogicDriver = CookieDriver.getNameLogicDriver();
+  const nameLogicRepository = CookieRepository.getNameLogicRepository();
   const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
   commonBaseCriteria.diccGlobalAC = {
-    structureProvider: { singleRunDriver: { nameLogicDriver } },
+    structureProvider: { singleRunRepository: { nameLogicRepository } },
   };
-  await CookieDriver.emptyAllCookies();
+  await CookieRepository.emptyAllCookies();
   let res: IStructureResponse;
   //████ Creación y comprobación inicial ████████████████████████████████████████████████████████████
   //====Crear todos los registros===========================

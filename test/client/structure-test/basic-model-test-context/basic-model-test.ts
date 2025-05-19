@@ -13,11 +13,11 @@ import {
   TStructureCtrlInstance,
 } from "../../../../src/logic/meta/base-shared-types";
 import { StructureLogicMetadataHandler } from "../../../../src/logic/meta/structure-metadata-handler";
-import { FetchDriver } from "../../../../src/logic/providers/drivers/client/web/https/fetch/fetch-driver";
-import { CookieDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/cookie/cookie-driver";
-import { TStructureCookieCustomQueryDriverFn } from "../../../../src/logic/providers/drivers/client/web/local-repositories/cookie/shared-types";
-import { IdbDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/idb/idb-driver";
-import { StorageDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/storage/storage-driver";
+import { FetchRepository } from "../../../../src/logic/providers/repositories/client/web/https/fetch/fetch-repository";
+import { CookieRepository } from "../../../../src/logic/providers/repositories/client/web/local-repositories/cookie/cookie-repository";
+import { TStructureCookieCustomQueryRepositoryFn } from "../../../../src/logic/providers/repositories/client/web/local-repositories/cookie/shared-types";
+import { IdbRepository } from "../../../../src/logic/providers/repositories/client/web/local-repositories/idb/idb-repository";
+import { StorageRepository } from "../../../../src/logic/providers/repositories/client/web/local-repositories/storage/storage-repository";
 
 //████ Tipos personalizados ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 type TModel = BasicModelTest;
@@ -84,11 +84,11 @@ const defineMetadataHandler = () => {
       // __requestValInstance: {}, //configuración personalizada o instancia personalizada
       // __hookInstance: {}, //configuración personalizada o instancia personalizada
       __providerInstance: {
-        driverList: [
-          //new CookieDriver(),
-          //new StorageDriver(),
-          //new IdbDriver(),
-          new FetchDriver({
+        repositoryList: [
+          //new CookieRepository(),
+          //new StorageRepository(),
+          //new IdbRepository(),
+          new FetchRepository({
             urlRoot: "http://www.mytest.com",
             srcSelector: "plural",
           }),
@@ -104,8 +104,11 @@ const defineMetadataHandler = () => {
             aTGlobalActionConfig: [
               [
                 "structureProvider",
-                "singleRunDriver",
-                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+                "singleRunRepository",
+                {
+                  nameLogicRepository:
+                    CookieRepository.getNameLogicRepository(),
+                },
               ],
             ],
           },
@@ -115,31 +118,35 @@ const defineMetadataHandler = () => {
             expectedDataType: "object", //solo puede ser 1
             diccGlobalAC: {
               structureProvider: {
-                singleRunDriver: {
-                  nameLogicDriver: CookieDriver.getNameLogicDriver(),
+                singleRunRepository: {
+                  nameLogicRepository:
+                    CookieRepository.getNameLogicRepository(),
                 },
               },
             },
             aTGlobalActionConfig: [
               [
                 "structureProvider",
-                "singleRunDriver",
-                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+                "singleRunRepository",
+                {
+                  nameLogicRepository:
+                    CookieRepository.getNameLogicRepository(),
+                },
               ],
             ],
-            aTCustomQueryDriverFn: [
+            aTCustomQueryRepositoryFn: [
               [
-                CookieDriver.getNameLogicDriver(),
-                CookieDriver.getStructureLibraryQueryFn<TModel>()
+                CookieRepository.getNameLogicRepository(),
+                CookieRepository.getStructureLibraryQueryFn<TModel>()
                   .readByQueryParam,
               ],
               [
-                StorageDriver.getNameLogicDriver(),
-                StorageDriver.getStructureLibraryQueryFn().readByQueryParam,
+                StorageRepository.getNameLogicRepository(),
+                StorageRepository.getStructureLibraryQueryFn().readByQueryParam,
               ],
               [
-                IdbDriver.getNameLogicDriver(),
-                IdbDriver.getStructureLibraryQueryFn().readByQueryParam,
+                IdbRepository.getNameLogicRepository(),
+                IdbRepository.getStructureLibraryQueryFn().readByQueryParam,
               ],
             ],
           },
@@ -151,23 +158,26 @@ const defineMetadataHandler = () => {
             aTGlobalActionConfig: [
               [
                 "structureProvider",
-                "singleRunDriver",
-                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+                "singleRunRepository",
+                {
+                  nameLogicRepository:
+                    CookieRepository.getNameLogicRepository(),
+                },
               ],
             ],
-            aTCustomQueryDriverFn: [
+            aTCustomQueryRepositoryFn: [
               [
-                CookieDriver.getNameLogicDriver(),
-                CookieDriver.getStructureLibraryQueryFn<TModel>()
+                CookieRepository.getNameLogicRepository(),
+                CookieRepository.getStructureLibraryQueryFn<TModel>()
                   .readByQueryParam,
               ],
               [
-                StorageDriver.getNameLogicDriver(),
-                StorageDriver.getStructureLibraryQueryFn().readByQueryParam,
+                StorageRepository.getNameLogicRepository(),
+                StorageRepository.getStructureLibraryQueryFn().readByQueryParam,
               ],
               [
-                IdbDriver.getNameLogicDriver(),
-                IdbDriver.getStructureLibraryQueryFn().readByQueryParam,
+                IdbRepository.getNameLogicRepository(),
+                IdbRepository.getStructureLibraryQueryFn().readByQueryParam,
               ],
             ],
           },
@@ -178,22 +188,25 @@ const defineMetadataHandler = () => {
             aTGlobalActionConfig: [
               [
                 "structureProvider",
-                "singleRunDriver",
-                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+                "singleRunRepository",
+                {
+                  nameLogicRepository:
+                    CookieRepository.getNameLogicRepository(),
+                },
               ],
             ],
-            aTCustomQueryDriverFn: [
+            aTCustomQueryRepositoryFn: [
               [
-                CookieDriver.getNameLogicDriver(),
-                CookieDriver.getStructureLibraryQueryFn<TModel>().readById,
+                CookieRepository.getNameLogicRepository(),
+                CookieRepository.getStructureLibraryQueryFn<TModel>().readById,
               ],
               [
-                StorageDriver.getNameLogicDriver(),
-                StorageDriver.getStructureLibraryQueryFn().readById,
+                StorageRepository.getNameLogicRepository(),
+                StorageRepository.getStructureLibraryQueryFn().readById,
               ],
               [
-                IdbDriver.getNameLogicDriver(),
-                IdbDriver.getStructureLibraryQueryFn().readById,
+                IdbRepository.getNameLogicRepository(),
+                IdbRepository.getStructureLibraryQueryFn().readById,
               ],
             ],
           },
@@ -204,23 +217,27 @@ const defineMetadataHandler = () => {
             aTGlobalActionConfig: [
               [
                 "structureProvider",
-                "singleRunDriver",
-                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+                "singleRunRepository",
+                {
+                  nameLogicRepository:
+                    CookieRepository.getNameLogicRepository(),
+                },
               ],
             ],
-            aTCustomQueryDriverFn: [
+            aTCustomQueryRepositoryFn: [
               [
-                CookieDriver.getNameLogicDriver(),
-                CookieDriver.getStructureLibraryQueryFn<TModel>()
+                CookieRepository.getNameLogicRepository(),
+                CookieRepository.getStructureLibraryQueryFn<TModel>()
                   .existByQueryParam,
               ],
               [
-                StorageDriver.getNameLogicDriver(),
-                StorageDriver.getStructureLibraryQueryFn().existByQueryParam,
+                StorageRepository.getNameLogicRepository(),
+                StorageRepository.getStructureLibraryQueryFn()
+                  .existByQueryParam,
               ],
               [
-                IdbDriver.getNameLogicDriver(),
-                IdbDriver.getStructureLibraryQueryFn().existByQueryParam,
+                IdbRepository.getNameLogicRepository(),
+                IdbRepository.getStructureLibraryQueryFn().existByQueryParam,
               ],
             ],
           },
@@ -231,23 +248,27 @@ const defineMetadataHandler = () => {
             aTGlobalActionConfig: [
               [
                 "structureProvider",
-                "singleRunDriver",
-                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+                "singleRunRepository",
+                {
+                  nameLogicRepository:
+                    CookieRepository.getNameLogicRepository(),
+                },
               ],
             ],
-            aTCustomQueryDriverFn: [
+            aTCustomQueryRepositoryFn: [
               [
-                CookieDriver.getNameLogicDriver(),
-                CookieDriver.getStructureLibraryQueryFn<TModel>()
+                CookieRepository.getNameLogicRepository(),
+                CookieRepository.getStructureLibraryQueryFn<TModel>()
                   .countByQueryParam,
               ],
               [
-                StorageDriver.getNameLogicDriver(),
-                StorageDriver.getStructureLibraryQueryFn().countByQueryParam,
+                StorageRepository.getNameLogicRepository(),
+                StorageRepository.getStructureLibraryQueryFn()
+                  .countByQueryParam,
               ],
               [
-                IdbDriver.getNameLogicDriver(),
-                IdbDriver.getStructureLibraryQueryFn().countByQueryParam,
+                IdbRepository.getNameLogicRepository(),
+                IdbRepository.getStructureLibraryQueryFn().countByQueryParam,
               ],
             ],
           },
@@ -258,14 +279,17 @@ const defineMetadataHandler = () => {
             aTGlobalActionConfig: [
               [
                 "structureProvider",
-                "singleRunDriver",
-                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+                "singleRunRepository",
+                {
+                  nameLogicRepository:
+                    CookieRepository.getNameLogicRepository(),
+                },
               ],
             ],
-            aTCustomQueryDriverFn: [
+            aTCustomQueryRepositoryFn: [
               [
-                CookieDriver.getNameLogicDriver(),
-                (async (driver, literalCriteria, registers) => {
+                CookieRepository.getNameLogicRepository(),
+                (async (repository, literalCriteria, registers) => {
                   const util = TwinBeeModule.util; //mejor usar una genérica
                   const { diccQueryParam } =
                     literalCriteria as IStructureModelReadCriteria<TModel>;
@@ -275,7 +299,7 @@ const defineMetadataHandler = () => {
                   );
                   const counter = f_regs.length;
                   return counter;
-                }) as TStructureCookieCustomQueryDriverFn<TModel>,
+                }) as TStructureCookieCustomQueryRepositoryFn<TModel>,
               ],
             ],
           },
@@ -291,8 +315,11 @@ const defineMetadataHandler = () => {
               ["structureCtrl", "checkAllFields", true],
               [
                 "structureProvider",
-                "singleRunDriver",
-                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+                "singleRunRepository",
+                {
+                  nameLogicRepository:
+                    CookieRepository.getNameLogicRepository(),
+                },
               ],
             ],
           },
@@ -308,8 +335,11 @@ const defineMetadataHandler = () => {
               ["structureCtrl", "checkAllFields", true],
               [
                 "structureProvider",
-                "singleRunDriver",
-                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+                "singleRunRepository",
+                {
+                  nameLogicRepository:
+                    CookieRepository.getNameLogicRepository(),
+                },
               ],
             ],
           },
@@ -325,8 +355,11 @@ const defineMetadataHandler = () => {
               //["modelVal", "isModel", {modelForDiccAC: undefined}],
               [
                 "structureProvider",
-                "singleRunDriver",
-                { nameLogicDriver: CookieDriver.getNameLogicDriver() },
+                "singleRunRepository",
+                {
+                  nameLogicRepository:
+                    CookieRepository.getNameLogicRepository(),
+                },
               ],
             ],
           },

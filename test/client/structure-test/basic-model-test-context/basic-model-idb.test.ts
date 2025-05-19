@@ -15,7 +15,7 @@ import {
   ELogicResStatusCode,
   IStructureResponse,
 } from "../../../../src/logic/reports/shared-types";
-import { IdbDriver } from "../../../../src/logic/providers/drivers/client/web/local-repositories/idb/idb-driver";
+import { IdbRepository } from "../../../../src/logic/providers/repositories/client/web/local-repositories/idb/idb-repository";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const GC = startTwinBee({
   environment: {
@@ -245,10 +245,10 @@ const GC = startTwinBee({
 //   // //inicial test
 //   // const ctrl = getBasicModelTestCtrl();
 //   // const util = ctrl.twinBeeUtil;
-//   // const nameLogicDriver = IdbDriver.getNameLogicDriver();
+//   // const nameLogicRepository = IdbRepository.getNameLogicRepository();
 //   // const commonBaseCriteria = ctrl.getEmptyBaseModelCriteria();
 //   // commonBaseCriteria.diccGlobalAC = {
-//   //   structureProvider: { singleRunDriver: { nameLogicDriver } },
+//   //   structureProvider: { singleRunRepository: { nameLogicRepository } },
 //   // };
 //   // describe("base: data valid", async () => {
 //   //   const db = bd_valid;

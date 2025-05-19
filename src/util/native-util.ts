@@ -4006,7 +4006,7 @@ export class UtilNative {
    * ⚠ **NO** se puede clonar instancias de clase ⚠
    *
    * @param {T} objOrArray El objeto a clonar. El tipo `T` se asume implícitamente al enviar el parámetro.
-   * @param {"stringify" | "structuredClone"} driver `= "structuredClone"` el driver o libreria para hacer clonación.
+   * @param {"stringify" | "structuredClone"} repository `= "structuredClone"` el repository o libreria para hacer clonación.
    * @returns {T} Retorna el objeto (o array) clonado. Si no es un objeto (o array), el retorno es el mismo valor.
    *
    * @example
@@ -4018,7 +4018,7 @@ export class UtilNative {
    */
   public clone<T>(
     objOrArray: T,
-    driver: "stringify" | "structuredClone" = "structuredClone"
+    repository: "stringify" | "structuredClone" = "structuredClone"
   ): T {
     if (
       typeof objOrArray != "object" || //❗solo clona los objetos (incluye array)❗
@@ -4027,12 +4027,12 @@ export class UtilNative {
       return objOrArray;
     }
     let dataCopia: T;
-    if (driver === "stringify") {
+    if (repository === "stringify") {
       dataCopia = JSON.parse(JSON.stringify(objOrArray)); //metodo antiguo
-    } else if (driver === "structuredClone") {
+    } else if (repository === "structuredClone") {
       dataCopia = structuredClone(objOrArray); //Se implementará en typescript ^4.7.x
     } else {
-      throw new Error(`${driver} does not driver valid`);
+      throw new Error(`${repository} does not repository valid`);
     }
     return dataCopia;
   }

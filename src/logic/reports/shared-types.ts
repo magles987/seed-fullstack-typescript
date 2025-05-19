@@ -169,8 +169,8 @@ export enum EKeyActionGroupForRes {
   /**indica grupo de sub acciones ejecutadas en el modulo
    * *provider*, del contexto *structure* */
   providerStructure = "#PROVIDER_STRUCTURE#",
-  /**indica grupo de sub acciones realizadas desde drivers */
-  driver = "#DRIVER#",
+  /**indica grupo de sub acciones realizadas desde repositories */
+  repository = "#DRIVER#",
 }
 /**definición de respuesta genérica */
 interface IGenericResponse {
@@ -231,20 +231,24 @@ export type TResponseForMutate = Partial<
   >
 >;
 /**... */
-export interface IGenericDriverResponse extends Pick<IGenericResponse, "data"> {
+export interface IGenericRepositoryResponse
+  extends Pick<IGenericResponse, "data"> {
   /**esquema específicos del error */
   error?: any;
   /**detalles adicionales de la respuesta (normalmente entregados por la api externa) */
   details?: any;
 }
-/**esquema de respuesta proveída por driver*/
-export interface IDriverResponse
-  extends IGenericDriverResponse,
+/**esquema de respuesta proveída por repository*/
+export interface IRepositoryResponse
+  extends IGenericRepositoryResponse,
     Pick<IResponse, "data" | "status" | "msn"> {}
 
 /**definición de contenedor exclusivo para respuestas de
  * api en http (solo apis que estén construidas con twinbee) */
-export type TGenericContainerHttpApiResponse = Omit<IDriverResponse, "details">;
+export type TGenericContainerHttpApiResponse = Omit<
+  IRepositoryResponse,
+  "details"
+>;
 
 //====Primitive============================================================================================================================
 /**clave identificadora de este modulo según su contexto */

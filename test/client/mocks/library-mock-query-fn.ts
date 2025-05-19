@@ -1,7 +1,7 @@
 import { TwinBeeModule } from "../../../src/logic/modules/module";
 import {
-  TPrimitiveMockCustomQueryDriverFn,
-  TStructureMockCustomQueryDriverFn,
+  TPrimitiveMockCustomQueryRepositoryFn,
+  TStructureMockCustomQueryRepositoryFn,
 } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** *Singleton*
@@ -9,25 +9,22 @@ import {
  * ...
  */
 export class PrimitiveLibraryMockQueryFn {
-  public readonly readByQueryParam: TPrimitiveMockCustomQueryDriverFn = async (
-    microbackend,
-    literalCriteria,
-    registers
-  ) => {
-    const util = TwinBeeModule.util;
-    const { diccQueryParam, expectedDataType } = literalCriteria;
-    let f_registers;
-    if (expectedDataType !== "array") {
-      f_registers = registers.find((reg) =>
-        util.isEquivalentTo([diccQueryParam, reg], {})
-      ); //el primero
-    } else {
-      f_registers = registers.filter((reg) =>
-        util.isEquivalentTo([diccQueryParam, reg], {})
-      ); //todas las coincidencias
-    }
-    return f_registers;
-  };
+  public readonly readByQueryParam: TPrimitiveMockCustomQueryRepositoryFn =
+    async (microbackend, literalCriteria, registers) => {
+      const util = TwinBeeModule.util;
+      const { diccQueryParam, expectedDataType } = literalCriteria;
+      let f_registers;
+      if (expectedDataType !== "array") {
+        f_registers = registers.find((reg) =>
+          util.isEquivalentTo([diccQueryParam, reg], {})
+        ); //el primero
+      } else {
+        f_registers = registers.filter((reg) =>
+          util.isEquivalentTo([diccQueryParam, reg], {})
+        ); //todas las coincidencias
+      }
+      return f_registers;
+    };
   /**  Almacena la instancia única de esta clase */
   private static PrimitiveLibraryMockQueryFn_instance: PrimitiveLibraryMockQueryFn;
   /**... */
@@ -49,7 +46,7 @@ export class PrimitiveLibraryMockQueryFn {
  */
 export class StructureLibraryMockQueryFn {
   /**... */
-  public readonly readById: TStructureMockCustomQueryDriverFn = async (
+  public readonly readById: TStructureMockCustomQueryRepositoryFn = async (
     microbackend,
     literalCriteria,
     registers
@@ -63,56 +60,47 @@ export class StructureLibraryMockQueryFn {
     return f_register;
   };
   /**... */
-  public readonly existByQueryParam: TStructureMockCustomQueryDriverFn = async (
-    microbackend,
-    literalCriteria,
-    registers
-  ) => {
-    const util = TwinBeeModule.util;
-    const { diccQueryParam } = literalCriteria;
-    const f_registers = registers.find((reg) =>
-      util.isEquivalentTo([diccQueryParam, reg], {})
-    ); //todas las coincidencias
-    const f_exist = util.convertToBoolean(f_registers, [
-      "isEmptyAsTrue",
-      "isZeroAsTrue",
-    ]);
-    return f_exist;
-  };
-  /**... */
-  public readonly countByQueryParam: TStructureMockCustomQueryDriverFn = async (
-    microbackend,
-    literalCriteria,
-    registers
-  ) => {
-    const util = TwinBeeModule.util;
-    const { diccQueryParam } = literalCriteria;
-    const f_registers = registers.filter((reg) =>
-      util.isEquivalentTo([diccQueryParam, reg], {})
-    ); //todas las coincidencias
-    const f_count = f_registers.length;
-    return f_count;
-  };
-  /**... */
-  public readonly readByQueryParam: TStructureMockCustomQueryDriverFn = async (
-    microbackend,
-    literalCriteria,
-    registers
-  ) => {
-    const util = TwinBeeModule.util;
-    const { diccQueryParam, expectedDataType } = literalCriteria;
-    let f_registers;
-    if (expectedDataType !== "array") {
-      f_registers = registers.find((reg) =>
-        util.isEquivalentTo([diccQueryParam, reg], {})
-      ); //el primero
-    } else {
-      f_registers = registers.filter((reg) =>
+  public readonly existByQueryParam: TStructureMockCustomQueryRepositoryFn =
+    async (microbackend, literalCriteria, registers) => {
+      const util = TwinBeeModule.util;
+      const { diccQueryParam } = literalCriteria;
+      const f_registers = registers.find((reg) =>
         util.isEquivalentTo([diccQueryParam, reg], {})
       ); //todas las coincidencias
-    }
-    return f_registers;
-  };
+      const f_exist = util.convertToBoolean(f_registers, [
+        "isEmptyAsTrue",
+        "isZeroAsTrue",
+      ]);
+      return f_exist;
+    };
+  /**... */
+  public readonly countByQueryParam: TStructureMockCustomQueryRepositoryFn =
+    async (microbackend, literalCriteria, registers) => {
+      const util = TwinBeeModule.util;
+      const { diccQueryParam } = literalCriteria;
+      const f_registers = registers.filter((reg) =>
+        util.isEquivalentTo([diccQueryParam, reg], {})
+      ); //todas las coincidencias
+      const f_count = f_registers.length;
+      return f_count;
+    };
+  /**... */
+  public readonly readByQueryParam: TStructureMockCustomQueryRepositoryFn =
+    async (microbackend, literalCriteria, registers) => {
+      const util = TwinBeeModule.util;
+      const { diccQueryParam, expectedDataType } = literalCriteria;
+      let f_registers;
+      if (expectedDataType !== "array") {
+        f_registers = registers.find((reg) =>
+          util.isEquivalentTo([diccQueryParam, reg], {})
+        ); //el primero
+      } else {
+        f_registers = registers.filter((reg) =>
+          util.isEquivalentTo([diccQueryParam, reg], {})
+        ); //todas las coincidencias
+      }
+      return f_registers;
+    };
   /**  Almacena la instancia única de esta clase */
   private static StructureLibraryMockQueryFn_instance: StructureLibraryMockQueryFn;
   /**... */
