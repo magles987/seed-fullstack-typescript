@@ -5,6 +5,11 @@ import {
   TStructureModelBaseReadCriteria,
   TStructureModelBaseModifyCriteria,
   TStructureEmbModelBaseCriteria,
+  IStructureModelReadCriteria,
+  IStructureModelModifyCriteria,
+  IStructureFieldCriteria,
+  IPrimitiveReadCriteria,
+  IPrimitiveModifyCriteria,
 } from "../criterias/shared-types";
 import { PrimitiveLogicHook } from "../hooks/primitive-hook";
 import { StructureLogicHook } from "../hooks/structure-hook";
@@ -97,6 +102,119 @@ export type TPrimitiveCtrlBaseConfig<
       >
   >;
 };
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*---- <INICIO CONSTRUCCION> -------------------------------------*/
+/** */
+export type TPrimitiveCtrlBaseConfigForMetadataBuilder<
+  TPrimitiveMutateInstance extends PrimitiveLogicMutater = PrimitiveLogicMutater,
+  TPrimitiveValInstance extends PrimitiveLogicValidation = PrimitiveLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
+  TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook,
+  TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider,
+  TKeyDiccActionRequest extends string = string
+> = {
+  /**diccionario de acciones de petición (configuración para criterios) */
+  diccCriteriaRequestConfig?: Record<
+    TKeyDiccActionRequest,
+    Omit<
+      TPrimitiveBaseReadCriteria<
+        TPrimitiveMutateInstance["diccActionConfig"],
+        TPrimitiveValInstance["diccActionConfig"],
+        TRequestValInstance["diccActionConfig"],
+        TPrimitiveHookInstance["diccActionConfig"],
+        TPrimitiveProviderInstance["diccActionConfig"],
+        TKeyDiccActionRequest
+      > &
+        TPrimitiveBaseModifyCriteria<
+          TPrimitiveMutateInstance["diccActionConfig"],
+          TPrimitiveValInstance["diccActionConfig"],
+          TRequestValInstance["diccActionConfig"],
+          TPrimitiveHookInstance["diccActionConfig"],
+          TPrimitiveProviderInstance["diccActionConfig"],
+          TKeyDiccActionRequest
+        >,
+      "diccGlobalAC"
+    >
+  >;
+};
+/** */
+export type TPrimitiveReadCtrlBaseConfigForRequestMethod<
+  TPrimitiveMutateInstance extends PrimitiveLogicMutater = PrimitiveLogicMutater,
+  TPrimitiveValInstance extends PrimitiveLogicValidation = PrimitiveLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
+  TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook,
+  TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider,
+  TKeyDiccActionRequest extends string = string
+> = Omit<
+  TPrimitiveBaseReadCriteria<
+    TPrimitiveMutateInstance["diccActionConfig"],
+    TPrimitiveValInstance["diccActionConfig"],
+    TRequestValInstance["diccActionConfig"],
+    TPrimitiveHookInstance["diccActionConfig"],
+    TPrimitiveProviderInstance["diccActionConfig"],
+    TKeyDiccActionRequest
+  >,
+  "aTGlobalActionConfig"
+> &
+  Pick<
+    IPrimitiveReadCriteria<
+      TPrimitiveMutateInstance["diccActionConfig"],
+      TPrimitiveValInstance["diccActionConfig"],
+      TRequestValInstance["diccActionConfig"],
+      TPrimitiveHookInstance["diccActionConfig"],
+      TPrimitiveProviderInstance["diccActionConfig"],
+      TKeyDiccActionRequest
+    >,
+    "keyActionRequest"
+  >;
+/** */
+export type TPrimitiveModifyCtrlBaseConfigForRequestMethod<
+  TPrimitiveMutateInstance extends PrimitiveLogicMutater = PrimitiveLogicMutater,
+  TPrimitiveValInstance extends PrimitiveLogicValidation = PrimitiveLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
+  TPrimitiveHookInstance extends PrimitiveLogicHook = PrimitiveLogicHook,
+  TPrimitiveProviderInstance extends PrimitiveLogicProvider = PrimitiveLogicProvider,
+  TKeyDiccActionRequest extends string = string
+> = Pick<
+  TPrimitiveBaseModifyCriteria<
+    TPrimitiveMutateInstance["diccActionConfig"],
+    TPrimitiveValInstance["diccActionConfig"],
+    TRequestValInstance["diccActionConfig"],
+    TPrimitiveHookInstance["diccActionConfig"],
+    TPrimitiveProviderInstance["diccActionConfig"],
+    TKeyDiccActionRequest
+  >,
+  "aTGlobalActionConfig"
+> &
+  Pick<
+    IPrimitiveModifyCriteria<
+      TPrimitiveMutateInstance["diccActionConfig"],
+      TPrimitiveValInstance["diccActionConfig"],
+      TRequestValInstance["diccActionConfig"],
+      TPrimitiveHookInstance["diccActionConfig"],
+      TPrimitiveProviderInstance["diccActionConfig"],
+      TKeyDiccActionRequest
+    >,
+    "keyActionRequest" | "data"
+  >;
+/*---- <FIN CONSTRUCCION> ----------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
 /** */
 export type TPrimitiveCtrlDiccACForCriteria<TIDiccPrimitiveCtrlAC> =
   IPrimitiveCtrlContext<
@@ -217,6 +335,184 @@ export type TModelCtrlBaseConfig<
     TStructureHookInstance["diccActionConfig"]
   >;
 };
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*---- <INICIO CONSTRUCCION> -------------------------------------*/
+
+export type TFieldCtrlBaseConfigForMetadataBuilder<
+  TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
+  TFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
+  TStructureHookInstance extends StructureLogicHook = StructureLogicHook
+> = {
+  criteriaFieldRequestConfig: Omit<
+    TStructureFieldBaseCriteria<
+      any,
+      TFieldMutateInstance["diccActionConfig"],
+      TFieldValInstance["diccActionConfig"],
+      TStructureHookInstance["diccActionConfig"]
+    >,
+    "diccGlobalAC"
+  >;
+};
+export type TFieldCtrlBaseConfigForRequestMethod<
+  TModel,
+  TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
+  TFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
+  TStructureHookInstance extends StructureLogicHook = StructureLogicHook
+> = Omit<
+  TStructureFieldBaseCriteria<
+    TModel,
+    TFieldMutateInstance["diccActionConfig"],
+    TFieldValInstance["diccActionConfig"],
+    TStructureHookInstance["diccActionConfig"]
+  >,
+  "aTGlobalActionConfig"
+> &
+  Pick<
+    IStructureFieldCriteria<
+      TModel,
+      TFieldMutateInstance["diccActionConfig"],
+      TFieldValInstance["diccActionConfig"],
+      TStructureHookInstance["diccActionConfig"]
+    >,
+    "keyPath" | "data"
+  >;
+/** */
+export type TModelCtrlBaseConfigForMetadataBuilder<
+  TModel,
+  TModelMutateInstance extends ModelLogicMutater = ModelLogicMutater,
+  TModelValInstance extends ModelLogicValidation = ModelLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
+  TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
+  TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
+  TKeyDiccActionRequest extends string = string
+> = {
+  /**diccionario de acciones de petición (configuración para criterios) */
+  diccCriteriaRequestConfig?: Record<
+    TKeyDiccActionRequest,
+    Omit<
+      TStructureModelBaseReadCriteria<
+        TModel,
+        TModelMutateInstance["diccActionConfig"],
+        TModelValInstance["diccActionConfig"],
+        TRequestValInstance["diccActionConfig"],
+        TStructureHookInstance["diccActionConfig"],
+        TStructureProviderInstance["diccActionConfig"],
+        TKeyDiccActionRequest
+      > &
+        TStructureModelBaseModifyCriteria<
+          TModel,
+          TModelMutateInstance["diccActionConfig"],
+          TModelValInstance["diccActionConfig"],
+          TRequestValInstance["diccActionConfig"],
+          TStructureHookInstance["diccActionConfig"],
+          TStructureProviderInstance["diccActionConfig"],
+          TKeyDiccActionRequest
+        >,
+      "diccGlobalAC"
+    >
+  >;
+  criteriaEmbModelRequestConfig?: Omit<
+    TStructureEmbModelBaseCriteria<
+      TModel,
+      TModelMutateInstance["diccActionConfig"], //no se necesita contexto embebido en este nivel
+      TModelValInstance["diccActionConfig"], //no se necesita contexto embebido en este nivel
+      TStructureHookInstance["diccActionConfig"]
+    >,
+    "diccGlobalAC"
+  >;
+};
+/** */
+export type TModelReadCtrlBaseConfigForRequestMethod<
+  TModel,
+  TModelMutateInstance extends ModelLogicMutater = ModelLogicMutater,
+  TModelValInstance extends ModelLogicValidation = ModelLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
+  TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
+  TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
+  TKeyDiccActionRequest extends string = string
+> = Omit<
+  TStructureModelBaseReadCriteria<
+    TModel,
+    TModelMutateInstance["diccActionConfig"],
+    TModelValInstance["diccActionConfig"],
+    TRequestValInstance["diccActionConfig"],
+    TStructureHookInstance["diccActionConfig"],
+    TStructureProviderInstance["diccActionConfig"],
+    TKeyDiccActionRequest
+  >,
+  "aTGlobalActionConfig"
+> &
+  Pick<
+    IStructureModelReadCriteria<
+      TModel,
+      TModelMutateInstance["diccActionConfig"],
+      TModelValInstance["diccActionConfig"],
+      TRequestValInstance["diccActionConfig"],
+      TStructureHookInstance["diccActionConfig"],
+      TStructureProviderInstance["diccActionConfig"],
+      TKeyDiccActionRequest
+    >,
+    "keyActionRequest"
+  >;
+/** */
+export type TModelModifyCtrlBaseConfigForRequestMethod<
+  TModel,
+  TModelMutateInstance extends ModelLogicMutater = ModelLogicMutater,
+  TModelValInstance extends ModelLogicValidation = ModelLogicValidation,
+  TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
+  TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
+  TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
+  TKeyDiccActionRequest extends string = string
+> = Omit<
+  TStructureModelBaseModifyCriteria<
+    TModel,
+    TModelMutateInstance["diccActionConfig"],
+    TModelValInstance["diccActionConfig"],
+    TRequestValInstance["diccActionConfig"],
+    TStructureHookInstance["diccActionConfig"],
+    TStructureProviderInstance["diccActionConfig"],
+    TKeyDiccActionRequest
+  >,
+  "aTGlobalActionConfig"
+> &
+  Pick<
+    IStructureModelModifyCriteria<
+      TModel,
+      TModelMutateInstance["diccActionConfig"],
+      TModelValInstance["diccActionConfig"],
+      TRequestValInstance["diccActionConfig"],
+      TStructureHookInstance["diccActionConfig"],
+      TStructureProviderInstance["diccActionConfig"],
+      TKeyDiccActionRequest
+    >,
+    "keyActionRequest"
+  >;
+
+//---------------------------------------------------
+const d: TModelCtrlBaseConfigForMetadataBuilder<any> = {
+  diccCriteriaRequestConfig: {
+    hola: {},
+  },
+  criteriaEmbModelRequestConfig: {},
+};
+/*---- <FIN CONSTRUCCION> ----------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
+/*----------------------------------------------------------------*/
 /** */
 export type TStructureCtrlBaseConfig<
   TModel,

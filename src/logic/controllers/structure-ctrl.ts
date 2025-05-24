@@ -33,9 +33,12 @@ import { RequestLogicValidation } from "../validators/request-validation";
 import { IDiccCtrlActionConfig, LogicController } from "./_controller";
 import {
   TFieldCtrlBaseConfig,
+  TFieldCtrlBaseConfigForRequestMethod,
   TKeyStructureCtrlModuleContext,
   TKeyStructureUnionActionRequestCtrl,
   TModelCtrlBaseConfig,
+  TModelModifyCtrlBaseConfigForRequestMethod,
+  TModelReadCtrlBaseConfigForRequestMethod,
   TStructureCtrlBaseConfig,
 } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -547,24 +550,12 @@ export class StructureLogicController<
   //████ Actions ████████████████████████████████████████████████████████████
   /**... */
   public async checkField(
-    baseCriteria: Omit<
-      TStructureFieldBaseCriteria<
-        TModel,
-        TFieldMutateInstance["diccActionConfig"],
-        TFieldValInstance["diccActionConfig"],
-        TStructureHookInstance["diccActionConfig"]
-      >,
-      "aTGlobalActionConfig"
-    > &
-      Pick<
-        IStructureFieldCriteria<
-          TModel,
-          TFieldMutateInstance["diccActionConfig"],
-          TFieldValInstance["diccActionConfig"],
-          TStructureHookInstance["diccActionConfig"]
-        >,
-        "keyPath" | "data"
-      >
+    baseCriteria: TFieldCtrlBaseConfigForRequestMethod<
+      TModel,
+      TFieldMutateInstance,
+      TFieldValInstance,
+      TStructureHookInstance
+    >
   ): Promise<IStructureResponse> {
     const mH = this.metadataHandler;
     let criteriaHandler: StructureCriteriaHandler<any>;
@@ -689,30 +680,15 @@ export class StructureLogicController<
   }
   /**... */
   public async readRequest(
-    baseCriteria: Omit<
-      TStructureModelBaseReadCriteria<
-        TModel,
-        TModelMutateInstance["diccActionConfig"],
-        TModelValInstance["diccActionConfig"],
-        TRequestValInstance["diccActionConfig"],
-        TStructureHookInstance["diccActionConfig"],
-        TStructureProviderInstance["diccActionConfig"],
-        TKeyDiccActionRequest
-      >,
-      "aTGlobalActionConfig"
-    > &
-      Pick<
-        IStructureModelReadCriteria<
-          TModel,
-          TModelMutateInstance["diccActionConfig"],
-          TModelValInstance["diccActionConfig"],
-          TRequestValInstance["diccActionConfig"],
-          TStructureHookInstance["diccActionConfig"],
-          TStructureProviderInstance["diccActionConfig"],
-          TKeyDiccActionRequest
-        >,
-        "keyActionRequest"
-      >
+    baseCriteria: TModelReadCtrlBaseConfigForRequestMethod<
+      TModel,
+      TModelMutateInstance,
+      TModelValInstance,
+      TRequestValInstance,
+      TStructureHookInstance,
+      TStructureProviderInstance,
+      TKeyDiccActionRequest
+    >
   ): Promise<IStructureResponse> {
     const mH = this.metadataHandler;
     let criteriaHandler: StructureCriteriaHandler<TModel>;
@@ -737,30 +713,15 @@ export class StructureLogicController<
   }
   /**... */
   public async modifyRequest(
-    baseCriteria: Omit<
-      TStructureModelBaseModifyCriteria<
-        TModel,
-        TModelMutateInstance["diccActionConfig"],
-        TModelValInstance["diccActionConfig"],
-        TRequestValInstance["diccActionConfig"],
-        TStructureHookInstance["diccActionConfig"],
-        TStructureProviderInstance["diccActionConfig"],
-        TKeyDiccActionRequest
-      >,
-      "aTGlobalActionConfig"
-    > &
-      Pick<
-        IStructureModelModifyCriteria<
-          TModel,
-          TModelMutateInstance["diccActionConfig"],
-          TModelValInstance["diccActionConfig"],
-          TRequestValInstance["diccActionConfig"],
-          TStructureHookInstance["diccActionConfig"],
-          TStructureProviderInstance["diccActionConfig"],
-          TKeyDiccActionRequest
-        >,
-        "keyActionRequest" | "data"
-      >
+    baseCriteria: TModelModifyCtrlBaseConfigForRequestMethod<
+      TModel,
+      TModelMutateInstance,
+      TModelValInstance,
+      TRequestValInstance,
+      TStructureHookInstance,
+      TStructureProviderInstance,
+      TKeyDiccActionRequest
+    >
   ): Promise<IStructureResponse> {
     const mH = this.metadataHandler;
     let criteriaHandler: StructureCriteriaHandler<TModel>;

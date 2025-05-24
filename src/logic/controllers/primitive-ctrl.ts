@@ -1,5 +1,6 @@
 import { PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
 import {
+  IPrimitiveModifyCriteria,
   IPrimitiveReadCriteria,
   TPrimitiveActionConfigFn,
   TPrimitiveBaseModifyCriteria,
@@ -26,6 +27,8 @@ import {
   TKeyPrimitiveCtrlModuleContext,
   TKeyPrimitiveUnionActionRequestCtrl,
   TPrimitiveCtrlBaseConfig,
+  TPrimitiveModifyCtrlBaseConfigForRequestMethod,
+  TPrimitiveReadCtrlBaseConfigForRequestMethod,
 } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
@@ -302,28 +305,14 @@ export class PrimitiveLogicController<
   //████ Actions ███████████████████████████████████████████████████
   /**... */
   public async readRequest(
-    baseCriteria: Omit<
-      TPrimitiveBaseReadCriteria<
-        TPrimitiveMutateInstance["diccActionConfig"],
-        TPrimitiveValInstance["diccActionConfig"],
-        TRequestValInstance["diccActionConfig"],
-        TPrimitiveHookInstance["diccActionConfig"],
-        TPrimitiveProviderInstance["diccActionConfig"],
-        TKeyDiccActionRequest
-      >,
-      "aTGlobalActionConfig"
-    > &
-      Pick<
-        IPrimitiveReadCriteria<
-          TPrimitiveMutateInstance["diccActionConfig"],
-          TPrimitiveValInstance["diccActionConfig"],
-          TRequestValInstance["diccActionConfig"],
-          TPrimitiveHookInstance["diccActionConfig"],
-          TPrimitiveProviderInstance["diccActionConfig"],
-          TKeyDiccActionRequest
-        >,
-        "keyActionRequest"
-      >
+    baseCriteria: TPrimitiveReadCtrlBaseConfigForRequestMethod<
+      TPrimitiveMutateInstance,
+      TPrimitiveValInstance,
+      TRequestValInstance,
+      TPrimitiveHookInstance,
+      TPrimitiveProviderInstance,
+      TKeyDiccActionRequest
+    >
   ): Promise<IPrimitiveResponse> {
     const mH = this.metadataHandler;
     let cH = new PrimitiveCriteriaHandler(mH, {
@@ -335,28 +324,14 @@ export class PrimitiveLogicController<
   }
   /**... */
   public async modifyRequest(
-    baseCriteria: Pick<
-      TPrimitiveBaseModifyCriteria<
-        TPrimitiveMutateInstance["diccActionConfig"],
-        TPrimitiveValInstance["diccActionConfig"],
-        TRequestValInstance["diccActionConfig"],
-        TPrimitiveHookInstance["diccActionConfig"],
-        TPrimitiveProviderInstance["diccActionConfig"],
-        TKeyDiccActionRequest
-      >,
-      "aTGlobalActionConfig"
-    > &
-      Pick<
-        IPrimitiveReadCriteria<
-          TPrimitiveMutateInstance["diccActionConfig"],
-          TPrimitiveValInstance["diccActionConfig"],
-          TRequestValInstance["diccActionConfig"],
-          TPrimitiveHookInstance["diccActionConfig"],
-          TPrimitiveProviderInstance["diccActionConfig"],
-          TKeyDiccActionRequest
-        >,
-        "keyActionRequest" | "data"
-      >
+    baseCriteria: TPrimitiveModifyCtrlBaseConfigForRequestMethod<
+      TPrimitiveMutateInstance,
+      TPrimitiveValInstance,
+      TRequestValInstance,
+      TPrimitiveHookInstance,
+      TPrimitiveProviderInstance,
+      TKeyDiccActionRequest
+    >
   ): Promise<IPrimitiveResponse> {
     const mH = this.metadataHandler;
     let cH = new PrimitiveCriteriaHandler(mH, {

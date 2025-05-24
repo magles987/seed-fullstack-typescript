@@ -1,5 +1,5 @@
 import { TwinBeeModule } from "../../../../src/logic/modules/module";
-import { Model } from "../../../../src/logic/models/_model";
+import { ModelWith_id } from "../../../../src/logic/models/model-with-_id";
 import { StructureLogicMetadataHandler } from "../../../../src/logic/meta/structure-metadata-handler";
 import { FetchRepository } from "../../../../src/logic/providers/repositories/client/web/https/fetch/fetch-repository";
 import { CookieRepository } from "../../../../src/logic/providers/repositories/client/web/local-repositories/cookie/cookie-repository";
@@ -20,7 +20,7 @@ export type TKeyFieldElementalModelTest = keyof IElementalModelTest<any>;
  * ❗esta clase está pensada para definición de
  * campos, no para ejecución de métodos❗
  */
-export class ElementalModelTest extends Model {
+export class ElementalModelTest extends ModelWith_id {
   //...aquí las propiedades
   /**ruta de acceso*/
   pathDoc: string = "";

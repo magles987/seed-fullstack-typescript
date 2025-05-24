@@ -1,5 +1,5 @@
 import { TwinBeeModule } from "../../../../src/logic/modules/module";
-import { Model } from "../../../../src/logic/models/_model";
+import { ModelWith_id } from "../../../../src/logic/models/model-with-_id";
 import { IStructureModelReadCriteria } from "../../../../src/logic/criterias/shared-types";
 import {
   TFieldMutateInstance,
@@ -49,16 +49,18 @@ export interface IBasicModelTest<TExtend>
   extends Partial<Record<keyof BasicModelTest, TExtend>> {}
 /**Tipado de las claves identificadoras de cada campo del modelo */
 export type TKeyFieldBasicModelTest = keyof IBasicModelTest<any>;
+
 //███ Modelo █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** Define las propiedades del modelo
  * ❗esta clase está pensada para definición de
  * campos, no para ejecución de métodos❗
  */
-export class BasicModelTest extends Model {
+export class BasicModelTest extends ModelWith_id {
   //...aquí las propiedades
   /**ruta de acceso al doc*/
-  pathDoc: string = "";
+  pathDoc = "";
 }
+
 //███ Constructor de Metadatos █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 const baseModel = new BasicModelTest();
 const keySrc = StructureLogicMetadataHandler.checkKeySrc(baseModel);
@@ -403,13 +405,11 @@ const defineMetadataHandler = () => {
   });
 };
 /**@returns la instancia de manejador actual de metadatos para este modelo */
-export function getBasicModelTestMetadataHandler() {
-  return StructureLogicMetadataHandler.buildMetadataHandlerAndSetRegister(
+export const getBasicModelTestMetadataHandler = () =>
+  StructureLogicMetadataHandler.buildMetadataHandlerAndSetRegister(
     keySrc,
     defineMetadataHandler
   );
-}
 /**@returns la instancia del controlador asociado a este modelo */
-export function getBasicModelTestCtrl() {
-  return getBasicModelTestMetadataHandler().getRootCtrlInstance();
-}
+export const getBasicModelTestCtrl = () =>
+  getBasicModelTestMetadataHandler().getRootCtrlInstance();

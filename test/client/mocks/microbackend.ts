@@ -52,7 +52,7 @@ export class MicroBackend
       /**determina que tipo de clave identificadora de recurso usar */
       srcSelector: "plural" as TKeySrcSelector,
       /**clave identificadora del campo de identificación del registro */
-      keyId: TwinBeeModule._globalConfig_.keyId,
+      keyId: util.keyId,
       /**función de consulta personalizada */
       customQueryFn: undefined as unknown as
         | TPrimitiveMockCustomQueryRepositoryFn
