@@ -1,13 +1,13 @@
 import { PrimitiveLogicController } from "../controllers/primitive-ctrl";
 import {
   IPrimitiveCtrlContext,
-  TPrimitiveCtrlBaseConfig,
   IStructureCtrlContext,
-  TFieldCtrlBaseConfig,
-  TModelCtrlBaseConfig,
   IStructureCtrlContextInstance,
   TKeyStructureUnionActionRequestCtrl,
   TKeyPrimitiveUnionActionRequestCtrl,
+  TPrimitiveCtrlBaseConfigForMetadataBuilder,
+  TModelCtrlBaseConfigForMetadataBuilder,
+  TFieldCtrlBaseConfigForMetadataBuilder,
 } from "../controllers/shared-types";
 import { StructureLogicController } from "../controllers/structure-ctrl";
 import { PrimitiveLogicHook } from "../hooks/primitive-hook";
@@ -238,7 +238,27 @@ export type TPrimitiveBaseMetadata<
         >,
         IPrimitiveCtrlContext<
           | TPrimitiveCtrlInstance
-          | TPrimitiveCtrlBaseConfig<
+          /*--------------------------------*/
+          /*--------------------------------*/
+          /*--------------------------------*/
+          /*--------------------------------*/
+          /*--------------------------------*/
+          /*---- <INICIO CONSTRUCCION> -----*/
+          // | TPrimitiveCtrlBaseConfig<
+          //     TPrimitiveMutateInstance,
+          //     TPrimitiveValInstance,
+          //     TRequestValInstance,
+          //     TPrimitiveHookInstance,
+          //     TPrimitiveProviderInstance,
+          //     TKeyDiccActionRequest
+          //   >
+          /*---- <FIN CONSTRUCCION> --------*/
+          /*--------------------------------*/
+          /*--------------------------------*/
+          /*--------------------------------*/
+          /*--------------------------------*/
+          /*--------------------------------*/
+          | TPrimitiveCtrlBaseConfigForMetadataBuilder<
               TPrimitiveMutateInstance,
               TPrimitiveValInstance,
               TRequestValInstance,
@@ -404,7 +424,11 @@ export type TStructureBaseMetadataForField<
         IStructureCtrlContext<
           //❗la instancia es la misma que el modelo❗, por eso no se permite instanciar aquí
           //| TStructureCtrlInstance
-          TFieldCtrlBaseConfig<TFieldMutateInstance, TFieldValInstance>
+          TFieldCtrlBaseConfigForMetadataBuilder<
+            TFieldMutateInstance,
+            TFieldValInstance,
+            TStructureHookInstance
+          >
         >["structureCtrl"]
       >
   > & {
@@ -523,7 +547,7 @@ export type TStructureBaseMetadata<
         >,
         IStructureCtrlContext<
           | TStructureCtrlInstance // o la instancia
-          | TModelCtrlBaseConfig<
+          | TModelCtrlBaseConfigForMetadataBuilder<
               // o la base de configuración
               TModel,
               TModelMutateInstance,

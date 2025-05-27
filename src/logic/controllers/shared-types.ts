@@ -102,16 +102,6 @@ export type TPrimitiveCtrlBaseConfig<
       >
   >;
 };
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*---- <INICIO CONSTRUCCION> -------------------------------------*/
 /** */
 export type TPrimitiveCtrlBaseConfigForMetadataBuilder<
   TPrimitiveMutateInstance extends PrimitiveLogicMutater = PrimitiveLogicMutater,
@@ -205,16 +195,6 @@ export type TPrimitiveModifyCtrlBaseConfigForRequestMethod<
     >,
     "keyActionRequest" | "data"
   >;
-/*---- <FIN CONSTRUCCION> ----------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
 /** */
 export type TPrimitiveCtrlDiccACForCriteria<TIDiccPrimitiveCtrlAC> =
   IPrimitiveCtrlContext<
@@ -288,12 +268,14 @@ export type Trf_IStructureCtrlContextInstance = IStructureCtrlContextInstance<
 >;
 export type TFieldCtrlBaseConfig<
   TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
-  TFieldValInstance extends FieldLogicValidation = FieldLogicValidation
+  TFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
+  TStructureHookInstance extends StructureLogicHook = StructureLogicHook
 > = {
   criteriaFieldRequestConfig: TStructureFieldBaseCriteria<
     any,
     TFieldMutateInstance["diccActionConfig"],
-    TFieldValInstance["diccActionConfig"]
+    TFieldValInstance["diccActionConfig"],
+    TStructureHookInstance["diccActionConfig"]
   >;
 };
 /** */
@@ -335,17 +317,7 @@ export type TModelCtrlBaseConfig<
     TStructureHookInstance["diccActionConfig"]
   >;
 };
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*---- <INICIO CONSTRUCCION> -------------------------------------*/
-
+/** */
 export type TFieldCtrlBaseConfigForMetadataBuilder<
   TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
   TFieldValInstance extends FieldLogicValidation = FieldLogicValidation,
@@ -495,24 +467,6 @@ export type TModelModifyCtrlBaseConfigForRequestMethod<
     >,
     "keyActionRequest"
   >;
-
-//---------------------------------------------------
-const d: TModelCtrlBaseConfigForMetadataBuilder<any> = {
-  diccCriteriaRequestConfig: {
-    hola: {},
-  },
-  criteriaEmbModelRequestConfig: {},
-};
-/*---- <FIN CONSTRUCCION> ----------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
-/*----------------------------------------------------------------*/
 /** */
 export type TStructureCtrlBaseConfig<
   TModel,
@@ -538,7 +492,8 @@ export type TStructureCtrlBaseConfig<
       keyof TModel,
       TFieldCtrlBaseConfig<
         TFieldMutateInstance,
-        TFieldValInstance
+        TFieldValInstance,
+        TStructureHookInstance
       >["criteriaFieldRequestConfig"]
     >;
   }

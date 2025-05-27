@@ -1,7 +1,5 @@
 import { PrimitiveCriteriaHandler } from "../criterias/primitive-criteria-handler";
 import {
-  IPrimitiveModifyCriteria,
-  IPrimitiveReadCriteria,
   TPrimitiveActionConfigFn,
   TPrimitiveBaseModifyCriteria,
   TPrimitiveBaseReadCriteria,
@@ -31,7 +29,6 @@ import {
   TPrimitiveReadCtrlBaseConfigForRequestMethod,
 } from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-
 /** define todas las propiedades de configuración
  * de cada acción  para este modulo
  */

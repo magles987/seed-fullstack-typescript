@@ -1,9 +1,6 @@
 import {
   IStructureEmbModelCriteria,
-  IStructureFieldCriteria,
   IStructureModelCriteria,
-  IStructureModelModifyCriteria,
-  IStructureModelReadCriteria,
   TStructureActionConfigFn,
   TStructureEmbModelBaseCriteria,
   TStructureFieldBaseCriteria,
@@ -112,12 +109,12 @@ export class StructureLogicController<
       } as IDiccStructureCtrlActionConfig<any>,
       criteriaEmbModelRequestConfig:
         {} as TModelCtrlBaseConfig<any>["criteriaEmbModelRequestConfig"],
-      criteriaFieldRequestConfig: {} as Record<
-        any,
+      criteriaFieldRequestConfig:
+        {} as TFieldCtrlBaseConfig["criteriaFieldRequestConfig"],
+      diccCriteriaFieldRequestConfig: {} as Record<
+        string,
         TFieldCtrlBaseConfig["criteriaFieldRequestConfig"]
       >,
-      diccCriteriaFieldRequestConfig:
-        {} as TFieldCtrlBaseConfig["criteriaFieldRequestConfig"],
       diccCriteriaRequestConfig:
         {} as TModelCtrlBaseConfig<any>["diccCriteriaRequestConfig"],
     };
@@ -242,18 +239,21 @@ export class StructureLogicController<
   }
   private _criteriaFieldRequestConfig: TFieldCtrlBaseConfig<
     TFieldMutateInstance,
-    TFieldValInstance
+    TFieldValInstance,
+    TStructureHookInstance
   >["criteriaFieldRequestConfig"];
   public get criteriaFieldRequestConfig(): TFieldCtrlBaseConfig<
     TFieldMutateInstance,
-    TFieldValInstance
+    TFieldValInstance,
+    TStructureHookInstance
   >["criteriaFieldRequestConfig"] {
     return this._criteriaFieldRequestConfig;
   }
   protected set criteriaFieldRequestConfig(
     v: TFieldCtrlBaseConfig<
       TFieldMutateInstance,
-      TFieldValInstance
+      TFieldValInstance,
+      TStructureHookInstance
     >["criteriaFieldRequestConfig"]
   ) {
     const newCRC = this.util.isObject(v)
@@ -338,7 +338,7 @@ export class StructureLogicController<
     } = baseConfig;
     this.diccCriteriaRequestConfig = diccCriteriaRequestConfig;
     this.criteriaEmbModelRequestConfig = criteriaEmbModelRequestConfig;
-    this.diccCriteriaFieldRequestConfig = diccCriteriaFieldRequestConfig;
+    this.diccCriteriaFieldRequestConfig = diccCriteriaFieldRequestConfig as any;
   }
   protected override getDefault() {
     return StructureLogicController.getDefault();
