@@ -1709,7 +1709,7 @@ export class StructureLogicMetadataHandler<
           keyModule
         );
         diccAC =
-          metadataByModuleContext.__ctrlInstance["diccCriteriaRequestConfig"]; //🐱‍👤Hackeando propiedad protected
+          metadataByModuleContext.__ctrlInstance.diccCriteriaRequestConfig;
       } else {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
