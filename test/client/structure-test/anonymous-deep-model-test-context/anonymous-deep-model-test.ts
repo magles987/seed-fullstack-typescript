@@ -20,7 +20,7 @@ import { IdbRepository } from "../../../../src/logic/providers/repositories/clie
 import { StorageRepository } from "../../../../src/logic/providers/repositories/client/web/local-repositories/storage/storage-repository";
 
 //████ Tipos personalizados ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-type TModel = DeepModelTest;
+type TModel = AnonymousDeepModelTest;
 type TFMI = TFieldMutateInstance;
 type TMMI = TModelMutateInstance;
 type TFVI = TFieldValInstance;
@@ -45,22 +45,33 @@ type TSCI = TStructureCtrlInstance<
 >;
 /** interfaz de este modelo para propósitos generales*/
 //⚠ la interfaz debe permanecer **vacía**
-export interface IDeepModelTest<TExtend>
-  extends Partial<Record<keyof DeepModelTest, TExtend>> {}
+export interface IAnonymousDeepModelTest<TExtend>
+  extends Partial<Record<keyof AnonymousDeepModelTest, TExtend>> {}
 /**Tipado de las claves identificadoras de cada campo del modelo */
-export type TKeyFieldDeepModelTest = keyof IDeepModelTest<any>;
+export type TKeyFieldAnonymousDeepModelTest =
+  keyof IAnonymousDeepModelTest<any>;
 //███ Modelo █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** Define las propiedades del modelo
  * ❗esta clase está pensada para definición de
  * campos, no para ejecución de métodos❗
  */
-export class DeepModelTest extends ModelWith_id {
+export class AnonymousDeepModelTest extends ModelWith_id {
   //...aquí las propiedades
-  public myAnonymObject = { a: 0, b: "", c: true };
-  public myAnonymArray = [] as string[];
+  public myAnonymousObject = {
+    a: 0,
+    b: "",
+    c: true,
+    d: {
+      d1: 0,
+      d2: "",
+    },
+    e: [] as string[],
+    f: [] as any[],
+  };
+  //public myAnonymStringArray = [] as string[];
 }
 //███ Constructor de Metadatos █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-const baseModel = new DeepModelTest();
+const baseModel = new AnonymousDeepModelTest();
 const keySrc = StructureLogicMetadataHandler.checkKeySrc(baseModel);
 /**@returns un manejador de metadatos personalizado para este modelo*/
 const defineMetadataHandler = () => {
@@ -352,27 +363,65 @@ const defineMetadataHandler = () => {
           },
         },
       },
-      myAnonymObject: {
-        __dfData: baseModel.myAnonymObject,
+      myAnonymousObject: {
+        __dfData: baseModel.myAnonymousObject,
         __fieldType: "object",
         __ctrlInstance: {
-          criteriaFieldRequestConfig: {},
+          criteriaFieldRequestConfig: {
+            aTGlobalActionConfig: [
+              [
+                "structureCtrl",
+                "checkAnonymousObject",
+                {
+                  schemaForATActionConfig: {
+                    a: [
+                      ["fieldMutate", "anyTrim", true],
+                      [
+                        "fieldVal",
+                        "isTypeOf",
+                        { fieldType: "number", isArray: false },
+                      ],
+                      ["fieldVal", "isRequired", true],
+                    ],
+                    b: [
+                      ["fieldMutate", "anyTrim", true],
+                      [
+                        "fieldVal",
+                        "isTypeOf",
+                        { fieldType: "string", isArray: false },
+                      ],
+                      ["fieldVal", "isRequired", true],
+                    ],
+                    c: [
+                      ["fieldMutate", "anyTrim", true],
+                      [
+                        "fieldVal",
+                        "isTypeOf",
+                        { fieldType: "boolean", isArray: false },
+                      ],
+                      ["fieldVal", "isRequired", true],
+                    ],
+                  },
+                },
+              ],
+            ],
+          },
         },
       },
-      myAnonymArray: {
-        __dfData: baseModel.myAnonymArray,
-        __fieldType: "string",
-        __isArray: true,
-      },
+      // myAnonymStringArray: {
+      //   __dfData: baseModel.myAnonymStringArray,
+      //   __fieldType: "string",
+      //   __isArray: true,
+      // },
     },
   });
 };
 /**@returns la instancia de manejador actual de metadatos para este modelo */
-export const getDeepModelTestMetadataHandler = () =>
+export const getAnonymousDeepModelTestMetadataHandler = () =>
   StructureLogicMetadataHandler.buildMetadataHandlerAndSetRegister(
     keySrc,
     defineMetadataHandler
   );
 /**@returns la instancia del controlador asociado a este modelo */
-export const getDeepModelTestCtrl = () =>
-  getDeepModelTestMetadataHandler().getRootCtrlInstance();
+export const getAnonymousDeepModelTestCtrl = () =>
+  getAnonymousDeepModelTestMetadataHandler().getRootCtrlInstance();

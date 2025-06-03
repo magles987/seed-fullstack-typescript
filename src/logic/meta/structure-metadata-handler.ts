@@ -138,7 +138,7 @@ export class StructureLogicMetadataHandler<
         fieldMeta: {
           __keyPath: undefined,
           __structureType: "structureField",
-          __fieldType: "string",
+          __type: "string",
           __isArray: false,
           __isVirtual: false,
           __dfData: util.dfValue, //❗ OBLIGATORIO en la definición de cada metadato
@@ -444,9 +444,9 @@ export class StructureLogicMetadataHandler<
             ? Object.keys(dfData)
             : dfHC.fieldMeta.__keysProp,
           __structureType: "structureField",
-          __fieldType: this.util.isString(mHC.__fieldType)
-            ? mHC.__fieldType
-            : dfHC.fieldMeta.__fieldType,
+          __type: this.util.isString(mHC.__type)
+            ? mHC.__type
+            : dfHC.fieldMeta.__type,
           __isArray: this.util.isBoolean(mHC.__isArray)
             ? mHC.__isArray
             : dfHC.fieldMeta.__isArray,

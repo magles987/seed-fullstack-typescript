@@ -6,6 +6,7 @@ import {
   TStructureFieldBaseCriteria,
   TStructureModelBaseModifyCriteria,
   TStructureModelBaseReadCriteria,
+  TTGlobalActionConfig,
 } from "../criterias/shared-types";
 import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
@@ -16,17 +17,26 @@ import {
 } from "../meta/structure-metadata-handler";
 import { TwinBeeModule } from "../modules/module";
 import { TKeyStructureContextFull } from "../modules/shared-types";
-import { FieldLogicMutater } from "../mutaters/field-mutater";
+import {
+  FieldLogicMutater,
+  IDiccFieldMutateActionConfig,
+} from "../mutaters/field-mutater";
 import { ModelLogicMutater } from "../mutaters/model-mutater";
+import { TStructureFieldMutateDiccACForCriteria } from "../mutaters/shared-types";
 import { StructureLogicProvider } from "../providers/structure-provider";
 import {
+  EKeyActionGroupForRes,
   ELogicResStatusCode,
   IStructureResponse,
 } from "../reports/shared-types";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import { FieldLogicValidation } from "../validators/field-validation";
+import {
+  FieldLogicValidation,
+  IDiccFieldValActionConfig,
+} from "../validators/field-validation";
 import { ModelLogicValidation } from "../validators/model-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
+import { TStructureFieldValDiccACForCriteria } from "../validators/shared-types";
 import { IDiccCtrlActionConfig, LogicController } from "./_controller";
 import {
   TFieldCtrlBaseConfig,
@@ -68,6 +78,34 @@ export interface IDiccStructureCtrlActionConfig<
         >
       >
     | boolean;
+  /** */
+  checkAnonymousObject: {
+    /**esquema recursivo para asignar acciones de configuración a
+     * cada subcampo, las acciones de configuración
+     * son asignadas a traves de una array de tuplas
+     *
+     * ⚠ Por complejidad aun no es posible tener acceso a
+     * diccionarios de acciones de configuración personalizados ⚠
+     */
+    schemaForATActionConfig: Record<
+      any,
+      Array<
+        TTGlobalActionConfig<
+          TStructureFieldMutateDiccACForCriteria<IDiccFieldMutateActionConfig> &
+            TStructureFieldValDiccACForCriteria<IDiccFieldValActionConfig>
+        >
+      >
+    >;
+  };
+  /** */
+  checkAnonymousArray: {
+    aTGlobalActionConfig: Array<
+      TTGlobalActionConfig<
+        TStructureFieldMutateDiccACForCriteria<IDiccFieldMutateActionConfig> &
+          TStructureFieldValDiccACForCriteria<IDiccFieldValActionConfig>
+      >
+    >;
+  };
 }
 /**claves identificadoras del diccionario de acciones de configuración */
 export type TKeysDiccStructureCtrlActionConfig =
@@ -106,6 +144,8 @@ export class StructureLogicController<
         checkField: true,
         checkEmbModel: true,
         checkAllFields: { modelForDiccAC: {} },
+        checkAnonymousObject: { schemaForATActionConfig: undefined },
+        checkAnonymousArray: { aTGlobalActionConfig: [] },
       } as IDiccStructureCtrlActionConfig<any>,
       criteriaEmbModelRequestConfig:
         {} as TModelCtrlBaseConfig<any>["criteriaEmbModelRequestConfig"],
@@ -676,6 +716,116 @@ export class StructureLogicController<
     res = rH.mutateResponse(res, {
       responses: resesForField,
     });
+    return res;
+  }
+  /**... */
+  protected async checkAnonymousObject(
+    criteriaHandler: StructureCriteriaHandler<any>
+  ): Promise<IStructureResponse> {
+    const { data, keyPath } = criteriaHandler;
+    const [keyAction, actionConfig] =
+      this.getTupleActionConfigFromCriteriaHandler(
+        criteriaHandler,
+        "checkAnonymousObject"
+      );
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
+    let { schemaForATActionConfig } = actionConfig;
+    //===============================================
+    //❗Obligatorio verificar que se pueda validar el dato❗
+    //res = this.checkEmptyDataWithRes(rH, criteriaHandler); //????
+    //if (res.status > ELogicResStatusCode.VALID_DATA) return res;
+    //===============================================
+    const mH = this.metadataHandler;
+    //bandera de tipo por seguridad (por si no se ejecutó isTypeOf)
+    const isObject = this.util.isObject(data);
+    //determinar si hay esquema de propiedades para validar cada una
+    if (!this.util.isObject(schemaForATActionConfig)) {
+      //al no haber esquema, solo se puede verificar el tipo general
+      if (isObject) {
+        res = rH.mutateResponse(res, {
+          status: ELogicResStatusCode.VALID_DATA,
+        });
+      } else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${schemaForATActionConfig} is not schema for action config valid`,
+        });
+      }
+      return res;
+    }
+    //si hay esquema de propiedades a validar, data debe ser objeto
+    if (!isObject) {
+      res = rH.mutateResponse(res, {
+        status: ELogicResStatusCode.INVALID_DATA,
+      });
+      return res;
+    }
+    const keysPropSchema = Object.keys(schemaForATActionConfig);
+    //validar propiedades de esquema (las adicionales no se validan)
+    for (const keyProp of keysPropSchema) {
+      const aTupleAC = schemaForATActionConfig[keyProp];
+      const subData = data[keyProp];
+      const keyPseudoPath = this.util.buildPath([keyPath, keyProp]);
+      let embResForProp = rH.mutateResponse(undefined, {
+        data: subData,
+        keyLogic: keyProp,
+        keyPath: keyPseudoPath,
+        keyAction: EKeyActionGroupForRes.props,
+      });
+      //si no es un array de tuplas, indica que permite cualquier valor
+      if (
+        !this.util.isArray(aTupleAC) ||
+        aTupleAC.some((tAC) => !this.util.isTuple(tAC, [2, 3]))
+      ) {
+        res.responses.push(embResForProp);
+        continue;
+      }
+      const subCriteriaHandler = new StructureCriteriaHandler(
+        mH,
+        "structureField",
+        {
+          keyPath: keyPseudoPath,
+          data: subData,
+          aTGlobalActionConfig: aTupleAC as any,
+        }
+      );
+      for (const tupleAC of aTupleAC) {
+        const keyAction = tupleAC[0];
+        let actionFn = this.getActionFnByKey(keyAction as any);
+        const resForAction = await actionFn(subCriteriaHandler);
+        embResForProp.responses.push(resForAction);
+        if (resForAction.status >= res.tolerance) break; //comprobar si se superó la tolerancia
+      }
+      embResForProp = rH.mutateResponse(embResForProp);
+      res.responses.push(embResForProp);
+    }
+    res = rH.mutateResponse(res);
+    return res;
+  }
+  /**.. */
+  protected async checkAnonymousArray(
+    criteriaHandler: StructureCriteriaHandler<any>
+  ) {
+    const { data, keyPath } = criteriaHandler;
+    const [keyAction, actionConfig] =
+      this.getTupleActionConfigFromCriteriaHandler(
+        criteriaHandler,
+        "checkAnonymousArray"
+      );
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
+    let { aTGlobalActionConfig } = actionConfig;
+    //===============================================
+    //❗Obligatorio verificar que se pueda validar el dato❗
+    //res = this.checkEmptyDataWithRes(rH, criteriaHandler);
+    //if (res.status > ELogicResStatusCode.VALID_DATA) return res;
+    //===============================================
+    const mH = this.metadataHandler;
+    //bandera de tipo por seguridad (por si no se ejecutó isTypeOf)
+    const isArray = this.util.isArray(data);
+
+    res = rH.mutateResponse(res);
     return res;
   }
   /**... */

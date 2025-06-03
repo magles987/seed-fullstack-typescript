@@ -4,7 +4,7 @@ import {
 } from "../criterias/shared-types";
 import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
-import { TFieldType } from "../meta/shared-types";
+import { TDataType } from "../meta/shared-types";
 import { TwinBeeModule } from "../modules/module";
 import {
   EKeyActionGroupForRes,
@@ -219,7 +219,7 @@ export interface IDiccFieldValActionConfig {
    * ⚠ SOLO para arrays de tipos primitivos, NO
    * usar con modelos embebidos
    */
-  isAnonymusObject: {
+  isAnonymousObject: {
     //se aplicará a cada propiedad del objeto por
     //lo que deben ser validaciones muy genericas
     /**esquema recursivo para asignar acciones de configuración a
@@ -270,9 +270,9 @@ export interface IDiccFieldValActionConfig {
     isAllowedExtraProp?: boolean;
   };
   /** */
-  isAnonimusArray: {
+  isAnonymousArray: {
     /**array de diccionarios de acciones para cada elemento del array del dato*/
-    aTupleAC: Array<
+    aTGlobalActionConfig: Array<
       TTGlobalActionConfig<
         TStructureFieldValDiccACForCriteria<IDiccFieldValActionConfig>
       >
@@ -302,13 +302,12 @@ export class FieldLogicValidation<
         ...(superDf.diccActionConfig as any),
         isTypeOf: true, //siempre
         isRequired: false,
-        isAnonymusObject: {
+        isAnonymousObject: {
           schemaForATActionConfig: undefined,
           isAllowedExtraProp: true,
-          isEmbModel: false,
         },
-        isAnonimusArray: {
-          aTupleAC: [],
+        isAnonymousArray: {
+          aTGlobalActionConfig: [],
         },
       } as IDiccFieldValActionConfig,
       topPriorityKeysAction: [
@@ -420,10 +419,10 @@ export class FieldLogicValidation<
     let res = rH.mutateResponse(undefined, { data });
     //❗tratamiento especial, dependiendo de la fuente de
     // configuración (metadatos (normalemnte) o anonimos)❗
-    let fieldType: TFieldType;
+    let dataType: TDataType;
     let isArray: boolean;
     if (this.util.isObject(actionConfig)) {
-      fieldType = (actionConfig as TITypeOf).fieldType;
+      dataType = (actionConfig as TITypeOf).fieldType;
       isArray = (actionConfig as TITypeOf).isArray;
     } else {
       const mH = this.metadataHandler;
@@ -433,36 +432,36 @@ export class FieldLogicValidation<
         criteriaHandler.keyPath
       );
       isArray = fieldMeta.__isArray;
-      fieldType = fieldMeta.__fieldType;
+      dataType = fieldMeta.__type;
     }
     //❗❗❗isTypeof no necesita saber si es dato vacio o no❗❗❗
     let isValid: boolean;
     //❗OBLIGATORIO iniciar las evaluación con array❗
     if (isArray === true)
       isValid = this.util.isValueType(data, ["undefined", "null", "array"]);
-    else if (fieldType === "boolean")
+    else if (dataType === "boolean")
       isValid = this.util.isValueType(data, ["undefined", "null", "boolean"]);
-    else if (fieldType === "number")
+    else if (dataType === "number")
       isValid = this.util.isValueType(data, ["undefined", "null", "number"]);
-    else if (fieldType === "bigint")
+    else if (dataType === "bigint")
       isValid = this.util.isValueType(data, ["undefined", "null", "bigint"]);
-    else if (fieldType === "string")
+    else if (dataType === "string")
       isValid = this.util.isValueType(data, ["undefined", "null", "string"]);
-    else if (fieldType === "string-RegExp")
+    else if (dataType === "string-RegExp")
       isValid = this.util.isValueType(data, ["undefined", "null", "string"]);
-    else if (fieldType === "string-Date")
+    else if (dataType === "string-Date")
       isValid = this.util.isValueType(data, ["undefined", "null", "string"]);
-    else if (fieldType === "timestamp")
+    else if (dataType === "timestamp")
       isValid = this.util.isValueType(data, ["undefined", "null", "number"]);
-    else if (fieldType === "symbol")
+    else if (dataType === "symbol")
       isValid = this.util.isValueType(data, ["undefined", "null", "symbol"]);
-    else if (fieldType === "object")
+    else if (dataType === "object")
       isValid = this.util.isValueType(data, ["undefined", "null", "object"]);
-    else if (fieldType === "structure")
+    else if (dataType === "structure")
       isValid = this.util.isValueType(data, ["undefined", "null", "object"]);
     // else if (fieldType === "function")
     //   isValid = this.util.isValueType(data, ["undefined", "null", "function"]);
-    else if (fieldType === "_system")
+    else if (dataType === "_system")
       isValid = this.util.isNotUndefinedAndNotNull(data);
     else isValid = this.util.isUndefinedOrNull(data); //❗Por default solo aceptaría `undefined` o `null`, rechazando todo lo demás ❗
     //finalizar, siguiente accion o reportar
@@ -748,15 +747,15 @@ export class FieldLogicValidation<
   //   });
   //   return res;
   // }
-  public async isAnonymusObject(
+  public async isAnonymousObject(
     criteriaHandler: StructureCriteriaHandler<any>
   ): Promise<IStructureResponse> {
-    //Desempaquetar la accion e inicializar
+    //Desempaquetar la acción e inicializar
     const { data, keyPath } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
-        "isAnonymusObject"
+        "isAnonymousObject"
       );
     const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
@@ -848,7 +847,7 @@ export class FieldLogicValidation<
     res = rH.mutateResponse(res);
     return res;
   }
-  public async isAnonimusArray(
+  public async isAnonymousArray(
     criteriaHandler: StructureCriteriaHandler<any>
   ): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
@@ -856,11 +855,11 @@ export class FieldLogicValidation<
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
-        "isAnonimusArray"
+        "isAnonymousArray"
       );
     const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
-    let { aTupleAC } = actionConfig;
+    let { aTGlobalActionConfig } = actionConfig;
     //===============================================
     //❗Obligatorio verificar que se pueda validar el dato❗
     res = this.checkEmptyDataWithRes(rH, criteriaHandler);
@@ -870,7 +869,7 @@ export class FieldLogicValidation<
     //bandera de tipo por seguridad (por si no se ejecutó isTypeOf)
     const isArray = this.util.isArray(data);
     //determinar si hay esquema de propiedades para validar cada elemento del array
-    if (!this.util.isArray(aTupleAC)) {
+    if (!this.util.isArray(aTGlobalActionConfig)) {
       //al no haber esquema, solo se puede verificar el tipo general
       if (isArray) {
         res = rH.mutateResponse(res, {
@@ -879,7 +878,7 @@ export class FieldLogicValidation<
       } else {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
-          msn: `${aTupleAC} is not tuple array for action config valid`,
+          msn: `${aTGlobalActionConfig} is not tuple array for action config valid`,
         });
       }
       return res;
@@ -908,10 +907,10 @@ export class FieldLogicValidation<
         {
           keyPath: keyPseudoPath,
           data: subData,
-          aTGlobalActionConfig: aTupleAC as any,
+          aTGlobalActionConfig: aTGlobalActionConfig as any,
         }
       );
-      for (const tupleAC of aTupleAC) {
+      for (const tupleAC of aTGlobalActionConfig) {
         const keyAction = tupleAC[0];
         let actionFn = this.getActionFnByKey(keyAction as any);
         const resForAction = await actionFn(subCriteriaHandler);

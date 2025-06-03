@@ -4,7 +4,7 @@ import {
 } from "../criterias/primitive-criteria-handler";
 import { TPrimitiveActionConfigFn } from "../criterias/shared-types";
 import { Trf_PrimitiveLogicMetadataHandler } from "../meta/primitive-metadata-handler";
-import { TPrimitiveType } from "../meta/shared-types";
+import { TDataType } from "../meta/shared-types";
 import { TwinBeeModule } from "../modules/module";
 import { PrimitiveReportHandler } from "../reports/primitive-report-handler";
 import {
@@ -43,7 +43,7 @@ type TisRequiredConfig = {
  * (casos anónimos o que no tienen metadatos ) */
 type TITypeOf = {
   /**tipo de dato (no array) */
-  primitiveType: TPrimitiveType;
+  type: TDataType;
   /**si se debe considerar como array */
   isArray: boolean;
 };
@@ -77,208 +77,6 @@ export interface IDiccPrimitiveValActionConfig {
    * `{}`
    */
   isRequired: boolean | TisRequiredConfig;
-  // /**determina caracteres minimos y maximos
-  //  * que puede tener un campo de tipo
-  //  * string
-  //  *
-  //  * ❗se pueden asignar mensajes personalizados
-  //  * para los estados `"invalid"` y `"warning"`
-  //  * mediante objetos
-  //  *
-  //  * Ejemplo:
-  //  *
-  //  * ````
-  //  * isStringRangeLength : {
-  //  *      msns : {
-  //  *          invalid : {
-  //  *              min : "Invalido, es menor que lo permitido",
-  //  *              max : "Invalido, es mayor que lo permitido"
-  //  *          },
-  //  *          warning : {
-  //  *              w_min : "precaucion, es menor de lo normal",
-  //  *              w_max : "precaucion, es mayor que lo normal"
-  //  *          }
-  //  *      }
-  //  * }
-  //  */
-  // isStringRangeLength:
-  //   | {
-  //       /**determina el rango de minimo a maximo
-  //        * que se puede ingresar
-  //        */
-  //       range: [number, number];
-  //       /**determina rango especial de
-  //        * minimo a maximo para saltar una
-  //        * advertencia
-  //        */
-  //       w_range?: [number, number] | undefined;
-  //     }
-  //   | undefined;
-  // /**determina el rango (minimo y maximo)
-  //  * de un campo numerico
-  //  *
-  //  * ❗se pueden asignar mensajes personalizados
-  //  * para los estados `"invalid"` y `"warning"`
-  //  * mediante objetos
-  //  *
-  //  * Ejemplo:
-  //  *
-  //  * ````
-  //  * isRange : {
-  //  *      msns : {
-  //  *          invalid : {
-  //  *              min : "Invalido, es menor que lo permitido",
-  //  *              max : "Invalido, es mayor que lo permitido"
-  //  *          },
-  //  *          warning : {
-  //  *              w_min : "precaucion, es menor de lo normal",
-  //  *              w_max : "precaucion, es mayor que lo normal"
-  //  *          }
-  //  *      }
-  //  * }
-  //  * ````
-  //  */
-  // isRange:
-  //   | {
-  //       /**determina el rango de minimo a maximo
-  //        * que se puede ingresar*/
-  //       range: [number, number];
-  //       /**determina rango especial de
-  //        * minimo a maximo para saltar una
-  //        * advertencia
-  //        */
-  //       w_range?: [number, number] | undefined;
-  //     }
-  //   | undefined;
-  // /**determina el rango (minimo y maximo)
-  //  * de un campo numerico
-  //  */
-  // isSelectable:
-  //   | {
-  //       /**determina el rango de minimo a maximo
-  //        * que se puede ingresar
-  //        */
-  //       selectionList: any[];
-  //       /**si el campo es de tipo objeto
-  //        * para verificar si corresponde
-  //        * a los seleccionable sse requiere
-  //        * un subcampo de del objeto
-  //        */
-  //       keyFieldForSelectorList?: string;
-  //       /**determina elementos que
-  //        * no son permitidos usar
-  //        * al usuario
-  //        *
-  //        * 🛑 esto **NO** indica que dichos
-  //        * elementos no sean validos, solamente
-  //        * que el usuario no debe tener acceso a
-  //        * seleccionarlos
-  //        */
-  //       noAvailableSelectionList?: any[] | "_all";
-  //       /**determina el rango de minimo a maximo
-  //        * de elementos que pueden seleccionarse
-  //        * antes de activar estado `"invalid"`
-  //        *
-  //        * ⚠ si el campo esta configurado como
-  //        * `isArray === false` es sus metadatos,
-  //        * este rango es ignorado ya que se deduce
-  //        * que solo se permite una selesccion
-  //        */
-  //       range: [number, number] | undefined;
-  //       /**determina el rango de minimo a maximo
-  //        * de elementos que pueden seleccionarse
-  //        * antes de activar estado `"warning"`
-  //        *
-  //        * ⚠ si el campo esta configurado como
-  //        * `isArray === false` es sus metadatos,
-  //        * este rango es ignorado ya que se deduce
-  //        * que solo se permite una selesccion
-  //        */
-  //       w_range?: [number, number] | undefined;
-  //     }
-  //   | undefined;
-  // /**determina el tipo de archivos aceptados*/
-  // isAcceptFile:
-  //   | {
-  //       /**extenciones aceptadas */
-  //       extension: string[];
-  //       /**tamaño maximo en bytes del archivo o la suma de archivos*/
-  //       size: number;
-  //       /**tamaño maximo en bytes del archivo o la suma de archivos*/
-  //       w_size: number;
-  //       /** la cantidad minimo y maxima de archivos */
-  //       rangeFile: [number, number];
-  //       /** la cantidad minimo y maxima de archivos para `"warning"`*/
-  //       w_rangeFile: [number, number];
-  //     }
-  //   | undefined;
-  /**
-   * establece una configuracion de validacion
-   * embebida para cada elementos del array
-   *
-   * ⚠ SOLO para arrays de tipos primitivos, NO
-   * usar con modelos embebidos
-   */
-  isAnonimusObject:
-    | {
-        //❓POSIBLES ERRORES DE CONFIGURACION❓
-        //se aplicará a cada propiedad del objeto por
-        //lo que deben ser validaciones muy genericas
-        /**recursivo para los subcampos */
-        anonimuSchemaForATupleAC: Record<
-          any,
-          Array<
-            [
-              keyof IDiccPrimitiveValActionConfig,
-              IDiccPrimitiveValActionConfig[keyof IDiccPrimitiveValActionConfig]
-            ]
-          > //tupla de acciones [keyAction, ActionConfig]
-        >; //Modelo o esquema con los campos asinando a cada uno un array de diccionarios de acciones de configuracion (ADiccAC)
-        /**determina si se permite propiedades
-         * adicionales en el dato que no esten
-         * en la configuracion de `schemaADiccActionsConfig`
-         *
-         * Ejemplo:
-         * ````
-         * isObjectAnonimus = {
-         *   isEmbbeded: false,
-         *   schemaADiccActionsConfig: {
-         *     field1: [
-         *       { isTypeOf: { fieldType: "string" } },
-         *       { isRequired: true }
-         *     ],
-         *   },
-         *   isAllowedExtraProp: true
-         * }
-         *
-         * data = {
-         *   field1: "algun dato",
-         *   field2: 99,
-         * }
-         * //`data` es valido aunque tenga
-         * //una propiedad extra `field2`
-         *
-         * **⚠Importante:** el permitir propiedades
-         * extras estas no se validan asi que
-         * pueden incluir cualquier tipo de información
-         * ````
-         *
-         */
-        isAllowedExtraProp?: boolean;
-      }
-    | undefined;
-  /** */
-  isAnonimusArray:
-    | {
-        /**array de diccionarios de acciones para cada elemento del array del dato*/
-        aTupleAC: Array<
-          [
-            keyof IDiccPrimitiveValActionConfig,
-            IDiccPrimitiveValActionConfig[keyof IDiccPrimitiveValActionConfig]
-          ]
-        >;
-      }
-    | undefined;
 }
 /**claves identificadoras del diccionario
  * de acciones de configuracion */
@@ -304,7 +102,7 @@ export class PrimitiveLogicValidation<
         ...(superDf.diccActionConfig as any),
         isTypeOf: {
           isArray: false,
-          primitiveType: "string",
+          type: "string",
         },
         isRequired: false,
         isAnonimusObject: {
@@ -510,46 +308,46 @@ export class PrimitiveLogicValidation<
     const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
     //❗tratamiento especial, dependiendo de la fuente de
-    // configuración (metadatos (normalemnte) o anonimos)❗
-    let primitiveType: TPrimitiveType;
+    // configuración (metadatos (normalmente) o anónimos)❗
+    let dataType: TDataType;
     let isArray: boolean;
     if (this.util.isObject(actionConfig)) {
-      primitiveType = (actionConfig as TITypeOf).primitiveType;
+      dataType = (actionConfig as TITypeOf).type;
       isArray = (actionConfig as TITypeOf).isArray;
     } else {
       const mH = this.metadataHandler;
-      const fieldMeta = mH.getExtractMetadataByModuleContext("metadata");
-      isArray = fieldMeta.__isArray;
-      primitiveType = fieldMeta.__type;
+      const primitiveMeta = mH.getExtractMetadataByModuleContext("metadata");
+      isArray = primitiveMeta.__isArray;
+      dataType = primitiveMeta.__type;
     }
     //❗❗❗isTypeof no necesita saber si es dato vacio o no❗❗❗
     let isValid: boolean;
     //❗OBLIGATORIO iniciar las evaluación con array❗
     if (isArray === true)
       isValid = this.util.isValueType(data, ["undefined", "null", "array"]);
-    else if (primitiveType === "boolean")
+    else if (dataType === "boolean")
       isValid = this.util.isValueType(data, ["undefined", "null", "boolean"]);
-    else if (primitiveType === "number")
+    else if (dataType === "number")
       isValid = this.util.isValueType(data, ["undefined", "null", "number"]);
-    else if (primitiveType === "bigint")
+    else if (dataType === "bigint")
       isValid = this.util.isValueType(data, ["undefined", "null", "bigint"]);
-    else if (primitiveType === "string")
+    else if (dataType === "string")
       isValid = this.util.isValueType(data, ["undefined", "null", "string"]);
-    else if (primitiveType === "string-RegExp")
+    else if (dataType === "string-RegExp")
       isValid = this.util.isValueType(data, ["undefined", "null", "string"]);
-    else if (primitiveType === "string-Date")
+    else if (dataType === "string-Date")
       isValid = this.util.isValueType(data, ["undefined", "null", "string"]);
-    else if (primitiveType === "timestamp")
+    else if (dataType === "timestamp")
       isValid = this.util.isValueType(data, ["undefined", "null", "number"]);
-    else if (primitiveType === "symbol")
+    else if (dataType === "symbol")
       isValid = this.util.isValueType(data, ["undefined", "null", "symbol"]);
-    else if (primitiveType === "object")
+    else if (dataType === "object")
       isValid = this.util.isValueType(data, ["undefined", "null", "object"]);
-    else if (primitiveType === "structure")
+    else if (dataType === "structure")
       isValid = this.util.isValueType(data, ["undefined", "null", "object"]);
     // else if (fieldType === "function")
     //   isValid = this.util.isValueType(data, ["undefined", "null", "function"]);
-    else if (primitiveType === "_system")
+    else if (dataType === "_system")
       isValid = this.util.isNotUndefinedAndNotNull(data);
     else isValid = this.util.isUndefinedOrNull(data); //❗Por default solo aceptaría `undefined` o `null`, rechazando todo lo demás ❗
     //finalizar, siguiente accion o reportar
@@ -584,116 +382,6 @@ export class PrimitiveLogicValidation<
         status: ELogicResStatusCode.INVALID_DATA,
       });
     }
-    return res;
-  }
-  public async isAnonimusObject(
-    criteriaHandler: PrimitiveCriteriaHandler<any>
-  ): Promise<IPrimitiveResponse> {
-    //Desempaquetar la accion e inicializar
-    const { data } = criteriaHandler;
-    const [keyAction, actionConfig] =
-      this.getTupleActionConfigFromCriteriaHandler(
-        criteriaHandler,
-        "isAnonimusObject"
-      );
-    const rH = this.buildReportHandler(criteriaHandler, keyAction);
-    let res = rH.mutateResponse(undefined, { data });
-    let { anonimuSchemaForATupleAC, isAllowedExtraProp } = actionConfig;
-    //===============================================
-    //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(rH, criteriaHandler);
-    if (res.status > ELogicResStatusCode.VALID_DATA) return res;
-    //===============================================
-    if (!this.util.isObject(anonimuSchemaForATupleAC)) {
-      res = rH.mutateResponse(res, {
-        status: ELogicResStatusCode.ERROR,
-        msn: `${anonimuSchemaForATupleAC} is not schema of array of tuples of action config configure valid`,
-      });
-      return res;
-    }
-    const keysPropSchema = Object.keys(anonimuSchemaForATupleAC);
-    //análisis de propiedades adicionales al esquema
-    if (!isAllowedExtraProp) {
-      const keysData = Object.keys(data);
-      const keysDiff = this.util.getArrayDifference(
-        [keysPropSchema, keysData],
-        "difference_A"
-      );
-      if (keysDiff.length > 0) {
-        res = rH.mutateResponse(res, {
-          status: ELogicResStatusCode.INVALID_DATA,
-        });
-        return res;
-      }
-    }
-    //validar propiedades de esquema (las adicionales no se validan)
-    for (const keyProp of keysPropSchema) {
-      const aTupleAC = anonimuSchemaForATupleAC[keyProp];
-      const subData = data[keyProp];
-      let embResForProp = rH.mutateResponse(undefined, {
-        data: subData,
-        keyLogic: keyProp,
-        keyAction: EKeyActionGroupForRes.props,
-      });
-
-      for (const tupleAC of aTupleAC) {
-        const keyAction = tupleAC[0];
-        let actionFn = this.getActionFnByKey(keyAction as any);
-        const resForAction = await actionFn(subBag);
-        embResForProp.responses.push(resForAction);
-        if (resForAction.status >= res.tolerance) break; //comprobar si se superó la tolerancia
-      }
-      embResForProp = rH.mutateResponse(embResForProp);
-      res.responses.push(embResForProp);
-    }
-    res = rH.mutateResponse(res);
-    return res;
-  }
-  public async isAnonimusArray(
-    criteriaHandler: PrimitiveCriteriaHandler<any>
-  ): Promise<IPrimitiveResponse> {
-    //Desempaquetar la accion e inicializar
-    const { data } = criteriaHandler;
-    const [keyAction, actionConfig] =
-      this.getTupleActionConfigFromCriteriaHandler(
-        criteriaHandler,
-        "isAnonimusArray"
-      );
-    const rH = this.buildReportHandler(criteriaHandler, keyAction);
-    let res = rH.mutateResponse(undefined, { data });
-    let { aTupleAC } = actionConfig;
-    //===============================================
-    //❗Obligatorio verificar que se pueda validar el dato❗
-    res = this.checkEmptyDataWithRes(rH, criteriaHandler);
-    if (res.status > ELogicResStatusCode.VALID_DATA) return res;
-    //===============================================
-    if (!this.util.isArray(data, true)) {
-      res = rH.mutateResponse(res, {
-        status: ELogicResStatusCode.INVALID_DATA,
-      });
-      return res;
-    }
-    //validar cada item del array de datos
-    for (let idx = 0; idx < (data as any[]).length; idx++) {
-      const subData = data[idx];
-      const keyIdx = `${idx}`;
-      let embResForItem = rH.mutateResponse(undefined, {
-        data: subData,
-        keyLogic: keyIdx,
-        keyAction: EKeyActionGroupForRes.items,
-      });
-
-      for (const tupleAC of aTupleAC) {
-        const keyAction = tupleAC[0];
-        let actionFn = this.getActionFnByKey(keyAction as any);
-        const resForAction = await actionFn(subBag);
-        embResForItem.responses.push(resForAction);
-        if (resForAction.status >= res.tolerance) break; //comprobar si se superó la tolerancia
-      }
-      embResForItem = rH.mutateResponse(embResForItem);
-      res.responses.push(embResForItem);
-    }
-    res = rH.mutateResponse(res);
     return res;
   }
 }

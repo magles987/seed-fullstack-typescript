@@ -6,7 +6,7 @@ import {
   IPrimitiveHookContextInstance,
   IStructureHookContextInstance,
 } from "../hooks/shared-types";
-import { TDataType, TKeyStructureContextFull } from "../modules/shared-types";
+import { TType, TKeyStructureContextFull } from "../modules/shared-types";
 import {
   IPrimitiveMutateContextInstance,
   IStructureMutateContextInstance,
@@ -22,17 +22,17 @@ import {
 
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
-//====Primitive===================================================================================================================
-/** tipos de datos aplicables a un primitivo.
+/** tipos de datos aplicables a la lógica de negocio.
  *
- * ❗los tipos vacios (`undefined` o `null`)
+ * ❗los tipos vacíos (`undefined` o `null`)
  * en los metadatos se deben reemplazar
- * con una flag que indique que el campo
- * puede estar vacio❗. Ya que declarar
- * que un campo que **solo** permite `undefined`
- * no tiene sentido
+ * con una flag que indique puede estar vació❗.
+ * Ya que declarar que un dato que **solo** permite `undefined`
+ * o `null` no tiene sentido
  */
-export type TPrimitiveType = Exclude<TDataType, "undefined" | "null">;
+export type TDataType = Exclude<TType, "undefined" | "null">;
+
+//====Primitive===================================================================================================================
 /**esquema de propósito general con los contextos primitivos del modulo*/
 export interface IPrimitiveMetadataContext<
   TPrimitiveMeta = unknown //puede ser cualquier interfaz o tipado
@@ -59,12 +59,12 @@ export interface IPrimitiveMetadataModuleConfig<TValue>
      * de acuerdo a las agrupaciones que recibe la
      * base de datos
      */
-    __type: TFieldType;
+    __type: TDataType;
     /**
      * Determina si es array,
      * util tanto para primitivos como
      * para embebidos o incrustados,
-     * tambien ayuda determinar la cardinalidad
+     * también ayuda determinar la cardinalidad
      * en embebidos:
      *
      * ❗ ver propiedad `isMany`
@@ -101,7 +101,7 @@ export interface IPrimitiveMetadataModuleConfig<TValue>
 /**refactorizacion del tipo */
 export type Trf_IPrimitiveMetadataModuleConfig =
   IPrimitiveMetadataModuleConfig<any>;
-/**esquema de configuracion para metadatos
+/**esquema de configuración para metadatos
  * en contexto primitivo*/
 export type TPrimitiveMetadataModuleConfigForPrimitive<TValue> = Partial<
   Omit<
@@ -124,16 +124,6 @@ export type Trf_TPrimitiveMetadataModuleConfigForPrimitive =
 
 //====Strcuture====================================================================================================================
 
-/** tipos de datos aplicables a un campo.
- *
- * ❗los tipos vacios (`undefined` o `null`)
- * en los metadatos se deben reemplazar
- * con una flag que indique que el campo
- * puede estar vacio❗. Ya que declarar
- * que un campo que **solo** permite `undefined`
- * no tiene sentido
- */
-export type TFieldType = Exclude<TDataType, "undefined" | "null">;
 /**esquema de proposito general con los contextos estructurales del modulo*/
 export interface IStructureMetadataContext<
   TFieldMeta = unknown, //puede ser cualquier interfaz o tipado
@@ -160,7 +150,7 @@ export interface IStructureMetadataModuleConfig<TModelOrEmbModel>
      * acuerdo a las agrupaciones que recibe la
      * base de datos
      */
-    __fieldType: TFieldType;
+    __type: TDataType;
     /**
      * Determina si es un campo array,
      * util tanto para primitivos como
@@ -266,10 +256,7 @@ export type TStructureMetadataModuleConfigForField = Partial<
     | "__ctrlInstance"
   >
 > &
-  Pick<
-    IStructureMetadataModuleConfig<any>["fieldMeta"],
-    "__fieldType" | "__dfData"
-  >;
+  Pick<IStructureMetadataModuleConfig<any>["fieldMeta"], "__type" | "__dfData">;
 /**refactorizacion del tipo */
 export type Trf_TStructureMetadataModuleConfigForField =
   TStructureMetadataModuleConfigForField;

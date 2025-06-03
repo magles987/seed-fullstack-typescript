@@ -1,12 +1,20 @@
-import { TStructureActionConfigFn } from "../criterias/shared-types";
+import {
+  TStructureActionConfigFn,
+  TTGlobalActionConfig,
+} from "../criterias/shared-types";
 import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
+import { ELogicCodeError, LogicError } from "../errors/logic-error";
 import { TwinBeeModule } from "../modules/module";
 import {
+  EKeyActionGroupForRes,
   ELogicResStatusCode,
   IStructureResponse,
 } from "../reports/shared-types";
 import { StructureLogicMutater } from "./_structure-mutater";
-import { TFieldMutateBaseConfig } from "./shared-types";
+import {
+  TFieldMutateBaseConfig,
+  TStructureFieldMutateDiccACForCriteria,
+} from "./shared-types";
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** define las propiedades de cada formateo
  * que puede configurar y ejecutar un campo
@@ -142,6 +150,33 @@ export interface IDiccFieldMutateActionConfig {
    *
    */
   anyTrim: boolean;
+  /** */
+  mutateAnonymousObject: {
+    /**esquema recursivo para asignar acciones de configuración a
+     * cada subcampo, las acciones de configuración
+     * son asignadas a traves de una array de tuplas
+     *
+     * ⚠ Por complejidad aun no es posible tener acceso a
+     * diccionarios de acciones de configuración personalizados ⚠
+     */
+    schemaForATActionConfig: Record<
+      any,
+      Array<
+        TTGlobalActionConfig<
+          TStructureFieldMutateDiccACForCriteria<IDiccFieldMutateActionConfig>
+        >
+      >
+    >;
+  };
+  /** */
+  mutateAnonymousArray: {
+    /**array de diccionarios de acciones para cada elemento del array del dato*/
+    aTGlobalActionConfig: Array<
+      TTGlobalActionConfig<
+        TStructureFieldMutateDiccACForCriteria<IDiccFieldMutateActionConfig>
+      >
+    >;
+  };
 }
 /**claves identificadoras del diccionario de
  * acciones de configuracion */
@@ -158,7 +193,7 @@ export class FieldLogicMutater<
   implements
     Record<TKeysDiccFieldMutateActionConfig, TStructureActionConfigFn<any>>
 {
-  /** configuracion de valores predefinidos para el modulo*/
+  /** configuración de valores predefinidos para el modulo*/
   public static override readonly getDefault = () => {
     const superDf = StructureLogicMutater.getDefault();
     return {
@@ -166,6 +201,12 @@ export class FieldLogicMutater<
       diccActionConfig: {
         ...(superDf.diccActionConfig as any),
         anyTrim: false,
+        mutateAnonymousObject: {
+          schemaForATActionConfig: undefined,
+        },
+        mutateAnonymousArray: {
+          aTGlobalActionConfig: [],
+        },
       } as IDiccFieldMutateActionConfig,
       topPriorityKeysAction: [
         ...superDf.topPriorityKeysAction,
@@ -405,189 +446,139 @@ export class FieldLogicMutater<
   //   // });
   //   // return res;
   // }
-  public async objectFormatter(
+  public async mutateAnonymousObject(
     criteriaHandler: StructureCriteriaHandler<any>
   ): Promise<IStructureResponse> {
-    // //Desempaquetar la accion e inicializar
-    // const keyAction: TLibKeyAction = "objectFormatter";
-    // const actionConfig = diccActionConfig[keyAction];
-    // const { key, embMeta } = this.getFieldOrEmbFieldConfig(
-    //   keyFieldOrKeyEmbField,
-    //   embAbsolutePath
-    // );
-    // const { aDiccActionsConfig } = actionConfig;
-    // let res = this.mutateResponseForAction(undefined, {
-    //   data,
-    //   keyAction,
-    //   key: keyFieldOrKeyEmbField,
-    //   status: ELogicResStatusCode.SUCCESS,
-    // });
-    // const { isValObject } = ValLib.getDiccValHelper(false);
-    // if (!isValObject(data)) {
-    //   res = this.mutateResponseForAction(res, {
-    //     data,
-    //     status: ELogicResStatusCode.WARNING,
-    //   });
-    //   return res;
-    // }
-    // //valida si ahi la suficiente configuracion para este tipo de formateo
-    // if (this.util.isNotArray(aDiccActionsConfig)) {
-    //   res = this.mutateResponseForAction(res, {
-    //     data: data,
-    //     status: ELogicResStatusCode.WARNING,
-    //   });
-    //   return res;
-    // }
-    // let promisesResponses: Promise<IFormatResponseForAction>[] = [];
-    // //verificar el tipo de objeto (anonimo o embebido)
-    // if (
-    //   this.util.isObject(embMeta) ||
-    //   this.util.isNotUndefinedAndNotNull(embMeta.__embAbsolutePath)
-    // ) {
-    //   const sub_embAbsolutePath = embMeta.__embAbsolutePath;
-    //   const embAllFieldConfig =
-    //     this.handler.getEmbAllFieldConfig(sub_embAbsolutePath);
-    //   promisesResponses = Object.keys(embAllFieldConfig).map(
-    //     async (keySubField) => {
-    //       const subData = data[keySubField];
-    //       const embFieldConfig = embAllFieldConfig[keySubField];
-    //       let embFieldContextConfig: Trf_IStructureFieldFormatConfig;
-    //       if (fieldHandlerContext == "inField") {
-    //         embFieldContextConfig = <any>embFieldConfig.formatConfig.inField;
-    //       }
-    //       if (fieldHandlerContext == "outField") {
-    //         embFieldContextConfig = <any>embFieldConfig.formatConfig.outField;
-    //       }
-    //       let subRes = this.mutateResponseForAction(undefined, {
-    //         data: subData,
-    //         keyAction,
-    //         status: ELogicResStatusCode.SUCCESS,
-    //       });
-    //       let sub_aDiccAC = embFieldContextConfig.aDiccActionsConfig;
-    //       if (this.util.isNotArray(sub_aDiccAC)) {
-    //         subRes = this.mutateResponseForAction(subRes, {
-    //           data: subData,
-    //           status: ELogicResStatusCode.ERROR,
-    //         });
-    //         return subRes;
-    //       }
-    //       subRes.embeddedResponses = await this.runFieldActionSequence(
-    //         fieldHandlerContext,
-    //         subData,
-    //         sub_aDiccAC,
-    //         bag,
-    //         keyFieldOrKeyEmbField,
-    //         embAbsolutePath,
-    //         keySubField
-    //       );
-    //       //garantizar integridad de dato;
-    //       data[keySubField] = subRes.data;
-    //       subRes = this.mutateResponseForAction(subRes, { data: subData });
-    //       return subRes;
-    //     }
-    //   );
-    // } else {
-    //   promisesResponses = Object.keys(data).map(async (keySubField) => {
-    //     const subData = data[keySubField];
-    //     let subRes = this.mutateResponseForAction(undefined, {
-    //       data,
-    //       keyAction,
-    //       status: ELogicResStatusCode.SUCCESS,
-    //     });
-    //     let sub_aDiccAC = aDiccActionsConfig;
-    //     subRes.embeddedResponses = await this.runFieldActionSequence(
-    //       fieldHandlerContext,
-    //       subData,
-    //       sub_aDiccAC,
-    //       bag,
-    //       keyFieldOrKeyEmbField,
-    //       embAbsolutePath,
-    //       keySubField
-    //     );
-    //     //garantizar integridad de dato;
-    //     data[keySubField] = subRes.data;
-    //     subRes = this.mutateResponseForAction(subRes, { data: subData });
-    //     return subRes;
-    //   });
-    // }
-    // res.embeddedResponses = await Promise.all(promisesResponses);
-    // //se asume que a este punto es valido mientras
-    // //no se sepa el estado de los embebidos
-    // res = this.mutateResponseForAction(res, { data });
-    // return res;
+    const { data, keyPath } = criteriaHandler;
+    const [keyAction, actionConfig] =
+      this.getTupleActionConfigFromCriteriaHandler(
+        criteriaHandler,
+        "mutateAnonymousObject"
+      );
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
+    let { schemaForATActionConfig } = actionConfig;
+    const mH = this.metadataHandler;
+    //bandera de tipo por seguridad
+    const isObject = this.util.isObject(data);
+    //determinar si hay esquema de propiedades para mutar
+    if (!this.util.isObject(schemaForATActionConfig)) {
+      //al no haber esquema, solo se puede verificar el tipo general
+      if (isObject) {
+        res = rH.mutateResponse(res, {
+          status: ELogicResStatusCode.SUCCESS,
+        });
+      } else {
+        throw new LogicError({
+          code: ELogicCodeError.MODULE_ERROR,
+          msn: `${schemaForATActionConfig} is not schema for action config valid`,
+        });
+      }
+      return res;
+    }
+    //si hay esquema de propiedades a mutar, data debe ser objeto
+    if (!isObject) {
+      res = rH.mutateResponse(res, {
+        status: ELogicResStatusCode.WARNING,
+      });
+      return res;
+    }
+    const keysPropSchema = Object.keys(schemaForATActionConfig);
+    //muta propiedades de esquema (las adicionales no se validan)
+    for (const keyProp of keysPropSchema) {
+      const aTupleAC = schemaForATActionConfig[keyProp];
+      const subData = data[keyProp];
+      const keyPseudoPath = this.util.buildPath([keyPath, keyProp]);
+      let embResForProp = rH.mutateResponse(undefined, {
+        data: subData,
+        keyLogic: keyProp,
+        keyPath: keyPseudoPath,
+        keyAction: EKeyActionGroupForRes.props,
+      });
+      //si no es un array de tuplas, indica que permite cualquier valor
+      if (
+        !this.util.isArray(aTupleAC) ||
+        aTupleAC.some((tAC) => !this.util.isTuple(tAC, [2, 3]))
+      ) {
+        res.responses.push(embResForProp);
+        continue;
+      }
+      const subCriteriaHandler = new StructureCriteriaHandler(
+        mH,
+        "structureField",
+        {
+          keyPath: keyPseudoPath,
+          data: subData,
+          aTGlobalActionConfig: aTupleAC as any,
+        }
+      );
+      for (const tupleAC of aTupleAC) {
+        const keyAction = tupleAC[0];
+        let actionFn = this.getActionFnByKey(keyAction as any);
+        const resForAction = await actionFn(subCriteriaHandler);
+        embResForProp.responses.push(resForAction);
+        if (resForAction.status >= res.tolerance) break; //comprobar si se superó la tolerancia
+      }
+      embResForProp = rH.mutateResponse(embResForProp);
+      res.responses.push(embResForProp);
+    }
+    res = rH.mutateResponse(res);
+    return res;
   }
-  public async arrayItemFormat(
+  public async mutateAnonymousArray(
     criteriaHandler: StructureCriteriaHandler<any>
   ): Promise<IStructureResponse> {
     // //Desempaquetar la accion e inicializar
-    // const keyAction: TLibKeyAction = "array_itemFormat";
-    // const actionConfig = diccActionConfig[keyAction];
-    // // const {  } = this.getFieldOrEmbFieldConfig(keyField, embAbsolutePath);
-    // const { aDiccActionsConfig } = actionConfig;
-    // let res = this.mutateResponseForAction(undefined, {
-    //   data,
-    //   keyAction,
-    //   key: keyFieldOrKeyEmbField,
-    // });
-    // const { isValArray } = ValLib.getDiccValHelper(false);
-    // if (!isValArray(data)) {
-    //   res = this.mutateResponseForAction(res, {
-    //     data,
-    //     status: ELogicResStatusCode.WARNING,
-    //   });
-    //   return res;
-    // }
-    // //valida si ahi la suficiente configuracion para este tipo de formateo
-    // if (this.util.isNotArray(aDiccActionsConfig)) {
-    //   res = this.mutateResponseForAction(res, {
-    //     data: data,
-    //     status: ELogicResStatusCode.WARNING,
-    //   });
-    //   return res;
-    // }
-    // const promisesResponses = (<any[]>data).map(async (subData, idx) => {
-    //   let subRes = this.mutateResponseForAction(undefined, {
-    //     data: subData,
-    //     keyAction,
-    //     status: ELogicResStatusCode.SUCCESS,
-    //   });
-    //   //se define un array de diccionarios fachada (o virtual):
-    //   let sub_aDiccAC: TADiccActionConfig<IDiccFieldFormatActionConfigG>;
-    //   if (this.util.isNotObject(subData)) {
-    //     //valida si ahi la suficiente configuracion para este tipo de validacion
-    //     sub_aDiccAC = aDiccActionsConfig;
-    //     if (this.util.isNotArray(sub_aDiccAC)) {
-    //       subRes = this.mutateResponseForAction(subRes, {
-    //         data: subData,
-    //         status: ELogicResStatusCode.ERROR,
-    //       });
-    //       return subRes;
-    //     }
-    //     subRes.embeddedResponses = await this.runFieldActionSequence(
-    //       fieldHandlerContext,
-    //       subData,
-    //       sub_aDiccAC,
-    //       bag,
-    //       keyFieldOrKeyEmbField,
-    //       `${idx}`
-    //     );
-    //   } else {
-    //     //apoyarse de la validacion de objeto
-    //     subRes = await this.objectFormatter(
-    //       fieldHandlerContext,
-    //       subData,
-    //       { objectFormatter: { aDiccActionsConfig: sub_aDiccAC } }, //se envia la configuracion del aDicc del array como si fuera la del objeto
-    //       bag,
-    //       keyFieldOrKeyEmbField
-    //     );
-    //   }
-    //   subRes = this.mutateResponseForAction(subRes, { data: subData });
-    //   //garantizar integridad de dato;
-    //   data[idx] = subRes.data;
-    //   return subRes;
-    // });
-    // res.embeddedResponses = await Promise.all(promisesResponses);
-    // res = this.mutateResponseForAction(res, { data }); //se analizará internamente los reportes embebidos
-    // return res;
+    const { data, keyPath } = criteriaHandler;
+    const [keyAction, actionConfig] =
+      this.getTupleActionConfigFromCriteriaHandler(
+        criteriaHandler,
+        "mutateAnonymousArray"
+      );
+    const rH = this.buildReportHandler(criteriaHandler, keyAction);
+    let res = rH.mutateResponse(undefined, { data });
+    let { aTGlobalActionConfig } = actionConfig;
+    const mH = this.metadataHandler;
+    //bandera de tipo por seguridad
+    const isArray = this.util.isArray(data);
+    //si hay esquema de propiedades a validar, data debe ser array
+    if (!isArray) {
+      res = rH.mutateResponse(res, {
+        status: ELogicResStatusCode.INVALID_DATA,
+      });
+      return res;
+    }
+    //análisis de cada elemento del array
+    for (let idx = 0; idx < (data as any[]).length; idx++) {
+      const subData = data[idx];
+      const keyIdx = `${idx}`;
+      const keyPseudoPath = this.util.buildPath([keyPath, keyIdx]);
+      let embResForItem = rH.mutateResponse(undefined, {
+        data: subData,
+        keyLogic: keyIdx,
+        keyPath: keyPseudoPath,
+        keyAction: EKeyActionGroupForRes.items,
+      });
+      const subCriteriaHandler = new StructureCriteriaHandler(
+        mH,
+        "structureField",
+        {
+          keyPath: keyPseudoPath,
+          data: subData,
+          aTGlobalActionConfig: aTGlobalActionConfig as any,
+        }
+      );
+      for (const tupleAC of aTGlobalActionConfig) {
+        const keyAction = tupleAC[0];
+        let actionFn = this.getActionFnByKey(keyAction as any);
+        const resForAction = await actionFn(subCriteriaHandler);
+        embResForItem.responses.push(resForAction);
+        if (resForAction.status >= res.tolerance) break; //comprobar si se superó la tolerancia
+      }
+      embResForItem = rH.mutateResponse(embResForItem);
+      res.responses.push(embResForItem);
+    }
+    res = rH.mutateResponse(res);
+    return res;
   }
 }

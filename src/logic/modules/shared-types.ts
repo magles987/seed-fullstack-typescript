@@ -43,7 +43,7 @@ export type TKeyBasicCRUD =
  * no esta en este type
  *
  */
-export type TDataType =
+export type TType =
   //Primitivos serializables
   | "boolean"
   | "bigint"

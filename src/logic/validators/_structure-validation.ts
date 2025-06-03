@@ -131,6 +131,7 @@ export abstract class StructureLogicValidation<
     keyActionConfig: keyof TIDiccAC
   ): void {
     super.preRunAction(criteriaHandler, keyActionConfig) as any;
+
     return;
   }
   public override postRunAction(
