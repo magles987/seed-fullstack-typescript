@@ -293,7 +293,7 @@ const defineMetadataHandler = () => {
       },
       _id: {
         __dfData: baseModel._id,
-        __fieldType: "string",
+        __type: "string",
         __emb: undefined,
         __isArray: false,
         __isVirtual: false,
@@ -309,7 +309,7 @@ const defineMetadataHandler = () => {
       },
       pathDoc: {
         __dfData: baseModel.pathDoc,
-        __fieldType: "string",
+        __type: "string",
         __emb: undefined,
         __isArray: false,
         __isVirtual: false,
@@ -332,7 +332,6 @@ export const getElementalModelTestMetadataHandler = () =>
     keySrc,
     defineMetadataHandler
   );
-
 /**@returns la instancia del controlador asociado a este modelo */
 export const getElementalModelTestCtrl = () =>
   getElementalModelTestMetadataHandler().getRootCtrlInstance();
