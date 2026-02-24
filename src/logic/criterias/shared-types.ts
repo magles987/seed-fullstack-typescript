@@ -705,7 +705,7 @@ export interface IStructureEmbModelCriteria<
   keyPath: string;
 }
 /**... */
-type _TStructureFieldDiccGlobalAC<
+export type _TStructureFieldDiccGlobalAC<
   TIDiccFieldMutateAC,
   TIDiccFieldValAC,
   TIDiccStructureHookAC,

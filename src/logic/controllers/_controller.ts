@@ -21,7 +21,7 @@ export type Trf_LogicController = LogicController<any>;
  * base controller
  */
 export abstract class LogicController<
-  TIDiccAC
+  TIDiccAC,
 > extends ActionTwinBeeModule<TIDiccAC> {
   public static getDefault = () => {
     const superDf = ActionTwinBeeModule.getDefault();
@@ -53,7 +53,7 @@ export abstract class LogicController<
         ReturnType<LogicController<TIDiccAC>["getDefault"]>,
         "diccActionConfig" | "topMandatoryKeysAction" | "topPriorityKeysAction"
       >
-    >
+    >,
   ) {
     super("controller", keyLogicContext);
     baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
@@ -61,9 +61,14 @@ export abstract class LogicController<
   protected override getDefault() {
     return LogicController.getDefault();
   }
+  /**propiedad especial que simula una acción genérica para el controller */
+  protected abstract runCommonActionRequest(
+    keyActionConfig: unknown,
+    criteriaHandler: unknown,
+  ): Promise<unknown>;
   public override preRunAction(
     criteriaHandler: unknown,
-    keyActionConfig: unknown
+    keyActionConfig: unknown,
   ): void {
     return;
   }
@@ -72,10 +77,10 @@ export abstract class LogicController<
     criteriaHandler["data"] = res["data"];
     return;
   }
-  /**propiedad especial que simula una acción genérica para el controller */
-  protected abstract runCommonActionRequest(
-    keyActionConfig: unknown,
-    criteriaHandler: unknown
+  /**... */
+  protected abstract runAction(
+    criteriaHandler: unknown,
+    tActionConfig: unknown,
   ): Promise<unknown>;
   /**verifica si la acción es permitida ejecutarla, se gun las condiciones necesarias
    *
@@ -91,7 +96,7 @@ export abstract class LogicController<
    * @returns si es o no permitido la ejecución de la acción
    */
   protected isAllowRunAction(
-    tGlobalActionConfig: TTGlobalActionConfig<any>
+    tGlobalActionConfig: TTGlobalActionConfig<any>,
   ): boolean {
     let r = false;
     if (!this.util.isTuple(tGlobalActionConfig, 3)) return r;
@@ -106,7 +111,7 @@ export abstract class LogicController<
    */
   public static getControlReduceStatusResponse(
     cStt: ELogicResStatusCode,
-    nStt: ELogicResStatusCode
+    nStt: ELogicResStatusCode,
   ): ELogicResStatusCode {
     let stateStatus: ELogicResStatusCode;
     if (

@@ -43,7 +43,7 @@ type TisRequiredConfig = {
  * (casos anónimos o que no tienen metadatos ) */
 type TITypeOf = {
   /**tipo de dato (no array) */
-  fieldType: TFieldType;
+  type: TDataType;
   /**si se debe considerar como array */
   isArray: boolean;
 };
@@ -212,72 +212,6 @@ export interface IDiccFieldValActionConfig {
   //       w_rangeFile: [number, number];
   //     }
   //   | undefined;
-  /**
-   * establece una configuracion de validacion
-   * embebida para cada elementos del array
-   *
-   * ⚠ SOLO para arrays de tipos primitivos, NO
-   * usar con modelos embebidos
-   */
-  isAnonymousObject: {
-    //se aplicará a cada propiedad del objeto por
-    //lo que deben ser validaciones muy genericas
-    /**esquema recursivo para asignar acciones de configuración a
-     * cada subcampo, las acciones de configuración
-     * son asignadas a traves de una array de tuplas
-     *
-     * ⚠ Por complejidad aun no es posible tener acceso a
-     * diccionarios de acciones de configuración personalizados ⚠
-     */
-    schemaForATActionConfig: Record<
-      any,
-      Array<
-        TTGlobalActionConfig<
-          TStructureFieldValDiccACForCriteria<IDiccFieldValActionConfig>
-        >
-      >
-    >;
-    /**determina si se permite propiedades
-     * adicionales en el dato que no esten
-     * en la configuracion de `schemaADiccActionsConfig`
-     *
-     * Ejemplo:
-     * ````
-     * isObjectAnonimus = {
-     *   isEmbbeded: false,
-     *   schemaADiccActionsConfig: {
-     *     field1: [
-     *       { isTypeOf: { fieldType: "string" } },
-     *       { isRequired: true }
-     *     ],
-     *   },
-     *   isAllowedExtraProp: true
-     * }
-     *
-     * data = {
-     *   field1: "algun dato",
-     *   field2: 99,
-     * }
-     * //`data` es valido aunque tenga
-     * //una propiedad extra `field2`
-     *
-     * **⚠Importante:** el permitir propiedades
-     * extras estas no se validan asi que
-     * pueden incluir cualquier tipo de información
-     * ````
-     *
-     */
-    isAllowedExtraProp?: boolean;
-  };
-  /** */
-  isAnonymousArray: {
-    /**array de diccionarios de acciones para cada elemento del array del dato*/
-    aTGlobalActionConfig: Array<
-      TTGlobalActionConfig<
-        TStructureFieldValDiccACForCriteria<IDiccFieldValActionConfig>
-      >
-    >;
-  };
 }
 /**claves identificadoras del diccionario
  * de acciones de configuracion */
@@ -422,7 +356,7 @@ export class FieldLogicValidation<
     let dataType: TDataType;
     let isArray: boolean;
     if (this.util.isObject(actionConfig)) {
-      dataType = (actionConfig as TITypeOf).fieldType;
+      dataType = (actionConfig as TITypeOf).type;
       isArray = (actionConfig as TITypeOf).isArray;
     } else {
       const mH = this.metadataHandler;

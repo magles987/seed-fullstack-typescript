@@ -349,7 +349,7 @@ const defineMetadataHandler = () => {
       },
       _id: {
         __dfData: baseModel._id,
-        __fieldType: "string",
+        __type: "string",
         __emb: undefined,
         __isArray: false,
         __isVirtual: false,
@@ -365,7 +365,7 @@ const defineMetadataHandler = () => {
       },
       myAnonymousObject: {
         __dfData: baseModel.myAnonymousObject,
-        __fieldType: "object",
+        __type: "object",
         __ctrlInstance: {
           criteriaFieldRequestConfig: {
             aTGlobalActionConfig: [
@@ -379,7 +379,7 @@ const defineMetadataHandler = () => {
                       [
                         "fieldVal",
                         "isTypeOf",
-                        { fieldType: "number", isArray: false },
+                        { type: "number", isArray: false },
                       ],
                       ["fieldVal", "isRequired", true],
                     ],
@@ -388,18 +388,36 @@ const defineMetadataHandler = () => {
                       [
                         "fieldVal",
                         "isTypeOf",
-                        { fieldType: "string", isArray: false },
+                        { type: "string", isArray: false },
                       ],
-                      ["fieldVal", "isRequired", true],
                     ],
                     c: [
                       ["fieldMutate", "anyTrim", true],
                       [
                         "fieldVal",
                         "isTypeOf",
-                        { fieldType: "boolean", isArray: false },
+                        { type: "boolean", isArray: false },
                       ],
-                      ["fieldVal", "isRequired", true],
+                    ],
+                    d: [
+                      ["fieldMutate", "anyTrim", true],
+                      [
+                        "fieldVal",
+                        "isTypeOf",
+                        { type: "object", isArray: false },
+                      ],
+                    ],
+                    e: [
+                      ["fieldMutate", "anyTrim", true],
+                      [
+                        "fieldVal",
+                        "isTypeOf",
+                        { type: "string", isArray: true },
+                      ],
+                    ],
+                    f: [
+                      ["fieldMutate", "anyTrim", true],
+                      ["fieldVal", "isTypeOf", { type: "any", isArray: true }],
                     ],
                   },
                 },

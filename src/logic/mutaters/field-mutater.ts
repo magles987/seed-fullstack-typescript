@@ -150,33 +150,6 @@ export interface IDiccFieldMutateActionConfig {
    *
    */
   anyTrim: boolean;
-  /** */
-  mutateAnonymousObject: {
-    /**esquema recursivo para asignar acciones de configuración a
-     * cada subcampo, las acciones de configuración
-     * son asignadas a traves de una array de tuplas
-     *
-     * ⚠ Por complejidad aun no es posible tener acceso a
-     * diccionarios de acciones de configuración personalizados ⚠
-     */
-    schemaForATActionConfig: Record<
-      any,
-      Array<
-        TTGlobalActionConfig<
-          TStructureFieldMutateDiccACForCriteria<IDiccFieldMutateActionConfig>
-        >
-      >
-    >;
-  };
-  /** */
-  mutateAnonymousArray: {
-    /**array de diccionarios de acciones para cada elemento del array del dato*/
-    aTGlobalActionConfig: Array<
-      TTGlobalActionConfig<
-        TStructureFieldMutateDiccACForCriteria<IDiccFieldMutateActionConfig>
-      >
-    >;
-  };
 }
 /**claves identificadoras del diccionario de
  * acciones de configuracion */
@@ -187,8 +160,8 @@ export type Trf_FieldLogicMutater = FieldLogicMutater;
 //████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 /** */
 export class FieldLogicMutater<
-    TIDiccAC extends IDiccFieldMutateActionConfig = IDiccFieldMutateActionConfig
-  >
+  TIDiccAC extends IDiccFieldMutateActionConfig = IDiccFieldMutateActionConfig,
+>
   extends StructureLogicMutater<TIDiccAC>
   implements
     Record<TKeysDiccFieldMutateActionConfig, TStructureActionConfigFn<any>>
@@ -227,7 +200,7 @@ export class FieldLogicMutater<
   }
   /**... */
   protected static buildInstanceForMetadata<
-    TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater
+    TFieldMutateInstance extends FieldLogicMutater = FieldLogicMutater,
   >(preInstance: TFieldMutateInstance): TFieldMutateInstance {
     const util = TwinBeeModule.util;
     let inst: TFieldMutateInstance;
@@ -238,14 +211,14 @@ export class FieldLogicMutater<
         TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = structureModuleFactory.makeModuleInstance(
         "fieldMutate",
-        preInstance as any
+        preInstance as any,
       ) as any;
     }
     return inst;
   }
   //================================================================================================================================
   public async anyTrim(
-    criteriaHandler: StructureCriteriaHandler<any>
+    criteriaHandler: StructureCriteriaHandler<any>,
   ): Promise<IStructureResponse> {
     //Desempaquetar la accion e inicializar
     const { data } = criteriaHandler;
@@ -262,6 +235,10 @@ export class FieldLogicMutater<
         status: ELogicResStatusCode.WARNING,
         msn: `${keyAction} is not applicable to ${data}`,
       });
+      return res;
+    }
+    if (this.util.isNumber(data)) {
+      return res;
     }
     let newData = (data as string).trim();
     res = rH.mutateResponse(res, {
@@ -447,13 +424,13 @@ export class FieldLogicMutater<
   //   // return res;
   // }
   public async mutateAnonymousObject(
-    criteriaHandler: StructureCriteriaHandler<any>
+    criteriaHandler: StructureCriteriaHandler<any>,
   ): Promise<IStructureResponse> {
     const { data, keyPath } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
-        "mutateAnonymousObject"
+        "mutateAnonymousObject",
       );
     const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
@@ -510,7 +487,7 @@ export class FieldLogicMutater<
           keyPath: keyPseudoPath,
           data: subData,
           aTGlobalActionConfig: aTupleAC as any,
-        }
+        },
       );
       for (const tupleAC of aTupleAC) {
         const keyAction = tupleAC[0];
@@ -526,14 +503,14 @@ export class FieldLogicMutater<
     return res;
   }
   public async mutateAnonymousArray(
-    criteriaHandler: StructureCriteriaHandler<any>
+    criteriaHandler: StructureCriteriaHandler<any>,
   ): Promise<IStructureResponse> {
     // //Desempaquetar la accion e inicializar
     const { data, keyPath } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
-        "mutateAnonymousArray"
+        "mutateAnonymousArray",
       );
     const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
@@ -566,7 +543,7 @@ export class FieldLogicMutater<
           keyPath: keyPseudoPath,
           data: subData,
           aTGlobalActionConfig: aTGlobalActionConfig as any,
-        }
+        },
       );
       for (const tupleAC of aTGlobalActionConfig) {
         const keyAction = tupleAC[0];

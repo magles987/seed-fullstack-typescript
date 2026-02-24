@@ -378,4 +378,25 @@ export class UtilTwinBee extends UtilExtension {
     let r = this.getArrayItem(aPath, -1);
     return r;
   }
+  /**... */
+  public getAnonymousObjectOrArrayKeyPath(
+    keyPath: string | undefined,
+    keyRefPath: string
+  ): string {
+    const sp = this.charSeparatorLogicPath;
+    const keysPath = keyPath.split(sp);
+    const keysRefPath = keyRefPath.split(sp);
+    const kPLen = keysPath.length;
+    const kRPLen = keysRefPath.length;
+    let extraPath = "";
+    if (kPLen > kRPLen) {
+      //verificar inicio con la referencia
+      if (keyPath.startsWith(keyRefPath)) {
+        extraPath = keyPath.slice(kRPLen);
+        //garantiza integridad de no separador inicial
+        extraPath = extraPath.startsWith(sp) ? extraPath.slice(1) : extraPath;
+      }
+    }
+    return extraPath;
+  }
 }

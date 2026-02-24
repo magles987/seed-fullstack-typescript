@@ -1,12 +1,13 @@
 import {
+  _TStructureFieldDiccGlobalAC,
   IStructureEmbModelCriteria,
+  IStructureFieldCriteria,
   IStructureModelCriteria,
   TStructureActionConfigFn,
   TStructureEmbModelBaseCriteria,
   TStructureFieldBaseCriteria,
   TStructureModelBaseModifyCriteria,
   TStructureModelBaseReadCriteria,
-  TTGlobalActionConfig,
 } from "../criterias/shared-types";
 import { StructureCriteriaHandler } from "../criterias/structure-criteria-handler";
 import { ELogicCodeError, LogicError } from "../errors/logic-error";
@@ -17,12 +18,8 @@ import {
 } from "../meta/structure-metadata-handler";
 import { TwinBeeModule } from "../modules/module";
 import { TKeyStructureContextFull } from "../modules/shared-types";
-import {
-  FieldLogicMutater,
-  IDiccFieldMutateActionConfig,
-} from "../mutaters/field-mutater";
+import { FieldLogicMutater } from "../mutaters/field-mutater";
 import { ModelLogicMutater } from "../mutaters/model-mutater";
-import { TStructureFieldMutateDiccACForCriteria } from "../mutaters/shared-types";
 import { StructureLogicProvider } from "../providers/structure-provider";
 import {
   EKeyActionGroupForRes,
@@ -30,13 +27,9 @@ import {
   IStructureResponse,
 } from "../reports/shared-types";
 import { StructureReportHandler } from "../reports/structure-report-handler";
-import {
-  FieldLogicValidation,
-  IDiccFieldValActionConfig,
-} from "../validators/field-validation";
+import { FieldLogicValidation } from "../validators/field-validation";
 import { ModelLogicValidation } from "../validators/model-validation";
 import { RequestLogicValidation } from "../validators/request-validation";
-import { TStructureFieldValDiccACForCriteria } from "../validators/shared-types";
 import { IDiccCtrlActionConfig, LogicController } from "./_controller";
 import {
   TFieldCtrlBaseConfig,
@@ -54,9 +47,12 @@ import {
  */
 export interface IDiccStructureCtrlActionConfig<
   TModel,
-  TIDiccFieldMutateAC extends FieldLogicMutater["diccActionConfig"] = FieldLogicMutater["diccActionConfig"],
-  TIDiccFieldValAC extends FieldLogicValidation["diccActionConfig"] = FieldLogicValidation["diccActionConfig"],
-  TIDiccStructureHookAC extends StructureLogicHook["diccActionConfig"] = StructureLogicHook["diccActionConfig"]
+  TIDiccFieldMutateAC extends FieldLogicMutater["diccActionConfig"] =
+    FieldLogicMutater["diccActionConfig"],
+  TIDiccFieldValAC extends FieldLogicValidation["diccActionConfig"] =
+    FieldLogicValidation["diccActionConfig"],
+  TIDiccStructureHookAC extends StructureLogicHook["diccActionConfig"] =
+    StructureLogicHook["diccActionConfig"],
   ////❗el dicc controller embebido no se puede tipar por profundidad❗
 > extends IDiccCtrlActionConfig {
   /** */
@@ -89,22 +85,22 @@ export interface IDiccStructureCtrlActionConfig<
      */
     schemaForATActionConfig: Record<
       any,
-      Array<
-        TTGlobalActionConfig<
-          TStructureFieldMutateDiccACForCriteria<IDiccFieldMutateActionConfig> &
-            TStructureFieldValDiccACForCriteria<IDiccFieldValActionConfig>
-        >
-      >
+      IStructureFieldCriteria<
+        any,
+        TIDiccFieldMutateAC,
+        TIDiccFieldValAC,
+        TIDiccStructureHookAC
+      >["aTGlobalActionConfig"]
     >;
   };
   /** */
   checkAnonymousArray: {
-    aTGlobalActionConfig: Array<
-      TTGlobalActionConfig<
-        TStructureFieldMutateDiccACForCriteria<IDiccFieldMutateActionConfig> &
-          TStructureFieldValDiccACForCriteria<IDiccFieldValActionConfig>
-      >
-    >;
+    aTGlobalActionConfig: IStructureFieldCriteria<
+      any,
+      TIDiccFieldMutateAC,
+      TIDiccFieldValAC,
+      TIDiccStructureHookAC
+    >["aTGlobalActionConfig"];
   };
 }
 /**claves identificadoras del diccionario de acciones de configuración */
@@ -125,8 +121,9 @@ export class StructureLogicController<
   TModelValInstance extends ModelLogicValidation = ModelLogicValidation,
   TRequestValInstance extends RequestLogicValidation = RequestLogicValidation,
   TStructureHookInstance extends StructureLogicHook = StructureLogicHook,
-  TStructureProviderInstance extends StructureLogicProvider = StructureLogicProvider,
-  TKeyDiccActionRequest extends string = TKeyStructureUnionActionRequestCtrl
+  TStructureProviderInstance extends StructureLogicProvider =
+    StructureLogicProvider,
+  TKeyDiccActionRequest extends string = TKeyStructureUnionActionRequestCtrl,
 > extends LogicController<
   IDiccStructureCtrlActionConfig<
     TModel,
@@ -173,7 +170,7 @@ export class StructureLogicController<
     return super.metadataHandler as any;
   }
   public override set metadataHandler(
-    metadataHandler: Trf_StructureLogicMetadataHandler
+    metadataHandler: Trf_StructureLogicMetadataHandler,
   ) {
     super.metadataHandler = metadataHandler;
   }
@@ -209,13 +206,13 @@ export class StructureLogicController<
       TStructureHookInstance,
       TStructureProviderInstance,
       TKeyDiccActionRequest
-    >["diccCriteriaRequestConfig"]
+    >["diccCriteriaRequestConfig"],
   ) {
     v = this.util.isObject(v)
       ? v
       : (this.getDefault().diccCriteriaRequestConfig as any);
     this._diccCriteriaRequestConfig = this.util.isObject(
-      this._diccCriteriaRequestConfig
+      this._diccCriteriaRequestConfig,
     )
       ? this._diccCriteriaRequestConfig
       : (this.getDefault().diccCriteriaRequestConfig as any);
@@ -227,7 +224,7 @@ export class StructureLogicController<
           StructureCriteriaHandler.rebuildCustomConfigFromModuleContext(
             "structureModel",
             baseCRC as any,
-            newCRC as any
+            newCRC as any,
           ) as any;
       }
     }
@@ -262,7 +259,7 @@ export class StructureLogicController<
       TStructureHookInstance,
       TStructureProviderInstance,
       TKeyDiccActionRequest
-    >["criteriaEmbModelRequestConfig"]
+    >["criteriaEmbModelRequestConfig"],
   ) {
     const newCRC = this.util.isObject(v)
       ? v
@@ -274,7 +271,7 @@ export class StructureLogicController<
       StructureCriteriaHandler.rebuildCustomConfigFromModuleContext(
         "structureEmbedded",
         baseCRC as any,
-        newCRC as any
+        newCRC as any,
       ) as any;
   }
   private _criteriaFieldRequestConfig: TFieldCtrlBaseConfig<
@@ -294,7 +291,7 @@ export class StructureLogicController<
       TFieldMutateInstance,
       TFieldValInstance,
       TStructureHookInstance
-    >["criteriaFieldRequestConfig"]
+    >["criteriaFieldRequestConfig"],
   ) {
     const newCRC = this.util.isObject(v)
       ? v
@@ -306,7 +303,7 @@ export class StructureLogicController<
       StructureCriteriaHandler.rebuildCustomConfigFromModuleContext(
         "structureField",
         baseCRC as any,
-        newCRC as any
+        newCRC as any,
       ) as any;
   }
   private _diccCriteriaFieldRequestConfig: Record<
@@ -332,13 +329,13 @@ export class StructureLogicController<
         TFieldMutateInstance,
         TFieldValInstance
       >["criteriaFieldRequestConfig"]
-    >
+    >,
   ) {
     v = this.util.isObject(v)
       ? v
       : (this.getDefault().diccCriteriaFieldRequestConfig as any);
     this._diccCriteriaFieldRequestConfig = this.util.isObject(
-      this._diccCriteriaFieldRequestConfig
+      this._diccCriteriaFieldRequestConfig,
     )
       ? this._diccCriteriaFieldRequestConfig
       : (this.getDefault().diccCriteriaFieldRequestConfig as any);
@@ -350,7 +347,7 @@ export class StructureLogicController<
           StructureCriteriaHandler.rebuildCustomConfigFromModuleContext(
             "structureField",
             baseCRC as any,
-            newCRC as any
+            newCRC as any,
           ) as any;
       }
     }
@@ -367,7 +364,7 @@ export class StructureLogicController<
       TStructureHookInstance,
       TStructureProviderInstance,
       TKeyDiccActionRequest
-    >
+    >,
   ) {
     super("structure");
     baseConfig = this.util.isObject(baseConfig) ? baseConfig : ({} as any);
@@ -385,7 +382,8 @@ export class StructureLogicController<
   }
   /**... */
   protected static buildInstanceForMetadata<
-    TStructureCtrlInstance extends StructureLogicController<any> = StructureLogicController<any>
+    TStructureCtrlInstance extends StructureLogicController<any> =
+      StructureLogicController<any>,
   >(preInstance: TStructureCtrlInstance): TStructureCtrlInstance {
     const util = TwinBeeModule.util;
     let inst: TStructureCtrlInstance;
@@ -396,7 +394,7 @@ export class StructureLogicController<
         TwinBeeModule._globalConfig_.diccModuleFactory;
       inst = structureModuleFactory.makeModuleInstance(
         "structureCtrl",
-        preInstance as any
+        preInstance as any,
       ) as any;
     }
     return inst;
@@ -419,7 +417,7 @@ export class StructureLogicController<
       TFieldMutateInstance["diccActionConfig"],
       TFieldValInstance["diccActionConfig"],
       TStructureHookInstance["diccActionConfig"]
-    >
+    >,
   >(keyAction: TKeys): TStructureActionConfigFn<any>;
   /**obtiene un array de funciones de accion de acuerdo a sus claves identificadoras
    * preparadas para ser inyectadas en el middleware
@@ -439,7 +437,7 @@ export class StructureLogicController<
       TFieldMutateInstance["diccActionConfig"],
       TFieldValInstance["diccActionConfig"],
       TStructureHookInstance["diccActionConfig"]
-    >
+    >,
   >(keysAction: TKeys[]): Array<TStructureActionConfigFn<any>>;
   public override getActionFnByKey(keyOrKeysAction: unknown): unknown {
     return super.getActionFnByKey(keyOrKeysAction);
@@ -450,10 +448,10 @@ export class StructureLogicController<
       TFieldMutateInstance["diccActionConfig"],
       TFieldValInstance["diccActionConfig"],
       TStructureHookInstance["diccActionConfig"]
-    >
+    >,
   >(
     criteriaHandler: StructureCriteriaHandler<TModel>,
-    keyAction: TKey
+    keyAction: TKey,
   ): [
     TKey,
     IDiccStructureCtrlActionConfig<
@@ -461,18 +459,18 @@ export class StructureLogicController<
       TFieldMutateInstance["diccActionConfig"],
       TFieldValInstance["diccActionConfig"],
       TStructureHookInstance["diccActionConfig"]
-    >[TKey]
+    >[TKey],
   ] {
     const tKeyGlobalAC = [this.keyModuleContext, keyAction];
     const actionConfig =
       criteriaHandler.findGlobalActionByKeyModuleAndKeyAction(
-        tKeyGlobalAC as any
+        tKeyGlobalAC as any,
       );
     return [keyAction, actionConfig];
   }
   protected override buildReportHandler(
     criteriaHandler: StructureCriteriaHandler<TModel>,
-    keyAction: unknown
+    keyAction: unknown,
   ): StructureReportHandler {
     const {
       data,
@@ -487,7 +485,7 @@ export class StructureLogicController<
     const deep_keyModuleContext =
       StructureReportHandler.adapatKeyStructureContextToDeepKeyModuleContext(
         this.keyModule as any,
-        keyStructureContext
+        keyStructureContext,
       );
     let rH = new StructureReportHandler(this.keySrc, {
       keyRepModule: this.keyModule as any,
@@ -509,14 +507,14 @@ export class StructureLogicController<
   }
   public override preRunAction(
     criteriaHandler: StructureCriteriaHandler<TModel>,
-    keyAction: unknown
+    keyAction: unknown,
   ): void {
     super.preRunAction(criteriaHandler, keyAction) as any;
     return;
   }
   public override postRunAction(
     criteriaHandler: StructureCriteriaHandler<TModel>,
-    res: IStructureResponse
+    res: IStructureResponse,
   ): void {
     super.postRunAction(criteriaHandler, res) as any;
     return;
@@ -545,9 +543,9 @@ export class StructureLogicController<
   }
   protected override async runCommonActionRequest(
     keyActionConfig: TKeysDiccStructureCtrlActionConfig,
-    criteriaHandler: StructureCriteriaHandler<TModel>
+    criteriaHandler: StructureCriteriaHandler<TModel>,
   ): Promise<IStructureResponse> {
-    const { data, keyStructureContext, aTGlobalActionConfig } = criteriaHandler;
+    const { data, aTGlobalActionConfig } = criteriaHandler;
     const rH = this.buildReportHandler(criteriaHandler, keyActionConfig);
     let res = rH.mutateResponse(undefined, { data });
     //verificar si hay acciones para ejecutar
@@ -559,33 +557,41 @@ export class StructureLogicController<
       return res;
     }
     for (const tGAC of aTGlobalActionConfig) {
-      const [keyModuleContext, keyActionConfig] = tGAC;
-      const keyModule =
-        this.metadataHandler.getKeyModuleFromKeyModuleContext(keyModuleContext);
-      const mIC = this.metadataHandler.getInstanceModuleByModuleContext(
-        keyStructureContext as any,
-        keyModule as any,
-        keyModuleContext as any,
-        criteriaHandler.keyPath
-      );
-      if (this.isAllowRunAction(tGAC)) {
-        let actionFn: TStructureActionConfigFn<TModel>;
-        actionFn = mIC.getActionFnByKey(keyActionConfig as any);
-        if (!this.util.isFunction(actionFn)) {
-          throw new LogicError({
-            code: ELogicCodeError.MODULE_ERROR,
-            msn: `${actionFn} is not action function valid`,
-          });
-        }
-        mIC.preRunAction(criteriaHandler, keyActionConfig as any) as any;
-        const resForAction = await actionFn(criteriaHandler);
-        mIC.postRunAction(criteriaHandler, resForAction);
-        res.responses.push(resForAction);
-        if (resForAction.status > this.globalTolerance) break;
-      }
+      //detectar si la acción esta habilitada para ejecutarse
+      if (!this.isAllowRunAction(tGAC)) continue;
+      const resForAction = await this.runAction(criteriaHandler, tGAC);
+      res.responses.push(resForAction);
+      if (resForAction.status > this.globalTolerance) break;
     }
     res = rH.mutateResponse(res);
     return res;
+  }
+  /**... */
+  protected override async runAction(
+    criteriaHandler: StructureCriteriaHandler<any>,
+    tActionConfig: (typeof criteriaHandler)["aTGlobalActionConfig"][0],
+  ): Promise<IStructureResponse> {
+    const [keyModuleContext, keyActionConfig] = tActionConfig;
+    const keyModule =
+      this.metadataHandler.getKeyModuleFromKeyModuleContext(keyModuleContext);
+    const iMC = this.metadataHandler.getInstanceModuleByModuleContext(
+      criteriaHandler.keyStructureContext as any,
+      keyModule as any,
+      keyModuleContext as any,
+      criteriaHandler.keyPath,
+    );
+    let actionFn: TStructureActionConfigFn<TModel>;
+    actionFn = iMC.getActionFnByKey(keyActionConfig as any);
+    if (!this.util.isFunction(actionFn)) {
+      throw new LogicError({
+        code: ELogicCodeError.MODULE_ERROR,
+        msn: `${actionFn} is not action function valid`,
+      });
+    }
+    iMC.preRunAction(criteriaHandler, keyActionConfig as any) as any;
+    const resForAction = await actionFn(criteriaHandler);
+    iMC.postRunAction(criteriaHandler, resForAction);
+    return resForAction;
   }
   //████ Actions ████████████████████████████████████████████████████████████
   /**... */
@@ -595,7 +601,7 @@ export class StructureLogicController<
       TFieldMutateInstance,
       TFieldValInstance,
       TStructureHookInstance
-    >
+    >,
   ): Promise<IStructureResponse> {
     const mH = this.metadataHandler;
     let criteriaHandler: StructureCriteriaHandler<any>;
@@ -608,7 +614,7 @@ export class StructureLogicController<
     }
     const res = await this.runCommonActionRequest(
       "checkField",
-      criteriaHandler as any
+      criteriaHandler,
     );
     return res;
   }
@@ -631,7 +637,7 @@ export class StructureLogicController<
           TStructureHookInstance["diccActionConfig"]
         >,
         "keyPath" | "data"
-      >
+      >,
   ): Promise<IStructureResponse> {
     const mH = this.metadataHandler;
     let criteriaHandler: StructureCriteriaHandler<TEmbModel>;
@@ -641,14 +647,14 @@ export class StructureLogicController<
         "structureEmbedded",
         {
           ...(baseCriteria as any),
-        }
+        },
       );
     } else {
       criteriaHandler = baseCriteria as any;
     }
     const res = await this.runCommonActionRequest(
       "checkEmbModel",
-      criteriaHandler as any
+      criteriaHandler as any,
     );
     return res;
   }
@@ -662,7 +668,7 @@ export class StructureLogicController<
       TStructureHookInstance["diccActionConfig"],
       TStructureProviderInstance["diccActionConfig"],
       TKeyDiccActionRequest
-    >
+    >,
   ): Promise<IStructureResponse> {
     const mH = this.metadataHandler;
     const keyStructureContext: TKeyStructureContextFull =
@@ -678,7 +684,7 @@ export class StructureLogicController<
           ...(baseCriteria as any),
           keyPath: mH.keyModelPath,
           data: this.util.dfValue,
-        }
+        },
       );
     } else {
       criteriaHandler = baseCriteria as any;
@@ -687,7 +693,7 @@ export class StructureLogicController<
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
-        "checkAllFields"
+        "checkAllFields",
       );
     const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
@@ -697,7 +703,7 @@ export class StructureLogicController<
     >;
     modelForDiccAC = this.util.isObject(modelForDiccAC) ? modelForDiccAC : {};
     const modelMetadata = mH.getExtractMetadataByStructureContext(
-      keyStructureContext as any
+      keyStructureContext as any,
     );
     const keysField = modelMetadata.__keysProp;
     const promForField = keysField.map(async (keyField) => {
@@ -720,13 +726,13 @@ export class StructureLogicController<
   }
   /**... */
   protected async checkAnonymousObject(
-    criteriaHandler: StructureCriteriaHandler<any>
+    criteriaHandler: StructureCriteriaHandler<any>,
   ): Promise<IStructureResponse> {
     const { data, keyPath } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
-        "checkAnonymousObject"
+        "checkAnonymousObject",
       );
     const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
@@ -762,25 +768,15 @@ export class StructureLogicController<
       return res;
     }
     const keysPropSchema = Object.keys(schemaForATActionConfig);
-    //validar propiedades de esquema (las adicionales no se validan)
-    for (const keyProp of keysPropSchema) {
+    /*--------------------------------*/
+    /*--------------------------------*/
+    /*---- <INICIO CONSTRUCCION> -----*/
+    /*
+    
+    const promForProps = keysPropSchema.map(async (keyProp) => {
       const aTupleAC = schemaForATActionConfig[keyProp];
       const subData = data[keyProp];
       const keyPseudoPath = this.util.buildPath([keyPath, keyProp]);
-      let embResForProp = rH.mutateResponse(undefined, {
-        data: subData,
-        keyLogic: keyProp,
-        keyPath: keyPseudoPath,
-        keyAction: EKeyActionGroupForRes.props,
-      });
-      //si no es un array de tuplas, indica que permite cualquier valor
-      if (
-        !this.util.isArray(aTupleAC) ||
-        aTupleAC.some((tAC) => !this.util.isTuple(tAC, [2, 3]))
-      ) {
-        res.responses.push(embResForProp);
-        continue;
-      }
       const subCriteriaHandler = new StructureCriteriaHandler(
         mH,
         "structureField",
@@ -788,30 +784,53 @@ export class StructureLogicController<
           keyPath: keyPseudoPath,
           data: subData,
           aTGlobalActionConfig: aTupleAC as any,
-        }
+        },
       );
-      for (const tupleAC of aTupleAC) {
-        const keyAction = tupleAC[0];
-        let actionFn = this.getActionFnByKey(keyAction as any);
-        const resForAction = await actionFn(subCriteriaHandler);
-        embResForProp.responses.push(resForAction);
-        if (resForAction.status >= res.tolerance) break; //comprobar si se superó la tolerancia
-      }
-      embResForProp = rH.mutateResponse(embResForProp);
-      res.responses.push(embResForProp);
+      const resForProp = this.runCommonActionRequest(
+        subCriteriaHandler.keyActionRequest as any,
+        subCriteriaHandler,
+      );
+      return resForProp;
+    });
+    const resesForProp = await Promise.all(promForProps);
+    */
+    let resesForProp: IStructureResponse[] = [];
+    for (const keyProp of keysPropSchema) {
+      const aTupleAC = schemaForATActionConfig[keyProp];
+      const subData = data[keyProp];
+      const keyPseudoPath = this.util.buildPath([keyPath, keyProp]);
+      const subCriteriaHandler = new StructureCriteriaHandler(
+        mH,
+        "structureField",
+        {
+          keyPath: keyPseudoPath,
+          data: subData,
+          aTGlobalActionConfig: aTupleAC as any,
+        },
+      );
+      const resForProp = await this.runCommonActionRequest(
+        subCriteriaHandler.keyActionRequest as any,
+        subCriteriaHandler,
+      );
+      resesForProp.push(resForProp);
     }
-    res = rH.mutateResponse(res);
+    /*---- <FIN CONSTRUCCION> --------*/
+    /*--------------------------------*/
+    /*--------------------------------*/
+    res = rH.mutateResponse(res, {
+      responses: resesForProp,
+    });
     return res;
   }
   /**.. */
   protected async checkAnonymousArray(
-    criteriaHandler: StructureCriteriaHandler<any>
+    criteriaHandler: StructureCriteriaHandler<any>,
   ) {
     const { data, keyPath } = criteriaHandler;
     const [keyAction, actionConfig] =
       this.getTupleActionConfigFromCriteriaHandler(
         criteriaHandler,
-        "checkAnonymousArray"
+        "checkAnonymousArray",
       );
     const rH = this.buildReportHandler(criteriaHandler, keyAction);
     let res = rH.mutateResponse(undefined, { data });
@@ -838,7 +857,7 @@ export class StructureLogicController<
       TStructureHookInstance,
       TStructureProviderInstance,
       TKeyDiccActionRequest
-    >
+    >,
   ): Promise<IStructureResponse> {
     const mH = this.metadataHandler;
     let criteriaHandler: StructureCriteriaHandler<TModel>;
@@ -850,14 +869,14 @@ export class StructureLogicController<
           ...(baseCriteria as any),
           keyPath: mH.keyModelPath,
           data: this.util.dfValue,
-        }
+        },
       );
     } else {
       criteriaHandler = baseCriteria as any;
     }
     const res = await this.runCommonActionRequest(
       "readRequest",
-      criteriaHandler
+      criteriaHandler,
     );
     return res;
   }
@@ -871,7 +890,7 @@ export class StructureLogicController<
       TStructureHookInstance,
       TStructureProviderInstance,
       TKeyDiccActionRequest
-    >
+    >,
   ): Promise<IStructureResponse> {
     const mH = this.metadataHandler;
     let criteriaHandler: StructureCriteriaHandler<TModel>;
@@ -882,14 +901,14 @@ export class StructureLogicController<
         {
           ...(baseCriteria as any),
           keyPath: mH.keyModelPath,
-        }
+        },
       );
     } else {
       criteriaHandler = baseCriteria as any;
     }
     const res = await this.runCommonActionRequest(
       "modifyRequest",
-      criteriaHandler
+      criteriaHandler,
     );
     return res;
   }

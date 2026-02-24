@@ -186,6 +186,8 @@ export class StructureLogicMetadataHandler<
   public get keyModelPath(): string {
     return this.metadata.__keyPath;
   }
+  public readonly keyEmb: keyof IStructureMetadataModuleConfig<TModel>["fieldMeta"] =
+    "__emb";
   /**... */
   private _aKeysPath: string[] = [];
   /**array con todos los posibles keyPath del metadato */
@@ -344,7 +346,7 @@ export class StructureLogicMetadataHandler<
       this.addkeyPathByContext(keyStructureContext, progressiveKeyPath);
       //❕asignación parcial de metadatos para uso interno en contextos de embebidos
       this.bf_baseFieldMetadata = newMetadata as any;
-      if (!this.util.isObject(nFM.__emb)) {
+      if (this.util.isObject(nFM.__emb)) {
         const nEmbM = nFM.__emb;
         //actualizar el path progresivo de acuerdo a la ultima verificacion
         progressiveKeyPath = newMetadata.__keyPath;
@@ -954,36 +956,46 @@ export class StructureLogicMetadataHandler<
     keyStructureContext: TKeyStructureContextFull,
     keyPath = this.keySrc
   ): unknown {
-    const keyEC: keyof IStructureMetadataModuleConfig<TModel>["fieldMeta"] =
-      "__emb";
+    const keyEC = this.keyEmb;
     let metadataSchema = this.metadata;
     const sp = this.util.charSeparatorLogicPath;
     const aPath = keyPath.split(sp);
     const lenAPath = aPath.length;
+    let bfKeyPath = "";
     for (let idx = 0; idx < lenAPath; idx++) {
       const key = aPath[idx];
-      //posible procedencia de array
-      if (this.util.isNumber(key, true)) continue; //ignorar profundidades en array
+      bfKeyPath += idx > 0 ? sp + key : key;
       if (keyStructureContext === "structureField") {
-        if (idx === 0) continue; //el primero es la key del modelo raiz, se ignora
-        //determinar si existe mayor profundidad
-        if (idx > 1) {
-          if (!this.util.isObject(metadataSchema[keyEC])) {
+        if (idx === 0) continue; //el primero es la key del modelo raíz, se ignora
+        if (idx === 1) {
+          //caso primer nivel modelo
+          metadataSchema = metadataSchema[key];
+          //verificación de integridad de metadato
+          if (!this.util.isObject(metadataSchema)) {
             throw new LogicError({
               code: ELogicCodeError.NOT_VALID,
               msn: `${metadataSchema} is not deep metadata field valid`,
             });
           }
-          metadataSchema = metadataSchema[keyEC];
+          continue;
         }
-        //agregar los metadatos correspondientes
+        //niveles profundos:
+        const isEmb = this.util.isObject(metadataSchema[keyEC]);
+        if (!isEmb) break;
+        metadataSchema = metadataSchema[keyEC];
+        if (!this.util.isObject(metadataSchema)) {
+          throw new LogicError({
+            code: ELogicCodeError.NOT_VALID,
+            msn: `${metadataSchema} is not deep metadata emb field valid`,
+          });
+        }
         metadataSchema = metadataSchema[key];
+        //verificación de integridad de metadato
         if (!this.util.isObject(metadataSchema)) {
           throw new LogicError({
             code: ELogicCodeError.NOT_VALID,
             msn: `${metadataSchema} is not deep metadata field valid`,
           });
-          break;
         }
       } else if (keyStructureContext === "structureEmbedded") {
         //el primero es la key del modelo raiz, se ignora
@@ -1594,8 +1606,13 @@ export class StructureLogicMetadataHandler<
           "controller",
           keyPath
         );
+        //se extrae directamente del diccionario interno por
+        // medio de la clave identificadora del parametro
+        const keyLogic = this.util.getKeyLogicByKeyPath(keyPath);
         diccAC =
-          metadataByModuleContext.__ctrlInstance.criteriaFieldRequestConfig;
+          metadataByModuleContext.__ctrlInstance.diccCriteriaFieldRequestConfig[
+            keyLogic
+          ];
       } else {
         throw new LogicError({
           code: ELogicCodeError.MODULE_ERROR,
